@@ -1,15 +1,17 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   NEXO MENU — CONFIG
+   NEXO MENU — CONFIG v5
    Cliente: O Nosso Prego (Parede · Quinta das Marianas)
 
-   ESTRUTURA EM 8 BLOCOS — cada bloco é independente:
+   ESTRUTURA EM 9 BLOCOS — cada bloco é independente:
      1. IDENTIDADE        → nome, tagline, cidade
      2. VISUAL            → cores, fonte, hero, logo
      3. CONTACTOS         → morada, telefone, horário
      4. REDES & REVIEWS   → Instagram, Google, TripAdvisor, Facebook, WhatsApp
      5. WI-FI             → SSID e password
-     6. BANNER DA SEMANA  → Happy Hour / prato do dia
+     6. BANNERS DINÂMICOS → por horário (almoço / happy hour / jantar)
      7. MENU              → secções e items
+        ↳ badge:  "popular" | "chef" | "new"   → ícone psicológico no item
+        ↳ upsell: ["sec:idx", ...]              → "Combina com..." no modal
      8. MAIS PEDIDOS      → top 3 destacados
      9. VINHOS            → carta de vinhos com filtros
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -68,8 +70,7 @@ const CONFIG = {
   /* ═══ 4. REDES & REVIEWS ═══ */
 
   googleReviewUrl: "https://www.google.com/search?q=O+Nosso+Prego+Parede+Quinta+das+Marianas",
-  tripadvisorReviewUrl: "https://www.tripadvisor.com/Restaurant_Review-g1426241-d19753391-Reviews-O_Nosso_Prego-Parede.html",
-  facebookReviewUrl: "https://www.facebook.com/Onossopregooficial/reviews",
+  theForkReviewUrl: "https://www.thefork.pt/restaurante/o-nosso-prego-r534661/reviews",
   instagramHandle: "onossoprego",
   whatsappNumber: "351935438292",
   whatsappLoyaltyMessage: {
@@ -86,17 +87,60 @@ const CONFIG = {
   wifiPassword: "prego2026",
 
 
-  /* ═══ 6. BANNER DA SEMANA ═══
-     specialMode: "happy-hour" OU "week"  → muda o label do banner
+  /* ═══ 6. BANNERS DINÂMICOS POR HORÁRIO ═══
+     Cada banner tem um intervalo de horas (startH inclusive, endH exclusive).
+     days: array de dias da semana — 0=Dom, 1=Seg … 6=Sáb
+           omitir ou deixar vazio = todos os dias
+     O banner ativo é o primeiro da lista cujo intervalo corresponde à hora atual.
+     Se nenhum corresponder, o banner é ocultado automaticamente.
      ═════════════════════════════════════════════════════════════════ */
 
-  specialMode: "happy-hour",
-  todaysSpecial: {
-    pt: "Imperial + Prego no Pão · 5,95€ · Seg–Sex, 17h–19h",
-    en: "Draft Beer + Steak Sandwich · €5.95 · Mon–Fri, 5–7pm",
-    es: "Caña + Prego en Pan · 5,95€ · Lun–Vie, 17h–19h",
-    fr: "Bière pression + Prego · 5,95€ · Lun–Ven, 17h–19h"
-  },
+  timeBanners: [
+    {
+      id: "almoco",
+      startH: 12, endH: 15,
+      // days: [1,2,3,4,5,6,0], // todos os dias — omitido = mesmo resultado
+      label: {
+        pt: "Almoço", en: "Lunch", es: "Almuerzo", fr: "Déjeuner"
+      },
+      text: {
+        pt: "Prato do dia + sobremesa + bebida · 9,95€ · Seg–Sex",
+        en: "Daily dish + dessert + drink · €9.95 · Mon–Fri",
+        es: "Plato del día + postre + bebida · 9,95€ · Lun–Vie",
+        fr: "Plat du jour + dessert + boisson · 9,95€ · Lun–Ven"
+      }
+    },
+    {
+      id: "happy-hour",
+      startH: 17, endH: 19,
+      days: [1, 2, 3, 4, 5], // Seg–Sex
+      label: {
+        pt: "Happy Hour", en: "Happy Hour", es: "Happy Hour", fr: "Happy Hour"
+      },
+      text: {
+        pt: "Imperial + Prego no Pão · 5,95€ · Seg–Sex, 17h–19h",
+        en: "Draft Beer + Steak Sandwich · €5.95 · Mon–Fri, 5–7pm",
+        es: "Caña + Prego en Pan · 5,95€ · Lun–Vie, 17h–19h",
+        fr: "Bière pression + Prego · 5,95€ · Lun–Ven, 17h–19h"
+      }
+    },
+    {
+      id: "jantar",
+      startH: 19, endH: 23,
+      label: {
+        pt: "Boa noite! Reserve a sua mesa pelo WhatsApp",
+        en: "Good evening! Book your table on WhatsApp",
+        es: "¡Buenas noches! Reserve su mesa por WhatsApp",
+        fr: "Bonsoir! Réservez votre table sur WhatsApp"
+      },
+      text: {
+        pt: "Cataplanas e arrozes de marisco — os favoritos do jantar",
+        en: "Cataplanas and shellfish rice — dinner favourites",
+        es: "Cataplanas y arroces de mariscos — favoritos de la noche",
+        fr: "Cataplanas et riz aux fruits de mer — favoris du soir"
+      }
+    }
+  ],
 
 
   /* ═══ 7. MENU ═══
@@ -104,6 +148,12 @@ const CONFIG = {
      Allergens (Reg. UE 1169/2011):
        1-glúten  2-crustáceos  3-ovos  4-peixe  5-amendoim  6-soja  7-lácteos
        8-frutos-casca  9-aipo  10-mostarda  11-sésamo  12-sulfitos  13-tremoço  14-moluscos
+
+     NOVIDADES v5:
+       badge:  "popular" | "chef" | "new"
+               → mostra ícone psicológico (🔥 Popular · ⭐ Chef · 🆕 Novo)
+       upsell: ["secaoId:itemIndex", "secaoId:itemIndex"]
+               → aparece no modal como "Combina com..."
      ═════════════════════════════════════════════════════════════════ */
 
   menu: [
@@ -123,7 +173,9 @@ const CONFIG = {
           price: "4,95€",
           photo: "",
           diet: [],
-          allergens: [1, 3, 7]
+          allergens: [1, 3, 7],
+          badge: "popular",                          // 🔥 Popular
+          upsell: ["petiscos:4", "entradas:1"]       // Combina com: Gamba à Guilho + Pão de Alho
         },
         {
           name: { pt: "Prego no Prato", en: "Steak with Fries and Rice", es: "Prego en Plato", fr: "Prego en Assiette" },
@@ -136,7 +188,8 @@ const CONFIG = {
           price: "8,50€",
           photo: "",
           diet: [],
-          allergens: [3]
+          allergens: [3],
+          upsell: ["entradas:4", "sobremesas:0"]     // Combina com: Croquete + Arroz Doce
         },
         {
           name: { pt: "Prego no Bolo do Caco", en: "Steak Sandwich in Madeira Bread", es: "Prego en Bolo do Caco", fr: "Prego au Bolo do Caco" },
@@ -175,7 +228,9 @@ const CONFIG = {
           price: "15,50€",
           photo: "",
           diet: [],
-          allergens: [3, 7]
+          allergens: [3, 7],
+          badge: "chef",                             // ⭐ Escolha do Chef
+          upsell: ["sobremesas:4", "sobremesas:5"]   // Combina com: Mousse Kit-Kat + Cheesecake
         }
       ]
     },
@@ -189,7 +244,7 @@ const CONFIG = {
         { name: { pt: "Pão de Alho", en: "Garlic Bread", es: "Pan de Ajo", fr: "Pain à l'Ail" }, desc: { pt: "Pão caseiro com manteiga de alho.", en: "Homemade bread with garlic butter.", es: "Pan casero con mantequilla de ajo.", fr: "Pain maison au beurre d'ail." }, price: "2,50€", photo: "", diet: ["V"], allergens: [1, 7] },
         { name: { pt: "Prato de Presunto (100gr)", en: "Portuguese Cured Ham (100g)", es: "Plato de Jamón (100g)", fr: "Jambon Cru Portugais (100g)" }, desc: { pt: "Presunto português de qualidade.", en: "Quality Portuguese cured ham.", es: "Jamón portugués de calidad.", fr: "Jambon portugais de qualité." }, price: "8,50€", photo: "", diet: ["GF", "LF"], allergens: [] },
         { name: { pt: "Queijo Curado", en: "Cured Cheese", es: "Queso Curado", fr: "Fromage Affiné" }, desc: { pt: "Queijo curado português.", en: "Portuguese cured cheese.", es: "Queso curado portugués.", fr: "Fromage affiné portugais." }, price: "3,50€", photo: "", diet: ["V", "GF"], allergens: [7] },
-        { name: { pt: "Croquete", en: "Beef Croquette", es: "Croqueta de Carne", fr: "Croquette de Bœuf" }, desc: { pt: "Croquete de carne caseiro.", en: "Homemade beef croquette.", es: "Croqueta de carne casera.", fr: "Croquette de bœuf maison." }, price: "1,80€", photo: "", diet: [], allergens: [1, 3, 7] }
+        { name: { pt: "Croquete", en: "Beef Croquette", es: "Croqueta de Carne", fr: "Croquette de Bœuf" }, desc: { pt: "Croquete de carne caseiro.", en: "Homemade beef croquette.", es: "Croqueta de carne casera.", fr: "Croquette de bœuf maison." }, price: "1,80€", photo: "", diet: [], allergens: [1, 3, 7], badge: "popular" }
       ]
     },
 
@@ -202,7 +257,7 @@ const CONFIG = {
         { name: { pt: "Chouriço Assado", en: "Grilled Chorizo", es: "Chorizo Asado", fr: "Chorizo Grillé" }, desc: { pt: "Chouriço português assado na brasa.", en: "Portuguese chorizo grilled over charcoal.", es: "Chorizo portugués asado a la brasa.", fr: "Chorizo portugais grillé au charbon." }, price: "9,50€", photo: "", diet: ["GF", "LF"], allergens: [] },
         { name: { pt: "Morcela Assada", en: "Portuguese Black Sausage", es: "Morcilla Asada", fr: "Boudin Noir Grillé" }, desc: { pt: "Morcela de Estremoz grelhada.", en: "Grilled Estremoz black sausage.", es: "Morcilla de Estremoz a la parrilla.", fr: "Boudin noir d'Estremoz grillé." }, price: "9,50€", photo: "", diet: ["GF", "LF"], allergens: [] },
         { name: { pt: "Salada de Polvo (250gr)", en: "Octopus Salad (250g)", es: "Ensalada de Pulpo (250g)", fr: "Salade de Poulpe (250g)" }, desc: { pt: "Polvo cozido com cebola, salsa e azeite.", en: "Boiled octopus with onion, parsley and olive oil.", es: "Pulpo cocido con cebolla, perejil y aceite.", fr: "Poulpe cuit à l'oignon, persil et huile d'olive." }, price: "12,50€", photo: "", diet: ["GF", "LF"], allergens: [14] },
-        { name: { pt: "Gamba à Guilho (230gr)", en: "Shrimps with Garlic Sauce", es: "Gambas al Ajillo", fr: "Crevettes à l'Ail" }, desc: { pt: "Gambas salteadas em azeite, alho e piri-piri.", en: "Shrimps sautéed in olive oil, garlic and chili.", es: "Gambas salteadas en aceite, ajo y guindilla.", fr: "Crevettes sautées à l'huile, ail et piment." }, price: "15,50€", photo: "", diet: ["GF", "LF"], allergens: [2] },
+        { name: { pt: "Gamba à Guilho (230gr)", en: "Shrimps with Garlic Sauce", es: "Gambas al Ajillo", fr: "Crevettes à l'Ail" }, desc: { pt: "Gambas salteadas em azeite, alho e piri-piri.", en: "Shrimps sautéed in olive oil, garlic and chili.", es: "Gambas salteadas en aceite, ajo y guindilla.", fr: "Crevettes sautées à l'huile, ail et piment." }, price: "15,50€", photo: "", diet: ["GF", "LF"], allergens: [2], badge: "popular" },
         { name: { pt: "Amêijoa à Bulhão Pato (300gr)", en: "Clams Bulhão Pato (300g)", es: "Almejas Bulhão Pato", fr: "Palourdes Bulhão Pato" }, desc: { pt: "Amêijoas em azeite, alho, coentros e vinho branco.", en: "Clams in olive oil, garlic, coriander and white wine.", es: "Almejas en aceite, ajo, cilantro y vino blanco.", fr: "Palourdes à l'huile, ail, coriandre et vin blanc." }, price: "16,00€", photo: "", diet: ["GF", "LF"], allergens: [12, 14] },
         { name: { pt: "Pica-Pau (Vaca)", en: "Pica-Pau (Sautéed Beef)", es: "Pica-Pau (Ternera)", fr: "Pica-Pau (Bœuf)" }, desc: { pt: "Bife em cubos salteados com pickles e cerveja.", en: "Diced beef sautéed with pickles and beer.", es: "Carne en cubos salteada con encurtidos y cerveza.", fr: "Bœuf en dés sauté aux cornichons et à la bière." }, price: "13,50€", photo: "", diet: [], allergens: [10, 12] }
       ]
@@ -215,7 +270,7 @@ const CONFIG = {
       items: [
         { name: { pt: "Mexilhão à Bulhão Pato (300gr)", en: "Mussels Bulhão Pato", es: "Mejillones Bulhão Pato", fr: "Moules Bulhão Pato" }, desc: { pt: "Mexilhão com alho, coentros e vinho branco.", en: "Mussels with garlic, coriander and white wine.", es: "Mejillones con ajo, cilantro y vino blanco.", fr: "Moules à l'ail, coriandre et vin blanc." }, price: "11,50€", photo: "", diet: ["GF", "LF"], allergens: [12, 14] },
         { name: { pt: "Amêijoa ao Natural (300gr)", en: "Natural Clams", es: "Almejas al Natural", fr: "Palourdes Nature" }, desc: { pt: "Amêijoas abertas ao vapor.", en: "Steam-opened clams.", es: "Almejas al vapor.", fr: "Palourdes à la vapeur." }, price: "12,00€", photo: "", diet: ["GF", "LF"], allergens: [14] },
-        { name: { pt: "Amêijoa à Nosso Prego (300gr)", en: "O Nosso Prego Clams", es: "Almejas à Nosso Prego", fr: "Palourdes à Nosso Prego" }, desc: { pt: "Receita exclusiva da casa.", en: "Exclusive house recipe.", es: "Receta exclusiva de la casa.", fr: "Recette exclusive maison." }, price: "16,00€", photo: "", diet: ["GF", "LF"], allergens: [12, 14] },
+        { name: { pt: "Amêijoa à Nosso Prego (300gr)", en: "O Nosso Prego Clams", es: "Almejas à Nosso Prego", fr: "Palourdes à Nosso Prego" }, desc: { pt: "Receita exclusiva da casa.", en: "Exclusive house recipe.", es: "Receta exclusiva de la casa.", fr: "Recette exclusive maison." }, price: "16,00€", photo: "", diet: ["GF", "LF"], allergens: [12, 14], badge: "chef" },
         { name: { pt: "Gamba Frita (mín. 300gr)", en: "Fried Shrimps", es: "Gambas Fritas", fr: "Crevettes Frites" }, desc: { pt: "Gambas fritas no azeite com sal grosso.", en: "Fried in olive oil with coarse salt.", es: "Fritas en aceite con sal gruesa.", fr: "Frites à l'huile avec sel gros." }, price: "22,50€", photo: "", diet: ["GF", "LF"], allergens: [2] }
       ]
     },
@@ -225,9 +280,15 @@ const CONFIG = {
       section: { pt: "Cataplanas", en: "Portuguese Stews", es: "Cataplanas", fr: "Cataplanas" },
       desc: { pt: "Para 2 pessoas. O sabor de Portugal ao centro da mesa.", en: "For 2 people. Portugal's flavour at the centre of the table.", es: "Para 2 personas.", fr: "Pour 2 personnes." },
       items: [
-        { name: { pt: "Cataplana de Porco e Amêijoa (2 pax)", en: "Pork & Clams Cataplana", es: "Cataplana de Cerdo y Almejas", fr: "Cataplana Porc et Palourdes" }, desc: { pt: "O clássico alentejano numa cataplana de cobre.", en: "The Alentejo classic in a copper cataplana.", es: "El clásico alentejano.", fr: "Le classique de l'Alentejo." }, price: "45,00€", photo: "", diet: ["LF"], allergens: [14] },
+        {
+          name: { pt: "Cataplana de Porco e Amêijoa (2 pax)", en: "Pork & Clams Cataplana", es: "Cataplana de Cerdo y Almejas", fr: "Cataplana Porc et Palourdes" },
+          desc: { pt: "O clássico alentejano numa cataplana de cobre.", en: "The Alentejo classic in a copper cataplana.", es: "El clásico alentejano.", fr: "Le classique de l'Alentejo." },
+          price: "45,00€", photo: "", diet: ["LF"], allergens: [14],
+          badge: "popular",
+          upsell: ["entradas:0", "entradas:3"]       // Combina com: Cesto Pão + Queijo Curado
+        },
         { name: { pt: "Cataplana de Garoupa c/ Gambas (2 pax)", en: "Grouper & Prawns Cataplana", es: "Cataplana de Mero", fr: "Cataplana de Mérou" }, desc: { pt: "Garoupa fresca com gambas e legumes.", en: "Fresh grouper with prawns and vegetables.", es: "Mero fresco con gambas.", fr: "Mérou frais aux crevettes." }, price: "60,00€", photo: "", diet: ["GF", "LF"], allergens: [2, 4] },
-        { name: { pt: "Cataplana de Marisco (2 pax)", en: "Shellfish Cataplana", es: "Cataplana de Marisco", fr: "Cataplana de Fruits de Mer" }, desc: { pt: "Mistura de mariscos em caldo aromático.", en: "Mixed shellfish in aromatic broth.", es: "Mezcla de mariscos.", fr: "Mélange de fruits de mer." }, price: "60,00€", photo: "", diet: ["GF", "LF"], allergens: [2, 14] },
+        { name: { pt: "Cataplana de Marisco (2 pax)", en: "Shellfish Cataplana", es: "Cataplana de Marisco", fr: "Cataplana de Fruits de Mer" }, desc: { pt: "Mistura de mariscos em caldo aromático.", en: "Mixed shellfish in aromatic broth.", es: "Mezcla de mariscos.", fr: "Mélange de fruits de mer." }, price: "60,00€", photo: "", diet: ["GF", "LF"], allergens: [2, 14], badge: "chef" },
         { name: { pt: "Cataplana de Tamboril e Gambas (2 pax)", en: "Monkfish & Prawns Cataplana", es: "Cataplana de Rape", fr: "Cataplana Lotte et Crevettes" }, desc: { pt: "Tamboril firme com gambas e coentros.", en: "Firm monkfish with prawns and coriander.", es: "Rape firme con gambas.", fr: "Lotte ferme aux crevettes." }, price: "77,50€", photo: "", diet: ["GF", "LF"], allergens: [2, 4] }
       ]
     },
@@ -238,9 +299,9 @@ const CONFIG = {
       desc: { pt: "Sempre malandro. Para 2 pessoas.", en: "Soupy rice. For 2 people.", es: "Para 2 personas.", fr: "Pour 2 personnes." },
       items: [
         { name: { pt: "Arroz de Tamboril c/ Gambas (2 pax)", en: "Monkfish Rice with Prawns", es: "Arroz de Rape con Gambas", fr: "Riz à la Lotte et Crevettes" }, desc: { pt: "Arroz malandro com tamboril e gambas.", en: "Soupy rice with monkfish and prawns.", es: "Arroz caldoso con rape y gambas.", fr: "Riz mouillé à la lotte et crevettes." }, price: "52,50€", photo: "", diet: ["LF"], allergens: [2, 4] },
-        { name: { pt: "Arroz de Marisco (2 pax)", en: "Shellfish Rice", es: "Arroz de Marisco", fr: "Riz aux Fruits de Mer" }, desc: { pt: "O clássico português com mariscos variados.", en: "Portuguese classic with mixed shellfish.", es: "El clásico portugués.", fr: "Le classique portugais." }, price: "52,50€", photo: "", diet: ["LF"], allergens: [2, 4, 14] },
+        { name: { pt: "Arroz de Marisco (2 pax)", en: "Shellfish Rice", es: "Arroz de Marisco", fr: "Riz aux Fruits de Mer" }, desc: { pt: "O clássico português com mariscos variados.", en: "Portuguese classic with mixed shellfish.", es: "El clásico portugués.", fr: "Le classique portugais." }, price: "52,50€", photo: "", diet: ["LF"], allergens: [2, 4, 14], badge: "popular" },
         { name: { pt: "Arroz de Lavagante (2 pax)", en: "Blue Lobster Rice", es: "Arroz de Bogavante", fr: "Riz au Homard" }, desc: { pt: "Lavagante azul em arroz malandro.", en: "Blue lobster in soupy rice.", es: "Bogavante azul.", fr: "Homard bleu." }, price: "70,00€", photo: "", diet: ["LF"], allergens: [2] },
-        { name: { pt: "Arroz de Lagosta (2 pax)", en: "Lobster Rice", es: "Arroz de Langosta", fr: "Riz au Homard" }, desc: { pt: "Lagosta em arroz malandro — só aos fins-de-semana.", en: "Lobster rice — weekends only.", es: "Langosta en arroz caldoso.", fr: "Homard en riz mouillé." }, price: "85,00€", photo: "", diet: ["LF"], allergens: [2] }
+        { name: { pt: "Arroz de Lagosta (2 pax)", en: "Lobster Rice", es: "Arroz de Langosta", fr: "Riz au Homard" }, desc: { pt: "Lagosta em arroz malandro — só aos fins-de-semana.", en: "Lobster rice — weekends only.", es: "Langosta en arroz caldoso.", fr: "Homard en riz mouillé." }, price: "85,00€", photo: "", diet: ["LF"], allergens: [2], badge: "new" }
       ]
     },
 
@@ -255,10 +316,10 @@ const CONFIG = {
         { name: { pt: "Piano Grelhado", en: "Grilled Pork Ribs", es: "Costillar de Cerdo", fr: "Travers de Porc Grillé" }, desc: { pt: "Costeletas de porco no carvão.", en: "Charcoal-grilled pork ribs.", es: "Costillar a la brasa.", fr: "Travers grillé au charbon." }, price: "15,00€", photo: "", diet: ["GF", "LF"], allergens: [] },
         { name: { pt: "Costeletas de Borrego", en: "Grilled Lamb Chops", es: "Chuletitas de Cordero", fr: "Côtelettes d'Agneau" }, desc: { pt: "Costeletas de borrego grelhadas com alecrim.", en: "Grilled lamb chops with rosemary.", es: "Chuletitas al romero.", fr: "Côtelettes au romarin." }, price: "14,00€", photo: "", diet: ["GF", "LF"], allergens: [] },
         { name: { pt: "Bife de Vitela c/ Pimenta Verde", en: "Veal Steak with Green Pepper", es: "Ternera con Pimienta Verde", fr: "Veau Sauce Poivre Vert" }, desc: { pt: "Vitela grelhada com molho de pimenta verde.", en: "Grilled veal with green peppercorn sauce.", es: "Ternera con salsa de pimienta verde.", fr: "Veau sauce poivre vert." }, price: "17,50€", photo: "", diet: [], allergens: [7, 10, 12] },
-        { name: { pt: "Bife de Vitela c/ Molho de Café", en: "Veal Steak with Coffee Sauce", es: "Ternera con Salsa de Café", fr: "Veau Sauce Café" }, desc: { pt: "Assinatura da casa — vitela com molho de café.", en: "House signature — veal with coffee sauce.", es: "Especialidad — ternera con café.", fr: "Spécialité — veau sauce café." }, price: "17,50€", photo: "", diet: [], allergens: [7, 12] },
+        { name: { pt: "Bife de Vitela c/ Molho de Café", en: "Veal Steak with Coffee Sauce", es: "Ternera con Salsa de Café", fr: "Veau Sauce Café" }, desc: { pt: "Assinatura da casa — vitela com molho de café.", en: "House signature — veal with coffee sauce.", es: "Especialidad — ternera con café.", fr: "Spécialité — veau sauce café." }, price: "17,50€", photo: "", diet: [], allergens: [7, 12], badge: "chef" },
         { name: { pt: "Costeletas de Novilho", en: "Beef Chop", es: "Chuletón de Ternera", fr: "Côte de Bœuf" }, desc: { pt: "Costeletas de novilho maturado.", en: "Aged beef chop.", es: "Chuletón madurado.", fr: "Côte de bœuf maturée." }, price: "20,00€", photo: "", diet: ["GF", "LF"], allergens: [] },
         { name: { pt: "Espetada de Vitela", en: "Veal Skewer", es: "Espeto de Ternera", fr: "Brochette de Veau" }, desc: { pt: "Espetada de vitela na brasa com louro.", en: "Charcoal-grilled veal skewer with bay leaf.", es: "Espeto a la brasa.", fr: "Brochette au charbon." }, price: "19,00€", photo: "", diet: ["GF", "LF"], allergens: [] },
-        { name: { pt: "Naco na Pedra", en: "Steak on Stone", es: "Entrecot en Piedra", fr: "Pavé sur Pierre" }, desc: { pt: "Naco de novilho servido em pedra a 400°C.", en: "Beef served on 400°C stone.", es: "Ternera en piedra caliente.", fr: "Bœuf sur pierre chaude." }, price: "22,50€", photo: "", diet: ["GF", "LF"], allergens: [] },
+        { name: { pt: "Naco na Pedra", en: "Steak on Stone", es: "Entrecot en Piedra", fr: "Pavé sur Pierre" }, desc: { pt: "Naco de novilho servido em pedra a 400°C.", en: "Beef served on 400°C stone.", es: "Ternera en piedra caliente.", fr: "Bœuf sur pierre chaude." }, price: "22,50€", photo: "", diet: ["GF", "LF"], allergens: [], badge: "popular" },
         { name: { pt: "Picanha", en: "Picanha", es: "Picanha", fr: "Picanha" }, desc: { pt: "Picanha à brasileira, fatiada à mesa.", en: "Brazilian-style picanha, sliced tableside.", es: "Picanha brasileña.", fr: "Picanha brésilienne." }, price: "20,00€", photo: "", diet: ["GF", "LF"], allergens: [] }
       ]
     },
@@ -268,11 +329,11 @@ const CONFIG = {
       section: { pt: "Peixe", en: "Fish", es: "Pescado", fr: "Poisson" },
       desc: { pt: "Fresco, do Atlântico.", en: "Fresh, from the Atlantic.", es: "Fresco del Atlántico.", fr: "Frais de l'Atlantique." },
       items: [
-        { name: { pt: "Bacalhau à Nosso Prego", en: "O Nosso Prego Codfish", es: "Bacalao à Nosso Prego", fr: "Morue à Nosso Prego" }, desc: { pt: "Receita exclusiva da casa com bacalhau e broa.", en: "Exclusive house recipe with codfish and cornbread.", es: "Receta exclusiva.", fr: "Recette exclusive." }, price: "12,50€", photo: "", diet: ["LF"], allergens: [1, 4] },
+        { name: { pt: "Bacalhau à Nosso Prego", en: "O Nosso Prego Codfish", es: "Bacalao à Nosso Prego", fr: "Morue à Nosso Prego" }, desc: { pt: "Receita exclusiva da casa com bacalhau e broa.", en: "Exclusive house recipe with codfish and cornbread.", es: "Receta exclusiva.", fr: "Recette exclusive." }, price: "12,50€", photo: "", diet: ["LF"], allergens: [1, 4], badge: "chef" },
         { name: { pt: "Salmão Grelhado", en: "Grilled Salmon", es: "Salmón a la Parrilla", fr: "Saumon Grillé" }, desc: { pt: "Posta de salmão grelhada com legumes.", en: "Grilled salmon with vegetables.", es: "Salmón con verduras.", fr: "Saumon aux légumes." }, price: "13,50€", photo: "", diet: ["GF", "LF"], allergens: [4] },
         { name: { pt: "Chocos Grelhados", en: "Grilled Cuttlefish", es: "Sepia a la Parrilla", fr: "Seiche Grillée" }, desc: { pt: "Chocos grelhados com arroz de tinta.", en: "Grilled cuttlefish with ink rice.", es: "Sepia con arroz negro.", fr: "Seiche et riz noir." }, price: "14,00€", photo: "", diet: ["LF"], allergens: [14] },
         { name: { pt: "Robalo Escalado", en: "Grilled Sea Bass", es: "Lubina a la Parrilla", fr: "Bar Grillé" }, desc: { pt: "Robalo inteiro aberto e grelhado na brasa.", en: "Whole sea bass charcoal-grilled.", es: "Lubina entera a la brasa.", fr: "Bar entier au charbon." }, price: "13,50€", photo: "", diet: ["GF", "LF"], allergens: [4] },
-        { name: { pt: "Polvo à Lagareiro", en: "Roasted Octopus", es: "Pulpo a Feira", fr: "Poulpe Rôti" }, desc: { pt: "Polvo assado no forno com batata a murro e azeite.", en: "Oven-roasted octopus with smashed potatoes.", es: "Pulpo al horno.", fr: "Poulpe au four." }, price: "25,00€", photo: "", diet: ["GF", "LF"], allergens: [14] },
+        { name: { pt: "Polvo à Lagareiro", en: "Roasted Octopus", es: "Pulpo a Feira", fr: "Poulpe Rôti" }, desc: { pt: "Polvo assado no forno com batata a murro e azeite.", en: "Oven-roasted octopus with smashed potatoes.", es: "Pulpo al horno.", fr: "Poulpe au four." }, price: "25,00€", photo: "", diet: ["GF", "LF"], allergens: [14], badge: "popular" },
         { name: { pt: "Bacalhau à Lagareiro", en: "Roasted Codfish", es: "Bacalao à Lagareiro", fr: "Morue Rôtie" }, desc: { pt: "Posta de bacalhau no forno com batata a murro.", en: "Oven-roasted codfish with smashed potatoes.", es: "Bacalao al horno.", fr: "Morue au four." }, price: "22,50€", photo: "", diet: ["LF"], allergens: [4] }
       ]
     },
@@ -282,11 +343,11 @@ const CONFIG = {
       section: { pt: "Sobremesas", en: "Desserts", es: "Postres", fr: "Desserts" },
       desc: { pt: "Para acabar em grande.", en: "End on a high note.", es: "Para acabar a lo grande.", fr: "Pour finir en beauté." },
       items: [
-        { name: { pt: "Arroz Doce", en: "Rice Pudding", es: "Arroz con Leche", fr: "Riz au Lait" }, desc: { pt: "Arroz doce cremoso com canela.", en: "Creamy rice pudding with cinnamon.", es: "Arroz con leche y canela.", fr: "Riz au lait à la cannelle." }, price: "3,95€", photo: "", diet: ["V"], allergens: [7] },
+        { name: { pt: "Arroz Doce", en: "Rice Pudding", es: "Arroz con Leche", fr: "Riz au Lait" }, desc: { pt: "Arroz doce cremoso com canela.", en: "Creamy rice pudding with cinnamon.", es: "Arroz con leche y canela.", fr: "Riz au lait à la cannelle." }, price: "3,95€", photo: "", diet: ["V"], allergens: [7], badge: "popular" },
         { name: { pt: "Baba de Camelo", en: "Caramel Mousse", es: "Baba de Camello", fr: "Mousse au Caramel" }, desc: { pt: "Mousse de caramelo tradicional portuguesa.", en: "Traditional Portuguese caramel mousse.", es: "Mousse de caramelo.", fr: "Mousse au caramel." }, price: "3,95€", photo: "", diet: ["V"], allergens: [3, 7] },
         { name: { pt: "Leite Creme", en: "Portuguese Crème Brûlée", es: "Crema Quemada", fr: "Crème Brûlée" }, desc: { pt: "Creme com açúcar queimado.", en: "Cream with burnt sugar.", es: "Crema con azúcar quemado.", fr: "Crème au sucre brûlé." }, price: "3,95€", photo: "", diet: ["V"], allergens: [3, 7] },
         { name: { pt: "Mousse de Chocolate", en: "Chocolate Mousse", es: "Mousse de Chocolate", fr: "Mousse au Chocolat" }, desc: { pt: "Mousse de chocolate negro caseira.", en: "Homemade dark chocolate mousse.", es: "Mousse de chocolate negro.", fr: "Mousse au chocolat noir." }, price: "3,95€", photo: "", diet: ["V"], allergens: [3, 7] },
-        { name: { pt: "Mousse de Kit-Kat", en: "Kit-Kat Mousse", es: "Mousse de Kit-Kat", fr: "Mousse Kit-Kat" }, desc: { pt: "Mousse de chocolate com pedaços de Kit-Kat.", en: "Chocolate mousse with Kit-Kat pieces.", es: "Mousse con trozos de Kit-Kat.", fr: "Mousse aux morceaux de Kit-Kat." }, price: "3,95€", photo: "", diet: ["V"], allergens: [1, 3, 7, 8] },
+        { name: { pt: "Mousse de Kit-Kat", en: "Kit-Kat Mousse", es: "Mousse de Kit-Kat", fr: "Mousse Kit-Kat" }, desc: { pt: "Mousse de chocolate com pedaços de Kit-Kat.", en: "Chocolate mousse with Kit-Kat pieces.", es: "Mousse con trozos de Kit-Kat.", fr: "Mousse aux morceaux de Kit-Kat." }, price: "3,95€", photo: "", diet: ["V"], allergens: [1, 3, 7, 8], badge: "new" },
         { name: { pt: "Cheesecake", en: "Cheesecake", es: "Cheesecake", fr: "Cheesecake" }, desc: { pt: "Cheesecake com coulis de frutos vermelhos.", en: "Cheesecake with red fruit coulis.", es: "Cheesecake con frutos rojos.", fr: "Cheesecake aux fruits rouges." }, price: "4,50€", photo: "", diet: ["V"], allergens: [1, 3, 7] }
       ]
     }
