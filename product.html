@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="pt" id="html-root">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#F6F5F0">
+<title>Taberna do Tejo — Menu</title>
+
+<!-- Open Graph para partilha Instagram Stories -->
+<meta property="og:title" content="Taberna do Tejo — Alfama, Lisboa">
+<meta property="og:description" content="Cozinha portuguesa contemporânea. Ver menu, avaliar, seguir.">
+<meta property="og:type" content="restaurant">
+<meta property="og:url" content="https://menu.nexo.pt/taberna-do-tejo">
+
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="stylesheet" href="https://unpkg.com/@fontsource/outfit@5.0.8/300.css">
+<link rel="stylesheet" href="https://unpkg.com/@fontsource/outfit@5.0.8/400.css">
+<link rel="stylesheet" href="https://unpkg.com/@fontsource/outfit@5.0.8/600.css">
+<link rel="stylesheet" href="https://unpkg.com/@fontsource/outfit@5.0.8/900.css">
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIG BLOCK — TUDO QUE MUDA POR CLIENTE ESTÁ AQUI
+// ═══════════════════════════════════════════════════════════════════════════
+const CONFIG = {
+  // ──── Identidade ────
+  slug: "taberna-do-tejo",
+  name: "Taberna do Tejo",
+  tagline: {
+    pt: "Cozinha portuguesa contemporânea",
+    en: "Contemporary Portuguese cuisine",
+    es: "Cocina portuguesa contemporánea",
+    fr: "Cuisine portugaise contemporaine"
+  },
+  city: "Alfama, Lisboa",
+  logoUrl: "",
+  brandColor: "#C2410C",
+  brandColorDark: "#9A3412",
+
+  // ──── Contactos e redes ────
+  googleReviewUrl: "https://g.page/r/taberna-do-tejo/review",
+  tripadvisorReviewUrl: "https://www.tripadvisor.com/UserReview-g189158-d-taberna-do-tejo.html",
+  facebookReviewUrl: "https://www.facebook.com/tabernadotejo/reviews",
+  instagramHandle: "tabernadotejo",
+  whatsappNumber: "351912345678",
+  whatsappStaffMessage: {
+    pt: "Olá! Estou na mesa {mesa} da Taberna do Tejo.",
+    en: "Hello! I'm at table {mesa} at Taberna do Tejo.",
+    es: "¡Hola! Estoy en la mesa {mesa} de Taberna do Tejo.",
+    fr: "Bonjour! Je suis à la table {mesa} à Taberna do Tejo."
+  },
+  bookingUrl: "https://wa.me/351912345678?text=Gostaria%20de%20reservar%20mesa",
+
+  // ──── Wi-Fi ────
+  wifiSsid: "Taberna_Tejo_Guest",
+  wifiPassword: "bacalhau2025",
+
+  // ──── Banner do dia/semana ────
+  todaysSpecial: {
+    pt: "Bacalhau à Brás com ovos caseiros — 14,50€",
+    en: "Cod à Brás with farm eggs — €14.50",
+    es: "Bacalao à Brás con huevos caseros — 14,50€",
+    fr: "Morue à Brás aux œufs fermiers — 14,50€"
+  },
+
+  // ──── Eventos da semana ────
+  events: [
+    {
+      date: { pt: "Sex 18 Abr", en: "Fri 18 Apr", es: "Vie 18 Abr", fr: "Ven 18 Avr" },
+      title: { pt: "Noite de Fado", en: "Fado Night", es: "Noche de Fado", fr: "Soirée Fado" },
+      desc: { pt: "Carla Rocha ao vivo · 21h", en: "Carla Rocha live · 9pm", es: "Carla Rocha en vivo · 21h", fr: "Carla Rocha en direct · 21h" }
+    },
+    {
+      date: { pt: "Sáb 19 Abr", en: "Sat 19 Apr", es: "Sáb 19 Abr", fr: "Sam 19 Avr" },
+      title: { pt: "Degustação de vinhos", en: "Wine tasting", es: "Cata de vinos", fr: "Dégustation de vins" },
+      desc: { pt: "5 vinhos do Douro · 19h · 25€", en: "5 Douro wines · 7pm · €25", es: "5 vinos del Duero · 19h · 25€", fr: "5 vins du Douro · 19h · 25€" }
+    }
+  ],
+
+  // ──── Carta de vinhos (link para segundo menu) ────
+  wineMenuUrl: "https://menu.nexo.pt/taberna-do-tejo/vinhos",
+
+  // ──── Endereço e horário ────
+  address: "Rua dos Bacalhoeiros 42, 1100-071 Lisboa",
+  hours: {
+    pt: "Ter–Dom · 12h–15h · 19h–23h",
+    en: "Tue–Sun · 12–3pm · 7–11pm",
+    es: "Mar–Dom · 12h–15h · 19h–23h",
+    fr: "Mar–Dim · 12h–15h · 19h–23h"
+  },
+
+  // ──── Menu ────
+  // Alergénios EU (Reg. 1169/2011): 1-glúten, 2-crustáceos, 3-ovos, 4-peixe, 5-amendoim,
+  // 6-soja, 7-lácteos, 8-frutos-casca, 9-aipo, 10-mostarda, 11-sésamo, 12-sulfitos, 13-tremoço, 14-moluscos
+  menu: [
+    {
+      section: { pt: "Entradas", en: "Starters", es: "Entrantes", fr: "Entrées" },
+      items: [
+        {
+          name: { pt: "Pão da casa com manteiga de alho", en: "House bread with garlic butter", es: "Pan de la casa con mantequilla de ajo", fr: "Pain maison, beurre à l'ail" },
+          desc: { pt: "Fermentação lenta de 48h", en: "48h slow fermentation", es: "Fermentación lenta de 48h", fr: "Fermentation lente 48h" },
+          price: "3,50€",
+          photo: "",
+          diet: ["V"],
+          allergens: [1, 7]
+        },
+        {
+          name: { pt: "Peixinhos da horta", en: "Tempura green beans", es: "Tempura de judías verdes", fr: "Haricots verts tempura" },
+          desc: { pt: "Feijão-verde em tempura, maionese de limão", en: "Tempura green beans, lemon mayo", es: "Judías en tempura, mayonesa de limón", fr: "Tempura de haricots, mayonnaise citron" },
+          price: "8,00€",
+          photo: "",
+          diet: ["V"],
+          allergens: [1, 3]
+        },
+        {
+          name: { pt: "Ameijoas à Bulhão Pato", en: "Clams Bulhão Pato", es: "Almejas Bulhão Pato", fr: "Palourdes Bulhão Pato" },
+          desc: { pt: "Azeite, alho, coentros, vinho branco", en: "Olive oil, garlic, coriander, white wine", es: "Aceite, ajo, cilantro, vino blanco", fr: "Huile d'olive, ail, coriandre, vin blanc" },
+          price: "12,00€",
+          photo: "",
+          diet: ["GF", "LF"],
+          allergens: [12, 14]
+        }
+      ]
+    },
+    {
+      section: { pt: "Pratos", en: "Mains", es: "Principales", fr: "Plats" },
+      items: [
+        {
+          name: { pt: "Bacalhau à Brás", en: "Cod à Brás", es: "Bacalao à Brás", fr: "Morue à Brás" },
+          desc: { pt: "Bacalhau desfiado, batata palha, ovo, azeitonas", en: "Shredded cod, straw potatoes, egg, olives", es: "Bacalao desmenuzado, patatas paja, huevo, aceitunas", fr: "Morue effilochée, pommes paille, œuf, olives" },
+          price: "14,50€",
+          photo: "",
+          diet: ["LF"],
+          allergens: [3, 4]
+        },
+        {
+          name: { pt: "Polvo à lagareiro", en: "Grilled octopus", es: "Pulpo a la brasa", fr: "Poulpe grillé" },
+          desc: { pt: "Batata a murro, azeite do Alentejo", en: "Smashed potatoes, Alentejo olive oil", es: "Patatas al puño, aceite del Alentejo", fr: "Pommes écrasées, huile d'olive de l'Alentejo" },
+          price: "19,00€",
+          photo: "",
+          diet: ["GF", "LF"],
+          allergens: [14]
+        },
+        {
+          name: { pt: "Risotto de cogumelos", en: "Mushroom risotto", es: "Risotto de setas", fr: "Risotto aux champignons" },
+          desc: { pt: "Arroz carnaroli, shiitake, trufa", en: "Carnaroli rice, shiitake, truffle", es: "Arroz carnaroli, shiitake, trufa", fr: "Riz carnaroli, shiitake, truffe" },
+          price: "15,00€",
+          photo: "",
+          diet: ["V"],
+          allergens: [7, 9, 12]
+        },
+        {
+          name: { pt: "Bife da vazia com pimenta", en: "Pepper sirloin steak", es: "Solomillo a la pimienta", fr: "Faux-filet au poivre" },
+          desc: { pt: "250g, molho de pimenta verde, batata frita", en: "250g, green pepper sauce, fries", es: "250g, salsa de pimienta verde, patatas fritas", fr: "250g, sauce au poivre vert, frites" },
+          price: "22,00€",
+          photo: "",
+          diet: [],
+          allergens: [7, 10, 12]
+        }
+      ]
+    },
+    {
+      section: { pt: "Sobremesas", en: "Desserts", es: "Postres", fr: "Desserts" },
+      items: [
+        {
+          name: { pt: "Pastel de nata artesanal", en: "Artisanal custard tart", es: "Pastel de nata artesanal", fr: "Pastel de nata artisanal" },
+          desc: { pt: "Feito na casa, canela a pedido", en: "Homemade, cinnamon on request", es: "Casero, canela a petición", fr: "Maison, cannelle sur demande" },
+          price: "2,50€",
+          photo: "",
+          diet: ["V"],
+          allergens: [1, 3, 7]
+        },
+        {
+          name: { pt: "Mousse de chocolate 70%", en: "70% chocolate mousse", es: "Mousse de chocolate 70%", fr: "Mousse au chocolat 70%" },
+          desc: { pt: "Flor de sal, azeite", en: "Flor de sal, olive oil", es: "Flor de sal, aceite de oliva", fr: "Fleur de sel, huile d'olive" },
+          price: "6,00€",
+          photo: "",
+          diet: ["V", "GF"],
+          allergens: [3, 7]
+        },
+        {
+          name: { pt: "Gelado de azeite e limão", en: "Olive oil & lemon sorbet", es: "Helado de aceite y limón", fr: "Sorbet huile d'olive et citron" },
+          desc: { pt: "Produção local, Ribatejo", en: "Local production, Ribatejo", es: "Producción local, Ribatejo", fr: "Production locale, Ribatejo" },
+          price: "5,00€",
+          photo: "",
+          diet: ["VG", "GF", "LF"],
+          allergens: []
+        }
+      ]
+    }
+  ]
+};
+
+// Tabela de alergénios EU
+const ALLERGENS_EU = {
+  pt: {1:"Glúten",2:"Crustáceos",3:"Ovos",4:"Peixe",5:"Amendoins",6:"Soja",7:"Lácteos",8:"Frutos de casca",9:"Aipo",10:"Mostarda",11:"Sésamo",12:"Sulfitos",13:"Tremoço",14:"Moluscos"},
+  en: {1:"Gluten",2:"Crustaceans",3:"Eggs",4:"Fish",5:"Peanuts",6:"Soy",7:"Dairy",8:"Nuts",9:"Celery",10:"Mustard",11:"Sesame",12:"Sulphites",13:"Lupin",14:"Molluscs"},
+  es: {1:"Gluten",2:"Crustáceos",3:"Huevos",4:"Pescado",5:"Cacahuetes",6:"Soja",7:"Lácteos",8:"Frutos cáscara",9:"Apio",10:"Mostaza",11:"Sésamo",12:"Sulfitos",13:"Altramuz",14:"Moluscos"},
+  fr: {1:"Gluten",2:"Crustacés",3:"Œufs",4:"Poisson",5:"Arachides",6:"Soja",7:"Laitiers",8:"Fruits à coque",9:"Céleri",10:"Moutarde",11:"Sésame",12:"Sulfites",13:"Lupin",14:"Mollusques"}
+};
+
+const DIET_LABELS = {
+  pt: {V:"Vegetariano", VG:"Vegan", GF:"Sem glúten", LF:"Sem lactose"},
+  en: {V:"Vegetarian", VG:"Vegan", GF:"Gluten-free", LF:"Lactose-free"},
+  es: {V:"Vegetariano", VG:"Vegano", GF:"Sin gluten", LF:"Sin lactosa"},
+  fr: {V:"Végétarien", VG:"Végan", GF:"Sans gluten", LF:"Sans lactose"}
+};
+
+const UI = {
+  pt: {
+    special: "Esta semana",
+    menu: "Menu",
+    events: "Eventos",
+    wines: "Carta de vinhos",
+    wineLink: "Ver lista completa",
+    review: "Avaliar",
+    reviewSub: "A sua opinião ajuda o restaurante",
+    google: "Google",
+    tripadvisor: "TripAdvisor",
+    facebook: "Facebook",
+    instagram: "Seguir no Instagram",
+    staff: "Pedir ao staff",
+    book: "Reservar mesa",
+    share: "Partilhar no Instagram",
+    wifi: "Wi-Fi",
+    copy: "Toque para copiar",
+    copied: "Copiado ✓",
+    allergens: "Alergénios UE",
+    address: "Morada",
+    hours: "Horário",
+    filter: "Filtrar",
+    all: "Tudo",
+    tableHint: "Mesa",
+    loyalty: "Receber os pratos especiais da semana",
+    loyaltySub: "Por WhatsApp · apenas quando há novidades",
+    loyaltyCta: "Aceitar",
+    reviewChoose: "Onde prefere avaliar?"
+  },
+  en: {
+    special: "This week",
+    menu: "Menu",
+    events: "Events",
+    wines: "Wine list",
+    wineLink: "See full list",
+    review: "Rate us",
+    reviewSub: "Your feedback helps the restaurant",
+    google: "Google",
+    tripadvisor: "TripAdvisor",
+    facebook: "Facebook",
+    instagram: "Follow on Instagram",
+    staff: "Ask the staff",
+    book: "Book a table",
+    share: "Share on Instagram",
+    wifi: "Wi-Fi",
+    copy: "Tap to copy",
+    copied: "Copied ✓",
+    allergens: "EU allergens",
+    address: "Address",
+    hours: "Hours",
+    filter: "Filter",
+    all: "All",
+    tableHint: "Table",
+    loyalty: "Get this week's specials",
+    loyaltySub: "Via WhatsApp · only when there's news",
+    loyaltyCta: "Accept",
+    reviewChoose: "Where do you prefer to rate us?"
+  },
+  es: {
+    special: "Esta semana",
+    menu: "Menú",
+    events: "Eventos",
+    wines: "Carta de vinos",
+    wineLink: "Ver lista completa",
+    review: "Valorar",
+    reviewSub: "Su opinión ayuda al restaurante",
+    google: "Google",
+    tripadvisor: "TripAdvisor",
+    facebook: "Facebook",
+    instagram: "Seguir en Instagram",
+    staff: "Pedir al personal",
+    book: "Reservar mesa",
+    share: "Compartir en Instagram",
+    wifi: "Wi-Fi",
+    copy: "Tocar para copiar",
+    copied: "Copiado ✓",
+    allergens: "Alérgenos UE",
+    address: "Dirección",
+    hours: "Horario",
+    filter: "Filtrar",
+    all: "Todo",
+    tableHint: "Mesa",
+    loyalty: "Recibir los platos especiales",
+    loyaltySub: "Por WhatsApp · solo cuando hay novedades",
+    loyaltyCta: "Aceptar",
+    reviewChoose: "¿Dónde prefiere valorar?"
+  },
+  fr: {
+    special: "Cette semaine",
+    menu: "Menu",
+    events: "Événements",
+    wines: "Carte des vins",
+    wineLink: "Voir la liste",
+    review: "Évaluer",
+    reviewSub: "Votre avis aide le restaurant",
+    google: "Google",
+    tripadvisor: "TripAdvisor",
+    facebook: "Facebook",
+    instagram: "Suivre sur Instagram",
+    staff: "Appeler le personnel",
+    book: "Réserver",
+    share: "Partager sur Instagram",
+    wifi: "Wi-Fi",
+    copy: "Toucher pour copier",
+    copied: "Copié ✓",
+    allergens: "Allergènes UE",
+    address: "Adresse",
+    hours: "Horaires",
+    filter: "Filtrer",
+    all: "Tout",
+    tableHint: "Table",
+    loyalty: "Recevoir les plats de la semaine",
+    loyaltySub: "Par WhatsApp · seulement quand il y a des nouveautés",
+    loyaltyCta: "Accepter",
+    reviewChoose: "Où préférez-vous évaluer?"
+  }
+};
+</script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM NEXO — variáveis globais
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --bg: #F6F5F0;
+  --text: #0C0C0B;
+  --muted: #8C8A82;
+  --border: #E0DED8;
+  --surface: #FFFFFF;
+  --accent: #C2410C;
+  --accent-dark: #9A3412;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+
+  --s1: 6px; --s2: 12px; --s3: 18px; --s4: 24px; --s5: 36px; --s6: 56px;
+
+  --font: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --shadow-sm: 0 1px 2px rgba(12,12,11,0.04);
+  --shadow-md: 0 4px 16px rgba(12,12,11,0.08);
+  --shadow-lg: 0 8px 32px rgba(12,12,11,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  font-weight: 400;
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ═══════ HEADER ═══════ */
+.header {
+  padding: var(--s5) var(--s4) var(--s3);
+  text-align: center;
+  position: relative;
+}
+
+.lang-toggle {
+  position: absolute;
+  top: var(--s3);
+  right: var(--s3);
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  padding: 3px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+}
+
+.lang-toggle button {
+  background: none;
+  border: none;
+  padding: 6px 9px;
+  border-radius: 100px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lang-toggle button.active {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.table-badge {
+  position: absolute;
+  top: var(--s3);
+  left: var(--s3);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 100px;
+  letter-spacing: 0.5px;
+  display: none;
+}
+
+.table-badge.show { display: block; }
+
+.logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 28px;
+  margin: 0 auto var(--s3);
+  letter-spacing: -1px;
+  box-shadow: var(--shadow-md);
+}
+
+.logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+.restaurant-name {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.tagline {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.city {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: var(--s2);
+  font-weight: 600;
+}
+
+/* ═══════ BANNER DO DIA ═══════ */
+.special-banner {
+  margin: 0 var(--s4) var(--s4);
+  background: var(--text);
+  color: var(--bg);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.special-banner-label {
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  border-radius: 100px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+/* ═══════ SECTION TITLES ═══════ */
+.section-title {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  margin: 0 var(--s4) var(--s3);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+/* ═══════ FILTRO DIETA ═══════ */
+.diet-filter {
+  padding: 0 var(--s4);
+  margin-bottom: var(--s4);
+  display: flex;
+  gap: var(--s1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.diet-filter::-webkit-scrollbar { display: none; }
+
+.diet-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.diet-chip.active {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+
+/* ═══════ MENU ═══════ */
+.menu-section {
+  padding: 0 var(--s4);
+  margin-bottom: var(--s5);
+}
+
+.menu-subtitle {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  margin-bottom: var(--s2);
+  padding-top: var(--s2);
+}
+
+.menu-item {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--s3);
+  margin-bottom: var(--s2);
+  border: 1px solid var(--border);
+  transition: opacity 0.2s;
+  display: flex;
+  gap: var(--s3);
+  align-items: flex-start;
+}
+
+.menu-item.hidden { display: none; }
+
+.item-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.item-body { flex: 1; min-width: 0; }
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s2);
+  margin-bottom: 4px;
+}
+
+.item-name {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  flex: 1;
+}
+
+.item-price {
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.item-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-bottom: var(--s1);
+}
+
+.item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: var(--s1);
+}
+
+.tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 100px;
+  letter-spacing: 0.3px;
+}
+
+.tag-diet { background: #E8F5E9; color: #2E7D32; }
+
+.tag-allergen {
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+/* ═══════ CARTA DE VINHOS (link card) ═══════ */
+.wine-card {
+  margin: 0 var(--s4) var(--s4);
+  background: linear-gradient(135deg, #4A1B0C 0%, #2C0F06 100%);
+  color: #F6F5F0;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  text-decoration: none;
+  transition: transform 0.1s;
+}
+
+.wine-card:active { transform: scale(0.98); }
+
+.wine-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.wine-info { flex: 1; }
+.wine-title { font-weight: 900; font-size: 16px; }
+.wine-sub { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+.wine-arrow { font-size: 20px; opacity: 0.5; }
+
+/* ═══════ EVENTOS ═══════ */
+.events-list {
+  padding: 0 var(--s4);
+  margin-bottom: var(--s5);
+}
+
+.event-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--s3);
+  margin-bottom: var(--s2);
+  display: flex;
+  gap: var(--s3);
+  align-items: center;
+}
+
+.event-date {
+  background: var(--accent);
+  color: white;
+  padding: var(--s2);
+  border-radius: var(--radius-sm);
+  font-weight: 900;
+  font-size: 12px;
+  text-align: center;
+  min-width: 68px;
+  line-height: 1.2;
+}
+
+.event-body { flex: 1; }
+.event-title { font-weight: 700; font-size: 15px; }
+.event-desc { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+/* ═══════ AÇÕES ═══════ */
+.actions {
+  padding: var(--s4);
+  display: grid;
+  gap: var(--s2);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  padding: 16px var(--s3);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+  min-height: 56px;
+  color: var(--text);
+}
+
+.action-btn:active { transform: scale(0.98); }
+.action-btn svg { flex-shrink: 0; }
+
+/* Review button — o MAIS dominante. Abre modal de 3 plataformas */
+.btn-review {
+  background: linear-gradient(135deg, #FBBC04 0%, #F59E0B 100%);
+  color: #0C0C0B;
+  font-weight: 900;
+  font-size: 17px;
+  min-height: 72px;
+  box-shadow: var(--shadow-md);
+  letter-spacing: -0.2px;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--s3);
+}
+
+.btn-review-main {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.btn-review-sub {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+  letter-spacing: 0.3px;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-primary {
+  background: var(--text);
+  color: var(--bg);
+}
+
+/* ═══════ WI-FI ═══════ */
+.wifi-card {
+  margin: 0 var(--s4) var(--s4);
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--s3);
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.wifi-card:active { background: var(--bg); }
+
+.wifi-icon {
+  width: 44px; height: 44px;
+  background: var(--bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wifi-info { flex: 1; min-width: 0; }
+.wifi-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+.wifi-pass { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; font-family: 'SF Mono', Menlo, monospace; }
+.wifi-hint { font-size: 11px; color: var(--accent); font-weight: 600; }
+
+/* ═══════ LOYALTY OPT-IN ═══════ */
+.loyalty-card {
+  margin: 0 var(--s4) var(--s4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--s3);
+}
+
+.loyalty-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+
+.loyalty-icon {
+  width: 32px; height: 32px;
+  background: #25D366;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.loyalty-text { flex: 1; }
+.loyalty-title { font-size: 14px; font-weight: 700; line-height: 1.3; }
+.loyalty-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.loyalty-btn {
+  width: 100%;
+  background: #25D366;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.loyalty-btn:active { transform: scale(0.98); }
+
+/* ═══════ FOOTER ═══════ */
+.footer {
+  padding: var(--s5) var(--s4) var(--s4);
+  text-align: center;
+  border-top: 1px solid var(--border);
+  margin-top: var(--s3);
+}
+
+.footer-info {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: var(--s4);
+}
+
+.footer-info strong { color: var(--text); font-weight: 600; }
+
+.share-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 10px 16px;
+  border-radius: 100px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: var(--s4);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nexo-brand {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.nexo-brand a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--muted); }
+
+/* ═══════ TOAST + MODAL ═══════ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 20px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transition: all 0.25s;
+  z-index: 100;
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(12,12,11,0.6);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 200;
+  animation: fadeIn 0.2s;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--bg);
+  width: 100%;
+  max-width: 520px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: var(--s4);
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideUp 0.25s;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 900;
+  margin-bottom: var(--s3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-close {
+  background: var(--border);
+  border: none;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Review modal — 3 plataformas */
+.review-options { display: grid; gap: var(--s2); }
+
+.review-option {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+  transition: transform 0.1s;
+}
+.review-option:active { transform: scale(0.98); }
+
+.review-icon {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.review-icon-google { background: #4285F4; }
+.review-icon-tripadvisor { background: #00AF87; }
+.review-icon-facebook { background: #1877F2; }
+
+.review-option-text { flex: 1; }
+.review-option-name { font-size: 15px; }
+.review-option-sub { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.review-arrow { color: var(--muted); font-size: 20px; }
+
+/* Allergen modal */
+.allergen-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s1);
+}
+
+.allergen-list li {
+  padding: 10px 12px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  border: 1px solid var(--border);
+}
+
+.allergen-list li strong { color: var(--accent); margin-right: 6px; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="table-badge" id="table-badge"></div>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button data-lang="pt" class="active">PT</button>
+    <button data-lang="en">EN</button>
+    <button data-lang="es">ES</button>
+    <button data-lang="fr">FR</button>
+  </div>
+  <div class="logo" id="logo"></div>
+  <h1 class="restaurant-name" id="restaurant-name"></h1>
+  <p class="tagline" id="tagline"></p>
+  <div class="city" id="city">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+    <span></span>
+  </div>
+</header>
+
+<!-- BANNER DO DIA -->
+<div class="special-banner" id="special-banner">
+  <span class="special-banner-label" id="special-label">Esta semana</span>
+  <span id="special-text"></span>
+</div>
+
+<!-- MENU -->
+<h2 class="section-title" id="menu-title">Menu</h2>
+<div class="diet-filter" id="diet-filter" role="group"></div>
+<main id="menu"></main>
+
+<!-- CARTA DE VINHOS (link separado) -->
+<a class="wine-card" id="wine-card" href="#">
+  <div class="wine-icon">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F6F5F0" stroke-width="1.8">
+      <path d="M8 2h8l-1 11a3 3 0 01-6 0L8 2z"/>
+      <line x1="12" y1="13" x2="12" y2="22"/>
+      <line x1="8" y1="22" x2="16" y2="22"/>
+    </svg>
+  </div>
+  <div class="wine-info">
+    <div class="wine-title" id="wine-title">Carta de vinhos</div>
+    <div class="wine-sub" id="wine-sub">Ver lista completa →</div>
+  </div>
+</a>
+
+<!-- EVENTOS -->
+<h2 class="section-title" id="events-title">Eventos</h2>
+<section class="events-list" id="events-list"></section>
+
+<!-- AÇÕES -->
+<section class="actions">
+  <button class="action-btn btn-review" id="btn-review" onclick="openReviewModal()">
+    <div class="btn-review-main">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z"/></svg>
+      <span id="btn-review-label"></span>
+    </div>
+    <div class="btn-review-sub" id="btn-review-sub"></div>
+  </button>
+
+  <a class="action-btn btn-secondary" id="btn-instagram" target="_blank" rel="noopener">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+    <span id="btn-instagram-label"></span>
+  </a>
+
+  <a class="action-btn btn-secondary" id="btn-staff" target="_blank" rel="noopener">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+    <span id="btn-staff-label"></span>
+  </a>
+
+  <a class="action-btn btn-primary" id="btn-book" target="_blank" rel="noopener">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span id="btn-book-label"></span>
+  </a>
+</section>
+
+<!-- WI-FI -->
+<div class="wifi-card" id="wifi-card">
+  <div class="wifi-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+  </div>
+  <div class="wifi-info">
+    <div class="wifi-label" id="wifi-label">Wi-Fi</div>
+    <div class="wifi-pass" id="wifi-pass"></div>
+    <div class="wifi-hint" id="wifi-hint"></div>
+  </div>
+</div>
+
+<!-- LOYALTY OPT-IN -->
+<div class="loyalty-card">
+  <div class="loyalty-header">
+    <div class="loyalty-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11.9 11.9 0 0012 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.8 1 3.8 1.5 5.8 1.5 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.4zM12 22c-1.9 0-3.7-.5-5.3-1.5l-.4-.2-3.7 1 1-3.6-.2-.4C2.5 15.8 2 13.9 2 12 2 6.5 6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z"/></svg>
+    </div>
+    <div class="loyalty-text">
+      <div class="loyalty-title" id="loyalty-title"></div>
+      <div class="loyalty-sub" id="loyalty-sub"></div>
+    </div>
+  </div>
+  <button class="loyalty-btn" id="loyalty-btn"></button>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-info">
+    <div><strong id="footer-addr-label">Morada</strong></div>
+    <div id="footer-address"></div>
+    <div style="margin-top: 12px"><strong id="footer-hours-label">Horário</strong></div>
+    <div id="footer-hours"></div>
+  </div>
+
+  <button class="share-btn" id="share-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+    <span id="share-label"></span>
+  </button>
+
+  <div class="nexo-brand">
+    powered by <a href="https://nexo.pt" target="_blank" rel="noopener"><strong>NEXO.</strong></a>
+  </div>
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL: Review (3 plataformas) -->
+<div class="modal-overlay" id="review-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="review-modal-title"></span>
+      <button class="modal-close" onclick="closeModal('review-modal')">✕</button>
+    </div>
+    <div class="review-options">
+      <a class="review-option" id="review-google" target="_blank" rel="noopener">
+        <div class="review-icon review-icon-google">G</div>
+        <div class="review-option-text">
+          <div class="review-option-name">Google</div>
+          <div class="review-option-sub">Mais visível · aumenta posição no Maps</div>
+        </div>
+        <span class="review-arrow">→</span>
+      </a>
+      <a class="review-option" id="review-tripadvisor" target="_blank" rel="noopener">
+        <div class="review-icon review-icon-tripadvisor">T</div>
+        <div class="review-option-text">
+          <div class="review-option-name">TripAdvisor</div>
+          <div class="review-option-sub">Ideal para turistas internacionais</div>
+        </div>
+        <span class="review-arrow">→</span>
+      </a>
+      <a class="review-option" id="review-facebook" target="_blank" rel="noopener">
+        <div class="review-icon review-icon-facebook">f</div>
+        <div class="review-option-text">
+          <div class="review-option-name">Facebook</div>
+          <div class="review-option-sub">Partilha direta com amigos</div>
+        </div>
+        <span class="review-arrow">→</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Alergénios -->
+<div class="modal-overlay" id="allergen-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="allergen-modal-title">Alergénios</span>
+      <button class="modal-close" onclick="closeModal('allergen-modal')">✕</button>
+    </div>
+    <ul class="allergen-list" id="allergen-list"></ul>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════
+let currentLang = 'pt';
+let currentFilter = 'all';
+
+// Mesa vem do URL (?mesa=7)
+const urlParams = new URLSearchParams(window.location.search);
+const tableNumber = urlParams.get('mesa') || urlParams.get('table') || '';
+
+// Aplicar cor de marca
+document.documentElement.style.setProperty('--accent', CONFIG.brandColor);
+document.documentElement.style.setProperty('--accent-dark', CONFIG.brandColorDark);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════════════════
+function renderLogo() {
+  const el = document.getElementById('logo');
+  if (CONFIG.logoUrl) {
+    el.innerHTML = `<img src="${CONFIG.logoUrl}" alt="${CONFIG.name}" loading="eager">`;
+  } else {
+    const initials = CONFIG.name.split(' ').filter(w => w.length > 2).slice(0,2).map(w => w[0]).join('').toUpperCase();
+    el.textContent = initials || CONFIG.name[0].toUpperCase();
+  }
+}
+
+function render() {
+  const t = UI[currentLang];
+
+  document.getElementById('html-root').lang = currentLang;
+  document.getElementById('restaurant-name').textContent = CONFIG.name;
+  document.getElementById('tagline').textContent = CONFIG.tagline[currentLang];
+  document.querySelector('#city span').textContent = CONFIG.city;
+
+  // Mesa badge
+  const tableBadge = document.getElementById('table-badge');
+  if (tableNumber) {
+    tableBadge.textContent = `${t.tableHint} ${tableNumber}`;
+    tableBadge.classList.add('show');
+  }
+
+  // Banner do dia
+  document.getElementById('special-label').textContent = t.special;
+  document.getElementById('special-text').textContent = CONFIG.todaysSpecial[currentLang];
+
+  // Section titles
+  document.getElementById('menu-title').innerHTML = `<span style="width:4px;height:18px;background:var(--accent);border-radius:2px;margin-right:12px;"></span>${t.menu}`;
+  document.getElementById('events-title').innerHTML = `<span style="width:4px;height:18px;background:var(--accent);border-radius:2px;margin-right:12px;"></span>${t.events}`;
+
+  // Wine card
+  document.getElementById('wine-title').textContent = t.wines;
+  document.getElementById('wine-sub').textContent = t.wineLink + ' →';
+  document.getElementById('wine-card').href = CONFIG.wineMenuUrl;
+
+  // Review button
+  document.getElementById('btn-review-label').textContent = t.review;
+  document.getElementById('btn-review-sub').textContent = t.reviewSub;
+  document.getElementById('review-modal-title').textContent = t.reviewChoose;
+  document.getElementById('review-google').href = CONFIG.googleReviewUrl;
+  document.getElementById('review-tripadvisor').href = CONFIG.tripadvisorReviewUrl;
+  document.getElementById('review-facebook').href = CONFIG.facebookReviewUrl;
+
+  // Other actions
+  document.getElementById('btn-instagram').href = `https://instagram.com/${CONFIG.instagramHandle}`;
+  document.getElementById('btn-instagram-label').textContent = t.instagram;
+
+  const staffMsg = CONFIG.whatsappStaffMessage[currentLang].replace('{mesa}', tableNumber || '___');
+  document.getElementById('btn-staff').href = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(staffMsg)}`;
+  document.getElementById('btn-staff-label').textContent = t.staff;
+
+  document.getElementById('btn-book').href = CONFIG.bookingUrl;
+  document.getElementById('btn-book-label').textContent = t.book;
+
+  // Wi-Fi
+  document.getElementById('wifi-label').textContent = `${t.wifi} · ${CONFIG.wifiSsid}`;
+  document.getElementById('wifi-pass').textContent = CONFIG.wifiPassword;
+  document.getElementById('wifi-hint').textContent = t.copy;
+
+  // Loyalty
+  document.getElementById('loyalty-title').textContent = t.loyalty;
+  document.getElementById('loyalty-sub').textContent = t.loyaltySub;
+  document.getElementById('loyalty-btn').textContent = t.loyaltyCta;
+
+  // Share
+  document.getElementById('share-label').textContent = t.share;
+
+  // Footer
+  document.getElementById('footer-addr-label').textContent = t.address;
+  document.getElementById('footer-address').textContent = CONFIG.address;
+  document.getElementById('footer-hours-label').textContent = t.hours;
+  document.getElementById('footer-hours').textContent = CONFIG.hours[currentLang];
+
+  // Allergen modal title
+  document.getElementById('allergen-modal-title').textContent = t.allergens;
+
+  renderFilter();
+  renderMenu();
+  renderEvents();
+  document.title = `${CONFIG.name} — Menu`;
+}
+
+function renderFilter() {
+  const t = UI[currentLang];
+  const d = DIET_LABELS[currentLang];
+  const options = [
+    { key: 'all', label: t.all },
+    { key: 'V', label: d.V },
+    { key: 'VG', label: d.VG },
+    { key: 'GF', label: d.GF },
+    { key: 'LF', label: d.LF }
+  ];
+  document.getElementById('diet-filter').innerHTML = options.map(o =>
+    `<button class="diet-chip ${currentFilter===o.key?'active':''}" data-filter="${o.key}">${o.label}</button>`
+  ).join('');
+}
+
+function renderMenu() {
+  const html = CONFIG.menu.map(sec => `
+    <section class="menu-section">
+      <h3 class="menu-subtitle">${sec.section[currentLang]}</h3>
+      ${sec.items.map(item => {
+        const matches = currentFilter === 'all' || (item.diet || []).includes(currentFilter);
+        return `
+        <article class="menu-item ${matches?'':'hidden'}">
+          ${item.photo ? `<img class="item-photo" src="${item.photo}" loading="lazy" alt="${item.name[currentLang]}">` : ''}
+          <div class="item-body">
+            <div class="item-header">
+              <h4 class="item-name">${item.name[currentLang]}</h4>
+              <span class="item-price">${item.price}</span>
+            </div>
+            ${item.desc[currentLang] ? `<p class="item-desc">${item.desc[currentLang]}</p>` : ''}
+            <div class="item-tags">
+              ${(item.diet||[]).map(d => `<span class="tag tag-diet">${DIET_LABELS[currentLang][d]||d}</span>`).join('')}
+              ${(item.allergens||[]).map(a => `<span class="tag tag-allergen" data-allergen="${a}">${ALLERGENS_EU[currentLang][a]}</span>`).join('')}
+            </div>
+          </div>
+        </article>`;
+      }).join('')}
+    </section>
+  `).join('');
+  document.getElementById('menu').innerHTML = html;
+}
+
+function renderEvents() {
+  const html = CONFIG.events.map(e => `
+    <div class="event-card">
+      <div class="event-date">${e.date[currentLang]}</div>
+      <div class="event-body">
+        <div class="event-title">${e.title[currentLang]}</div>
+        <div class="event-desc">${e.desc[currentLang]}</div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('events-list').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function openReviewModal() {
+  document.getElementById('review-modal').classList.add('show');
+}
+
+function openAllergenModal() {
+  const list = document.getElementById('allergen-list');
+  list.innerHTML = Object.entries(ALLERGENS_EU[currentLang])
+    .map(([n, name]) => `<li><strong>${n}</strong>${name}</li>`).join('');
+  document.getElementById('allergen-modal').classList.add('show');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// Language toggle
+document.querySelectorAll('.lang-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLang = btn.dataset.lang;
+    render();
+  });
+});
+
+// Diet filter
+document.getElementById('diet-filter').addEventListener('click', e => {
+  const btn = e.target.closest('[data-filter]');
+  if (!btn) return;
+  currentFilter = btn.dataset.filter;
+  renderFilter();
+  renderMenu();
+});
+
+// Wi-Fi copy
+document.getElementById('wifi-card').addEventListener('click', () => {
+  const pwd = CONFIG.wifiPassword;
+  const msg = UI[currentLang].copied;
+  navigator.clipboard.writeText(pwd).then(() => showToast(msg)).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = pwd;
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+    showToast(msg);
+  });
+});
+
+// Allergen tags clickable
+document.addEventListener('click', e => {
+  if (e.target.matches('.tag-allergen')) openAllergenModal();
+});
+
+// Modal overlay click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => {
+    if (e.target === m) m.classList.remove('show');
+  });
+});
+
+// Loyalty opt-in via WhatsApp
+document.getElementById('loyalty-btn').addEventListener('click', () => {
+  const msg = currentLang === 'pt' ? `Olá! Quero receber os pratos especiais da semana do ${CONFIG.name}.` :
+              currentLang === 'en' ? `Hi! I'd like to receive the weekly specials from ${CONFIG.name}.` :
+              currentLang === 'es' ? `¡Hola! Quiero recibir los platos especiales de ${CONFIG.name}.` :
+                                     `Bonjour! Je veux recevoir les plats de la semaine de ${CONFIG.name}.`;
+  window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+});
+
+// Share via Web Share API (abre Instagram nativo em iOS/Android)
+document.getElementById('share-btn').addEventListener('click', async () => {
+  const shareData = {
+    title: CONFIG.name,
+    text: `${CONFIG.name} · ${CONFIG.city}`,
+    url: window.location.href.split('?')[0]
+  };
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+    } else {
+      await navigator.clipboard.writeText(shareData.url);
+      showToast(UI[currentLang].copied);
+    }
+  } catch (err) { /* user cancelled */ }
+});
+
+// Detect browser language
+(function detectLang() {
+  const browserLang = (navigator.language || 'pt').substring(0,2);
+  if (['pt','en','es','fr'].includes(browserLang)) {
+    currentLang = browserLang;
+    document.querySelectorAll('.lang-toggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === currentLang);
+    });
+  }
+})();
+
+// Init
+renderLogo();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt" id="html-root">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#F4EDE0">
+  <title>O Nosso Prego — Menu</title>
+
+  <meta property="og:title" content="O Nosso Prego — Parede">
+  <meta property="og:description" content="Cozinha portuguesa. Pregos, mariscos e cataplanas.">
+  <meta property="og:type" content="restaurant">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Outfit (UI) + Fraunces (títulos serif, dá peso editorial) -->
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800;9..144,900&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HERO -->
+  <header class="hero" id="hero">
+    <div class="hero-image" id="hero-image"></div>
+    <div class="hero-overlay"></div>
+
+    <div class="hero-top-bar">
+      <div class="table-badge" id="table-badge"></div>
+      <div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language">
+        <button data-lang="pt" class="active">PT</button>
+        <button data-lang="en">EN</button>
+        <button data-lang="es">ES</button>
+        <button data-lang="fr">FR</button>
+      </div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-stamp" id="hero-stamp"></div>
+      <div class="hero-logo" id="hero-logo"></div>
+      <h1 class="hero-name" id="hero-name"></h1>
+      <p class="hero-tagline" id="hero-tagline"></p>
+      <div class="hero-meta">
+        <span class="hero-city" id="hero-city"></span>
+        <span class="hero-dot">·</span>
+        <span class="hero-hours-today" id="hero-hours-today"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- QUICK NAV -->
+  <nav class="quick-nav" id="quick-nav" aria-label="Navegação rápida"></nav>
+
+  <!-- BANNER (happy hour / semana) -->
+  <div class="special-banner" id="special-banner">
+    <span class="special-banner-label" id="special-label"></span>
+    <span class="special-banner-text" id="special-text"></span>
+  </div>
+
+  <!-- MAIS PEDIDOS — ELITE section -->
+  <section class="most-ordered" id="section-most-ordered">
+    <div class="section-header-elite">
+      <div class="elite-badge" id="elite-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm2.7-2h8.6l.9-5.4-3.4 3L12 7l-1.8 4.6-3.4-3 .9 5.4z"/>
+        </svg>
+        <span id="elite-badge-text"></span>
+      </div>
+      <h2 class="section-title-elite" id="most-ordered-title"></h2>
+      <p class="section-sub-elite" id="most-ordered-sub"></p>
+    </div>
+    <div class="most-ordered-list" id="most-ordered-list"></div>
+  </section>
+
+  <!-- CATEGORY TABS -->
+  <nav class="category-tabs" id="category-tabs" aria-label="Categorias do menu"></nav>
+
+  <!-- DIET FILTER -->
+  <div class="diet-filter" id="diet-filter" role="group" aria-label="Filtro de dieta"></div>
+
+  <!-- MENU -->
+  <main class="menu" id="menu"></main>
+
+  <!-- WINES -->
+  <section class="wine-section" id="section-wines">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title" id="wine-section-title"></h2>
+        <span class="section-badge" id="wine-section-badge"></span>
+      </div>
+    </div>
+
+    <div class="wine-filters" id="wine-filters">
+      <div class="wine-filter-group">
+        <div class="wine-filter-label" id="wine-filter-country-label"></div>
+        <div class="wine-filter-chips" id="wine-filter-country"></div>
+      </div>
+      <div class="wine-filter-group">
+        <div class="wine-filter-label" id="wine-filter-type-label"></div>
+        <div class="wine-filter-chips" id="wine-filter-type"></div>
+      </div>
+      <div class="wine-filter-group">
+        <div class="wine-filter-label" id="wine-filter-grape-label"></div>
+        <div class="wine-filter-chips" id="wine-filter-grape"></div>
+      </div>
+    </div>
+
+    <div class="wine-list" id="wine-list"></div>
+  </section>
+
+  <!-- WI-FI -->
+  <div class="wifi-card" id="wifi-card">
+    <div class="wifi-icon" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 12.55a11 11 0 0114 0"/>
+        <path d="M1.42 9a16 16 0 0121.16 0"/>
+        <path d="M8.53 16.11a6 6 0 016.95 0"/>
+        <line x1="12" y1="20" x2="12.01" y2="20"/>
+      </svg>
+    </div>
+    <div class="wifi-info">
+      <div class="wifi-label" id="wifi-label"></div>
+      <div class="wifi-pass" id="wifi-pass"></div>
+      <div class="wifi-hint" id="wifi-hint"></div>
+    </div>
+  </div>
+
+  <!-- LOYALTY / WhatsApp -->
+  <div class="loyalty-card" id="loyalty-card">
+    <div class="loyalty-header">
+      <div class="loyalty-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20.5 3.5A11.9 11.9 0 0012 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.8 1 3.8 1.5 5.8 1.5 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.4z"/>
+        </svg>
+      </div>
+      <div class="loyalty-text">
+        <div class="loyalty-title" id="loyalty-title"></div>
+        <div class="loyalty-sub" id="loyalty-sub"></div>
+      </div>
+    </div>
+    <button class="loyalty-btn" id="loyalty-btn"></button>
+  </div>
+
+  <!-- AÇÕES -->
+  <section class="actions" id="section-actions">
+    <button class="action-btn btn-review" id="btn-review">
+      <div class="btn-review-main">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z"/>
+        </svg>
+        <span id="btn-review-label"></span>
+      </div>
+      <div class="btn-review-sub" id="btn-review-sub"></div>
+    </button>
+
+    <a class="action-btn btn-secondary" id="btn-instagram" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="5"/>
+        <circle cx="12" cy="12" r="4"/>
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor"/>
+      </svg>
+      <span id="btn-instagram-label"></span>
+    </a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-info">
+      <div class="footer-row">
+        <strong id="footer-addr-label"></strong>
+        <span id="footer-address"></span>
+      </div>
+      <div class="footer-row">
+        <strong id="footer-phone-label"></strong>
+        <a id="footer-phone" href=""></a>
+      </div>
+      <div class="footer-row">
+        <strong id="footer-hours-label"></strong>
+        <span id="footer-hours"></span>
+      </div>
+    </div>
+
+    <button class="share-btn" id="share-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="18" cy="5" r="3"/>
+        <circle cx="6" cy="12" r="3"/>
+        <circle cx="18" cy="19" r="3"/>
+        <line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/>
+        <line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/>
+      </svg>
+      <span id="share-label"></span>
+    </button>
+
+    <div class="nexo-brand">
+      powered by <a href="https://nexo.pt" target="_blank" rel="noopener"><strong>NEXO.</strong></a>
+    </div>
+  </footer>
+
+  <!-- TOAST + MODAIS -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal-overlay" id="review-modal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h3 id="review-modal-title"></h3>
+        <button class="modal-close" data-close="review-modal" aria-label="Fechar">✕</button>
+      </div>
+      <div class="review-options">
+        <a class="review-option" id="review-google" target="_blank" rel="noopener">
+          <div class="review-icon review-icon-google">G</div>
+          <div class="review-option-text">
+            <div class="review-option-name">Google</div>
+            <div class="review-option-sub" id="review-google-sub"></div>
+          </div>
+          <span class="review-arrow" aria-hidden="true">→</span>
+        </a>
+        <a class="review-option" id="review-tripadvisor" target="_blank" rel="noopener">
+          <div class="review-icon review-icon-tripadvisor">T</div>
+          <div class="review-option-text">
+            <div class="review-option-name">TripAdvisor</div>
+            <div class="review-option-sub" id="review-tripadvisor-sub"></div>
+          </div>
+          <span class="review-arrow" aria-hidden="true">→</span>
+        </a>
+        <a class="review-option" id="review-facebook" target="_blank" rel="noopener">
+          <div class="review-icon review-icon-facebook">f</div>
+          <div class="review-option-text">
+            <div class="review-option-name">Facebook</div>
+            <div class="review-option-sub" id="review-facebook-sub"></div>
+          </div>
+          <span class="review-arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay modal-item" id="item-modal" role="dialog" aria-modal="true">
+    <div class="modal modal-item-content">
+      <button class="modal-item-close" data-close="item-modal" aria-label="Fechar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="6" y1="18" x2="18" y2="6"/>
+        </svg>
+      </button>
+      <div class="item-modal-photo" id="item-modal-photo"></div>
+      <div class="item-modal-body">
+        <div class="item-modal-header">
+          <h3 id="item-modal-name"></h3>
+          <span class="item-modal-price" id="item-modal-price"></span>
+        </div>
+        <p class="item-modal-desc" id="item-modal-desc"></p>
+        <div class="item-modal-tags" id="item-modal-tags"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay modal-item" id="wine-modal" role="dialog" aria-modal="true">
+    <div class="modal modal-item-content">
+      <button class="modal-item-close" data-close="wine-modal" aria-label="Fechar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="6" y1="18" x2="18" y2="6"/>
+        </svg>
+      </button>
+      <div class="wine-modal-photo" id="wine-modal-photo"></div>
+      <div class="item-modal-body">
+        <div class="item-modal-header">
+          <h3 id="wine-modal-name"></h3>
+          <span class="item-modal-price" id="wine-modal-price"></span>
+        </div>
+        <p class="item-modal-desc" id="wine-modal-desc"></p>
+        <div class="wine-modal-specs" id="wine-modal-specs"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
