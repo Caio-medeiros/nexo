@@ -191,6 +191,62 @@ let cart = [];
 // Order ID curto, gerado uma vez por sessão (staff referencia se várias mesas mostram)
 const ORDER_ID = Math.random().toString(36).substring(2, 6).toUpperCase();
 
+/* ─── SPLIT BILL STATE & i18n (declared early so renderCartSheet can use ts()) ─── */
+const SPLIT_MAX = 10;
+const SPLIT_MIN = 2;
+
+const PERSON_NAMES = {
+  pt: ['Pessoa 1','Pessoa 2','Pessoa 3','Pessoa 4','Pessoa 5','Pessoa 6','Pessoa 7','Pessoa 8','Pessoa 9','Pessoa 10'],
+  en: ['Person 1','Person 2','Person 3','Person 4','Person 5','Person 6','Person 7','Person 8','Person 9','Person 10'],
+  es: ['Persona 1','Persona 2','Persona 3','Persona 4','Persona 5','Persona 6','Persona 7','Persona 8','Persona 9','Persona 10'],
+  fr: ['Personne 1','Personne 2','Personne 3','Personne 4','Personne 5','Personne 6','Personne 7','Personne 8','Personne 9','Personne 10']
+};
+
+const SPLIT_UI = {
+  pt: {
+    tabOrder: '🧾 Pedido', tabSplit: '➗ Dividir',
+    people: 'Pessoas',
+    modeEqual: 'Partes iguais', modeCustom: 'Por item',
+    perPerson: 'por pessoa',
+    unassigned: 'Não atribuído',
+    totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} pessoas`,
+    myItems: 'Os meus itens',
+    subtotal: 'Subtotal',
+  },
+  en: {
+    tabOrder: '🧾 Order', tabSplit: '➗ Split',
+    people: 'People',
+    modeEqual: 'Equal split', modeCustom: 'By item',
+    perPerson: 'per person',
+    unassigned: 'Unassigned',
+    totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} people`,
+    myItems: 'My items',
+    subtotal: 'Subtotal',
+  },
+  es: {
+    tabOrder: '🧾 Pedido', tabSplit: '➗ Dividir',
+    people: 'Personas',
+    modeEqual: 'A partes iguales', modeCustom: 'Por ítem',
+    perPerson: 'por persona',
+    unassigned: 'Sin asignar',
+    totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} personas`,
+    myItems: 'Mis ítems',
+    subtotal: 'Subtotal',
+  },
+  fr: {
+    tabOrder: '🧾 Commande', tabSplit: '➗ Partager',
+    people: 'Personnes',
+    modeEqual: 'Parts égales', modeCustom: 'Par article',
+    perPerson: 'par personne',
+    unassigned: 'Non attribué',
+    totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} personnes`,
+    myItems: 'Mes articles',
+    subtotal: 'Sous-total',
+  }
+};
+
+const ts = () => SPLIT_UI[currentLang] || SPLIT_UI.pt;
+
 const urlParams = new URLSearchParams(window.location.search);
 const tableNumber = urlParams.get('mesa') || urlParams.get('table') || '';
 
@@ -1258,6 +1314,12 @@ function renderCartSheet() {
   if (showStaffLabel) showStaffLabel.textContent = t().cartShowStaff;
   if (clearBtn) clearBtn.textContent = t().cartClear;
 
+  // Always set tab labels (fix: they were only set when split tab was clicked)
+  const tabOrderEl = document.getElementById('tab-order');
+  const tabSplitEl = document.getElementById('tab-split');
+  if (tabOrderEl) tabOrderEl.textContent = ts().tabOrder;
+  if (tabSplitEl) tabSplitEl.textContent = ts().tabSplit;
+
   if (cart.length === 0) {
     listEl.innerHTML = `<div class="cart-empty">${t().cartEmpty}</div>`;
     if (totalValue) totalValue.textContent = formatPrice(0);
@@ -1488,67 +1550,10 @@ function setupStaffView() {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Estado do split */
-let splitPeople = 2;          // número de pessoas (2–10)
-let splitMode = 'equal';      // 'equal' | 'custom'
-let splitActivePerson = 0;    // índice da pessoa activa no modo custom
-// splitAssign[personIdx] = Set de refIds atribuídos a essa pessoa
+let splitPeople = 2;
+let splitMode = 'equal';
+let splitActivePerson = 0;
 let splitAssign = [];
-
-const SPLIT_MAX = 10;
-const SPLIT_MIN = 2;
-
-// Nomes automáticos das pessoas
-const PERSON_NAMES = {
-  pt: ['Pessoa 1','Pessoa 2','Pessoa 3','Pessoa 4','Pessoa 5','Pessoa 6','Pessoa 7','Pessoa 8','Pessoa 9','Pessoa 10'],
-  en: ['Person 1','Person 2','Person 3','Person 4','Person 5','Person 6','Person 7','Person 8','Person 9','Person 10'],
-  es: ['Persona 1','Persona 2','Persona 3','Persona 4','Persona 5','Persona 6','Persona 7','Persona 8','Persona 9','Persona 10'],
-  fr: ['Personne 1','Personne 2','Personne 3','Personne 4','Personne 5','Personne 6','Personne 7','Personne 8','Personne 9','Personne 10']
-};
-
-const SPLIT_UI = {
-  pt: {
-    tabOrder: '🧾 Pedido', tabSplit: '➗ Dividir',
-    people: 'Pessoas',
-    modeEqual: 'Partes iguais', modeCustom: 'Por item',
-    perPerson: 'por pessoa',
-    unassigned: 'Não atribuído',
-    totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} pessoas`,
-    myItems: 'Os meus itens',
-    subtotal: 'Subtotal',
-  },
-  en: {
-    tabOrder: '🧾 Order', tabSplit: '➗ Split',
-    people: 'People',
-    modeEqual: 'Equal split', modeCustom: 'By item',
-    perPerson: 'per person',
-    unassigned: 'Unassigned',
-    totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} people`,
-    myItems: 'My items',
-    subtotal: 'Subtotal',
-  },
-  es: {
-    tabOrder: '🧾 Pedido', tabSplit: '➗ Dividir',
-    people: 'Personas',
-    modeEqual: 'A partes iguales', modeCustom: 'Por ítem',
-    perPerson: 'por persona',
-    unassigned: 'Sin asignar',
-    totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} personas`,
-    myItems: 'Mis ítems',
-    subtotal: 'Subtotal',
-  },
-  fr: {
-    tabOrder: '🧾 Commande', tabSplit: '➗ Partager',
-    people: 'Personnes',
-    modeEqual: 'Parts égales', modeCustom: 'Par article',
-    perPerson: 'par personne',
-    unassigned: 'Non attribué',
-    totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} personnes`,
-    myItems: 'Mes articles',
-    subtotal: 'Sous-total',
-  }
-};
-
-const ts = () => SPLIT_UI[currentLang] || SPLIT_UI.pt;
 
 // Inicializa/reset os sets de atribuição
 function initSplitAssign() {

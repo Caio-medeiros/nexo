@@ -2169,7 +2169,7 @@ body.has-cart {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
-  padding: 0 var(--s3) var(--s3);
+  padding:  var(--s3) var(--s3);
 }
 
 .cart-tab {
