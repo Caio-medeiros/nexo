@@ -1,180 +1,97 @@
-// ========================================
-// NEXO. — JavaScript
-// ========================================
-
 document.addEventListener('DOMContentLoaded', () => {
-
   const nav = document.querySelector('nav');
-  const announceBar = document.querySelector('.announce-bar');
   const mobileToggle = document.querySelector('.mobile-toggle');
   const navLinks = document.querySelector('.nav-links');
   const navActions = document.querySelector('.nav-actions');
-  const stickyCTA = document.querySelector('.sticky-mobile-cta');
-  const heroSection = document.querySelector('.hero');
-  const ctaSection = document.querySelector('.cta-section');
-  const footerEl = document.querySelector('footer');
+  const stickyCTA = document.querySelector('.sticky-cta');
+  const hero = document.querySelector('.hero');
+  const ctaSection = document.querySelector('.final-cta-section');
 
-  // ---- NAV SCROLL ----
-  let lastScroll = 0;
+  // ── NAV SCROLL ──
   window.addEventListener('scroll', () => {
     const y = window.scrollY;
     nav.classList.toggle('scrolled', y > 20);
 
-    // Hide announce bar after scrolling
-    if (y > 80) {
-      nav.classList.add('announce-hidden');
-      if (announceBar) announceBar.style.transform = 'translateY(-100%)';
-    } else {
-      nav.classList.remove('announce-hidden');
-      if (announceBar) announceBar.style.transform = 'translateY(0)';
-    }
-
-    // Sticky mobile CTA — show after hero, hide near contact/footer
+    // Sticky mobile CTA
     if (stickyCTA && window.innerWidth < 960) {
-      const heroBottom = heroSection ? heroSection.offsetTop + heroSection.offsetHeight : 0;
-      const ctaTop = ctaSection ? ctaSection.offsetTop : Infinity;
-      const footerTop = footerEl ? footerEl.offsetTop : Infinity;
-      const viewportBottom = y + window.innerHeight;
-
-      if (y > heroBottom && viewportBottom < ctaTop) {
+      const heroBottom = hero ? hero.offsetTop + hero.offsetHeight : 0;
+      const ctaTop = ctaSection ? ctaSection.offsetTop - window.innerHeight * 0.5 : Infinity;
+      if (y > heroBottom && y < ctaTop) {
         stickyCTA.classList.add('visible');
       } else {
         stickyCTA.classList.remove('visible');
       }
     }
-
-    lastScroll = y;
   });
 
-  if (announceBar) announceBar.style.transition = 'transform 0.3s ease';
-
-  // ---- SMOOTH SCROLL ----
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', (e) => {
-      const href = anchor.getAttribute('href');
+  // ── SMOOTH SCROLL ──
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const href = a.getAttribute('href');
       if (href === '#') return;
-      const target = document.querySelector(href);
-      if (!target) return;
+      const t = document.querySelector(href);
+      if (!t) return;
       e.preventDefault();
-      const navHeight = nav.offsetHeight;
-      const announceHeight = announceBar && !nav.classList.contains('announce-hidden') ? announceBar.offsetHeight : 0;
-      const top = target.getBoundingClientRect().top + window.scrollY - navHeight - announceHeight - 8;
+      const top = t.getBoundingClientRect().top + window.scrollY - nav.offsetHeight - 8;
       window.scrollTo({ top, behavior: 'smooth' });
-      if (mobileToggle.classList.contains('active')) closeMobileMenu();
+      if (mobileToggle.classList.contains('active')) closeMobile();
     });
   });
 
-  // ---- MOBILE MENU ----
-  function closeMobileMenu() {
+  // ── MOBILE MENU ──
+  function closeMobile() {
     mobileToggle.classList.remove('active');
     navLinks.classList.remove('open');
     navActions.classList.remove('open');
     nav.classList.remove('menu-open');
   }
-
   mobileToggle.addEventListener('click', () => {
-    if (mobileToggle.classList.contains('active')) {
-      closeMobileMenu();
-    } else {
-      mobileToggle.classList.add('active');
-      navLinks.classList.add('open');
-      navActions.classList.add('open');
-      nav.classList.add('menu-open');
-    }
+    mobileToggle.classList.contains('active') ? closeMobile() : (
+      mobileToggle.classList.add('active'),
+      navLinks.classList.add('open'),
+      navActions.classList.add('open'),
+      nav.classList.add('menu-open')
+    );
   });
+  window.addEventListener('resize', () => { if (window.innerWidth >= 960) closeMobile(); });
 
-  window.addEventListener('resize', () => {
-    if (window.innerWidth >= 960) closeMobileMenu();
-  });
-
-  // ---- SCROLL REVEAL (IntersectionObserver) ----
+  // ── SCROLL REVEAL ──
   const reveals = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window && reveals.length > 0) {
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          revealObserver.unobserve(entry.target);
-        }
+  if ('IntersectionObserver' in window) {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
       });
-    }, {
-      threshold: 0.12,
-      rootMargin: '0px 0px -40px 0px'
-    });
-
-    reveals.forEach(el => revealObserver.observe(el));
+    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+    reveals.forEach(el => obs.observe(el));
   } else {
-    // Fallback — just show everything
     reveals.forEach(el => el.classList.add('visible'));
   }
 
-  // ---- FAQ — only one open at a time ----
-  const faqItems = document.querySelectorAll('.faq-item');
-  faqItems.forEach(item => {
-    item.addEventListener('toggle', () => {
-      if (item.open) {
-        faqItems.forEach(other => {
-          if (other !== item && other.open) other.open = false;
-        });
-      }
-    });
-  });
-
-  // ---- FORM VALIDATION ----
+  // ── FORM VALIDATION ──
   const form = document.getElementById('nexo-form');
-  const successMsg = document.getElementById('success-msg');
-
+  const msg = document.getElementById('success-msg');
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', e => {
       e.preventDefault();
       form.querySelectorAll('.form-group').forEach(g => g.classList.remove('error'));
-      successMsg.classList.remove('visible');
-
-      let isValid = true;
-
+      msg.classList.remove('visible');
+      let ok = true;
       const nome = form.querySelector('#nome');
-      if (!nome.value.trim()) {
-        nome.closest('.form-group').classList.add('error');
-        isValid = false;
-      }
-
+      if (!nome.value.trim()) { nome.closest('.form-group').classList.add('error'); ok = false; }
       const email = form.querySelector('#email');
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email.value.trim() || !emailRegex.test(email.value)) {
-        email.closest('.form-group').classList.add('error');
-        isValid = false;
-      }
-
+      if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) { email.closest('.form-group').classList.add('error'); ok = false; }
       const tipo = form.querySelector('#tipo');
-      if (!tipo.value) {
-        tipo.closest('.form-group').classList.add('error');
-        isValid = false;
-      }
-
-      if (!isValid) {
-        const firstError = form.querySelector('.form-group.error');
-        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-
-      const submitBtn = form.querySelector('.btn-submit');
-      const originalText = submitBtn.textContent;
-      submitBtn.textContent = 'A enviar...';
-      submitBtn.disabled = true;
-
-      setTimeout(() => {
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-        form.reset();
-        successMsg.classList.add('visible');
-        setTimeout(() => successMsg.classList.remove('visible'), 5000);
-      }, 1500);
+      if (!tipo.value) { tipo.closest('.form-group').classList.add('error'); ok = false; }
+      if (!ok) { const f = form.querySelector('.form-group.error'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      const btn = form.querySelector('.btn-submit');
+      const orig = btn.textContent;
+      btn.textContent = 'A enviar...'; btn.disabled = true;
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; form.reset(); msg.classList.add('visible'); setTimeout(() => msg.classList.remove('visible'), 5000); }, 1500);
     });
-
-    form.querySelectorAll('input, select, textarea').forEach(field => {
-      field.addEventListener('input', () => field.closest('.form-group').classList.remove('error'));
-      field.addEventListener('change', () => field.closest('.form-group').classList.remove('error'));
+    form.querySelectorAll('input,select,textarea').forEach(f => {
+      f.addEventListener('input', () => f.closest('.form-group').classList.remove('error'));
+      f.addEventListener('change', () => f.closest('.form-group').classList.remove('error'));
     });
   }
-
 });
