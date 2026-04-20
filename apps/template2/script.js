@@ -68,13 +68,31 @@ const UI = {
     wineEmpty: "Nenhum vinho corresponde a estes filtros.",
     wineSpecCountry: "País", wineSpecRegion: "Região", wineSpecGrape: "Casta",
     wineSpecAbv: "Álcool", wineSpecVolume: "Volume",
+    vivinoSeeMore: "Ver no Vivino →",
     upsellTitle: "Combina com...",
     // Order system
     addToOrder: "Adicionar ao pedido", addedToOrder: "Adicionado ✓",
     cartItem: "item", cartItems: "itens",
     cartTitle: "O meu pedido", cartEmpty: "Ainda não adicionou nada.",
     cartTotal: "Total", cartShowStaff: "Mostrar ao staff", cartClear: "Limpar pedido",
-    staffHelper: "Mostre este ecrã ao staff para pedir"
+    staffHelper: "Mostre este ecrã ao staff para pedir",
+    // Rating gate
+    ratingStep1Title: "Como foi a sua experiência?",
+    ratingStep1Sub: "A sua opinião ajuda-nos a melhorar.",
+    starLabels: ["", "Muito mau", "Mau", "Razoável", "Bom", "Excelente!"],
+    ratingHappyTitle: "Que bom! 🎉",
+    ratingHappySub: "Partilhe a sua experiência numa plataforma:",
+    ratingUnhappyTitle: "Pedimos desculpa.",
+    ratingUnhappySub: "O que correu menos bem? O seu feedback vai diretamente à gerência.",
+    ratingTextareaPlaceholder: "Conte-nos o que aconteceu...",
+    ratingSendLabel: "Enviar pelo WhatsApp",
+    ratingPrivateNote: "Mensagem privada. Só a gerência tem acesso.",
+    ratingThanksHappyIcon: "🌟",
+    ratingThanksHappyTitle: "Obrigado!",
+    ratingThanksHappySub: "A sua avaliação ajuda outros clientes a encontrar-nos.",
+    ratingThanksUnhappyIcon: "🙏",
+    ratingThanksUnhappyTitle: "Recebemos o seu feedback.",
+    ratingThanksUnhappySub: "A gerência vai analisar e responder assim que possível."
   },
   en: {
     specialHappyHour: "Happy Hour", specialWeek: "This week",
@@ -101,12 +119,29 @@ const UI = {
     wineEmpty: "No wines match these filters.",
     wineSpecCountry: "Country", wineSpecRegion: "Region", wineSpecGrape: "Grape",
     wineSpecAbv: "ABV", wineSpecVolume: "Volume",
+    vivinoSeeMore: "See on Vivino →",
     upsellTitle: "Goes well with...",
     addToOrder: "Add to order", addedToOrder: "Added ✓",
     cartItem: "item", cartItems: "items",
     cartTitle: "My order", cartEmpty: "Nothing added yet.",
     cartTotal: "Total", cartShowStaff: "Show to staff", cartClear: "Clear order",
-    staffHelper: "Show this screen to staff to order"
+    staffHelper: "Show this screen to staff to order",
+    ratingStep1Title: "How was your experience?",
+    ratingStep1Sub: "Your opinion helps us improve.",
+    starLabels: ["", "Very bad", "Bad", "OK", "Good", "Excellent!"],
+    ratingHappyTitle: "Great! 🎉",
+    ratingHappySub: "Share your experience on a platform:",
+    ratingUnhappyTitle: "We're sorry.",
+    ratingUnhappySub: "What went wrong? Your feedback goes directly to management.",
+    ratingTextareaPlaceholder: "Tell us what happened...",
+    ratingSendLabel: "Send via WhatsApp",
+    ratingPrivateNote: "Private message. Only management can see it.",
+    ratingThanksHappyIcon: "🌟",
+    ratingThanksHappyTitle: "Thank you!",
+    ratingThanksHappySub: "Your review helps others find us.",
+    ratingThanksUnhappyIcon: "🙏",
+    ratingThanksUnhappyTitle: "Feedback received.",
+    ratingThanksUnhappySub: "Management will review and respond as soon as possible."
   },
   es: {
     specialHappyHour: "Happy Hour", specialWeek: "Esta semana",
@@ -133,12 +168,29 @@ const UI = {
     wineEmpty: "Ningún vino coincide con estos filtros.",
     wineSpecCountry: "País", wineSpecRegion: "Región", wineSpecGrape: "Uva",
     wineSpecAbv: "Alcohol", wineSpecVolume: "Volumen",
+    vivinoSeeMore: "Ver en Vivino →",
     upsellTitle: "Combina con...",
     addToOrder: "Añadir al pedido", addedToOrder: "Añadido ✓",
     cartItem: "artículo", cartItems: "artículos",
     cartTitle: "Mi pedido", cartEmpty: "Aún no ha añadido nada.",
     cartTotal: "Total", cartShowStaff: "Mostrar al staff", cartClear: "Vaciar pedido",
-    staffHelper: "Muestre esta pantalla al staff para pedir"
+    staffHelper: "Muestre esta pantalla al staff para pedir",
+    ratingStep1Title: "¿Cómo fue su experiencia?",
+    ratingStep1Sub: "Su opinión nos ayuda a mejorar.",
+    starLabels: ["", "Muy malo", "Malo", "Regular", "Bueno", "¡Excelente!"],
+    ratingHappyTitle: "¡Qué bien! 🎉",
+    ratingHappySub: "Comparta su experiencia en una plataforma:",
+    ratingUnhappyTitle: "Lo sentimos.",
+    ratingUnhappySub: "¿Qué salió mal? Su feedback va directamente a la gerencia.",
+    ratingTextareaPlaceholder: "Cuéntenos qué pasó...",
+    ratingSendLabel: "Enviar por WhatsApp",
+    ratingPrivateNote: "Mensaje privado. Solo la gerencia tiene acceso.",
+    ratingThanksHappyIcon: "🌟",
+    ratingThanksHappyTitle: "¡Gracias!",
+    ratingThanksHappySub: "Su valoración ayuda a otros clientes a encontrarnos.",
+    ratingThanksUnhappyIcon: "🙏",
+    ratingThanksUnhappyTitle: "Feedback recibido.",
+    ratingThanksUnhappySub: "La gerencia revisará y responderá lo antes posible."
   },
   fr: {
     specialHappyHour: "Happy Hour", specialWeek: "Cette semaine",
@@ -165,12 +217,29 @@ const UI = {
     wineEmpty: "Aucun vin ne correspond à ces filtres.",
     wineSpecCountry: "Pays", wineSpecRegion: "Région", wineSpecGrape: "Cépage",
     wineSpecAbv: "Alcool", wineSpecVolume: "Volume",
+    vivinoSeeMore: "Voir sur Vivino →",
     upsellTitle: "Se marie avec...",
     addToOrder: "Ajouter à la commande", addedToOrder: "Ajouté ✓",
     cartItem: "article", cartItems: "articles",
     cartTitle: "Ma commande", cartEmpty: "Rien n'a été ajouté.",
     cartTotal: "Total", cartShowStaff: "Montrer au personnel", cartClear: "Vider",
-    staffHelper: "Montrez cet écran au personnel pour commander"
+    staffHelper: "Montrez cet écran au personnel pour commander",
+    ratingStep1Title: "Comment s'est passée votre expérience?",
+    ratingStep1Sub: "Votre avis nous aide à nous améliorer.",
+    starLabels: ["", "Très mauvais", "Mauvais", "Correct", "Bon", "Excellent!"],
+    ratingHappyTitle: "Super! 🎉",
+    ratingHappySub: "Partagez votre expérience sur une plateforme:",
+    ratingUnhappyTitle: "Nous sommes désolés.",
+    ratingUnhappySub: "Qu'est-ce qui s'est mal passé? Votre avis va directement à la direction.",
+    ratingTextareaPlaceholder: "Dites-nous ce qui s'est passé...",
+    ratingSendLabel: "Envoyer par WhatsApp",
+    ratingPrivateNote: "Message privé. Seule la direction y a accès.",
+    ratingThanksHappyIcon: "🌟",
+    ratingThanksHappyTitle: "Merci!",
+    ratingThanksHappySub: "Votre avis aide d'autres clients à nous trouver.",
+    ratingThanksUnhappyIcon: "🙏",
+    ratingThanksUnhappyTitle: "Feedback reçu.",
+    ratingThanksUnhappySub: "La direction analysera et répondra dès que possible."
   }
 };
 
@@ -634,6 +703,33 @@ function renderWineFilters() {
   ).join('');
 }
 
+// Renders Vivino-style partial star SVGs for a rating (0–5, one decimal)
+function renderVivinoStars(rating) {
+  const full = Math.floor(rating);
+  const partial = rating - full; // 0.0–0.9
+  const empty = 5 - full - (partial > 0 ? 1 : 0);
+  let html = '';
+  // Full stars
+  for (let i = 0; i < full; i++) {
+    html += `<svg class="vs" viewBox="0 0 20 20"><polygon points="10,1 12.9,7 19.5,7.6 14.5,12 16.2,18.5 10,15 3.8,18.5 5.5,12 0.5,7.6 7.1,7" fill="currentColor"/></svg>`;
+  }
+  // Partial star (clip by percentage)
+  if (partial > 0) {
+    const pct = Math.round(partial * 100);
+    const id = `vp${Math.random().toString(36).slice(2,7)}`;
+    html += `<svg class="vs" viewBox="0 0 20 20">
+      <defs><clipPath id="${id}"><rect x="0" y="0" width="${pct}%" height="20"/></clipPath></defs>
+      <polygon points="10,1 12.9,7 19.5,7.6 14.5,12 16.2,18.5 10,15 3.8,18.5 5.5,12 0.5,7.6 7.1,7" fill="#E0D5C8"/>
+      <polygon points="10,1 12.9,7 19.5,7.6 14.5,12 16.2,18.5 10,15 3.8,18.5 5.5,12 0.5,7.6 7.1,7" fill="currentColor" clip-path="url(#${id})"/>
+    </svg>`;
+  }
+  // Empty stars
+  for (let i = 0; i < empty; i++) {
+    html += `<svg class="vs" viewBox="0 0 20 20"><polygon points="10,1 12.9,7 19.5,7.6 14.5,12 16.2,18.5 10,15 3.8,18.5 5.5,12 0.5,7.6 7.1,7" fill="#E0D5C8"/></svg>`;
+  }
+  return html;
+}
+
 function renderWineList() {
   if (!CONFIG.wines || CONFIG.wines.length === 0) {
     document.getElementById('wine-list').innerHTML = '';
@@ -663,6 +759,13 @@ function renderWineList() {
   const html = filtered.map(w => {
     const realIdx = CONFIG.wines.indexOf(w);
     const typeLabel = WINE_TYPE_LABELS[currentLang][w.type] || w.type;
+    const vivinoHtml = w.vivinoRating ? `
+      <div class="wine-card-vivino">
+        ${renderVivinoStars(w.vivinoRating)}
+        <span class="vivino-score"></span>
+        <span class="vivino-logo">Vivino</span>
+      </div>
+    ` : '';
 
     return `
       <div class="wine-card-item" data-wine-idx="${realIdx}">
@@ -676,6 +779,7 @@ function renderWineList() {
             <span class="wine-meta-pill wine-meta-type-${w.type}">${typeLabel}</span>
             <span class="wine-meta-pill">${w.abv}</span>
           </div>
+          ${vivinoHtml}
           <div class="wine-card-desc">${w.desc}</div>
           <div class="wine-card-footer">
             <span class="wine-card-price">${w.price}</span>
@@ -728,11 +832,175 @@ function renderFooter() {
 }
 
 function renderReviewModal() {
-  document.getElementById('review-modal-title').textContent = t().reviewModalTitle;
-  document.getElementById('review-google').href = CONFIG.googleReviewUrl;
-  document.getElementById('review-thefork').href = CONFIG.theForkReviewUrl;
-  document.getElementById('review-google-sub').textContent = t().googleSub;
-  document.getElementById('review-thefork-sub').textContent = t().theforkSub;
+  // Step 1 static text
+  const s1title = document.getElementById('review-step1-title');
+  const s1sub = document.getElementById('review-step1-sub');
+  if (s1title) s1title.textContent = t().ratingStep1Title;
+  if (s1sub) s1sub.textContent = t().ratingStep1Sub;
+
+  // Happy step
+  const happyTitle = document.getElementById('review-happy-title');
+  const happySub = document.getElementById('review-happy-sub');
+  if (happyTitle) happyTitle.textContent = t().ratingHappyTitle;
+  if (happySub) happySub.textContent = t().ratingHappySub;
+
+  // Unhappy step
+  const unhappyTitle = document.getElementById('review-unhappy-title');
+  const unhappySub = document.getElementById('review-unhappy-sub');
+  const textarea = document.getElementById('review-textarea');
+  const sendLabel = document.getElementById('review-send-label');
+  const privateNote = document.getElementById('review-private-note');
+  if (unhappyTitle) unhappyTitle.textContent = t().ratingUnhappyTitle;
+  if (unhappySub) unhappySub.textContent = t().ratingUnhappySub;
+  if (textarea) textarea.placeholder = t().ratingTextareaPlaceholder;
+  if (sendLabel) sendLabel.textContent = t().ratingSendLabel;
+  if (privateNote) privateNote.textContent = t().ratingPrivateNote;
+
+  // Platform links
+  const googleLink = document.getElementById('review-google');
+  const theforkLink = document.getElementById('review-thefork');
+  if (googleLink) googleLink.href = CONFIG.googleReviewUrl;
+  if (theforkLink) theforkLink.href = CONFIG.theForkReviewUrl;
+  const googleSub = document.getElementById('review-google-sub');
+  const theforkSub = document.getElementById('review-thefork-sub');
+  if (googleSub) googleSub.textContent = t().googleSub;
+  if (theforkSub) theforkSub.textContent = t().theforkSub;
+}
+
+/* ─── Rating gate state & interactions ─── */
+let currentRating = 0;
+
+function resetReviewModal() {
+  currentRating = 0;
+  // Show step 1, hide rest
+  const s1 = document.getElementById('review-step-1');
+  const s2h = document.getElementById('review-step-2-happy');
+  const s2u = document.getElementById('review-step-2-unhappy');
+  const s3 = document.getElementById('review-step-3');
+  if (s1) s1.style.display = 'block';
+  if (s2h) s2h.style.display = 'none';
+  if (s2u) s2u.style.display = 'none';
+  if (s3) s3.style.display = 'none';
+  // Reset stars
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('lit'));
+  const label = document.getElementById('star-label');
+  if (label) { label.textContent = '\u200B'; label.className = 'star-label'; }
+  // Clear textarea
+  const ta = document.getElementById('review-textarea');
+  if (ta) ta.value = '';
+}
+
+function setupRatingGate() {
+  const picker = document.getElementById('star-picker');
+  if (!picker) return;
+
+  // Hover: light up stars up to hovered index
+  picker.addEventListener('mouseover', e => {
+    const btn = e.target.closest('.star-btn');
+    if (!btn) return;
+    const n = parseInt(btn.dataset.star);
+    document.querySelectorAll('.star-btn').forEach((b, i) => {
+      b.classList.toggle('lit', i < n);
+    });
+    const label = document.getElementById('star-label');
+    if (label) {
+      label.textContent = t().starLabels[n] || '';
+      label.className = 'star-label ' + (n >= 4 ? 'positive' : 'negative');
+    }
+  });
+
+  picker.addEventListener('mouseleave', () => {
+    // Restore to currentRating state
+    document.querySelectorAll('.star-btn').forEach((b, i) => {
+      b.classList.toggle('lit', i < currentRating);
+    });
+    const label = document.getElementById('star-label');
+    if (label && currentRating === 0) {
+      label.textContent = '\u200B';
+      label.className = 'star-label';
+    }
+  });
+
+  // Click: commit rating and advance
+  picker.addEventListener('click', e => {
+    const btn = e.target.closest('.star-btn');
+    if (!btn) return;
+    haptic();
+    currentRating = parseInt(btn.dataset.star);
+
+    // Light up stars permanently
+    document.querySelectorAll('.star-btn').forEach((b, i) => {
+      b.classList.toggle('lit', i < currentRating);
+    });
+
+    // Brief pause then advance to step 2
+    setTimeout(() => {
+      const s1 = document.getElementById('review-step-1');
+      if (s1) s1.style.display = 'none';
+
+      if (currentRating >= 4) {
+        // Happy path: send to Google/TheFork
+        const s2h = document.getElementById('review-step-2-happy');
+        if (s2h) s2h.style.display = 'block';
+      } else {
+        // Unhappy path: private feedback
+        const s2u = document.getElementById('review-step-2-unhappy');
+        if (s2u) s2u.style.display = 'block';
+        const ta = document.getElementById('review-textarea');
+        if (ta) setTimeout(() => ta.focus(), 50);
+      }
+    }, 380);
+  });
+
+  // Send private feedback via WhatsApp
+  const sendBtn = document.getElementById('review-send-btn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', () => {
+      haptic();
+      const ta = document.getElementById('review-textarea');
+      const text = ta ? ta.value.trim() : '';
+      const stars = '★'.repeat(currentRating) + '☆'.repeat(5 - currentRating);
+      const table = tableNumber ? ` | Mesa ${tableNumber}` : '';
+      const msg = `[Feedback Privado${table}] ${stars}\n${text || '(sem comentário)'}`;
+      window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+      showThanks(false);
+    });
+  }
+
+  // When user clicks a platform link on happy path → show thanks after
+  ['review-google', 'review-thefork'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('click', () => {
+        setTimeout(() => showThanks(true), 300);
+      });
+    }
+  });
+}
+
+function showThanks(happy) {
+  const s2h = document.getElementById('review-step-2-happy');
+  const s2u = document.getElementById('review-step-2-unhappy');
+  const s3 = document.getElementById('review-step-3');
+  if (s2h) s2h.style.display = 'none';
+  if (s2u) s2u.style.display = 'none';
+  if (s3) s3.style.display = 'block';
+
+  const icon = document.getElementById('review-thankyou-icon');
+  const title = document.getElementById('review-thanks-title');
+  const sub = document.getElementById('review-thanks-sub');
+  if (happy) {
+    if (icon) icon.textContent = t().ratingThanksHappyIcon;
+    if (title) title.textContent = t().ratingThanksHappyTitle;
+    if (sub) sub.textContent = t().ratingThanksHappySub;
+  } else {
+    if (icon) icon.textContent = t().ratingThanksUnhappyIcon;
+    if (title) title.textContent = t().ratingThanksUnhappyTitle;
+    if (sub) sub.textContent = t().ratingThanksUnhappySub;
+  }
+
+  // Auto-close after 3s
+  setTimeout(() => closeModal('review-modal'), 3000);
 }
 
 function renderAll() {
@@ -806,6 +1074,7 @@ function setupQuickNav() {
     if (!btn) return;
     haptic();
     if (btn.classList.contains('quick-nav-review')) {
+      resetReviewModal();
       openModal('review-modal');
       return;
     }
@@ -1068,6 +1337,25 @@ function openWineModal(idx) {
     </div>
   `).join('');
 
+  // Vivino rating + link (optional — only if wine has rating)
+  const vivinoBlock = document.getElementById('wine-modal-vivino');
+  if (vivinoBlock) {
+    if (w.vivinoRating && w.vivinoUrl) {
+      vivinoBlock.style.display = 'flex';
+      const starsEl = vivinoBlock.querySelector('.vivino-modal-stars');
+      const scoreEl = vivinoBlock.querySelector('.vivino-modal-score');
+      const linkEl = vivinoBlock.querySelector('.vivino-modal-link');
+      if (starsEl) starsEl.innerHTML = renderVivinoStars(w.vivinoRating);
+      if (scoreEl) scoreEl.textContent = w.vivinoRating.toFixed(1);
+      if (linkEl) {
+        linkEl.href = w.vivinoUrl;
+        linkEl.textContent = t().vivinoSeeMore;
+      }
+    } else {
+      vivinoBlock.style.display = 'none';
+    }
+  }
+
   openModal('wine-modal');
 }
 
@@ -1075,6 +1363,7 @@ function openWineModal(idx) {
 function setupReviewButton() {
   document.getElementById('btn-review').addEventListener('click', () => {
     haptic();
+    resetReviewModal();
     openModal('review-modal');
   });
 }
@@ -1825,6 +2114,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupWineClicks();
   setupReviewButton();
   setupModalCloses();
+  setupRatingGate();
+  resetReviewModal();
   setupWifiCopy();
   setupLoyalty();
   setupShare();

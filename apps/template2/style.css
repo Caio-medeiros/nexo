@@ -2470,3 +2470,245 @@ body.has-cart {
   color: var(--accent);
   letter-spacing: -0.6px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RATING GATE SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.review-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: -6px 0 var(--s3);
+  line-height: 1.5;
+}
+
+/* ── Star picker ── */
+.star-picker {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--s2) 0 var(--s3);
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 44px;
+  line-height: 1;
+  color: var(--border);
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.12s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.star-btn:active { transform: scale(0.88); }
+.star-btn.lit { color: var(--gold); }
+
+/* Hover cascade on desktop */
+.star-picker:hover .star-btn { color: var(--border); }
+.star-picker .star-btn:hover,
+.star-picker .star-btn:hover ~ .star-btn { color: var(--border); }
+.star-picker:hover .star-btn:hover,
+.star-picker:hover .star-btn:hover ~ * { /* reset siblings */ }
+
+/* JS-driven lit state is what we use on touch */
+.star-btn.lit { color: var(--gold); }
+
+.star-label {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-height: 20px;
+  margin: 0 0 var(--s3);
+  transition: color 0.15s;
+}
+
+.star-label.positive { color: var(--accent); }
+.star-label.negative { color: var(--gold-deep); }
+
+/* ── Private feedback (unhappy path) ── */
+.review-textarea {
+  width: 100%;
+  background: var(--bg-alt);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--s3);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--text);
+  resize: none;
+  outline: none;
+  transition: border-color 0.15s;
+  margin-bottom: var(--s3);
+  line-height: 1.5;
+}
+
+.review-textarea:focus { border-color: var(--accent); }
+.review-textarea::placeholder { color: var(--muted); }
+
+.review-send-btn {
+  width: 100%;
+  background: #25D366;
+  color: white;
+  border: none;
+  padding: 15px 20px;
+  border-radius: var(--r-md);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.1s;
+  margin-bottom: var(--s2);
+}
+
+.review-send-btn:active { transform: scale(0.97); }
+
+.review-private-note {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ── Thank you screen ── */
+.review-thankyou {
+  text-align: center;
+  padding: var(--s4) var(--s3) var(--s3);
+}
+
+.review-thankyou-icon {
+  font-size: 52px;
+  line-height: 1;
+  margin-bottom: var(--s3);
+}
+
+.review-thankyou h3 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+  margin-bottom: var(--s2);
+  color: var(--text);
+}
+
+.review-thankyou p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VIVINO RATINGS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Stars on the wine card list */
+.wine-card-vivino {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.wine-card-vivino .vs {
+  width: 13px;
+  height: 13px;
+  color: #9B1B30;   /* Vivino signature red */
+  flex-shrink: 0;
+}
+
+.vivino-score {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  color: #9B1B30;
+  letter-spacing: -0.2px;
+  line-height: 1;
+}
+
+.vivino-logo {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Vivino block in the wine modal */
+.vivino-modal-block {
+  margin-top: var(--s3);
+  padding: var(--s3);
+  background: #FDF6F7;
+  border: 1px solid #F2DDE0;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+.vivino-modal-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.vivino-modal-stars {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.vivino-modal-stars .vs {
+  width: 16px;
+  height: 16px;
+  color: #9B1B30;
+  flex-shrink: 0;
+}
+
+.vivino-modal-score {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+  color: #9B1B30;
+  letter-spacing: -0.4px;
+  line-height: 1;
+}
+
+.vivino-modal-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9B1B30;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  align-self: flex-end;
+  margin-bottom: 1px;
+}
+
+.vivino-modal-link {
+  flex-shrink: 0;
+  background: #9B1B30;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-decoration: none;
+  transition: transform 0.1s, background 0.15s;
+  white-space: nowrap;
+}
+
+.vivino-modal-link:active {
+  transform: scale(0.95);
+  background: #7A1526;
+}
