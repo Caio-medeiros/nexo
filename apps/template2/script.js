@@ -51,7 +51,7 @@ const UI = {
     eliteBadge: "A experiência da casa",
     wines: "Carta de vinhos", winesBadge: "Seleção do chefe",
     wifi: "Wi-Fi", review: "Avaliar",
-    googleSub: "Mais visibilidade no Maps", thefork: "TheFork", theforkSub: "A nossa comunidade",
+    googleSub: "Mais visibilidade no Maps", thefork: "TheFork", theforkSub: "Plataforma de reservas de restaurantes",
     reviewModalTitle: "Onde prefere avaliar?",
     instagram: "Instagram", share: "Partilhar",
     copy: "Tocar para copiar", copied: "Copiado ✓",
@@ -63,7 +63,7 @@ const UI = {
     noAllergens: "Sem alergénios declarados.",
     allergenListLabel: "Contém",
     navMenu: "Menu", navTop: "Mais pedidos", navWines: "Vinhos",
-    navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Avaliar",
+    navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Avaliar",navInsta: "Instagram",
     wineFilterCountry: "País", wineFilterType: "Tipo", wineFilterGrape: "Casta",
     wineEmpty: "Nenhum vinho corresponde a estes filtros.",
     wineSpecCountry: "País", wineSpecRegion: "Região", wineSpecGrape: "Casta",
@@ -84,7 +84,7 @@ const UI = {
     eliteBadge: "The house experience",
     wines: "Wine list", winesBadge: "Chef's selection",
     wifi: "Wi-Fi", review: "Rate us",
-    googleSub: "More visibility on Maps", thefork: "TheFork", theforkSub: "Our community",
+    googleSub: "More visibility on Maps", thefork: "TheFork", theforkSub: "Online restaurant booking platform",
     reviewModalTitle: "Where would you like to rate us?",
     instagram: "Instagram", share: "Share",
     copy: "Tap to copy", copied: "Copied ✓",
@@ -96,7 +96,7 @@ const UI = {
     noAllergens: "No allergens declared.",
     allergenListLabel: "Contains",
     navMenu: "Menu", navTop: "Most ordered", navWines: "Wines",
-    navWifi: "Wi-Fi", navContact: "Contact", navReview: "Rate",
+    navWifi: "Wi-Fi", navContact: "Contact", navReview: "Rate", navInsta: "Instagram",
     wineFilterCountry: "Country", wineFilterType: "Type", wineFilterGrape: "Grape",
     wineEmpty: "No wines match these filters.",
     wineSpecCountry: "Country", wineSpecRegion: "Region", wineSpecGrape: "Grape",
@@ -116,7 +116,7 @@ const UI = {
     eliteBadge: "La experiencia de la casa",
     wines: "Carta de vinos", winesBadge: "Selección del chef",
     wifi: "Wi-Fi", review: "Valorar",
-    googleSub: "Más visibilidad en Maps", thefork: "TheFork", theforkSub: "Nuestra comunidad",
+    googleSub: "Más visibilidad en Maps", thefork: "TheFork", theforkSub: "Plataforma de reservas de restaurantes",
     reviewModalTitle: "¿Dónde prefiere valorar?",
     instagram: "Instagram", share: "Compartir",
     copy: "Tocar para copiar", copied: "Copiado ✓",
@@ -128,7 +128,7 @@ const UI = {
     noAllergens: "Sin alérgenos declarados.",
     allergenListLabel: "Contiene",
     navMenu: "Menú", navTop: "Más pedidos", navWines: "Vinos",
-    navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Valorar",
+    navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Valorar",navInsta: "Instagram",
     wineFilterCountry: "País", wineFilterType: "Tipo", wineFilterGrape: "Uva",
     wineEmpty: "Ningún vino coincide con estos filtros.",
     wineSpecCountry: "País", wineSpecRegion: "Región", wineSpecGrape: "Uva",
@@ -148,7 +148,7 @@ const UI = {
     eliteBadge: "L'expérience maison",
     wines: "Carte des vins", winesBadge: "Sélection du chef",
     wifi: "Wi-Fi", review: "Évaluer",
-    googleSub: "Plus de visibilité sur Maps", thefork: "TheFork", theforkSub: "Notre communauté",
+    googleSub: "Plus de visibilité sur Maps", thefork: "TheFork", theforkSub: "Plateforme de réservation de restaurants",
     reviewModalTitle: "Où préférez-vous évaluer?",
     instagram: "Instagram", share: "Partager",
     copy: "Toucher pour copier", copied: "Copié ✓",
@@ -160,7 +160,7 @@ const UI = {
     noAllergens: "Aucun allergène déclaré.",
     allergenListLabel: "Contient",
     navMenu: "Menu", navTop: "Plus commandés", navWines: "Vins",
-    navWifi: "Wi-Fi", navContact: "Contact", navReview: "Évaluer",
+    navWifi: "Wi-Fi", navContact: "Contact", navReview: "Évaluer", navInsta: "Instagram",
     wineFilterCountry: "Pays", wineFilterType: "Type", wineFilterGrape: "Cépage",
     wineEmpty: "Aucun vin ne correspond à ces filtres.",
     wineSpecCountry: "Pays", wineSpecRegion: "Région", wineSpecGrape: "Cépage",
@@ -354,6 +354,14 @@ function renderQuickNav() {
     {
       label: t().navContact, target: 'loyalty-card',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>`
+    },
+    {
+      label: t().navInsta, target: 'instagram-card',
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+        <circle cx="12" cy="12" r="4"></circle>
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor"></circle>
+      </svg>`
     }
 
   ];
@@ -701,7 +709,7 @@ function renderLoyalty() {
 function renderActions() {
   document.getElementById('btn-review-label').textContent = t().review;
   const tableText = tableNumber ? ` · ${t().tableHint} ${tableNumber}` : '';
-  document.getElementById('btn-review-sub').textContent = `Google · TripAdvisor · Facebook${tableText}`;
+  document.getElementById('btn-review-sub').textContent = `Google · The Fork${tableText}`;
 
   document.getElementById('btn-instagram').href = `https://instagram.com/${CONFIG.instagramHandle}`;
   document.getElementById('btn-instagram-label').textContent = t().instagram;

@@ -45,7 +45,7 @@ const CONFIG = {
   brandColor: "#8B1A1A",          // vermelho-vinho (acento primário)
   brandColorDark: "#5C0F0F",      // wine burgundy (escuro)
   heroImageUrl: "https://cdn.website.dish.co/media/27/d6/1863874/O-Nosso-Prego-Parede-IMG-20191212-145139.jpg?w=1600&q=80",
-  logoUrl: "",                     // vazio = iniciais automáticas
+  logoUrl: "https://onossoprego.pt/wp-content/uploads/2025/09/Nosso-Prego-10-2.jpg",                     // vazio = iniciais automáticas
 
 
   /* ═══ 3. CONTACTOS ═══ */
