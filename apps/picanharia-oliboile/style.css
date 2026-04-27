@@ -2838,22 +2838,3 @@ body.has-cart {
   transform: scale(0.95);
   background: #7A1526;
 }
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   AUTO REVIEW MODAL — context pill shown when auto-triggered after 30s
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-#review-modal[data-auto-triggered="1"] .modal::before {
-  content: attr(data-context-label);
-  display: block;
-  text-align: center;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  padding-bottom: var(--s2);
-  margin-bottom: var(--s1);
-  border-bottom: 1px solid var(--border-soft);
-}

@@ -765,6 +765,50 @@ a { color: inherit; text-decoration: none; }
   flex-wrap: wrap;
 }
 
+.menu-item-order-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.menu-item-step-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.86);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.menu-item-step-btn.show {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.menu-item-step-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
+}
+
+.menu-item-step-btn:active {
+  transform: scale(0.92);
+  background: var(--text);
+  color: white;
+  border-color: var(--text);
+}
+
 /* PREÇO DOMINANTE — v5: ainda maior, verdadeiro destaque visual */
 .menu-item-price {
   font-family: var(--font-display);
@@ -1436,8 +1480,11 @@ a { color: inherit; text-decoration: none; }
 .wine-modal-photo.is-placeholder { font-size: 60px; }
 
 .item-modal-body {
-  padding: var(--s4) var(--s3) var(--s5);
+  padding: var(--s4) var(--s3) calc(var(--s5) + 110px + env(safe-area-inset-bottom));
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .item-modal-header {
@@ -1478,6 +1525,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  margin-bottom: var(--s2);
 }
 
 .item-modal-tags .tag {
@@ -1491,6 +1539,7 @@ a { color: inherit; text-decoration: none; }
 .item-modal-upsell {
   margin-top: var(--s4);
   padding-top: var(--s3);
+  padding-bottom: calc(var(--s5) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border-soft);
 }
 
@@ -1705,6 +1754,8 @@ body.has-cart {
 /* ─── Modal: "Adicionar ao pedido" primary button ─── */
 .item-modal-add {
   width: 100%;
+  min-width: 0;
+  min-height: 56px;
   background: var(--accent);
   color: white;
   border: none;
@@ -1718,10 +1769,82 @@ body.has-cart {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: var(--s3);
+  margin-top: 0;
   transition: all 0.15s;
   letter-spacing: 0.2px;
+  line-height: 1.2;
+  text-align: center;
   box-shadow: 0 4px 14px rgba(139, 26, 26, 0.25);
+}
+
+.item-modal-order-bar {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  margin-top: var(--s3);
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  padding-top: 12px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(244, 237, 224, 0) 0%, rgba(244, 237, 224, 0.92) 24%, var(--bg) 100%);
+}
+
+.item-modal-step-btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 56px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--r-md);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.item-modal-step-btn.show {
+  display: flex;
+}
+
+.item-modal-order-bar > * {
+  pointer-events: auto;
+}
+
+.item-modal-add span {
+  display: block;
+}
+
+.item-modal-add svg {
+  flex-shrink: 0;
+}
+
+.item-modal-order-bar .item-modal-add {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.item-modal-order-bar.has-decrement .item-modal-step-btn.show {
+  flex: 0 0 clamp(60px, 20%, 84px);
+}
+
+.item-modal-order-bar.has-decrement .item-modal-add {
+  flex: 1 1 80%;
+}
+
+.item-modal-order-bar:not(.has-decrement) .item-modal-add {
+  flex: 1 1 100%;
+}
+
+.item-modal-step-btn:active {
+  transform: scale(0.97);
+  background: var(--text);
+  color: white;
+  border-color: var(--text);
 }
 
 .item-modal-add:active {
@@ -1794,6 +1917,9 @@ body.has-cart {
 .cart-pill-text {
   font-weight: 700;
   letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cart-pill-total {
@@ -2711,4 +2837,23 @@ body.has-cart {
 .vivino-modal-link:active {
   transform: scale(0.95);
   background: #7A1526;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTO REVIEW MODAL — context pill shown when auto-triggered after 30s
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#review-modal[data-auto-triggered="1"] .modal::before {
+  content: attr(data-context-label);
+  display: block;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--s2);
+  margin-bottom: var(--s1);
+  border-bottom: 1px solid var(--border-soft);
 }

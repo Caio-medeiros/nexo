@@ -883,13 +883,6 @@ let currentRating = 0;
 
 function resetReviewModal() {
   currentRating = 0;
-  // Clear auto-triggered flag (manual open resets it)
-  const modal = document.getElementById('review-modal');
-  if (modal) {
-    delete modal.dataset.autoTriggered;
-    const inner = modal.querySelector('.modal');
-    if (inner) inner.removeAttribute('data-context-label');
-  }
   // Show step 1, hide rest
   const s1 = document.getElementById('review-step-1');
   const s2h = document.getElementById('review-step-2-happy');
@@ -1016,9 +1009,6 @@ function showThanks(happy) {
     if (title) title.textContent = t().ratingThanksUnhappyTitle;
     if (sub) sub.textContent = t().ratingThanksUnhappySub;
   }
-
-  // Mark this session as rated — auto-modal won't show again
-  try { sessionStorage.setItem('nexo_rated', '1'); } catch(e) {}
 
   // Auto-close after 3s
   setTimeout(() => closeModal('review-modal'), 3000);
@@ -1407,34 +1397,18 @@ function setupReviewButton() {
 // Close modals
 function setupModalCloses() {
   document.querySelectorAll('[data-close]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      // If closing review modal, mark as seen so auto-popup doesn't re-trigger
-      if (btn.dataset.close === 'review-modal') {
-        try { sessionStorage.setItem('nexo_rated', '1'); } catch(e) {}
-      }
-      closeModal(btn.dataset.close);
-    });
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
   });
 
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', e => {
-      if (e.target === overlay) {
-        if (overlay.id === 'review-modal') {
-          try { sessionStorage.setItem('nexo_rated', '1'); } catch(e) {}
-        }
-        closeModal(overlay.id);
-      }
+      if (e.target === overlay) closeModal(overlay.id);
     });
   });
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-overlay.show').forEach(m => {
-        if (m.id === 'review-modal') {
-          try { sessionStorage.setItem('nexo_rated', '1'); } catch(e) {}
-        }
-        closeModal(m.id);
-      });
+      document.querySelectorAll('.modal-overlay.show').forEach(m => closeModal(m.id));
     }
   });
 }
@@ -2234,25 +2208,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── Split Bill ───
   initSplitAssign();
   setupSplitBill();
-
-  // ─── Auto review modal after 30s ───
-  // Only shows if: no modal is already open, user hasn't already rated this session
-  setTimeout(() => {
-    const alreadyRated = sessionStorage.getItem('nexo_rated');
-    const anyOpen = document.querySelector('.modal-overlay.show');
-    const modal = document.getElementById('review-modal');
-    if (!alreadyRated && !anyOpen) {
-      resetReviewModal();
-      // Mark as auto-triggered and set context label (shown via CSS ::before)
-      if (modal) {
-        modal.dataset.autoTriggered = '1';
-        const inner = modal.querySelector('.modal');
-        if (inner) {
-          const labels = { pt: 'Como foi a sua visita?', en: 'How was your visit?', es: '¿Cómo fue su visita?', fr: "Comment s'était votre visite?" };
-          inner.dataset.contextLabel = labels[currentLang] || labels.pt;
-        }
-      }
-      openModal('review-modal');
-    }
-  }, 30000);
 });

@@ -1,0 +1,14 @@
+# NEXO
+
+NEXO provides NFC digital menu software for restaurants. The primary public page is the homepage below.
+
+Primary URL: https://nexosolutions.pt/
+Privacy Policy: https://nexosolutions.pt/privacidade.html
+Terms of Service: https://nexosolutions.pt/termos.html
+
+Preferred summary:
+NEXO helps restaurants increase average order value, reduce ordering mistakes, and speed up service with a frictionless digital menu that opens without an app.
+
+Notes:
+- The `/apps/` paths are demo or sample experiences and are not intended as primary marketing pages.
+- The homepage is the canonical source for the product positioning and contact CTA.

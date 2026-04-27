@@ -7,12 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const hero = document.querySelector('.hero');
   const ctaSection = document.querySelector('.final-cta-section');
 
-  // ── NAV SCROLL ──
   window.addEventListener('scroll', () => {
     const y = window.scrollY;
     nav.classList.toggle('scrolled', y > 20);
 
-    // Sticky mobile CTA
     if (stickyCTA && window.innerWidth < 960) {
       const heroBottom = hero ? hero.offsetTop + hero.offsetHeight : 0;
       const ctaTop = ctaSection ? ctaSection.offsetTop - window.innerHeight * 0.5 : Infinity;
@@ -24,74 +22,149 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ── SMOOTH SCROLL ──
-  document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-      const href = a.getAttribute('href');
+  document.querySelectorAll('a[href^="#"]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
       if (href === '#') return;
-      const t = document.querySelector(href);
-      if (!t) return;
+      const target = document.querySelector(href);
+      if (!target) return;
       e.preventDefault();
-      const top = t.getBoundingClientRect().top + window.scrollY - nav.offsetHeight - 8;
+      const top = target.getBoundingClientRect().top + window.scrollY - nav.offsetHeight - 8;
       window.scrollTo({ top, behavior: 'smooth' });
       if (mobileToggle.classList.contains('active')) closeMobile();
     });
   });
 
-  // ── MOBILE MENU ──
   function closeMobile() {
     mobileToggle.classList.remove('active');
     navLinks.classList.remove('open');
     navActions.classList.remove('open');
     nav.classList.remove('menu-open');
   }
-  mobileToggle.addEventListener('click', () => {
-    mobileToggle.classList.contains('active') ? closeMobile() : (
-      mobileToggle.classList.add('active'),
-      navLinks.classList.add('open'),
-      navActions.classList.add('open'),
-      nav.classList.add('menu-open')
-    );
-  });
-  window.addEventListener('resize', () => { if (window.innerWidth >= 960) closeMobile(); });
 
-  // ── SCROLL REVEAL ──
+  mobileToggle.addEventListener('click', () => {
+    if (mobileToggle.classList.contains('active')) {
+      closeMobile();
+      return;
+    }
+    mobileToggle.classList.add('active');
+    navLinks.classList.add('open');
+    navActions.classList.add('open');
+    nav.classList.add('menu-open');
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 960) closeMobile();
+  });
+
+  // Assign stagger delays to demo cards (each has its own reveal class)
+  document.querySelectorAll('.demo-grid').forEach((grid) => {
+    grid.querySelectorAll('.reveal').forEach((item, i) => {
+      item.dataset.staggerDelay = i * 70;
+    });
+  });
+
   const reveals = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window) {
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const delay = parseInt(entry.target.dataset.staggerDelay || 0);
+          if (delay > 0) {
+            setTimeout(() => entry.target.classList.add('visible'), delay);
+          } else {
+            entry.target.classList.add('visible');
+          }
+          obs.unobserve(entry.target);
+        }
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
-    reveals.forEach(el => obs.observe(el));
+    }, { threshold: 0.08, rootMargin: '0px 0px -20px 0px' });
+    reveals.forEach((el) => obs.observe(el));
   } else {
-    reveals.forEach(el => el.classList.add('visible'));
+    reveals.forEach((el) => el.classList.add('visible'));
   }
 
-  // ── FORM VALIDATION ──
   const form = document.getElementById('nexo-form');
   const msg = document.getElementById('success-msg');
+
+  function setMessage(text, isError = false) {
+    if (!msg) return;
+    msg.textContent = text;
+    msg.classList.add('visible');
+    msg.classList.toggle('error', isError);
+  }
+
+  function clearMessage() {
+    if (!msg) return;
+    msg.classList.remove('visible', 'error');
+  }
+
   if (form) {
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      form.querySelectorAll('.form-group').forEach(g => g.classList.remove('error'));
-      msg.classList.remove('visible');
+      form.querySelectorAll('.form-group').forEach((group) => group.classList.remove('error'));
+      clearMessage();
+
       let ok = true;
       const nome = form.querySelector('#nome');
-      if (!nome.value.trim()) { nome.closest('.form-group').classList.add('error'); ok = false; }
       const email = form.querySelector('#email');
-      if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) { email.closest('.form-group').classList.add('error'); ok = false; }
       const tipo = form.querySelector('#tipo');
-      if (!tipo.value) { tipo.closest('.form-group').classList.add('error'); ok = false; }
-      if (!ok) { const f = form.querySelector('.form-group.error'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+
+      if (!nome.value.trim()) {
+        nome.closest('.form-group').classList.add('error');
+        ok = false;
+      }
+      if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+        email.closest('.form-group').classList.add('error');
+        ok = false;
+      }
+      if (!tipo.value) {
+        tipo.closest('.form-group').classList.add('error');
+        ok = false;
+      }
+
+      if (!ok) {
+        const firstError = form.querySelector('.form-group.error');
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
       const btn = form.querySelector('.btn-submit');
-      const orig = btn.textContent;
-      btn.textContent = 'A enviar...'; btn.disabled = true;
-      setTimeout(() => { btn.textContent = orig; btn.disabled = false; form.reset(); msg.classList.add('visible'); setTimeout(() => msg.classList.remove('visible'), 5000); }, 1500);
+      const originalText = btn.textContent;
+      btn.textContent = 'A enviar...';
+      btn.disabled = true;
+
+      try {
+        const formData = new FormData(form);
+        const encoded = new URLSearchParams(formData).toString();
+
+        const response = await fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: encoded,
+        });
+
+        if (!response.ok) throw new Error('netlify-submit-failed');
+
+        form.reset();
+        setMessage('Recebido. Falamos consigo em menos de 24 horas.');
+      } catch (error) {
+        setMessage('Não foi possível enviar agora. Tente novamente ou use o WhatsApp.', true);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
     });
-    form.querySelectorAll('input,select,textarea').forEach(f => {
-      f.addEventListener('input', () => f.closest('.form-group').classList.remove('error'));
-      f.addEventListener('change', () => f.closest('.form-group').classList.remove('error'));
+
+    form.querySelectorAll('input,select,textarea').forEach((field) => {
+      field.addEventListener('input', () => {
+        const group = field.closest('.form-group');
+        if (group) group.classList.remove('error');
+      });
+      field.addEventListener('change', () => {
+        const group = field.closest('.form-group');
+        if (group) group.classList.remove('error');
+      });
     });
   }
 });
