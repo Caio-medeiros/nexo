@@ -93,7 +93,27 @@ const UI = {
     ratingThanksHappySub: "A sua avaliação ajuda outros clientes a encontrar-nos.",
     ratingThanksUnhappyIcon: "🙏",
     ratingThanksUnhappyTitle: "Recebemos o seu feedback.",
-    ratingThanksUnhappySub: "A gerência vai analisar e responder assim que possível."
+    ratingThanksUnhappySub: "A gerência vai analisar e responder assim que possível.",
+    // Favorites
+    favoritesTitle: "Os meus favoritos",
+    bookmarkSave: "Guardar",
+    bookmarkSaved: "Guardado ✓",
+    favoritesCleared: "Favoritos limpos",
+    // Share dish
+    shareDish: "Partilhar",
+    shareImageTitle: "Partilhar prato",
+    shareNotSupported: "Copia o link e partilha manualmente.",
+    // Order history
+    orderSent: "Enviado",
+    orderHistoryLabel: "Pedido",
+    pillSent: "Enviado ✓",
+    // Split podium
+    splitPodiumTitle: "Quem gastou mais?",
+    splitPodiumWinner: "gastou mais esta noite 👑",
+    splitPodiumAllEqual: "Iguais! 🤝 Dividam em partes iguais.",
+    splitPodiumUnassigned: "Há items sem dono — atribui tudo primeiro.",
+    // Happy hour countdown
+    happyHourEnds: "Termina em"
   },
   en: {
     specialHappyHour: "Happy Hour", specialWeek: "This week",
@@ -143,7 +163,22 @@ const UI = {
     ratingThanksHappySub: "Your review helps others find us.",
     ratingThanksUnhappyIcon: "🙏",
     ratingThanksUnhappyTitle: "Feedback received.",
-    ratingThanksUnhappySub: "Management will review and respond as soon as possible."
+    ratingThanksUnhappySub: "Management will review and respond as soon as possible.",
+    favoritesTitle: "My favourites",
+    bookmarkSave: "Save",
+    bookmarkSaved: "Saved ✓",
+    favoritesCleared: "Favourites cleared",
+    shareDish: "Share",
+    shareImageTitle: "Share dish",
+    shareNotSupported: "Copy the link and share manually.",
+    orderSent: "Sent",
+    orderHistoryLabel: "Order",
+    pillSent: "Sent ✓",
+    splitPodiumTitle: "Who spent the most?",
+    splitPodiumWinner: "spent the most tonight 👑",
+    splitPodiumAllEqual: "All equal! 🤝 Split evenly.",
+    splitPodiumUnassigned: "Some items have no owner — assign everything first.",
+    happyHourEnds: "Ends in"
   },
   es: {
     specialHappyHour: "Happy Hour", specialWeek: "Esta semana",
@@ -193,7 +228,22 @@ const UI = {
     ratingThanksHappySub: "Su valoración ayuda a otros clientes a encontrarnos.",
     ratingThanksUnhappyIcon: "🙏",
     ratingThanksUnhappyTitle: "Feedback recibido.",
-    ratingThanksUnhappySub: "La gerencia revisará y responderá lo antes posible."
+    ratingThanksUnhappySub: "La gerencia revisará y responderá lo antes posible.",
+    favoritesTitle: "Mis favoritos",
+    bookmarkSave: "Guardar",
+    bookmarkSaved: "Guardado ✓",
+    favoritesCleared: "Favoritos borrados",
+    shareDish: "Compartir",
+    shareImageTitle: "Compartir plato",
+    shareNotSupported: "Copia el enlace y compártelo manualmente.",
+    orderSent: "Enviado",
+    orderHistoryLabel: "Pedido",
+    pillSent: "Enviado ✓",
+    splitPodiumTitle: "¿Quién gastó más?",
+    splitPodiumWinner: "gastó más esta noche 👑",
+    splitPodiumAllEqual: "¡Iguales! 🤝 Dividid a partes iguales.",
+    splitPodiumUnassigned: "Hay ítems sin asignar — asígnalos todos primero.",
+    happyHourEnds: "Termina en"
   },
   fr: {
     specialHappyHour: "Happy Hour", specialWeek: "Cette semaine",
@@ -243,7 +293,22 @@ const UI = {
     ratingThanksHappySub: "Votre avis aide d'autres clients à nous trouver.",
     ratingThanksUnhappyIcon: "🙏",
     ratingThanksUnhappyTitle: "Feedback reçu.",
-    ratingThanksUnhappySub: "La direction analysera et répondra dès que possible."
+    ratingThanksUnhappySub: "La direction analysera et répondra dès que possible.",
+    favoritesTitle: "Mes favoris",
+    bookmarkSave: "Sauvegarder",
+    bookmarkSaved: "Sauvegardé ✓",
+    favoritesCleared: "Favoris effacés",
+    shareDish: "Partager",
+    shareImageTitle: "Partager le plat",
+    shareNotSupported: "Copiez le lien et partagez manuellement.",
+    orderSent: "Envoyé",
+    orderHistoryLabel: "Commande",
+    pillSent: "Envoyé ✓",
+    splitPodiumTitle: "Qui a dépensé le plus?",
+    splitPodiumWinner: "a dépensé le plus ce soir 👑",
+    splitPodiumAllEqual: "Égalité! 🤝 Partagez équitablement.",
+    splitPodiumUnassigned: "Des articles n'ont pas de propriétaire — assignez tout d'abord.",
+    happyHourEnds: "Termine dans"
   }
 };
 
@@ -263,6 +328,18 @@ let cart = [];
 
 // Order ID curto, gerado uma vez por sessão (staff referencia se várias mesas mostram)
 const ORDER_ID = Math.random().toString(36).substring(2, 6).toUpperCase();
+
+/* ─── FAVORITES STATE ─── */
+let favorites = new Set(JSON.parse(sessionStorage.getItem('nexo_favs') || '[]'));
+
+function saveFavorites() {
+  try { sessionStorage.setItem('nexo_favs', JSON.stringify([...favorites])); } catch(e) {}
+}
+
+/* ─── ORDER HISTORY STATE ─── */
+// Each entry: { id, timestamp, items: [{refId, qty, name, price}], total }
+let orderHistory = [];
+let currentShareItem = null; // item currently open in modal for share
 
 /* ─── SPLIT BILL STATE & i18n (declared early so renderCartSheet can use ts()) ─── */
 const SPLIT_MAX = 10;
@@ -659,6 +736,7 @@ function renderMenu() {
                   ${item.diet.map(d => `<span class="tag tag-diet">${d}</span>`).join('')}
                 </div>
               ` : ''}
+              <button class="menu-item-bookmark ${isFavorited(refId) ? 'saved' : ''}" data-bookmark-ref="${refId}" aria-label="Guardar favorito" type="button">🔖</button>
               ${addBtnHtml}
             </div>
           </div>
@@ -1043,6 +1121,8 @@ function renderAll() {
   // Cart UI usa textos i18n — re-render quando idioma muda
   if (typeof renderCartPill === 'function') renderCartPill();
   if (typeof renderCartSheet === 'function') renderCartSheet();
+  if (typeof renderFavorites === 'function') renderFavorites();
+  if (typeof setupCountdown === 'function') setupCountdown();
 }
 
 
@@ -1316,6 +1396,27 @@ function openItemModal(sectionId, itemIdx) {
     } else {
       upsellEl.style.display = 'none';
     }
+  }
+
+  // ═══ BOOKMARK button ═══
+  const bookmarkBtn = document.getElementById('item-bookmark-btn');
+  const bookmarkLabel = document.getElementById('bookmark-label');
+  const bookmarkIcon = document.getElementById('bookmark-icon');
+  if (bookmarkBtn) {
+    const refId = `${sectionId}:${itemIdx}`;
+    bookmarkBtn.dataset.bookmarkRef = refId;
+    const isSaved = favorites.has(refId);
+    bookmarkBtn.classList.toggle('saved', isSaved);
+    if (bookmarkIcon) bookmarkIcon.textContent = isSaved ? '🔖' : '🔖';
+    if (bookmarkLabel) bookmarkLabel.textContent = isSaved ? t().bookmarkSaved : t().bookmarkSave;
+  }
+
+  // ═══ SHARE button — store current item for canvas generation ═══
+  currentShareItem = { sectionId, itemIdx, item };
+  const shareBtn = document.getElementById('item-share-btn');
+  const shareLabel = document.getElementById('item-share-label');
+  if (shareBtn) {
+    if (shareLabel) shareLabel.textContent = t().shareDish;
   }
 
   openModal('item-modal');
@@ -1765,20 +1866,20 @@ function updateOpenItemModalControls() {
 
 // STAFF VIEW — fullscreen
 function openStaffView() {
-  if (cart.length === 0) return;
+  if (cart.length === 0 && orderHistory.length === 0) return;
 
   const staffView = document.getElementById('staff-view');
   const tableEl = document.getElementById('staff-table');
   const orderIdEl = document.getElementById('staff-order-id');
   const helperEl = document.getElementById('staff-helper');
-  const listEl = document.getElementById('staff-list');
   const totalEl = document.getElementById('staff-total');
   if (!staffView) return;
 
-  // Helper text
+  // Record current cart as a new snapshot
+  if (cart.length > 0) recordOrderSnapshot();
+
   helperEl.textContent = t().staffHelper;
 
-  // Mesa — grande
   if (tableNumber) {
     tableEl.textContent = `${t().tableHint} ${tableNumber}`;
     tableEl.classList.remove('no-table');
@@ -1787,31 +1888,20 @@ function openStaffView() {
     tableEl.classList.add('no-table');
   }
 
-  // Order ID curto
   orderIdEl.textContent = `#${ORDER_ID}`;
 
-  // Lista de items no formato "1× Nome"
-  listEl.innerHTML = cart.map(entry => {
-    const item = getItemByRef(entry.refId);
-    if (!item) return '';
-    return `
-      <div class="staff-list-item">
-        <span class="staff-list-qty">${entry.qty}×</span>
-        <span class="staff-list-name">${item.name[currentLang]}</span>
-      </div>
-    `;
-  }).join('');
+  // Render full order history
+  renderStaffHistory();
 
-  // Total
-  totalEl.innerHTML = `<span>${t().cartTotal}</span>${formatPrice(getCartTotal())}`;
+  // Grand total across all rounds
+  const grand = getGrandTotal();
+  totalEl.innerHTML = `<span>${t().cartTotal}</span>${formatPrice(grand)}`;
 
-  // Fecha todos os modals abertos antes de abrir o staff view
   document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
   document.body.style.overflow = 'hidden';
 
-  // Força landscape-friendly e evita screen sleep se suportado
   if (screen.orientation && screen.orientation.unlock) {
-    try { screen.orientation.unlock(); } catch(e) { /* silent */ }
+    try { screen.orientation.unlock(); } catch(e) {}
   }
 
   staffView.classList.add('show');
@@ -1822,6 +1912,16 @@ function closeStaffView() {
   if (!staffView) return;
   staffView.classList.remove('show');
   document.body.style.overflow = '';
+  // Clear current cart (it's now recorded in history)
+  if (cart.length > 0) {
+    cart = [];
+    renderCartPillWithHistory();
+    renderCartSheet();
+    updateAddBtnBadges();
+    if (typeof onCartChangeSplitHook === 'function') onCartChangeSplitHook();
+  } else {
+    renderCartPillWithHistory();
+  }
 }
 
 // Setup: botões "+" no menu (delegação)
@@ -2051,6 +2151,7 @@ function renderSplitCustom() {
   renderSplitPeopleTabs();
   renderSplitAssignList();
   renderSplitPersonSummary();
+  renderSplitPodium();
 }
 
 function renderSplitPeopleTabs() {
@@ -2202,6 +2303,442 @@ function onCartChangeSplitHook() {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   12D. FAVORITES — Guardar favoritos em sessionStorage
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function isFavorited(refId) { return favorites.has(refId); }
+
+function toggleFavorite(refId) {
+  if (favorites.has(refId)) {
+    favorites.delete(refId);
+  } else {
+    favorites.add(refId);
+  }
+  saveFavorites();
+  renderFavorites();
+  // Update all bookmark buttons for this refId in menu
+  document.querySelectorAll(`[data-bookmark-ref="${refId}"]`).forEach(btn => {
+    btn.classList.toggle('saved', favorites.has(refId));
+  });
+  // Update modal bookmark button if open on this item
+  const modalBtn = document.getElementById('item-bookmark-btn');
+  if (modalBtn && modalBtn.dataset.bookmarkRef === refId) {
+    const isSaved = favorites.has(refId);
+    modalBtn.classList.toggle('saved', isSaved);
+    const lbl = document.getElementById('bookmark-label');
+    if (lbl) lbl.textContent = isSaved ? t().bookmarkSaved : t().bookmarkSave;
+  }
+}
+
+function renderFavorites() {
+  const section = document.getElementById('section-favorites');
+  const list = document.getElementById('favorites-list');
+  const titleEl = document.getElementById('favorites-title');
+  if (!section || !list) return;
+
+  if (titleEl) titleEl.textContent = t().favoritesTitle;
+
+  if (favorites.size === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  list.innerHTML = [...favorites].map(refId => {
+    const item = getItemByRef(refId);
+    if (!item) return '';
+    return `
+      <div class="fav-chip" data-fav-open="${refId}">
+        <span class="fav-chip-name">${item.name[currentLang]}</span>
+        <span class="fav-chip-price">${item.price}</span>
+        <button class="fav-chip-remove" data-fav-remove="${refId}" aria-label="Remover" type="button">✕</button>
+      </div>
+    `;
+  }).filter(Boolean).join('');
+}
+
+function setupFavorites() {
+  // Menu item list: bookmark buttons (delegated)
+  document.getElementById('menu').addEventListener('click', e => {
+    const bookmarkBtn = e.target.closest('[data-bookmark-ref]');
+    if (!bookmarkBtn) return;
+    e.stopPropagation();
+    haptic();
+    toggleFavorite(bookmarkBtn.dataset.bookmarkRef);
+  });
+
+  // Item modal: bookmark button (correct ID: item-bookmark-btn)
+  const modalBookmark = document.getElementById('item-bookmark-btn');
+  if (modalBookmark) {
+    modalBookmark.addEventListener('click', () => {
+      haptic();
+      toggleFavorite(modalBookmark.dataset.bookmarkRef);
+    });
+  }
+
+  // Favorites section: chip click → open modal, ✕ → remove
+  const section = document.getElementById('section-favorites');
+  if (section) {
+    section.addEventListener('click', e => {
+      const removeBtn = e.target.closest('[data-fav-remove]');
+      if (removeBtn) {
+        haptic();
+        toggleFavorite(removeBtn.dataset.favRemove);
+        return;
+      }
+      const chip = e.target.closest('[data-fav-open]');
+      if (chip) {
+        haptic();
+        const [sectionId, itemIdx] = chip.dataset.favOpen.split(':');
+        openItemModal(sectionId, parseInt(itemIdx));
+      }
+    });
+  }
+
+  // Clear all button
+  const clearBtn = document.getElementById('favorites-clear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      haptic();
+      favorites.clear();
+      saveFavorites();
+      renderFavorites();
+      document.querySelectorAll('[data-bookmark-ref]').forEach(b => b.classList.remove('saved'));
+      showToast(t().favoritesCleared);
+    });
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12E. HAPPY HOUR COUNTDOWN
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+let _countdownInterval = null;
+
+function getCountdownBanner() {
+  // Only count down for banners with id "happy-hour" (or any with countdown: true)
+  if (!CONFIG.timeBanners) return null;
+  const now = new Date();
+  const h = now.getHours();
+  const day = now.getDay();
+  for (const banner of CONFIG.timeBanners) {
+    if (banner.days && banner.days.length > 0 && !banner.days.includes(day)) continue;
+    if (h >= banner.startH && h < banner.endH) {
+      // Only countdown for happy-hour or banners explicitly marked
+      if (banner.id === 'happy-hour' || banner.countdown === true) {
+        return banner;
+      }
+    }
+  }
+  return null;
+}
+
+function setupCountdown() {
+  function tick() {
+    const banner = getCountdownBanner();
+    const el = document.getElementById('special-countdown');
+    if (!el) return;
+
+    if (!banner) {
+      el.style.display = 'none';
+      return;
+    }
+
+    const now = new Date();
+    const endTime = new Date();
+    endTime.setHours(banner.endH, 0, 0, 0);
+    const diffMs = endTime - now;
+
+    if (diffMs <= 0) {
+      el.style.display = 'none';
+      // Banner expired — re-render to hide it
+      renderSpecialBanner();
+      return;
+    }
+
+    const totalMins = Math.floor(diffMs / 60000);
+    const mins = totalMins % 60;
+    const hours = Math.floor(totalMins / 60);
+    const secs = Math.floor((diffMs % 60000) / 1000);
+
+    let label;
+    if (hours > 0) {
+      label = `⏳ ${hours}h ${String(mins).padStart(2,'0')}m`;
+    } else {
+      label = `⏳ ${mins}m ${String(secs).padStart(2,'0')}s`;
+    }
+
+    el.textContent = label;
+    el.style.display = 'inline-block';
+    // Pulse when < 10 min
+    el.classList.toggle('urgent', totalMins < 10);
+  }
+
+  if (_countdownInterval) clearInterval(_countdownInterval);
+  tick(); // immediate first render
+  _countdownInterval = setInterval(tick, 1000);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12F. SHARE DISH — Canvas → Web Share API
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function setupShareDish() {
+  // Delegated from item modal body — ID is item-share-btn
+  const shareBtn = document.getElementById('item-share-btn');
+  if (!shareBtn) return;
+
+  shareBtn.addEventListener('click', async () => {
+    haptic();
+    if (!currentShareItem) return;
+    const { item } = currentShareItem;
+    const name = item.name[currentLang];
+    const price = item.price;
+    const restName = CONFIG.name || '';
+
+    try {
+      const canvas = document.getElementById('share-canvas');
+      const ctx = canvas.getContext('2d');
+      const W = 1080, H = 1080;
+
+      // Background gradient using brand colors
+      const brandColor = CONFIG.brandColor || '#8B1A1A';
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, brandColor);
+      grad.addColorStop(1, shadeColor(brandColor, -40));
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Subtle noise texture overlay
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      for (let i = 0; i < 8000; i++) {
+        ctx.fillRect(Math.random() * W, Math.random() * H, 1, 1);
+      }
+
+      // Gold accent line top
+      ctx.fillStyle = '#D4A574';
+      ctx.fillRect(60, 60, W - 120, 6);
+
+      // Restaurant name
+      ctx.fillStyle = 'rgba(212, 165, 116, 0.9)';
+      ctx.font = `600 38px 'Outfit', sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.fillText(restName.toUpperCase(), 60, 130);
+
+      // Item name — large serif
+      ctx.fillStyle = '#FFFCF7';
+      ctx.font = `900 ${name.length > 20 ? '82' : '100'}px Georgia, serif`;
+      ctx.textAlign = 'left';
+      wrapText(ctx, name, 60, 320, W - 120, name.length > 20 ? 95 : 115);
+
+      // Price
+      ctx.fillStyle = '#D4A574';
+      ctx.font = `800 72px Georgia, serif`;
+      ctx.fillText(price, 60, H - 200);
+
+      // Gold line bottom
+      ctx.fillStyle = '#D4A574';
+      ctx.fillRect(60, H - 140, W - 120, 4);
+
+      // NEXO watermark
+      ctx.fillStyle = 'rgba(255,252,247,0.3)';
+      ctx.font = `700 30px 'Outfit', sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.fillText('menu.nexo.pt', W - 60, H - 60);
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) { showToast(t().shareNotSupported); return; }
+        const file = new File([blob], `${name}.png`, { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: `${name} — ${restName}`, text: `${name} · ${price}` });
+          } catch (err) { if (err.name !== 'AbortError') showToast(t().shareNotSupported); }
+        } else if (navigator.share) {
+          try {
+            await navigator.share({ title: `${name} — ${restName}`, text: `${name} · ${price}`, url: window.location.href });
+          } catch (err) { if (err.name !== 'AbortError') showToast(t().shareNotSupported); }
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = `${name}.png`; a.click();
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png');
+    } catch (err) {
+      showToast(t().shareNotSupported);
+    }
+  });
+}
+
+// Canvas text word-wrap helper
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+      ctx.fillText(line.trim(), x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, y);
+}
+
+// Darken/lighten hex color
+function shadeColor(hex, percent) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, Math.max(0, (num >> 16) + percent));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + percent));
+  const b = Math.min(255, Math.max(0, (num & 0xff) + percent));
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12G. ORDER HISTORY — Track pedidos enviados ao staff na sessão
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// Snapshot the current cart into history when "Mostrar ao staff" is used
+function recordOrderSnapshot() {
+  if (cart.length === 0) return;
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const snapshot = {
+    id: `#${Math.random().toString(36).substring(2,5).toUpperCase()}`,
+    time: timeStr,
+    items: cart.map(e => {
+      const item = getItemByRef(e.refId);
+      return { refId: e.refId, qty: e.qty, name: item ? item.name : {}, price: item ? item.price : '' };
+    }),
+    total: getCartTotal()
+  };
+  orderHistory.push(snapshot);
+}
+
+// Render staff view with full history
+function renderStaffHistory() {
+  const historyEl = document.getElementById('staff-history');
+  if (!historyEl) return;
+
+  if (orderHistory.length === 0) {
+    // Single current order (not yet sent)
+    historyEl.innerHTML = `
+      <div class="staff-order-block">
+        ${cart.map(entry => {
+          const item = getItemByRef(entry.refId);
+          if (!item) return '';
+          return `<div class="staff-list-item"><span class="staff-list-qty">${entry.qty}×</span><span class="staff-list-name">${item.name[currentLang]}</span></div>`;
+        }).join('')}
+      </div>`;
+    return;
+  }
+
+  // Multiple rounds — render each snapshot + current pending
+  historyEl.innerHTML = orderHistory.map((snap, i) => `
+    <div class="staff-order-block ${i > 0 ? 'staff-order-block--subsequent' : ''}">
+      <div class="staff-round-label">${t().orderHistoryLabel} ${i + 1} · ${snap.time} · ${snap.id}</div>
+      ${snap.items.map(e => `
+        <div class="staff-list-item">
+          <span class="staff-list-qty">${e.qty}×</span>
+          <span class="staff-list-name">${e.name[currentLang] || Object.values(e.name)[0] || ''}</span>
+        </div>`).join('')}
+    </div>
+  `).join('') + (cart.length > 0 ? `
+    
+    ` : '');
+}
+
+// Grand total across all history + current cart
+function getGrandTotal() {
+  const historyTotal = orderHistory.reduce((sum, snap) => sum + snap.total, 0);
+  return historyTotal + getCartTotal();
+}
+
+// Update pill to show "Enviado ✓" badge when history exists
+function renderCartPillWithHistory() {
+  renderCartPill();
+  if (orderHistory.length > 0) {
+    const pill = document.getElementById('cart-pill');
+    if (pill) pill.classList.add('has-history');
+    const textEl = document.getElementById('cart-pill-text');
+    if (textEl && cart.length === 0) {
+      // Show last order sent if cart is now empty
+      textEl.textContent = `${t().pillSent} · ${orderHistory.length}×`;
+      pill && pill.classList.add('show');
+      document.body.classList.add('has-cart');
+    }
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12H. SPLIT PODIUM — Gamificação do split bill
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function renderSplitPodium() {
+  // Only shown in custom mode when all items are assigned
+  const podiumEl = document.getElementById('split-podium');
+  if (!podiumEl) return;
+
+  if (splitMode !== 'custom') { podiumEl.style.display = 'none'; return; }
+
+  // Check all items assigned
+  const totalAssignedItems = splitAssign.reduce((sum, set) => sum + set.size, 0);
+  const allAssigned = totalAssignedItems >= cart.length && cart.length > 0;
+
+  if (!allAssigned) { podiumEl.style.display = 'none'; return; }
+
+  // Build sorted leaderboard
+  const names = PERSON_NAMES[currentLang] || PERSON_NAMES.pt;
+  const standings = Array.from({ length: splitPeople }, (_, i) => ({
+    name: names[i],
+    total: getPersonTotal(i),
+    idx: i
+  })).sort((a, b) => b.total - a.total);
+
+  const allEqual = standings.every(s => s.total === standings[0].total);
+
+  if (allEqual) {
+    podiumEl.innerHTML = `<div class="podium-equal">${t().splitPodiumAllEqual}</div>`;
+    podiumEl.style.display = 'block';
+    return;
+  }
+
+  // Podium: top 3 with medal emojis, bar chart for all
+  const medals = ['🥇', '🥈', '🥉'];
+  const maxTotal = standings[0].total;
+
+  podiumEl.innerHTML = `
+    <div class="podium-title">${t().splitPodiumTitle}</div>
+    <div class="podium-winner">
+      ${standings[0].name} <span class="podium-winner-suffix">${t().splitPodiumWinner}</span>
+    </div>
+    <div class="podium-bars">
+      ${standings.map((s, rank) => {
+        const pct = maxTotal > 0 ? Math.round((s.total / maxTotal) * 100) : 0;
+        return `
+          <div class="podium-bar-row">
+            <span class="podium-medal">${medals[rank] || ''}</span>
+            <span class="podium-name">${s.name}</span>
+            <div class="podium-bar-track">
+              <div class="podium-bar-fill" style="width:${pct}%"></div>
+            </div>
+            <span class="podium-amount">${formatPrice(s.total)}</span>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  podiumEl.style.display = 'block';
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
    13. BOOT
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -2234,6 +2771,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── Split Bill ───
   initSplitAssign();
   setupSplitBill();
+  // ─── Favorites ───
+  setupFavorites();
+  renderFavorites();
+  // ─── Happy Hour Countdown ───
+  setupCountdown();
+  // ─── Share Dish ───
+  setupShareDish();
 
   // ─── Auto review modal after 30s ───
   // Only shows if: no modal is already open, user hasn't already rated this session

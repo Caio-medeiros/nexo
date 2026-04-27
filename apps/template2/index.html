@@ -56,7 +56,18 @@
   <div class="special-banner" id="special-banner">
     <span class="special-banner-label" id="special-label"></span>
     <span class="special-banner-text" id="special-text"></span>
+    <span class="special-countdown" id="special-countdown" style="display:none"></span>
   </div>
+
+  <!-- FAVORITOS — aparece apenas quando há pelo menos 1 favorito -->
+  <section class="favorites-section" id="section-favorites" style="display:none">
+    <div class="favorites-header">
+      <span class="favorites-icon">🔖</span>
+      <h2 class="favorites-title" id="favorites-title"></h2>
+      <button class="favorites-clear" id="favorites-clear" aria-label="Limpar favoritos">✕</button>
+    </div>
+    <div class="favorites-list" id="favorites-list"></div>
+  </section>
 
   <!-- MAIS PEDIDOS — ELITE section -->
   <section class="most-ordered" id="section-most-ordered">
@@ -315,6 +326,19 @@
         </div>
         <p class="item-modal-desc" id="item-modal-desc"></p>
         <div class="item-modal-tags" id="item-modal-tags"></div>
+        <!-- Share + bookmark row -->
+        <div class="item-modal-actions-row">
+          <button class="item-bookmark-btn" id="item-bookmark-btn" aria-label="Guardar favorito" type="button">
+            <span class="bookmark-icon" id="bookmark-icon">🔖</span>
+            <span class="bookmark-label" id="bookmark-label"></span>
+          </button>
+          <button class="item-share-btn" id="item-share-btn" aria-label="Partilhar" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span id="item-share-label"></span>
+          </button>
+        </div>
+        <!-- Hidden canvas for share image generation -->
+        <canvas id="share-canvas" style="display:none;position:absolute;left:-9999px" width="1080" height="1080"></canvas>
         <!-- Primary CTA: adicionar ao pedido -->
         <div class="item-modal-order-bar" id="item-modal-order-bar">
           <button class="item-modal-step-btn" id="item-modal-decrement" aria-label="Diminuir quantidade" type="button">
@@ -415,6 +439,7 @@
           <div class="split-people-tabs" id="split-people-tabs"></div>
           <div class="split-assign-list" id="split-assign-list"></div>
           <div class="split-person-summary" id="split-person-summary"></div>
+          <div class="split-podium" id="split-podium" style="display:none"></div>
         </div>
       </div>
 
@@ -428,7 +453,8 @@
       <div class="staff-helper" id="staff-helper"></div>
       <div class="staff-table" id="staff-table"></div>
       <div class="staff-order-id" id="staff-order-id"></div>
-      <div class="staff-list" id="staff-list"></div>
+      <!-- Multi-order history rendered here -->
+      <div class="staff-history" id="staff-history"></div>
       <div class="staff-total" id="staff-total"></div>
     </div>
   </div>
