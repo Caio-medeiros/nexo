@@ -1432,15 +1432,18 @@ a { color: inherit; text-decoration: none; }
 .modal-item-content {
   padding: 0;
   max-height: 92vh;
+  max-height: 92dvh; /* dynamic viewport — accounts for browser chrome on mobile */
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-item-close {
   position: absolute;
   top: var(--s3);
   right: var(--s3);
-  z-index: 10;
+  z-index: 20;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -1454,11 +1457,14 @@ a { color: inherit; text-decoration: none; }
   justify-content: center;
   color: var(--text);
   box-shadow: var(--shadow-md);
+  flex-shrink: 0; /* never squish */
 }
 
 .item-modal-photo, .wine-modal-photo {
   width: 100%;
-  height: 260px;
+  /* Responsive: shrinks on small screens, caps on large */
+  height: clamp(140px, 30vh, 240px);
+  flex-shrink: 0; /* photo never shrinks past its clamp min */
   background-size: cover;
   background-position: center;
   background-color: var(--bg-alt);
@@ -1473,18 +1479,22 @@ a { color: inherit; text-decoration: none; }
   color: var(--gold-bright);
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 72px;
+  font-size: clamp(48px, 10vw, 72px);
   letter-spacing: -2px;
 }
 
-.wine-modal-photo.is-placeholder { font-size: 60px; }
+.wine-modal-photo.is-placeholder { font-size: clamp(40px, 8vw, 60px); }
 
 .item-modal-body {
-  padding: var(--s4) var(--s3) calc(var(--s5) + 110px + env(safe-area-inset-bottom));
+  padding: var(--s4) var(--s3) calc(var(--s4) + env(safe-area-inset-bottom));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1; /* takes all remaining height after photo */
+  min-height: 0; /* required for flex children to scroll */
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  overscroll-behavior: contain;
 }
 
 .item-modal-header {
