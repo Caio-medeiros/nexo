@@ -103,6 +103,9 @@ const UI = {
     shareDish: "Partilhar",
     shareImageTitle: "Partilhar prato",
     shareNotSupported: "Copia o link e partilha manualmente.",
+    searchPlaceholder: "Procurar prato, ingrediente ou vinho",
+    searchResults: "A mostrar {count} resultados para “{query}”.",
+    searchEmpty: "Sem resultados. Experimente outro nome ou ingrediente.",
     // Order history
     orderSent: "Enviado",
     orderHistoryLabel: "Pedido",
@@ -171,6 +174,9 @@ const UI = {
     shareDish: "Share",
     shareImageTitle: "Share dish",
     shareNotSupported: "Copy the link and share manually.",
+    searchPlaceholder: "Search dish, ingredient or wine",
+    searchResults: "Showing {count} results for “{query}”.",
+    searchEmpty: "No results. Try another dish or ingredient.",
     orderSent: "Sent",
     orderHistoryLabel: "Order",
     pillSent: "Sent ✓",
@@ -236,6 +242,9 @@ const UI = {
     shareDish: "Compartir",
     shareImageTitle: "Compartir plato",
     shareNotSupported: "Copia el enlace y compártelo manualmente.",
+    searchPlaceholder: "Buscar plato, ingrediente o vino",
+    searchResults: "Mostrando {count} resultados para “{query}”.",
+    searchEmpty: "Sin resultados. Pruebe otro plato o ingrediente.",
     orderSent: "Enviado",
     orderHistoryLabel: "Pedido",
     pillSent: "Enviado ✓",
@@ -301,6 +310,9 @@ const UI = {
     shareDish: "Partager",
     shareImageTitle: "Partager le plat",
     shareNotSupported: "Copiez le lien et partagez manuellement.",
+    searchPlaceholder: "Rechercher plat, ingrédient ou vin",
+    searchResults: "Affichage de {count} résultats pour « {query} ».",
+    searchEmpty: "Aucun résultat. Essayez un autre plat ou ingrédient.",
     orderSent: "Envoyé",
     orderHistoryLabel: "Commande",
     pillSent: "Envoyé ✓",
@@ -319,6 +331,7 @@ const UI = {
 
 let currentLang = 'pt';
 let currentFilter = 'all';
+let currentQuery = '';
 let wineFilters = { country: 'all', type: 'all', grape: 'all' };
 
 /* ─── ORDER SYSTEM STATE ─── */
@@ -417,6 +430,14 @@ function applyBrandColors() {
 }
 
 function detectLang() {
+  const savedLang = localStorage.getItem('nexo_menu_lang');
+  if (savedLang && UI[savedLang]) {
+    currentLang = savedLang;
+    document.querySelectorAll('.lang-toggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === currentLang);
+    });
+    return;
+  }
   const browserLang = (navigator.language || 'pt').substring(0, 2).toLowerCase();
   // Se o browser estiver numa das línguas suportadas (excepto PT que já é default), muda.
   if (['en', 'es', 'fr'].includes(browserLang)) {
@@ -485,10 +506,6 @@ function renderQuickNav() {
   const nav = document.getElementById('quick-nav');
 
   const buttons = [
-        {
-      label: t().navReview, target: 'section-actions', isReview: true,
-      icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z"/></svg>`
-    },
     {
       label: t().navMenu, target: 'menu',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`
@@ -504,14 +521,6 @@ function renderQuickNav() {
     {
       label: t().navContact, target: 'loyalty-card',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>`
-    },
-    {
-      label: t().navInsta, target: 'instagram-card',
-      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <rect x="3" y="3" width="18" height="18" rx="5"></rect>
-        <circle cx="12" cy="12" r="4"></circle>
-        <circle cx="17.5" cy="6.5" r="1" fill="currentColor"></circle>
-      </svg>`
     }
 
   ];
@@ -522,6 +531,18 @@ function renderQuickNav() {
     if (b.isReview) classes.push('quick-nav-review');
     return `<button class="${classes.join(' ')}" data-target="${b.target}">${b.icon}<span>${b.label}</span></button>`;
   }).join('');
+}
+
+function renderSearchBar() {
+  const input = document.getElementById('menu-search-input');
+  const meta = document.getElementById('menu-search-meta');
+  const search = document.querySelector('.menu-search');
+  if (!input || !meta || !search) return;
+
+  input.placeholder = t().searchPlaceholder;
+  input.value = currentQuery;
+  search.classList.toggle('has-value', !!currentQuery.trim());
+  if (!currentQuery.trim()) meta.textContent = '';
 }
 
 
@@ -690,12 +711,28 @@ function positionTabInk(activeTab, animate = true) {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function renderMenu() {
-  const html = CONFIG.menu.map(sec => `
-    <section class="menu-section" id="section-${sec.id}">
-      <h2 class="menu-section-title">${sec.section[currentLang]}</h2>
-      ${sec.desc && sec.desc[currentLang] ? `<p class="menu-section-desc">${sec.desc[currentLang]}</p>` : ''}
-      ${sec.items.map((item, idx) => {
-        const matches = currentFilter === 'all' || (item.diet || []).includes(currentFilter);
+  const normalizedQuery = currentQuery.trim().toLowerCase();
+  let visibleItems = 0;
+
+  const html = CONFIG.menu.map(sec => {
+    let sectionVisibleItems = 0;
+
+    const itemsHtml = sec.items.map((item, idx) => {
+        const matchesFilter = currentFilter === 'all' || (item.diet || []).includes(currentFilter);
+        const haystack = [
+          item.name[currentLang],
+          item.desc && item.desc[currentLang],
+          item.name.pt,
+          item.name.en,
+          item.name.es,
+          item.name.fr
+        ].filter(Boolean).join(' ').toLowerCase();
+        const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
+        const matches = matchesFilter && matchesQuery;
+        if (matches) {
+          visibleItems++;
+          sectionVisibleItems++;
+        }
 
         // Badge psicológico
         const badgeHtml = item.badge && ITEM_BADGES[item.badge]
@@ -746,10 +783,29 @@ function renderMenu() {
           }
         </article>
         `;
-      }).join('')}
+      }).join('');
+
+    return `
+    <section class="menu-section ${sectionVisibleItems > 0 ? '' : 'hidden'}" id="section-${sec.id}">
+      <h2 class="menu-section-title">${sec.section[currentLang]}</h2>
+      ${sec.desc && sec.desc[currentLang] ? `<p class="menu-section-desc">${sec.desc[currentLang]}</p>` : ''}
+      ${itemsHtml}
     </section>
-  `).join('');
-  document.getElementById('menu').innerHTML = html;
+  `;
+  }).join('');
+
+  const emptyState = visibleItems === 0
+    ? `<div class="menu-empty-state">${t().searchEmpty}</div>`
+    : '';
+
+  document.getElementById('menu').innerHTML = html + emptyState;
+
+  const meta = document.getElementById('menu-search-meta');
+  if (meta) {
+    meta.textContent = normalizedQuery
+      ? t().searchResults.replace('{count}', String(visibleItems)).replace('{query}', currentQuery.trim())
+      : '';
+  }
 }
 
 
@@ -1108,6 +1164,7 @@ function renderAll() {
   renderSpecialBanner();
   renderMostOrdered();
   renderCategoryTabs();
+  renderSearchBar();
   renderDietFilter();
   renderMenu();
   renderWineFilters();
@@ -1163,6 +1220,7 @@ function setupLanguage() {
       document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentLang = btn.dataset.lang;
+      localStorage.setItem('nexo_menu_lang', currentLang);
       renderAll();
     });
   });
@@ -1193,6 +1251,29 @@ function setupDietFilter() {
     renderDietFilter();
     renderMenu();
     if (window._attachMenuObserver) window._attachMenuObserver();
+  });
+}
+
+function setupSearch() {
+  const input = document.getElementById('menu-search-input');
+  const clearBtn = document.getElementById('menu-search-clear');
+  const search = document.querySelector('.menu-search');
+  if (!input || !clearBtn || !search) return;
+
+  input.addEventListener('input', () => {
+    currentQuery = input.value;
+    search.classList.toggle('has-value', !!currentQuery.trim());
+    renderMenu();
+    if (window._attachMenuObserver) window._attachMenuObserver();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    currentQuery = '';
+    input.value = '';
+    search.classList.remove('has-value');
+    renderMenu();
+    if (window._attachMenuObserver) window._attachMenuObserver();
+    input.focus();
   });
 }
 
@@ -2744,9 +2825,11 @@ function renderSplitPodium() {
 
 document.addEventListener('DOMContentLoaded', () => {
   applyBrandColors();
+  detectLang();
   renderAll();
   setupLanguage();
   setupQuickNav();
+  setupSearch();
   setupDietFilter();
   setupCategoryTabs();
   setupWineFilters();

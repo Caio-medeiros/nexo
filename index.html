@@ -1,773 +1,585 @@
+
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-63WWW1VX62"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-63WWW1VX62');
-</script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEXO. — Mais pedidos, menos erros, mais mesas servidas</title>
-  <meta name="description" content="Menu digital NFC para restaurantes em Portugal. O cliente toca, o menu abre sem app — com upsells automáticos, multi-idioma e pedido claro para a equipa.">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://nexosolutions.pt/">
-
-  <meta property="og:title" content="NEXO. — O menu NFC que aumenta a faturação por mesa">
-  <meta property="og:description" content="O cliente toca na mesa, o menu abre sem app. Upsells automáticos, multi-idioma e pedido claro para a equipa. Mais faturação, menos erros.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://nexosolutions.pt/">
-  <meta property="og:image" content="https://nexosolutions.pt/img/nexo.png">
-  <meta property="og:locale" content="pt_PT">
-  <meta property="og:site_name" content="NEXO">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="NEXO. — O menu NFC que aumenta a faturação por mesa">
-  <meta name="twitter:description" content="Menu digital NFC para restaurantes. O cliente toca, o menu abre — sem app, sem PDF, com upsells automáticos e pedido claro para a equipa.">
-  <meta name="twitter:image" content="https://nexosolutions.pt/img/nexo.png">
-  <meta name="theme-color" content="#0C0C0B">
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "@id": "https://nexosolutions.pt/#organization",
-      "name": "NEXO",
-      "url": "https://nexosolutions.pt/",
-      "logo": "https://nexosolutions.pt/img/nexo.svg",
-      "email": "comercial@nexo.pt",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Lisboa",
-        "addressCountry": "PT"
-      }
-    }
-  </script>
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "@id": "https://nexosolutions.pt/#website",
-      "url": "https://nexosolutions.pt/",
-      "name": "NEXO",
-      "inLanguage": "pt-PT",
-      "publisher": {
-        "@id": "https://nexosolutions.pt/#organization"
-      }
-    }
-  </script>
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Service",
-      "@id": "https://nexosolutions.pt/#service",
-      "name": "NEXO Menu",
-      "serviceType": "Menu digital NFC para restaurantes",
-      "provider": {
-        "@id": "https://nexosolutions.pt/#organization"
-      },
-      "areaServed": {
-        "@type": "Country",
-        "name": "Portugal"
-      },
-      "url": "https://nexosolutions.pt/",
-      "description": "Sistema de menu digital NFC para restaurantes que ajuda a aumentar o ticket médio, reduzir erros de pedido e acelerar o serviço."
-    }
-  </script>
-  <link rel="preconnect" href="https://unpkg.com" crossorigin>
-  <link rel="stylesheet" href="https://unpkg.com/@fontsource/outfit/300.css">
-  <link rel="stylesheet" href="https://unpkg.com/@fontsource/outfit/400.css">
-  <link rel="stylesheet" href="https://unpkg.com/@fontsource/outfit/600.css">
-  <link rel="stylesheet" href="https://unpkg.com/@fontsource/outfit/900.css">
-  <link rel="stylesheet" href="https://unpkg.com/@fontsource/playfair-display/400-italic.css">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXO. — O menu que vende por si</title>
+<meta name="description" content="Menu digital NFC + QR para restaurantes. Mais valor por mesa. Menos fricção no serviço.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,700&family=Barlow:wght@300;400;500&family=Outfit:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <nav>
-    <div class="nav-inner">
-      <a href="#" class="logo">NEXO<span class="dot">.</span></a>
-      <button class="mobile-toggle" aria-label="Abrir menu"><span></span><span></span><span></span></button>
-      <div class="nav-links">
-        <a href="#produto">Produto</a>
-        <a href="#como-funciona">Como funciona</a>
-        <a href="#planos">Planos</a>
-        <a href="#resultados">Resultados</a>
-        <a href="#contacto">Contacto</a>
-      </div>
-      <div class="nav-actions">
-        <a class='btn-primary' href='./apps/template2/index.html' target='_blank'>Ver demo →</a>
-      </div>
-    </div>
-  </nav>
+<div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+<div class="cursor-ring" id="cursorRing" aria-hidden="true"><span class="cursor-label" id="cursorLabel"></span></div>
+<div class="scroll-bar"><div class="scroll-fill" id="scrollFill"></div></div>
+<div class="wipe" id="wipe" aria-hidden="true"></div>
 
-  <section class="hero" id="hero">
-    <div class="container">
-      <div class="hero-grid">
-        <div class="hero-left reveal">
-          <p class="eyebrow">Menu digital NFC · Restaurantes · Portugal</p>
-          <h1>Transforme o seu menu num sistema que <span class="serif-italic">vende por si.</span></h1>
-          <p class="hero-sub">Sem app, sem download — o cliente toca na mesa e o menu abre de imediato. Guia a escolha, sugere extras no momento certo e cria um pedido claro para a equipa. Menos erros. Mais faturação por turno.</p>
-          <div class="hero-ctas">
-            <a class='btn-primary btn-lg' href='/apps/template2/' target='_blank'>Ver demonstração →</a>
-            <a href="#contacto" class="btn-outline btn-lg">Instalar no meu restaurante</a>
-          </div>
-          <div class="hero-proof">
-            <div class="hero-proof-dots"><span></span><span></span><span></span></div>
-            <span>NFC + QR · Sem app · Abre em segundos · Multi-idioma</span>
-          </div>
-          <!-- <div class="hero-metrics">
-            <div class="hero-metric">
-              <strong>+ ticket médio</strong>
-              <span>Upsells no momento certo</span>
-            </div>
-            <div class="hero-metric">
-              <strong>− erros</strong>
-              <span>Fluxo claro para a equipa</span>
-            </div>
-            <div class="hero-metric">
-              <strong>+ rotação</strong>
-              <span>Mesas decidem mais depressa</span>
-            </div>
-          </div> -->
+<!-- ═══════════════════════════════════════════
+     NAV — logo + desktop links + hamburger
+     Mobile overlay is a SEPARATE element below
+     ═══════════════════════════════════════════ -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="logo">NEXO<span class="dot">.</span></a>
+
+
+
+    <!-- Desktop links: display:none on mobile, display:flex on 1024px+ via CSS -->
+    <ul class="nav-links">
+      <li><a href="#problema">Problema</a></li>
+      <li><a href="#como-funciona">Processo</a></li>
+      <li><a href="#features">Produto</a></li>
+      <li><a href="#planos">Planos</a></li>
+    </ul>
+    <a class="nav-cta" href="#contacto">Pedir proposta</a>
+
+    <!-- Hamburger: display:flex on mobile, display:none on 1024px+ via CSS -->
+    <button id="hamburger" class="hamburger" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     MOBILE MENU — fully separate overlay div
+     z-index:400  nav z-index:500
+     Toggled via JS with .is-open class
+     ═══════════════════════════════════════════ -->
+<div id="mob-menu" class="mob-menu" aria-hidden="true">
+  <ul class="mob-links">
+    <li><a href="#problema">Problema</a></li>
+    <li><a href="#como-funciona">Processo</a></li>
+    <li><a href="#features">Produto</a></li>
+    <li><a href="#planos">Planos</a></li>
+  </ul>
+  <a href="#contacto" class="mob-cta">Pedir proposta →</a>
+</div>
+
+<!-- ── HERO ── -->
+<section class="hero" id="hero">
+  <div class="hero-inner">
+
+    <div class="hero-left">
+      <div class="hero-tags">
+        <span class="tag"><span class="tag-dot"></span>MENU DIGITAL INOVADOR NFC + QR</span>
+      </div>
+
+      <h1 class="hero-h1">
+        <span class="lw"><span class="lt">O menu</span></span>
+        <span class="lw"><span class="lt">que <em>vende</em></span></span>
+        <span class="lw"><span class="lt">por si.</span></span>
+      </h1>
+
+      <p class="hero-sub">
+        Um toque no display. O cliente abre o menu, percebe melhor a carta,
+        escolhe com menos fricção e mostra o pedido com mais clareza.
+      </p>
+
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="./apps/template2/index.html" target="_blank">
+          Ver demo ao vivo
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="#contacto">Pedir proposta</a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="hs-cell">
+          <span class="hs-val hs-zero">NFC + QR</span>
+          <span class="hs-lbl">abertura imediata</span>
         </div>
-
-        <div class="hero-right reveal">
-          <div class="hero-illustration">
-            <div class="scene-glow"></div>
-
-            <div class="scene-phone">
-              <div class="phone-frame">
-                <div class="phone-notch"></div>
-                <div class="phone-screen">
-                  <div class="app-lang-bar">
-                    <span class="app-lang active">PT</span>
-                    <span class="app-lang">EN</span>
-                    <span class="app-lang">ES</span>
-                                        <span class="app-lang">FR</span>
-
-                  </div>
-
-                  <div class="app-header">
-                    <div class="app-logo-circle">R</div>
-                    <div>
-                      <div class="app-brand-name">Restaurante</div>
-                      <div class="app-brand-loc">Lisboa · Menu digital</div>
-                    </div>
-                  </div>
-
-                  <div class="app-actions">
-                    <div class="app-action-btn">
-                      <svg viewBox="0 0 20 20" fill="currentColor"><polygon points="10,1 12.5,7 19,7.5 14,12 15.5,18.5 10,15 4.5,18.5 6,12 1,7.5 7.5,7"/></svg>
-                      <span>Avaliar</span>
-                    </div>
-                    <div class="app-action-btn">
-                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10a8 8 0 0 1 12 0" stroke-linecap="round"/><path d="M7 13a4 4 0 0 1 6 0" stroke-linecap="round"/><circle cx="10" cy="16" r="1" fill="currentColor"/></svg>
-                      <span>Wi-Fi</span>
-                    </div>
-                    <div class="app-action-btn">
-                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="14" height="14" rx="4"/><circle cx="10" cy="10" r="3.5"/></svg>
-                      <span>Seguir</span>
-                    </div>
-                    <div class="app-action-btn">
-                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M2 8h16"/></svg>
-                      <span>Reservar</span>
-                    </div>
-                  </div>
-
-                  <div class="app-featured-item">
-                    <div class="app-featured-img">
-                      <div class="app-item-badge badge-popular">Popular</div>
-                      <svg viewBox="0 0 80 80" class="plate-illustration">
-                        <circle cx="40" cy="40" r="34" fill="#E8E4DB" stroke="#D4CFC4" stroke-width="0.8"/>
-                        <circle cx="40" cy="40" r="24" fill="none" stroke="#E0DCD3" stroke-width="0.5"/>
-                        <ellipse cx="40" cy="38" rx="14" ry="10" fill="#C8A67A"/>
-                        <ellipse cx="35" cy="35" rx="3" ry="2" fill="#E0CDA8"/>
-                        <circle cx="45" cy="40" r="2" fill="#8B7355"/>
-                        <path d="M28 33 Q30 29 34 31" stroke="#5A8A5C" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-                        <path d="M50 31 Q52 28 54 31" stroke="#5A8A5C" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-                      </svg>
-                    </div>
-                    <div class="app-featured-info">
-                      <div class="app-item-name">Prego no prato</div>
-                      <div class="app-item-desc">Bife tenro, ovo, batata frita</div>
-                      <div class="app-item-price">€12.50</div>
-                    </div>
-                  </div>
-
-                  <div class="app-menu-section">
-                    <div class="app-section-title">Entradas</div>
-                    <div class="app-menu-item">
-                      <div class="app-mi-left">
-                        <span class="app-mi-name">Croquetes caseiros</span>
-                        <span class="app-mi-tags">
-                          <span class="mi-tag tag-chef">Chef</span>
-                        </span>
-                      </div>
-                      <span class="app-mi-price">€6</span>
-                    </div>
-                    <div class="app-menu-item">
-                      <div class="app-mi-left">
-                        <span class="app-mi-name">Peixinhos da horta</span>
-                        <span class="app-mi-tags">
-                          <span class="mi-tag tag-new">Novo</span>
-                        </span>
-                      </div>
-                      <span class="app-mi-price">€7</span>
-                    </div>
-                  </div>
-
-                  <div class="app-order-preview">
-                    <span>2 itens prontos</span>
-                    <strong>Mostrar à equipa</strong>
-                  </div>
-
-                  <div class="app-suggestion">
-                    <span class="suggestion-label">Combina com...</span>
-                    <span class="suggestion-item">Vinho da casa +€4</span>
-                  </div>
-
-                  <div class="app-footer-bar">
-                    <span class="app-powered">powered by <strong>NEXO.</strong></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="float-card fc-1">
-              <div class="fc-inner">
-                <div class="fc-icon fc-green"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 5 8 14 4 10"/></svg></div>
-                <div><div class="fc-title">Pedido pronto</div><div class="fc-sub">Mostrar à equipa — Mesa 4</div></div>
-              </div>
-            </div>
-            <div class="float-card fc-2">
-              <div class="fc-inner">
-                <div class="fc-icon fc-gold"><svg viewBox="0 0 20 20" fill="currentColor"><polygon points="10,1 12.5,7 19,7.5 14,12 15.5,18.5 10,15 4.5,18.5 6,12 1,7.5 7.5,7"/></svg></div>
-                <div><div class="fc-title">+€3.20 de upsell</div><div class="fc-sub">Sugestão aceite — Mesa 2</div></div>
-              </div>
-            </div>
-            <div class="float-card fc-3">
-              <div class="fc-inner">
-                <div class="fc-icon fc-blue"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 15V5a2 2 0 012-2h10a2 2 0 012 2v10"/><path d="M3 15l4-4 3 3 4-5 3 3"/></svg></div>
-                <div><div class="fc-title">312 toques esta semana</div><div class="fc-sub">↑ 18% vs semana anterior</div></div>
-              </div>
-            </div>
-
-          </div>
+        <div class="hs-sep"></div>
+        <div class="hs-cell">
+          <span class="hs-val"><span data-count="4">0</span></span>
+          <span class="hs-lbl">idiomas disponíveis</span>
+        </div>
+        <div class="hs-sep"></div>
+        <div class="hs-cell">
+          <span class="hs-val hs-zero">Sem</span>
+          <span class="hs-lbl">instalação</span>
         </div>
       </div>
     </div>
-  </section>
 
-  <section class="problem-section" id="problema">
-    <div class="container reveal">
-      <div class="problem-grid">
-        <div class="problem-left">
-          <p class="eyebrow">O problema</p>
-          <h2 class="section-title">O seu menu está a custar-lhe <span class="serif-italic">dinheiro e tempo.</span></h2>
+    <div class="hero-right">
+      <div class="phone-stage" id="phoneStage">
+        <div class="float-chip fc1">
+          <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="2"/><circle cx="5" cy="5" r="4.5" opacity=".4"/></svg>
+          tap to open
         </div>
-        <div class="problem-right">
-          <div class="problem-bullets">
-            <div class="problem-bullet">
-              <span class="pb-num">01</span>
-              <div>
-                <h4>PDF e papel não orientam a escolha.</h4>
-                <p>O cliente perde-se, faz zoom, salta linhas e acaba por pedir o habitual. Os pratos mais rentáveis continuam escondidos.</p>
-              </div>
-            </div>
-            <div class="problem-bullet">
-              <span class="pb-num">02</span>
-              <div>
-                <h4>A equipa repete sempre as mesmas explicações.</h4>
-                <p>"Qual é o Wi-Fi?", "O que sai mais?", "Tem fotografias?", "O que recomenda?" — a mesma conversa dezenas de vezes por noite.</p>
-              </div>
-            </div>
-            <div class="problem-bullet">
-              <span class="pb-num">03</span>
-              <div>
-                <h4>Erros no pedido roubam margem.</h4>
-                <p>Quando o cliente diz o pedido à pressa e nada está confirmado no ecrã, aumentam os erros, as trocas e a pressão na sala.</p>
-              </div>
-            </div>
-          </div>
-          <p class="problem-close">O problema não é a comida. É a forma como ela é <strong>apresentada, escolhida e comunicada à equipa.</strong></p>
-        </div>
-      </div>
-    </div>
-  </section>
+        <div class="float-chip fc2">+€4 · adicionado</div>
+        <div class="float-chip fc3">★★★★★</div>
 
-  <section class="solution-section" id="produto">
-    <div class="container reveal">
-      <p class="eyebrow eyebrow-light">A resposta</p>
-      <h2 class="section-title-light">Um menu que vende melhor, simplifica o serviço e <span class="serif-italic">reduz erros.</span></h2>
-      <div class="pillars-grid">
-        <div class="pillar">
-          <div class="pillar-icon">💰</div>
-          <h3>Vende mais por mesa.</h3>
-          <p>Destaques automáticos, pratos em foco e sugestões inteligentes que aumentam o valor médio de cada pedido.</p>
-        </div>
-        <div class="pillar">
-          <div class="pillar-icon">⚡</div>
-          <h3>Tira pressão à equipa.</h3>
-          <p>Wi-Fi, descrições, fotografias, idiomas e recomendações ficam no menu. Menos perguntas repetidas. Mais foco no serviço.</p>
-        </div>
-        <div class="pillar">
-          <div class="pillar-icon">🎯</div>
-          <h3>Corta erros com clareza.</h3>
-          <p>O cliente confirma no telemóvel e mostra o pedido à equipa. Menos confusão na recolha e menos margem perdida.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="compare-section reveal">
-    <div class="container">
-      <p class="eyebrow">PDF vs NEXO</p>
-      <h2 class="section-title">A diferença não é visual. É <span class="serif-italic">faturação, rapidez e controlo.</span></h2>
-      <div class="compare-grid">
-        <div class="compare-col compare-before">
-          <h3 class="compare-col-title">PDF / papel</h3>
-          <ul>
-            <li><span class="x-mark">✕</span> Obriga a procurar, fazer zoom e perder tempo</li>
-            <li><span class="x-mark">✕</span> Não destaca o que tem mais margem</li>
-            <li><span class="x-mark">✕</span> Faz a equipa repetir a mesma conversa</li>
-            <li><span class="x-mark">✕</span> Não tem upsell nem sugestão automática</li>
-            <li><span class="x-mark">✕</span> Não cria um fluxo claro para mostrar o pedido</li>
-            <li><span class="x-mark">✕</span> Não deixa dados sobre o que está a acontecer</li>
-          </ul>
-        </div>
-        <div class="compare-vs">vs</div>
-        <div class="compare-col compare-after">
-          <h3 class="compare-col-title">NEXO Menu</h3>
-          <ul>
-            <li><span class="check-mark">✓</span> Abre de imediato, sem app e sem fricção</li>
-            <li><span class="check-mark">✓</span> Mostra primeiro o que quer vender mais</li>
-            <li><span class="check-mark">✓</span> Reduz perguntas e carga sobre a equipa</li>
-            <li><span class="check-mark">✓</span> Sugere extras e aumenta o valor por mesa</li>
-            <li><span class="check-mark">✓</span> Pedido claro para mostrar à equipa</li>
-            <li><span class="check-mark">✓</span> Dados reais por mesa, hora e comportamento</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="workflow-section reveal" id="como-funciona">
-    <div class="container">
-      <p class="eyebrow">Como funciona</p>
-      <h2 class="section-title">Três passos simples. <span class="serif-italic">Sem complicações.</span></h2>
-      <div class="workflow-grid">
-        <div class="flow-step">
-          <span class="flow-num">01</span>
-          <h3>Toca ou lê o QR.</h3>
-          <p>O menu abre no navegador em segundos. Sem app, sem login, sem explicar tecnologia ao cliente.</p>
-        </div>
-        <div class="flow-step">
-          <span class="flow-num">02</span>
-          <h3>Escolhe com ajuda do menu.</h3>
-          <p>Os pratos certos aparecem primeiro, os extras surgem no momento certo e a decisão torna-se muito mais rápida.</p>
-        </div>
-        <div class="flow-step">
-          <span class="flow-num">03</span>
-          <h3>Mostra à equipa.</h3>
-          <p>O pedido fica claro no ecrã para confirmar com a equipa. Menos erros, menos repetições e menos atrito na sala.</p>
-        </div>
-      </div>
-      <div class="adoption-card">
-        <div>
-          <p class="eyebrow">A objeção mais comum</p>
-          <h3>"E se os clientes não usarem?"</h3>
-        </div>
-        <ul class="adoption-list">
-          <li>Não precisam de instalar nada.</li>
-          <li>NFC para quem quer rapidez, QR para quem prefere apontar a câmara.</li>
-          <li>A equipa só precisa de dizer "toque aqui" uma única vez.</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <section class="demo-section" id="features">
-    <div class="container">
-      <p class="eyebrow reveal">O que mexe na caixa e na sala</p>
-      <h2 class="section-title reveal">Cada detalhe foi pensado para <span class="serif-italic">mais faturação e menos fricção.</span></h2>
-      <div class="demo-grid">
-        <div class="demo-card reveal">
-          <div class="demo-card-visual demo-v1">
-            <div class="demo-badge-stack">
-              <span class="demo-badge db-popular">Popular</span>
-              <span class="demo-badge db-chef">Chef</span>
-              <span class="demo-badge db-new">Novo</span>
-            </div>
-          </div>
-          <div class="demo-card-text">
-            <h3>🔥 Mais pedidos.</h3>
-            <p>Badges como "Popular", "Chef" e "Novo" empurram a escolha para os pratos que quer vender primeiro.</p>
-          </div>
-        </div>
-        <div class="demo-card reveal">
-          <div class="demo-card-visual demo-v2">
-            <div class="demo-suggest-ui">
-              <span class="ds-label">Combina com...</span>
-              <span class="ds-item">Vinho +€4</span>
-              <span class="ds-item">Queijo +€3</span>
-            </div>
-          </div>
-          <div class="demo-card-text">
-            <h3>💡 Upsell automático.</h3>
-            <p>Sugestões de acompanhamento e bebida no momento certo. O upsell acontece sem a equipa dizer uma palavra.</p>
-          </div>
-        </div>
-        <div class="demo-card reveal">
-          <div class="demo-card-visual demo-v3">
-            <div class="demo-flow-ui">
-              <div class="do-item"><span>Prego no prato</span><span>€12.50</span></div>
-              <div class="do-item"><span>Vinho da casa</span><span>€4.00</span></div>
-              <div class="do-total"><span>Total</span><span>€16.50</span></div>
-              <div class="do-show">Mostrar à equipa</div>
-            </div>
-          </div>
-          <div class="demo-card-text">
-            <h3>🧾 Mostrar à equipa.</h3>
-            <p>O cliente confirma no telemóvel e mostra o pedido pronto. Esta é a funcionalidade que mais corta erros e repetições.</p>
-          </div>
-        </div>
-        <div class="demo-card reveal">
-          <div class="demo-card-visual demo-v4">
-            <div class="demo-review-ui">
-              <div class="dr-stars">★★★★★</div>
-              <div class="dr-text">"Refeição incrível!"</div>
-              <div class="dr-source">Google · há 3 min</div>
-            </div>
-          </div>
-          <div class="demo-card-text">
-            <h3>⭐ Avaliações no timing certo.</h3>
-            <p>Botão de review direto no menu. O pedido aparece quando o cliente está mais satisfeito e a taxa dispara.</p>
-          </div>
-        </div>
-        <div class="demo-card reveal">
-          <div class="demo-card-visual">
-            <div class="demo-proof-ui">
-              <span>Sem app</span>
-              <span>NFC + QR</span>
-              <span>Abre no browser</span>
-            </div>
-          </div>
-          <div class="demo-card-text">
-            <h3>📲 Adoção imediata.</h3>
-            <p>Não há login nem download. Por isso a objeção "os clientes não vão usar" perde força logo à partida.</p>
-          </div>
-        </div>
-        <div class="demo-card reveal">
-          <div class="demo-card-visual">
-            <div class="demo-lang-ui">
-              <span class="lang-pill active">PT</span>
-              <span class="lang-pill">EN</span>
-              <span class="lang-pill">ES</span>
-                            <span class="lang-pill">FR</span>
-
-            </div>
-          </div>
-          <div class="demo-card-text">
-            <h3>🌍 Mais clareza para turistas.</h3>
-            <p>O cliente percebe melhor o que está a pedir, hesita menos e pede com mais confiança.</p>
+        <!-- Phone frame + screenshot -->
+        <div class="phone" id="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <!--
+              Coloque o screenshot do template2 em: ./imgs/menu-demo.png
+              (ficheiro: _Users_caiomedeiros_nexo_apps_template2_index_html_iPhone_14_Pro_Max_.png)
+            -->
+            <img
+              src="./img/_Users_caiomedeiros_nexo_apps_template2_index.html(iPhone 14 Pro Max).png"
+              alt="NEXO — Demo do menu digital"
+              class="phone-img"
+              draggable="false"
+            >
           </div>
         </div>
       </div>
-    </div>
-  </section>
 
-  <section class="premium-section reveal">
-    <div class="container">
-      <p class="eyebrow">Posicionamento</p>
-      <h2 class="section-title">Quem adota isto primeiro fica logo um passo <span class="serif-italic">à frente.</span></h2>
-      <p class="section-sub">Quem continua preso ao PDF parece datado. Quem oferece uma experiência rápida, cuidada e útil ganha mais confiança, melhores avaliações e mais vontade de voltar.</p>
-      <div class="premium-grid">
-        <div class="premium-card">
-          <div class="premium-num">01</div>
-          <h4>Primeira impressão mais forte.</h4>
-          <p>O cliente sente logo que está num restaurante organizado, atual e atento ao detalhe.</p>
-        </div>
-        <div class="premium-card">
-          <div class="premium-num">02</div>
-          <h4>Mais reviews, mais confiança.</h4>
-          <p>Experiências melhores e mais fluidas geram melhores avaliações e mais prova social para futuras reservas.</p>
-        </div>
-        <div class="premium-card">
-          <div class="premium-num">03</div>
-          <h4>Vantagem competitiva local.</h4>
-          <p>Enquanto a concorrência ainda usa papel e PDFs, o seu restaurante passa a parecer mais moderno e mais fácil de consumir.</p>
+      <!-- NFC Display Stand -->
+      <div class="stand-scene">
+        <div class="stand-wrap" id="standWrap">
+          <!--
+            Coloque o print A6 do display em: ./imgs/display-stand.png
+            (ficheiro: A6_-_2.png)
+          -->
+          <img
+            src="./card/A6 - 2.png"
+            alt="NEXO Display Stand NFC"
+            class="stand-img"
+            draggable="false"
+          >
         </div>
       </div>
-    </div>
-  </section>
-
-  <section class="features-grid-section reveal">
-    <div class="container">
-      <p class="eyebrow">Tudo incluído</p>
-      <h2 class="section-title">Cada detalhe conta para vender mais e <span class="serif-italic">servir melhor.</span></h2>
-      <div class="fg-grid">
-        <div class="fg-item"><span class="fg-ico">🧾</span><h4>Mostrar à equipa</h4><p>Resumo claro do pedido para reduzir erros logo no momento da confirmação.</p></div>
-        <div class="fg-item"><span class="fg-ico">🏷️</span><h4>Badges inteligentes</h4><p>Popular, Chef, Novo, Vegetariano. O cliente percebe logo o que pedir.</p></div>
-        <div class="fg-item"><span class="fg-ico">🍾</span><h4>Upsells automáticos</h4><p>Bebidas, extras e sobremesas sugeridos sem depender da equipa.</p></div>
-        <div class="fg-item"><span class="fg-ico">🌍</span><h4>Multi-idioma</h4><p>PT, EN, ES com troca instantânea para clientes que querem decidir sem hesitar.</p></div>
-        <div class="fg-item"><span class="fg-ico">📶</span><h4>Wi-Fi integrado</h4><p>Visível no menu para cortar perguntas repetidas e interrupções à equipa.</p></div>
-        <div class="fg-item"><span class="fg-ico">⏰</span><h4>Promoções por horário</h4><p>Happy hour, prato do dia e campanhas que ligam e desligam automaticamente.</p></div>
-        <div class="fg-item"><span class="fg-ico">🍷</span><h4>Carta de vinhos</h4><p>Página separada com filtros, notas e harmonizações para vender melhor garrafa e pairing.</p></div>
-        <div class="fg-item"><span class="fg-ico">☁️</span><h4>Hosting incluído</h4><p>O menu fica sempre online, rápido e gerido por nós, sem dores de cabeça técnicas.</p></div>
-      </div>
-    </div>
-  </section>
-
-<section class="pricing-section reveal" id="planos">
-  <div class="container">
-    <p class="eyebrow">Planos</p>
-    <h2 class="section-title">
-      Transforme o seu menu num ativo que gera receita.
-      <span class="serif-italic">Escolha o nível de impacto no seu restaurante.</span>
-    </h2>
-    <p class="section-sub">
-      Todos os planos incluem hosting, suporte e gestão contínua. 
-      Sem compromisso — pode alterar ou cancelar a qualquer momento.
-    </p>
-
-    <div class="pricing-grid">
-
-      <div class="plan-card">
-        <span class="plan-label">Essencial</span>
-        <h3 class="plan-name">Digitalização.</h3>
-        <div class="plan-price">€39</div>
-        <span class="plan-period">por mês</span>
-
-        <ul class="plan-features">
-          <li><strong>Design Premium</strong> personalizado</li>
-          <li><strong>QR Code & NFC</strong> (sem app)</li>
-          <li><strong>Alergénios</strong> e info dietética</li>
-          <li><strong>Wi-Fi & Contactos</strong> integrados</li>
-          <li><strong>Redes Sociais</strong> e WhatsApp</li>
-          <li><strong>1 Atualização</strong> mensal</li>
-          <li><strong>Website Hosting</strong></li>
-        </ul>
-
-        <a href="#contacto" class="btn-outline plan-cta">Começar sem risco</a>
-      </div>
-
-      <div class="plan-card plan-featured">
-        <span class="plan-badge">Mais escolhido</span>
-        <span class="plan-label">Core</span>
-        <h3 class="plan-name">Vendas & Gestão.</h3>
-        <div class="plan-price">€79</div>
-        <span class="plan-period">por mês</span>
-
-        <ul class="plan-features">
-          <li><i>Tudo do Essencial</i></li>
-          <li><strong>Multi-idioma:</strong> PT, EN, ES, FR</li>
-          <li><strong>Upsells:</strong> Aumente o valor médio</li>
-          <li><strong>Destaques:</strong> 'Popular', 'Chef', 'Novo'</li>
-          <li><strong>"Meu Pedido":</strong> Sistema anti-erro</li>
-          <li><strong>Banner Promoções</strong> Por horário/dia</li>
-          <li><strong>Reviews:</strong> Gestão de avaliações inteligente</li>
-          <li><strong>Atualizações Ilimitadas</strong></li>
-        </ul>
-
-        <a href="#contacto" class="btn-primary-inv plan-cta">Quero vender mais</a>
-      </div>
-
-      <div class="plan-card">
-        <span class="plan-label">Premium</span>
-        <h3 class="plan-name">Experiência.</h3>
-        <div class="plan-price">€129</div>
-        <span class="plan-period">por mês</span>
-
-        <ul class="plan-features">
-          <li><i>Tudo do Core</i></li>
-          <li><strong>Carta de Vinhos:</strong> Filtros avançados</li>
-          <li><strong>Mais Pedidos:</strong> Prova social auto</li>
-          <li><strong>Website Institucional</strong> incluído</li>
-          <li><strong>Relatórios</strong> de cliques e performance</li>
-          <li><strong>Suporte Prioritário</strong></li>
-        </ul>
-
-        <a href="#contacto" class="btn-outline plan-cta">Falar com especialista</a>
-      </div>
-
-    </div>
-
-    <div class="pricing-addon">
-      <div class="pricing-addon-copy">
-        <span class="addon-label">Add-on premium</span>
-        <h3>Website institucional totalmente personalizado por +€35/mês (12 meses)</h3>
-        <p>Ideal para posicionar o seu restaurante online com uma presença forte, profissional e alinhada com a sua marca.</p>
-      </div>
-      <a href="#contacto" class="btn-primary">Adicionar website</a>
-    </div>
-
-    <div class="pricing-note">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
-        <path d="M10 4v7"/>
-        <circle cx="10" cy="14.5" r="0.8" fill="currentColor"/>
-        <path d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/>
-      </svg>
-      <span>
-        <strong>Display Stand c/ NFC:</strong> cobrados uma única vez, conforme o número de mesas. 
-        O serviço mensal cobre hosting, suporte e gestão contínua do menu.
-      </span>
     </div>
 
   </div>
 </section>
 
-  <section class="objection-section reveal">
-    <div class="container">
-      <div class="objection-grid">
-        <div class="objection-left">
-          <p class="eyebrow eyebrow-light">Porque isto converte</p>
-          <h2 class="section-title-light">Mais simples do que um PDF. <span class="serif-italic">Muito mais útil.</span></h2>
-          <p class="objection-sub">A adoção acontece porque o fluxo resolve logo várias dores reais da mesa e da equipa.</p>
-        </div>
-        <div class="objection-right">
-          <div class="objection-steps">
-            <div class="obj-step">
-              <span class="obj-num">01</span>
-              <div>
-                <h4>Sem app, sem login.</h4>
-                <p>O cliente toca, abre e usa. A fricção desaparece logo no primeiro contacto.</p>
-              </div>
-            </div>
-            <div class="obj-step">
-              <span class="obj-num">02</span>
-              <div>
-                <h4>NFC com QR de backup.</h4>
-                <p>Funciona para quem quer rapidez e também para quem prefere apontar a câmara.</p>
-              </div>
-            </div>
-            <div class="obj-step">
-              <span class="obj-num">03</span>
-              <div>
-                <h4>Ganha a sala e a marca.</h4>
-                <p>Enquanto outros restaurantes continuam presos ao papel, os primeiros a adotar isto ganham mais avaliações, mais eficiência e melhor perceção.</p>
-              </div>
-            </div>
-          </div>
-          <p class="objection-close">Não é só tecnologia bonita. É uma vantagem operacional e comercial que o cliente percebe logo.</p>
-        </div>
+<!-- ── MARQUEE ── -->
+<div class="marquee-wrap" aria-hidden="true">
+  <div class="marquee">
+    <div class="marquee-track">
+      <span>NEXO.</span><em>abre no browser</em>
+      <span>NEXO.</span><em>explica menos, vende melhor</em>
+      <span>NEXO.</span><em>4 idiomas no mesmo menu</em>
+      <span>NEXO.</span><em>abre no browser</em>
+      <span>NEXO.</span><em>explica menos, vende melhor</em>
+      <span>NEXO.</span><em>4 idiomas no mesmo menu</em>
+    </div>
+  </div>
+</div>
+
+<!-- ── STATS ── -->
+<section class="stats" id="stats">
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat reveal">
+        <span class="stat-val"><span data-count="59">0</span>%</span>
+        <p>dos clientes de restaurantes com serviço de mesa dizem que usariam QR para abrir o menu no smartphone</p>
+        <span class="stat-tag">→ National Restaurant Association 2024</span>
+      </div>
+      <div class="stat reveal" style="--d:.1s">
+        <span class="stat-val"><span data-count="70">0</span>%</span>
+        <p>dizem que as reviews são extremamente ou muito importantes quando escolhem onde comer</p>
+        <span class="stat-tag">→ Tripadvisor</span>
+      </div>
+      <div class="stat reveal" style="--d:.2s">
+        <span class="stat-val"><span data-count="76">0</span>%</span>
+        <p>dos operadores dizem que usar tecnologia lhes dá vantagem competitiva</p>
+        <span class="stat-tag">→ National Restaurant Association 2024</span>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="results-section reveal" id="resultados">
-    <div class="container">
-      <div class="results-head">
-        <p class="eyebrow">Resultados</p>
-        <h2 class="section-title">Quando tudo isto entra em prática, os ganhos veem-se na <span class="serif-italic">faturação e na operação.</span></h2>
-        <p class="section-sub">Depois de perceber a proposta, o fluxo e o preço, fica claro onde está o retorno: mais valor por mesa, menos erros e menos desgaste para a equipa.</p>
-      </div>
-      <div class="results-grid">
-        <div class="result-card">
-          <span class="result-value">+12% A +18%</span>
-          <h3>Maior ticket médio.</h3>
-          <p>Badges, sugestões e destaques puxam bebidas, extras e sobremesas sem depender da equipa.</p>
-        </div>
-        <div class="result-card">
-          <span class="result-value">- ERROS</span>
-          <h3>Pedido mais claro na sala.</h3>
-          <p>O fluxo “mostrar à equipa” reduz mal-entendidos, devoluções e confusão entre mesa, sala e cozinha.</p>
-        </div>
-        <div class="result-card">
-          <span class="result-value">+ ROTAÇÃO</span>
-          <h3>Mesas decidem mais depressa.</h3>
-          <p>Em vez de se perder num PDF, o cliente vê logo o que importa e chega ao pedido muito mais rápido.</p>
-        </div>
-        <div class="result-card">
-          <span class="result-value">- CARGA</span>
-          <h3>Menos perguntas repetidas.</h3>
-          <p>Wi-Fi, idiomas, fotografias, descrições e recomendações ficam todos no mesmo sítio, sem interromper a equipa.</p>
-        </div>
-      </div>
-      <div class="revenue-block">
-        <div>
-          <p class="eyebrow">Exemplo simples</p>
-          <h3>Pequenos ganhos por mesa escalam depressa.</h3>
-        </div>
-        <div class="revenue-equation">
-          <span>+€2,50 em extras</span>
-          <span>× 40 mesas/dia</span>
-          <span>× 30 dias</span>
-          <strong>= +€3.000/mês</strong>
-        </div>
-        <p class="revenue-note">Sem contratar mais pessoas. Sem mudar a operação. Sem pedir ao cliente para instalar nada.</p>
-      </div>
+<!-- ── PROBLEM ── -->
+<section class="problem" id="problema">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">01 — O problema</span>
+      <h2>O menu da maioria<br>foi feito para imprimir.<br><em>Não para vender.</em></h2>
     </div>
-  </section>
+    <ol class="prob-list">
+      <li class="prob-item reveal">
+        <span class="prob-n">01</span>
+        <div class="prob-body">
+          <h3>O menu deixa margem por vender.</h3>
+          <p>O cliente decide pelo habitual e ignora extras. Os pratos mais rentáveis ficam para trás porque o menu não os posiciona no momento certo.</p>
+        </div>
+        <span class="prob-impact">margem<br>perdida</span>
+      </li>
+      <li class="prob-item reveal" style="--d:.08s">
+        <span class="prob-n">02</span>
+        <div class="prob-body">
+          <h3>A equipa perde tempo a explicar o óbvio.</h3>
+          <p>Wi-Fi, alergénios, idiomas e recomendações continuam a ser explicados mesa a mesa — tirando tempo a servir e adicionando fricção ao turno.</p>
+        </div>
+        <span class="prob-impact">tempo de sala<br>perdido</span>
+      </li>
+    </ol>
+    <blockquote class="prob-quote reveal">"A sua comida já vende. O problema é o que fica por pedir."</blockquote>
+  </div>
+</section>
 
-  <section class="final-cta-section reveal" id="contacto">
-    <div class="container">
-      <div class="final-cta-grid">
-        <div class="final-cta-left">
-          <p class="eyebrow">Comece agora</p>
-          <h2 class="section-title">Veja quanto isto pode render <span class="serif-italic">no seu restaurante.</span></h2>
-          <p class="section-sub">Peça uma demonstração e mostramos-lhe como aumentar o ticket médio, reduzir erros e acelerar o serviço no seu restaurante.</p>
-          <div class="cta-trust-row">
-            <div class="trust-pill"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 5 8 14 4 10"/></svg> Hosting incluído</div>
-            <div class="trust-pill"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 5 8 14 4 10"/></svg> Demonstração gratuita</div>
-            <div class="trust-pill"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 5 8 14 4 10"/></svg> Sem app para o cliente</div>
-            <div class="trust-pill"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 5 8 14 4 10"/></svg> Resposta em 24h</div>
+<!-- ── HOW IT WORKS ── -->
+<section class="how" id="como-funciona">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow eyebrow-light">02 — Como funciona</span>
+      <h2 class="light">Um toque.<br><em>Todo o processo.</em></h2>
+    </div>
+    <div class="how-steps">
+      <div class="how-step reveal">
+        <div class="hs-num">01</div>
+        <div class="hs-glyph">
+          <div class="glyph-tap">
+            <span class="tap-dot"></span>
+            <span class="tap-ring"></span><span class="tap-ring"></span><span class="tap-ring"></span>
           </div>
         </div>
-        <div class="final-cta-right">
-          <form action='/' class='cta-form' id='nexo-form' method='POST' name='nexo-contact' novalidate>
-            <input type="hidden" name="form-name" value="nexo-contact">
-            <p class="hidden-field">
-              <label>Não preencher se for humano <input name="bot-field"></label>
-            </p>
-            <div class="form-row">
-              <div class="form-group"><label for="nome">Nome *</label><input type="text" id="nome" name="nome" placeholder="O seu nome" required></div>
-              <div class="form-group"><label for="email">Email *</label><input type="email" id="email" name="email" placeholder="email@seurestaurante.pt" required></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label for="telefone">Telefone</label><input type="tel" id="telefone" name="telefone" placeholder="+351"></div>
-              <div class="form-group"><label for="tipo">Tipo de negócio *</label><select id="tipo" name="tipo" required><option value="" disabled selected>Selecionar</option><option value="restaurante">Restaurante</option><option value="beach-club">Beach Club</option><option value="hotel">Hotel</option><option value="cafe">Café</option><option value="evento">Evento</option><option value="outro">Outro</option></select></div>
-            </div>
-            <div class="form-group full-width"><label for="negocio">Restaurante / Espaço</label><input type="text" id="negocio" name="negocio" placeholder="Nome do seu restaurante"></div>
-            <div class="form-group full-width"><label for="mensagem">Mensagem (opcional)</label><textarea id="mensagem" name="mensagem" rows="3" placeholder="Quantas mesas tem? Usa papel ou PDF? Quer também o website institucional?"></textarea></div>
-            <button type="submit" class="btn-submit">Ver demonstração →</button>
-            <div class="form-alt">ou <a href="https://wa.me/351000000000">fale connosco por WhatsApp →</a></div>
-            <div class="success-message" id="success-msg">Recebido. Falamos consigo em menos de 24 horas.</div>
-          </form>
+        <div class="hs-text">
+          <h3>O cliente abre sem app.</h3>
+          <p>Toca no display NFC ou lê o QR. O menu abre direto no browser. Nenhuma instalação. Funciona em qualquer telemóvel.</p>
+          <span class="hs-chip">abre direto no browser</span>
+        </div>
+      </div>
+      <div class="how-step reveal" style="--d:.1s">
+        <div class="hs-num">02</div>
+        <div class="hs-glyph">
+          <div class="glyph-upsell">
+            <div class="gu-row">Prego no pão · 12,50€</div>
+            <div class="gu-row gu-add">+ Vinho da casa · 4,00€</div>
+            <div class="gu-row gu-add">+ Pudim · 3,50€</div>
+            <div class="gu-total">= 20,00€</div>
+          </div>
+        </div>
+        <div class="hs-text">
+          <h3>O menu sugere. O cliente adiciona.</h3>
+          <p>Destaques, combinações e sugestões aparecem no momento certo. O pedido cresce sem a equipa intervir.</p>
+          <span class="hs-chip">combinações no momento certo</span>
+        </div>
+      </div>
+      <div class="how-step reveal" style="--d:.2s">
+        <div class="hs-num">03</div>
+        <div class="hs-glyph">
+          <div class="glyph-review">
+            <div class="gr-stars">★★★★★</div>
+            <div class="gr-quote">"Serviço perfeito."</div>
+            <div class="gr-badge">Google · há 2 min</div>
+          </div>
+        </div>
+        <div class="hs-text">
+          <h3>A review chega sozinha.</h3>
+          <p>Depois da refeição, o menu encaminha para Google, TheFork ou Tripadvisor. Mais avaliações sem depender de nenhum pedido verbal.</p>
+          <span class="hs-chip">pedido de review com timing certo</span>
         </div>
       </div>
     </div>
-  </section>
-
-  <footer>
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-left">
-          <a href="#" class="logo footer-logo">NEXO<span class="dot">.</span></a>
-          <p class="footer-tagline">O menu que vende por si.</p>
-        </div>
-        <div class="footer-links">
-          <a href="#produto">Produto</a>
-          <a href="#como-funciona">Como funciona</a>
-          <a href="#planos">Planos</a>
-          <a href="#resultados">Resultados</a>
-          <a href="#contacto">Contacto</a>
-        </div>
-        <div class="footer-right">
-          <a href="mailto:comercial@nexo.pt">comercial@nexo.pt</a>
-        </div>
+    <div class="how-obj reveal">
+      <div class="ho-q">
+        <span class="eyebrow eyebrow-light">A pergunta mais comum</span>
+        <h3>"E se os clientes não usarem?"</h3>
       </div>
-      <div class="footer-bottom">
-        <span>© 2026 NEXO. Lisboa, Portugal.</span>
-        <div class="footer-legal"><a href="./termos.html">Termos</a><a href="./privacidade.html">Privacidade</a></div>
+      <ul class="ho-ans">
+        <li><span>+</span>Sem instalação — abre direto no browser</li>
+        <li><span>+</span>NFC para rapidez; QR como alternativa universal</li>
+        <li><span>+</span>A equipa só precisa de indicar o display uma vez</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">03 — O produto</span>
+      <h2>Não é só um menu.<br><em>É uma ferramenta de venda.</em></h2>
+    </div>
+    <div class="bento">
+      <article class="bc bc-a reveal-b">
+        <div class="bc-label">UPSELL AUTOMÁTICO</div>
+        <div class="bc-vis">
+          <div class="bv-upsell">
+            <div class="bvu-item"><span>Prego no pão</span><span>12,50€</span></div>
+            <div class="bvu-suggest">
+              <div class="bvus-head">◇ Combina com…</div>
+              <div class="bvus-pills">
+                <span class="bvus-p bvus-on">🍷 Vinho da casa <em>+4€</em></span>
+                <span class="bvus-p">🍮 Pudim <em>+3,50€</em></span>
+                <span class="bvus-p">🧀 Queijo <em>+3€</em></span>
+              </div>
+              <div class="bvus-result">+€4 · sem a equipa intervir</div>
+            </div>
+          </div>
+        </div>
+        <div class="bc-text">
+          <h3>Upsell automático, mesa a mesa.</h3>
+          <p>Sugere complementos, bebidas e sobremesas sem depender da equipa. Mais valor por mesa de forma consistente.</p>
+          <span class="bc-chip">upsell sem pressionar a equipa</span>
+        </div>
+      </article>
+      <article class="bc bc-b bc-dark reveal-b" style="--bd:120ms">
+        <div class="bc-label">ZERO ERROS DE PEDIDO</div>
+        <div class="bc-vis">
+          <div class="bv-order">
+            <div class="bvo-head"><span>Pedido · Mesa 4</span><span class="bvo-ok">CONFIRMADO</span></div>
+            <div class="bvo-line"><span>Prego no pão</span><span>12,50€</span></div>
+            <div class="bvo-line"><span>Vinho da casa</span><span>4,00€</span></div>
+            <div class="bvo-total"><span>Total</span><span>16,50€</span></div>
+            <div class="bvo-btn">Mostrar à equipa →</div>
+          </div>
+        </div>
+        <div class="bc-text">
+          <h3>O pedido chega claro à equipa.</h3>
+          <p>O cliente confirma no telemóvel e mostra o pedido. Menos mal-entendidos. Menos trocas. Menos retrabalho na cozinha.</p>
+          <span class="bc-chip bc-chip-inv">A preferida na sala</span>
+        </div>
+      </article>
+      <article class="bc bc-c reveal-b" style="--bd:200ms">
+        <div class="bc-label">REVIEWS AUTOMÁTICAS</div>
+        <div class="bc-vis bc-vis-c">
+          <div class="bv-review">
+            <div class="bvr-stars">★★★★★</div>
+            <div class="bvr-q">"Serviço perfeito."</div>
+            <div class="bvr-time">Google · há 4 min</div>
+          </div>
+        </div>
+        <div class="bc-text">
+          <h3>Reviews no momento certo.</h3>
+          <p>O pedido aparece com a experiência ainda fresca. Sem a equipa ter de pedir.</p>
+        </div>
+      </article>
+      <article class="bc bc-d reveal-b" style="--bd:280ms">
+        <div class="bc-label">4 IDIOMAS</div>
+        <div class="bc-vis bc-vis-c">
+          <div class="bv-lang">
+            <span class="lc lc-on">PT</span><span class="lc">EN</span>
+            <span class="lc">ES</span><span class="lc">FR</span>
+          </div>
+        </div>
+        <div class="bc-text">
+          <h3>4 idiomas, 1 toque.</h3>
+          <p>O cliente percebe o menu na sua língua. Menos perguntas. Decisão mais rápida.</p>
+        </div>
+      </article>
+    </div>
+    <ul class="feat-list reveal">
+      <li><span class="fl-n">05</span><div><strong>Wi-Fi integrado</strong><p>Zero perguntas sobre a password.</p></div></li>
+      <li><span class="fl-n">06</span><div><strong>Destaques inteligentes</strong><p>Posicione os pratos mais rentáveis à frente.</p></div></li>
+      <li><span class="fl-n">07</span><div><strong>Filtros de dieta</strong><p>Vegetariano, vegan, sem glúten e mais.</p></div></li>
+      <li><span class="fl-n">08</span><div><strong>Alergénios UE</strong><p>Conformidade com Reg. UE 1169/2011 incluída.</p></div></li>
+      <li><span class="fl-n">09</span><div><strong>Carta de vinhos</strong><p>Filtros por país, tipo e casta com Vivino integrado.</p></div></li>
+      <li><span class="fl-n">10</span><div><strong>Favoritos e partilha</strong><p>Guardar pratos e partilhar links ou imagens do menu.</p></div></li>
+      <li><span class="fl-n">11</span><div><strong>Identidade visual do restaurante</strong><p>Cores, logo, imagem hero e linguagem alinhadas com a marca.</p></div></li>
+      <li><span class="fl-n">12</span><div><strong>WhatsApp direto</strong><p>Reservas, dúvidas e feedback sem sair do telemóvel.</p></div></li>
+      <li><span class="fl-n">13</span><div><strong>Dividir conta</strong><p>Partilha por pessoa ou por item, direto no ecrã.</p></div></li>
+      <li><span class="fl-n">14</span><div><strong>Mesa identificada</strong><p>O menu reconhece a mesa e contextualiza melhor o pedido.</p></div></li>
+      <li><span class="fl-n">15</span><div><strong>Atualizações ilimitadas</strong><p>Altere preços, pratos e campanhas sem esperar.</p></div></li>
+      <li><span class="fl-n">16</span><div><strong>Hosting incluído</strong><p>Sempre online, gerido por nós.</p></div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── PRICING ── -->
+<section class="pricing" id="planos">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow">04 — Planos</span>
+      <h2>Escolha o nível<br><em>de impacto que quer gerar.</em></h2>
+      <p class="section-sub">Comece por digitalizar o menu ou avance para organizar melhor o serviço, destacar pratos rentáveis e captar mais reviews.</p>
+    </div>
+    <div class="plans">
+      <article class="plan reveal">
+        <div class="plan-top">
+          <span class="plan-tier">Base</span>
+          <h3>Starter<span>.</span></h3>
+        </div>
+        <div class="plan-price"><span>€</span><strong>37</strong><span>/mês</span></div>
+        <span class="plan-daily">≈ €1,23 / dia</span>
+        <ul class="plan-feats">
+          <li><span>+</span>Menu digital NFC + QR</li>
+          <li><span>+</span>Alergénios legais incluídos</li>
+          <li><span>+</span>Hosting e manutenção</li>
+          <li><span>+</span>1 idioma · 1 atualização/mês</li>
+        </ul>
+        <a href="#contacto" class="plan-cta plan-out">Começar →</a>
+      </article>
+      <article class="plan plan-featured reveal" style="--d:.08s">
+        <span class="plan-badge">★ MAIS ESCOLHIDO</span>
+        <div class="plan-top">
+          <span class="plan-tier">Crescimento</span>
+          <h3>Growth<span>.</span></h3>
+        </div>
+        <div class="plan-price"><span>€</span><strong>69</strong><span>/mês</span></div>
+        <span class="plan-daily">≈ €2,30 / dia</span>
+        <ul class="plan-feats">
+          <li class="plan-incl"><em>Tudo do Base, e mais:</em></li>
+          <li><span>+</span>Upsell automático</li>
+          <li><span>+</span>4 idiomas para turistas</li>
+          <li><span>+</span>Destaques inteligentes</li>
+          <li><span>+</span>Mostrar à equipa (zero erros)</li>
+          <li><span>+</span>Reviews automáticas</li>
+          <li><span>+</span>Atualizações ilimitadas</li>
+        </ul>
+        <a href="#contacto" class="plan-cta plan-fill">Quero este plano →</a>
+      </article>
+      <article class="plan reveal" style="--d:.16s">
+        <div class="plan-top">
+          <span class="plan-tier">Performance</span>
+          <h3>Pro<span>.</span></h3>
+        </div>
+        <div class="plan-price"><span>€</span><strong>99</strong><span>/mês</span></div>
+        <span class="plan-daily">≈ €3,30 / dia</span>
+        <ul class="plan-feats">
+          <li class="plan-incl"><em>Tudo do Growth, e mais:</em></li>
+          <li><span>+</span>Relatórios de performance</li>
+          <li><span>+</span>Carta de vinhos com Vivino</li>
+          <li><span>+</span>Campanhas por horário</li>
+          <li><span>+</span>Website institucional incluído</li>
+          <li><span>+</span>Suporte prioritário</li>
+        </ul>
+        <a href="#contacto" class="plan-cta plan-out">Escalar →</a>
+      </article>
+    </div>
+    <div class="pricing-note reveal">
+      <span class="pn-i">i</span>
+      <p><strong>Display Stand NFC:</strong> pagamento único por mesa. A mensalidade cobre software, suporte e evolução contínua do produto.</p>
+    </div>
+    <div class="rev-eq reveal">
+      <div class="re-l">
+        <span class="eyebrow">A lógica</span>
+        <h3>O impacto vem da <em>sequência certa.</em></h3>
+        <p>Quando o menu contextualiza bem, a decisão fica mais simples e o pedido tende a sair mais completo.</p>
+      </div>
+      <div class="re-r">
+        <div class="re-calc">
+          <div class="re-cell"><span>Sugestão</span><small>produto certo</small></div>
+          <div class="re-op">×</div>
+          <div class="re-cell"><span>Contexto</span><small>foto, descrição, destaque</small></div>
+          <div class="re-op">×</div>
+          <div class="re-cell"><span>Timing</span><small>antes de fechar a escolha</small></div>
+          <div class="re-eq">=</div>
+          <div class="re-result">
+            <strong>Pedido mais completo</strong>
+            <small>sem transformar a mesa num discurso comercial</small>
+          </div>
+        </div>
       </div>
     </div>
-  </footer>
+  </div>
+</section>
 
-  <a href="#contacto" class="sticky-cta">Ver demonstração →</a>
+<!-- ── CONTACT ── -->
+<section class="contact" id="contacto">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-l">
+        <span class="eyebrow reveal">05 — Comece agora</span>
+        <h2 class="reveal">Peça uma demo<br><em>para o seu restaurante.</em></h2>
+        <p class="reveal">Mostramos-lhe o produto ao vivo e estimamos o impacto real com base no seu número de mesas e tipo de serviço.</p>
+        <ul class="trust-list reveal">
+          <li><span>✓</span>Demo gratuita, sem compromisso</li>
+          <li><span>✓</span>Resposta em menos de 24 horas</li>
+          <li><span>✓</span>Sem app para o cliente</li>
+          <li><span>✓</span>Hosting incluído no plano</li>
+        </ul>
+        <div class="contact-info reveal">
+          <div class="ci-row"><span class="ci-l">Email</span><a href="mailto:comercial@nexo.pt" class="ci-v">comercial@nexo.pt</a></div>
+          <div class="ci-row"><span class="ci-l">WhatsApp</span><a href="https://wa.me/351000000000" class="ci-v">+351 ███ ███ ███ →</a></div>
+          <div class="ci-row"><span class="ci-l">Localização</span><span class="ci-v">Lisboa, Portugal</span></div>
+        </div>
+      </div>
+      <form class="contact-form reveal" id="nexoForm" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+        <input type="hidden" name="form-name" value="contact">
+        <p hidden aria-hidden="true">
+          <label>Não preencher: <input name="bot-field"></label>
+        </p>
+        <div class="form-header">
+          <span>FORM / 01</span>
+          <span class="form-status" id="formStatus">DRAFT</span>
+        </div>
+        <div class="fg">
+          <label for="nome">Nome <em>*</em></label>
+          <input type="text" id="nome" name="nome" placeholder="O seu nome" required>
+        </div>
+        <div class="fg-row">
+          <div class="fg">
+            <label for="email">Email <em>*</em></label>
+            <input type="email" id="email" name="email" placeholder="email@restaurante.pt" required>
+          </div>
+          <div class="fg">
+            <label for="telefone">Telefone</label>
+            <input type="tel" id="telefone" name="telefone" placeholder="+351">
+          </div>
+        </div>
+        <div class="fg-row">
+          <div class="fg">
+            <label for="tipo">Tipo de negócio <em>*</em></label>
+            <select id="tipo" name="tipo" required>
+              <option value="" disabled selected>Selecionar</option>
+              <option>Restaurante</option><option>Beach Club</option>
+              <option>Hotel</option><option>Café</option>
+              <option>Evento</option><option>Outro</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label for="negocio">Nome do espaço</label>
+            <input type="text" id="negocio" name="negocio" placeholder="Restaurante XYZ">
+          </div>
+        </div>
+        <div class="fg">
+          <label for="mensagem">Mensagem</label>
+          <textarea id="mensagem" name="mensagem" rows="3" placeholder="Quantas mesas? Quantos turnos?"></textarea>
+        </div>
+        <button type="submit" class="form-submit">
+          <span>Quero ver a demo</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+        <div class="form-msg" id="formMsg"></div>
+      </form>
+    </div>
+  </div>
+</section>
 
-  <script src="script.js"></script>
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <span class="foot-logo">NEXO.</span>
+        <p>Mais valor por mesa.<br>Menos fricção no serviço.</p>
+      </div>
+      <div class="foot-nav">
+        <div class="foot-col">
+          <span class="foot-label">Site</span>
+          <ul>
+            <li><a href="#problema">Problema</a></li>
+            <li><a href="#como-funciona">Processo</a></li>
+            <li><a href="#features">Produto</a></li>
+            <li><a href="#planos">Planos</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <span class="foot-label">Contacto</span>
+          <ul>
+            <li><a href="mailto:comercial@nexo.pt">comercial@nexo.pt</a></li>
+            <li><a href="https://wa.me/351000000000">WhatsApp →</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <span class="foot-label">Legal</span>
+          <ul>
+            <li><a href="./termos.html">Termos</a></li>
+            <li><a href="./privacidade.html">Privacidade</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 NEXO. Lisboa, Portugal</span>
+      <span>PT · LIS · EST. 2025</span>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
 </body>
 </html>

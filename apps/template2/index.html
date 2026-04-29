@@ -8,6 +8,8 @@
   <meta name="robots" content="noindex,follow">
   <link rel="canonical" href="https://nexosolutions.pt/apps/template2/index.html">
   <link rel="icon" href="/img/nexo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/img/nexo.png">
+  <link rel="manifest" href="/site.webmanifest">
 
   <meta property="og:title" content="O Nosso Prego — Parede">
   <meta property="og:description" content="Cozinha portuguesa. Pregos, mariscos e cataplanas.">
@@ -88,6 +90,19 @@
   <nav class="category-tabs" id="category-tabs" aria-label="Categorias do menu">
     <span class="tab-ink" id="tab-ink" aria-hidden="true"></span>
   </nav>
+
+  <!-- MENU SEARCH -->
+  <div class="menu-search-wrap">
+    <label class="menu-search" for="menu-search-input">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+      </svg>
+      <input id="menu-search-input" type="search" inputmode="search" autocomplete="off">
+      <button class="menu-search-clear" id="menu-search-clear" type="button" aria-label="Limpar pesquisa">✕</button>
+    </label>
+    <div class="menu-search-meta" id="menu-search-meta" aria-live="polite"></div>
+  </div>
 
   <!-- DIET FILTER -->
   <div class="diet-filter" id="diet-filter" role="group" aria-label="Filtro de dieta"></div>
