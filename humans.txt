@@ -2,7 +2,7 @@
 Company: NEXO
 Site: https://nexosolutions.pt/
 Location: Lisbon, Portugal
-Contact: comercial@nexo.pt
+Contact: hello.nexosolutions@gmail.com
 
 /* SITE */
 Standards: HTML5, CSS3, JavaScript

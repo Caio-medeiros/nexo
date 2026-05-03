@@ -1,51 +1,61 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   NEXO MENU — Identidade O Nosso Prego   v5
-   Paleta: vermelho-vinho profundo + gold accent + cream quente
-   Tipografia: Fraunces (serif display) + Outfit (UI)
 
-   NOVIDADES v5:
-     • Category tabs — underline deslizante (.tab-ink)
-     • Back to top — botão flutuante (.back-to-top)
-     • Item badges — 🔥 Popular · ⭐ Chef · 🆕 Novo (.item-badge)
-     • Upsell modal — "Combina com..." (.item-modal-upsell)
-     • Bounce animation — feedback tátil (@keyframes tap-bounce)
-     • Tipografia apertada — preço ainda mais dominante
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEXO MENU — Identidade O Nosso Prego   v6
+   Paleta: cream quente + terracotta + navy profundo
+   Tipografia: Cormorant Garamond (serif display elegante) + Outfit (UI)
+
+   NOVIDADES v6:
+     • Font swap: Fraunces → Cormorant Garamond (editorial, italic elegante)
+     • Badges: ghost pill outlined (estilo foto — "POPULAR" border-only)
+     • Diet tags: sage green pill com borda refinada
+     • Photo placeholder: cream + initial em terracotta
+     • Save button: SVG bookmark em cada item
+     • Section elite: header editorial com linhas horizontais
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
   /* === Paleta O Nosso Prego === */
-  --bg: #F4EDE0;
-  --bg-alt: #EDE4D3;
-  --surface: #FFFCF7;
-  --text: #2B1410;
-  --text-muted: #7A5E50;
-  --muted: #9B8578;
-  --border: #E3D6C1;
-  --border-soft: #EFE5D4;
+  --bg: #F2EDE5;
+  --bg-alt: #EBE4D8;
+  --surface: #FDFAF5;
+  --text: #1C1410;
+  --text-muted: #7A6A5A;
+  --muted: #9B8C7E;
+  --border: #E0D5C5;
+  --border-soft: #EDE6D8;
 
-  /* Vermelho-vinho profundo */
-  --accent: #8B1A1A;
-  --accent-dark: #5C0F0F;
-  --accent-bright: #A32525;
+  /* Terracotta accent (vermelho-vinho mais quente) */
+  --accent: #8B4A35;
+  --accent-dark: #5C2618;
+  --accent-bright: #A35540;
 
   /* Gold accent */
   --gold: #B8894E;
   --gold-bright: #D4A574;
   --gold-deep: #8B6030;
 
+  /* Navy — para títulos elite */
+  --navy: #1E2A3A;
+  --navy-mid: #2D3E52;
+
+  /* Sage — para diet tags */
+  --sage: #5A7A55;
+  --sage-bg: #EAF0E6;
+  --sage-border: #C4D8BE;
+
   --success: #25D366;
 
   /* Tipografia */
   --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
 
   --s1: 6px; --s2: 12px; --s3: 18px; --s4: 24px; --s5: 36px; --s6: 56px;
   --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-xl: 28px;
 
-  --shadow-sm: 0 1px 2px rgba(43, 20, 16, 0.05);
-  --shadow-md: 0 4px 16px rgba(43, 20, 16, 0.08);
-  --shadow-lg: 0 12px 40px rgba(43, 20, 16, 0.12);
-  --shadow-elite: 0 20px 50px -10px rgba(139, 26, 26, 0.25), 0 8px 16px -4px rgba(184, 137, 78, 0.15);
+  --shadow-sm: 0 1px 2px rgba(28, 20, 16, 0.05);
+  --shadow-md: 0 4px 16px rgba(28, 20, 16, 0.08);
+  --shadow-lg: 0 12px 40px rgba(28, 20, 16, 0.12);
+  --shadow-elite: 0 20px 50px -10px rgba(139, 74, 53, 0.2), 0 8px 16px -4px rgba(184, 137, 78, 0.12);
 
   --quick-nav-h: 64px;
   --tabs-h: 48px;
@@ -67,9 +77,8 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-image:
-    radial-gradient(circle at 10% 20%, rgba(139, 26, 26, 0.015) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(184, 137, 78, 0.02) 0%, transparent 50%);
+background-image: radial-gradient(circle, rgba(160, 140, 110, 0.12) 1px, transparent 1px);
+background-size: 28px 28px;
 }
 
 button { font-family: inherit; }
@@ -82,7 +91,7 @@ a { color: inherit; text-decoration: none; }
 .hero {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 275px;
   overflow: hidden;
   background: var(--text);
 }
@@ -109,7 +118,7 @@ a { color: inherit; text-decoration: none; }
 .hero-top-bar {
   position: absolute;
   top: 0; left: 0; right: 0;
-  padding: var(--s3);
+  padding: var(--s3) var(--s3) 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -163,7 +172,7 @@ a { color: inherit; text-decoration: none; }
 .hero-content {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  padding: var(--s4);
+  padding: 0 var(--s4)  var(--s4)  var(--s4);
   color: white;
   z-index: 2;
 }
@@ -338,8 +347,7 @@ a { color: inherit; text-decoration: none; }
   color: var(--accent-dark);
   font-size: 10px;
   font-weight: 900;
-  letter-spacing: 1.5px;
-  padding: 5px 10px;
+  padding: 5px 16px;
   border-radius: 100px;
   flex-shrink: 0;
   text-transform: uppercase;
@@ -397,15 +405,114 @@ a { color: inherit; text-decoration: none; }
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIS PEDIDOS — ELITE TREATMENT
    ═══════════════════════════════════════════════════════════════════════════ */
-
 .most-ordered {
-  margin: 0 0 var(--s6);
-  padding: var(--s4) 0 var(--s3);
-  background: rgba(139, 26, 26, 0.03);
+  margin: 0 0 var(--s4);
+  padding: var(--s4);
+  background: rgba(139, 26, 26, 0.04);
   scroll-margin-top: calc(var(--quick-nav-h) + 12px);
-  position: relative;
 }
 
+.most-ordered-list {
+  display: flex;
+  gap: 10px;
+  padding: 0 var(--s3) var(--s2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.most-ordered-list::-webkit-scrollbar { display: none; }
+
+.most-ordered-card {
+  flex: 0 0 200px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--s3);
+  cursor: pointer;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.most-ordered-card:active { transform: scale(0.97); }
+
+.most-ordered-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+.most-ordered-rank {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--gold);
+  letter-spacing: -2px;
+  opacity: 0.1;
+  position: absolute;
+  top: 8px; right: 10px;
+  pointer-events: none;
+}
+
+.most-ordered-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--s3);
+}
+
+.most-ordered-card-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.most-ordered-card-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.most-ordered-card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.most-ordered-card-price {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+  line-height: 1;
+  padding-top: var(--s2);
+  border-top: 1px solid var(--border-soft);
+  margin-top: auto;
+}
 .section-header-elite {
   padding: 0 var(--s3);
   margin-bottom: var(--s4);
@@ -415,143 +522,47 @@ a { color: inherit; text-decoration: none; }
 .elite-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold-deep) 100%);
-  color: white;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  padding: 6px 14px;
-  border-radius: 100px;
+  gap: 10px;
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
   text-transform: uppercase;
   margin-bottom: var(--s2);
-  box-shadow: 0 4px 12px rgba(184, 137, 78, 0.3);
 }
 
-.elite-badge svg { flex-shrink: 0; }
+/* Horizontal lines on both sides of the badge text */
+.elite-badge::before,
+.elite-badge::after {
+  content: '';
+  display: block;
+  height: 1px;
+  width: 28px;
+  background: var(--accent);
+  opacity: 0.45;
+}
+
+.elite-badge svg { display: none; }
 
 .section-title-elite {
   font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 900;
-  letter-spacing: -1px;      /* v5: mais apertado */
+  font-size: 42px;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: -0.5px;
   line-height: 1;
-  color: var(--accent-dark);
-  margin-bottom: 4px;
+  color: var(--navy);
+  margin-bottom: 8px;
 }
 
 .section-sub-elite {
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 15px;
   font-style: italic;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-muted);
-  letter-spacing: 0.3px;
-}
-
-.most-ordered-list {
-  display: flex;
-  gap: var(--s3);
-  padding: 0 var(--s3) var(--s3);
-  overflow-x: auto;
-  scrollbar-width: none;
-  scroll-snap-type: x mandatory;
-  scroll-padding-left: var(--s3);
-  -webkit-overflow-scrolling: touch;
-}
-.most-ordered-list::-webkit-scrollbar { display: none; }
-
-.most-ordered-card {
-  flex: 0 0 280px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: var(--s3);
-  cursor: pointer;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
-  position: relative;
-  overflow: hidden;
-  /* box-shadow: var(--shadow-elite); */
-  scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
-  min-height: 200px;
-}
-
-.most-ordered-card:active {
-  transform: scale(0.96);
-}
-
-.most-ordered-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg,
-    var(--gold-deep) 0%,
-    var(--gold-bright) 50%,
-    var(--gold-deep) 100%);
-}
-
-.most-ordered-rank {
-  font-family: var(--font-display);
-  font-size: 56px;
-  font-weight: 900;
-  line-height: 1;
-  color: var(--gold);
-  letter-spacing: -3px;
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  opacity: 0.15;
-  pointer-events: none;
-}
-
-.most-ordered-card-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--accent);
-  color: white;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 5px 10px;
-  border-radius: 100px;
-  margin-bottom: var(--s2);
-  letter-spacing: 0.5px;
-  align-self: flex-start;
-  text-transform: uppercase;
-}
-
-.most-ordered-card-name {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 800;
-  line-height: 1.2;
-  margin-bottom: 6px;
-  color: var(--text);
-  letter-spacing: -0.4px;    /* v5: mais apertado */
-}
-
-.most-ordered-card-desc {
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin-bottom: var(--s3);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  flex: 1;
-}
-
-.most-ordered-card-price {
-  font-family: var(--font-display);
-  font-size: 26px;           /* v5: ligeiramente maior */
-  font-weight: 900;
-  color: var(--accent);
-  letter-spacing: -1px;
-  line-height: 1;
+  letter-spacing: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -791,47 +802,48 @@ a { color: inherit; text-decoration: none; }
 
 /* ═══ BADGES PSICOLÓGICOS ═══
    🔥 popular  ⭐ chef  🆕 new
-   Definir no config.js com badge: "popular" | "chef" | "new"
+   Estilo: ghost pill outlined — sem fundo sólido, border suave
    ═══════════════════════════ */
 .item-badge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+  font-family: var(--font-ui);
   font-size: 9px;
-  font-weight: 800;
-  padding: 2px 8px;
+  font-weight: 700;
+  padding: 3px 9px;
   border-radius: 100px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  line-height: 1.6;
+  letter-spacing: 0.8px;
+  line-height: 1.5;
+  background: transparent;
 }
 
 .item-badge-popular {
-  background: #FEF3C7;
-  color: #92400E;
-  border: 1px solid #FDE68A;
+  color: var(--accent);
+  border: 1.5px solid rgba(139, 74, 53, 0.35);
 }
 
 .item-badge-chef {
-  background: #EEF2FF;
-  color: #3730A3;
-  border: 1px solid #C7D2FE;
+  color: var(--navy-mid);
+  border: 1.5px solid rgba(30, 42, 58, 0.28);
 }
 
 .item-badge-new {
-  background: #ECFDF5;
-  color: #065F46;
-  border: 1px solid #6EE7B7;
+  color: var(--sage);
+  border: 1.5px solid var(--sage-border);
 }
 
 .menu-item-name {
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.2;          /* v5: mais compacto */
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700 !important;
+  font-style: italic;
+  line-height: 1.15;
   margin-bottom: 5px;
-  color: var(--text);
-  letter-spacing: -0.3px;    /* v5 */
+  color: var(--navy);
+  letter-spacing: 0;
 }
 
 .menu-item-desc {
@@ -849,62 +861,74 @@ a { color: inherit; text-decoration: none; }
 .menu-item-meta {
   display: flex;
   align-items: center;
-  gap: var(--s2);
-  margin-top: 6px;
-  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: nowrap;
 }
 
-.menu-item-order-controls {
+/* Save + Add wrapper — always pushed to the far right */
+.menu-item-actions {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
-.menu-item-step-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
+.menu-item-order-controls {
+  margin-left: 0;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
   background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 100px;
+  overflow: hidden;
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.menu-item-step-btn {
+  width: 0;
+  height: 36px;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
   color: var(--text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transform: scale(0.86);
+  overflow: hidden;
   pointer-events: none;
-  transition: opacity 0.18s ease, transform 0.18s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: width 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.18s ease;
 }
 
 .menu-item-step-btn.show {
+  width: 34px;
   opacity: 1;
-  transform: scale(1);
   pointer-events: auto;
 }
 
 .menu-item-step-btn svg {
-  width: 14px;
-  height: 14px;
-  stroke-width: 3;
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.8;
+  flex-shrink: 0;
 }
 
-.menu-item-step-btn:active {
-  transform: scale(0.92);
-  background: var(--text);
-  color: white;
-  border-color: var(--text);
-}
+.menu-item-step-btn:active { background: var(--bg-alt); }
 
-/* PREÇO DOMINANTE — v5: ainda maior, verdadeiro destaque visual */
+/* PREÇO — bold Outfit para contraste com o nome em italic serif */
 .menu-item-price {
-  font-family: var(--font-display);
-  font-size: 22px;           /* v5: era 20px */
-  font-weight: 900;
-  color: var(--accent);
-  letter-spacing: -0.8px;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
   line-height: 1;
 }
 
@@ -915,17 +939,19 @@ a { color: inherit; text-decoration: none; }
 }
 
 .tag {
+  font-family: var(--font-ui);
   font-size: 9px;
-  font-weight: 700;
-  padding: 2px 6px;
+  font-weight: 600;
+  padding: 3px 7px;
   border-radius: 100px;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
 .tag-diet {
-  background: #EAF3DE;
-  color: #3B6D11;
+  background: var(--sage-bg);
+  color: var(--sage);
+  border: 1px solid var(--sage-border);
 }
 
 .menu-item-photo {
@@ -942,16 +968,17 @@ a { color: inherit; text-decoration: none; }
   height: 88px;
   border-radius: var(--r-md);
   flex-shrink: 0;
-  background: linear-gradient(135deg, #3D1010 0%, #1A0808 100%);
+  background: var(--bg-alt);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--gold-bright);
+  color: var(--accent);
   font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 900;
-  letter-spacing: -1px;
-  box-shadow: inset 0 0 0 1px rgba(212, 165, 116, 0.2);
+  font-size: 34px;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: 0;
+  border: 1px solid var(--border);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1058,7 +1085,7 @@ a { color: inherit; text-decoration: none; }
 .wine-card-name {
   font-family: var(--font-display);
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.2;
   margin-bottom: 4px;
   color: var(--text);
@@ -1772,39 +1799,38 @@ body.has-cart {
 
 /* ─── Menu item + button (subtle, aligned with price) ─── */
 .menu-item-add-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--surface);
+  width: 36px;
+  height: 36px;
+  border-radius: 100px;
   border: 1.5px solid var(--accent);
+  background: transparent;
   color: var(--accent);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.15s;
-  padding: 0;
-  margin-left: auto;
   position: relative;
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+  padding: 0;
+  margin-left: 0;
   z-index: 2;
 }
 
 .menu-item-add-btn svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   stroke-width: 2.5;
+  transition: transform 0.18s ease;
 }
 
 .menu-item-add-btn:active {
-  transform: scale(0.88);
+  transform: scale(0.9);
   background: var(--accent);
   color: white;
 }
 
 .menu-item-add-btn.added {
-  background: var(--accent);
-  color: white;
   animation: tap-bounce 0.3s ease;
 }
 
@@ -1813,7 +1839,7 @@ body.has-cart {
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 2px solid var(--gold-bright);
+  border: 2px solid rgba(139, 74, 53, 0.3);
   opacity: 0;
   animation: ring-pulse 0.5s ease-out;
 }
@@ -1829,25 +1855,41 @@ body.has-cart {
   align-items: center;
 }
 
-/* Quando item está no cart, badge discreto na quantity */
-.menu-item-add-btn .qty-badge {
+/* Pill expande quando item está no cart */
+.menu-item-order-controls.has-qty {
+  border-color: var(--accent);
+  background: rgba(139, 74, 53, 0.04);
+}
+
+.menu-item-order-controls.has-qty .menu-item-add-btn {
+  background: var(--accent);
+  color: white;
+  border-radius: 0;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Qty badge — visível quando pill não está expandida */
+.qty-badge {
   position: absolute;
   top: -5px;
   right: -5px;
-  background: var(--gold);
+  background: var(--accent);
   color: white;
-  font-size: 10px;
-  font-weight: 900;
-  min-width: 16px;
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
   height: 16px;
-  border-radius: 100px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
-  border: 2px solid var(--bg);
+  border: 1.5px solid var(--bg);
   line-height: 1;
+  font-family: var(--font-ui);
 }
+
+.menu-item-order-controls.has-qty .qty-badge { display: none; }
 
 
 /* ─── Modal: "Adicionar ao pedido" primary button ─── */
@@ -3065,17 +3107,29 @@ body.has-cart {
 /* Bookmark button on menu items */
 .menu-item-bookmark {
   background: none;
-  border: none;
-  font-size: 16px;
+  border: 1.5px solid var(--border);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   cursor: pointer;
-  padding: 4px;
-  line-height: 1;
-  opacity: 0.35;
-  transition: opacity 0.15s, transform 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
   flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  padding: 0;
 }
-.menu-item-bookmark:active { transform: scale(0.85); }
-.menu-item-bookmark.saved { opacity: 1; }
+.menu-item-bookmark:active { transform: scale(0.88); }
+.menu-item-bookmark.saved {
+  background: rgba(139, 74, 53, 0.08);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.menu-item-bookmark.saved svg {
+  fill: var(--accent);
+}
 
 /* Bookmark + share row in item modal */
 .item-modal-actions-row {
@@ -3190,14 +3244,7 @@ body.has-cart {
   margin-bottom: var(--s2);
 }
 
-/* Pill: history badge */
-.cart-pill.has-history .cart-pill-icon svg {
-  color: var(--gold-bright);
-}
 
-.cart-pill.has-history {
-  background: linear-gradient(135deg, var(--text) 0%, var(--accent-dark) 100%);
-}
 
 
 /* ═══════════════════════════════════════════════════════════════════════════

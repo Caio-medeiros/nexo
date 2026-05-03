@@ -17,7 +17,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800;9..144,900&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -64,7 +64,9 @@
   <!-- FAVORITOS — aparece apenas quando há pelo menos 1 favorito -->
   <section class="favorites-section" id="section-favorites" style="display:none">
     <div class="favorites-header">
-      <span class="favorites-icon">🔖</span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M5 3h14a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/>
+</svg>
       <h2 class="favorites-title" id="favorites-title"></h2>
       <button class="favorites-clear" id="favorites-clear" aria-label="Limpar favoritos">✕</button>
     </div>
@@ -344,8 +346,11 @@
         <!-- Share + bookmark row -->
         <div class="item-modal-actions-row">
           <button class="item-bookmark-btn" id="item-bookmark-btn" aria-label="Guardar favorito" type="button">
-            <span class="bookmark-icon" id="bookmark-icon">🔖</span>
-            <span class="bookmark-label" id="bookmark-label"></span>
+
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M5 3h14a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/>
+</svg>
+       <span class="bookmark-label" id="bookmark-label"></span>
           </button>
           <button class="item-share-btn" id="item-share-btn" aria-label="Partilhar" type="button">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>

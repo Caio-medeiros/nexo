@@ -1,3 +1,4 @@
+
 /* ═══════════════════════════════════════════════════════════════════════════
    NEXO MENU — CONFIG v5
    Cliente: O Nosso Prego (Parede · Quinta das Marianas)
@@ -54,16 +55,16 @@ const CONFIG = {
   phone: "+351 210 186 581",
   phoneDisplay: "210 186 581",
   hours: {
-    pt: "Seg–Dom · 12h–15h · 19h–23h",
-    en: "Mon–Sun · 12–3pm · 7–11pm",
-    es: "Lun–Dom · 12h–15h · 19h–23h",
-    fr: "Lun–Dim · 12h–15h · 19h–23h"
+    pt: "Seg–Dom · 12h–15h · 19h–24h",
+    en: "Mon–Sun · 12–3pm · 7–12am",
+    es: "Lun–Dom · 12h–15h · 19h–24h",
+    fr: "Lun–Dim · 12h–15h · 19h–24h"
   },
   hoursToday: {
-    pt: "Aberto até 23h",
-    en: "Open until 11pm",
-    es: "Abierto hasta las 23h",
-    fr: "Ouvert jusqu'à 23h"
+    pt: "Aberto até 24h",
+    en: "Open until 12am",
+    es: "Abierto hasta las 24h",
+    fr: "Ouvert jusqu'à 24h"
   },
 
 
@@ -126,7 +127,7 @@ const CONFIG = {
     },
     {
       id: "jantar",
-      startH: 19, endH: 23,
+      startH: 19, endH: 24,
       label: {
         pt: "Boa noite! Reserve a sua mesa pelo WhatsApp",
         en: "Good evening! Book your table on WhatsApp",

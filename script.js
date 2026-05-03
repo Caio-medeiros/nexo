@@ -299,3 +299,51 @@
   });
 
 })();
+
+
+/* ══════════════════════════════
+   PRODUCT CONTEXT — reveal + parallax
+   ══════════════════════════════ */
+(function initProductContext() {
+  // Reveal on scroll
+  const pcEls = document.querySelectorAll('.pc-intro, .pc-col, .pc-footer');
+  if (!pcEls.length) return;
+
+  const pcObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('pc-visible');
+        pcObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+
+  pcEls.forEach(el => pcObs.observe(el));
+
+  // Parallax on scroll — desktop only
+  if (!matchMedia('(hover: hover)').matches) return;
+
+  const cols = document.querySelectorAll('[data-pc-parallax]');
+  if (!cols.length) return;
+
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      // todas as leituras de getBoundingClientRect aqui dentro
+      cols.forEach(col => {
+        const speed = parseFloat(col.dataset.pcParallax || 0);
+        const rect = col.closest('.pc-stage')?.getBoundingClientRect();
+        if (!rect) {
+          ticking = false;
+          return;
+        }
+        const offset = (window.innerHeight / 2 - (rect.top + rect.height / 2)) * speed;
+        const img = col.querySelector('.pc-img');
+        if (img) img.style.transform = `translateY(${offset.toFixed(1)}px)`;
+      });
+      ticking = false;
+    });
+  }, { passive: true });
+})();

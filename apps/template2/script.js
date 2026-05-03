@@ -1,3 +1,4 @@
+
 /* ═══════════════════════════════════════════════════════════════════════════
    NEXO MENU — Script v5
    Novidades desta versão:
@@ -103,7 +104,7 @@ const UI = {
     shareDish: "Partilhar",
     shareImageTitle: "Partilhar prato",
     shareNotSupported: "Copia o link e partilha manualmente.",
-    searchPlaceholder: "Procurar prato, ingrediente ou vinho",
+    searchPlaceholder: "Procurar prato, ingrediente ou palavra-chave",
     searchResults: "A mostrar {count} resultados para “{query}”.",
     searchEmpty: "Sem resultados. Experimente outro nome ou ingrediente.",
     // Order history
@@ -174,7 +175,7 @@ const UI = {
     shareDish: "Share",
     shareImageTitle: "Share dish",
     shareNotSupported: "Copy the link and share manually.",
-    searchPlaceholder: "Search dish, ingredient or wine",
+    searchPlaceholder: "Search dish, ingredient or keyword",
     searchResults: "Showing {count} results for “{query}”.",
     searchEmpty: "No results. Try another dish or ingredient.",
     orderSent: "Sent",
@@ -242,7 +243,7 @@ const UI = {
     shareDish: "Compartir",
     shareImageTitle: "Compartir plato",
     shareNotSupported: "Copia el enlace y compártelo manualmente.",
-    searchPlaceholder: "Buscar plato, ingrediente o vino",
+    searchPlaceholder: "Buscar plato, ingrediente o palabra clave.",
     searchResults: "Mostrando {count} resultados para “{query}”.",
     searchEmpty: "Sin resultados. Pruebe otro plato o ingrediente.",
     orderSent: "Enviado",
@@ -310,7 +311,7 @@ const UI = {
     shareDish: "Partager",
     shareImageTitle: "Partager le plat",
     shareNotSupported: "Copiez le lien et partagez manuellement.",
-    searchPlaceholder: "Rechercher plat, ingrédient ou vin",
+    searchPlaceholder: "Rechercher plat, ingrédient ou mot-clé",
     searchResults: "Affichage de {count} résultats pour « {query} ».",
     searchEmpty: "Aucun résultat. Essayez un autre plat ou ingrédient.",
     orderSent: "Envoyé",
@@ -349,9 +350,6 @@ function saveFavorites() {
   try { sessionStorage.setItem('nexo_favs', JSON.stringify([...favorites])); } catch(e) {}
 }
 
-/* ─── ORDER HISTORY STATE ─── */
-// Each entry: { id, timestamp, items: [{refId, qty, name, price}], total }
-let orderHistory = [];
 let currentShareItem = null; // item currently open in modal for share
 
 /* ─── SPLIT BILL STATE & i18n (declared early so renderCartSheet can use ts()) ─── */
@@ -431,21 +429,22 @@ function applyBrandColors() {
 
 function detectLang() {
   const savedLang = localStorage.getItem('nexo_menu_lang');
-  if (savedLang && UI[savedLang]) {
+  const forcedInitial = localStorage.getItem('nexo_initial_force_pt');
+
+  if (!forcedInitial) {
+    currentLang = 'pt';
+    localStorage.setItem('nexo_initial_force_pt', '1');
+    localStorage.setItem('nexo_menu_lang', 'pt');
+  } else if (savedLang && UI[savedLang]) {
     currentLang = savedLang;
-    document.querySelectorAll('.lang-toggle button').forEach(b => {
-      b.classList.toggle('active', b.dataset.lang === currentLang);
-    });
-    return;
+  } else {
+    currentLang = 'pt';
   }
-  const browserLang = (navigator.language || 'pt').substring(0, 2).toLowerCase();
-  // Se o browser estiver numa das línguas suportadas (excepto PT que já é default), muda.
-  if (['en', 'es', 'fr'].includes(browserLang)) {
-    currentLang = browserLang;
-    document.querySelectorAll('.lang-toggle button').forEach(b => {
-      b.classList.toggle('active', b.dataset.lang === currentLang);
-    });
-  }
+  
+  // Atualiza botões
+  document.querySelectorAll('.lang-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === currentLang);
+  });
 }
 
 /* Haptic feedback subtil — chama se disponível */
@@ -505,7 +504,12 @@ function renderHero() {
 function renderQuickNav() {
   const nav = document.getElementById('quick-nav');
 
-  const buttons = [
+const buttons = [
+  {
+    label: t().navReview, target: 'review-modal', isReview: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+  },
+  // ... resto dos botões que já tens
     {
       label: t().navMenu, target: 'menu',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`
@@ -525,12 +529,11 @@ function renderQuickNav() {
 
   ];
 
-  nav.innerHTML = buttons.map(b => {
-    const classes = ['quick-nav-btn'];
-    if (b.highlighted) classes.push('highlighted');
-    if (b.isReview) classes.push('quick-nav-review');
-    return `<button class="${classes.join(' ')}" data-target="${b.target}">${b.icon}<span>${b.label}</span></button>`;
-  }).join('');
+nav.innerHTML = buttons.map(b => {
+  const classes = ['quick-nav-btn'];
+  if (b.isReview) classes.push('quick-nav-review');
+  return `<button class="${classes.join(' ')}" data-target="${b.target}">${b.icon}<span>${b.label}</span></button>`;
+}).join('');
 }
 
 function renderSearchBar() {
@@ -614,31 +617,25 @@ function renderMostOrdered() {
 
   const list = document.getElementById('most-ordered-list');
 
-  list.innerHTML = CONFIG.mostOrdered.map((ref, idx) => {
-    const [sectionId, itemIdx] = ref.refId.split(':');
-    const section = CONFIG.menu.find(s => s.id === sectionId);
-    if (!section) return '';
-    const item = section.items[parseInt(itemIdx)];
-    if (!item) return '';
+ list.innerHTML = CONFIG.mostOrdered.map((ref, idx) => {
+  const [sectionId, itemIdx] = ref.refId.split(':');
+  const section = CONFIG.menu.find(s => s.id === sectionId);
+  if (!section) return '';
+  const item = section.items[parseInt(itemIdx)];
+  if (!item) return '';
+  const rank = String(idx + 1).padStart(2, '0');
 
-    const rank = String(idx + 1).padStart(2, '0');
-
-    // Badge psicológico no card elite
-    const badgeHtml = item.badge && ITEM_BADGES[item.badge]
-      ? ``
-      : '';
-
-    return `
-      <div class="most-ordered-card" data-item="${sectionId}:${itemIdx}">
-        <span class="most-ordered-rank">#${rank}</span>
-        <div class="most-ordered-card-badge">${ref.badge[currentLang]}</div>
-        ${badgeHtml}
+  return `
+    <div class="most-ordered-card" data-item="${sectionId}:${itemIdx}">
+      <span class="most-ordered-rank">${rank}</span>
+      <div class="most-ordered-card-content">
+        <span class="most-ordered-card-badge">${ref.badge[currentLang]}</span>
         <div class="most-ordered-card-name">${item.name[currentLang]}</div>
-        <div class="most-ordered-card-desc">${item.desc[currentLang] || ''}</div>
-        <div class="most-ordered-card-price">${item.price}</div>
       </div>
-    `;
-  }).join('');
+      <div class="most-ordered-card-price">${item.price}</div>
+    </div>
+  `;
+}).join('');
 }
 
 
@@ -773,8 +770,12 @@ function renderMenu() {
                   ${item.diet.map(d => `<span class="tag tag-diet">${d}</span>`).join('')}
                 </div>
               ` : ''}
-              <button class="menu-item-bookmark ${isFavorited(refId) ? 'saved' : ''}" data-bookmark-ref="${refId}" aria-label="Guardar favorito" type="button">🔖</button>
-              ${addBtnHtml}
+              <div class="menu-item-actions">
+                <button class="menu-item-bookmark ${isFavorited(refId) ? 'saved' : ''}" data-bookmark-ref="${refId}" aria-label="Guardar favorito" type="button">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+                </button>
+                ${addBtnHtml}
+              </div>
             </div>
           </div>
           ${item.photo
@@ -1947,7 +1948,7 @@ function updateOpenItemModalControls() {
 
 // STAFF VIEW — fullscreen
 function openStaffView() {
-  if (cart.length === 0 && orderHistory.length === 0) return;
+  if (cart.length === 0) return;
 
   const staffView = document.getElementById('staff-view');
   const tableEl = document.getElementById('staff-table');
@@ -1955,9 +1956,6 @@ function openStaffView() {
   const helperEl = document.getElementById('staff-helper');
   const totalEl = document.getElementById('staff-total');
   if (!staffView) return;
-
-  // Record current cart as a new snapshot
-  if (cart.length > 0) recordOrderSnapshot();
 
   helperEl.textContent = t().staffHelper;
 
@@ -1971,12 +1969,11 @@ function openStaffView() {
 
   orderIdEl.textContent = `#${ORDER_ID}`;
 
-  // Render full order history
+  // Render current cart items
   renderStaffHistory();
 
-  // Grand total across all rounds
-  const grand = getGrandTotal();
-  totalEl.innerHTML = `<span>${t().cartTotal}</span>${formatPrice(grand)}`;
+  // Total = current cart only
+  totalEl.innerHTML = `<span>${t().cartTotal}</span>${formatPrice(getCartTotal())}`;
 
   document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
   document.body.style.overflow = 'hidden';
@@ -1993,16 +1990,6 @@ function closeStaffView() {
   if (!staffView) return;
   staffView.classList.remove('show');
   document.body.style.overflow = '';
-  // Clear current cart (it's now recorded in history)
-  if (cart.length > 0) {
-    cart = [];
-    renderCartPillWithHistory();
-    renderCartSheet();
-    updateAddBtnBadges();
-    if (typeof onCartChangeSplitHook === 'function') onCartChangeSplitHook();
-  } else {
-    renderCartPillWithHistory();
-  }
 }
 
 // Setup: botões "+" no menu (delegação)
@@ -2685,75 +2672,18 @@ function shadeColor(hex, percent) {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 // Snapshot the current cart into history when "Mostrar ao staff" is used
-function recordOrderSnapshot() {
-  if (cart.length === 0) return;
-  const now = new Date();
-  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const snapshot = {
-    id: `#${Math.random().toString(36).substring(2,5).toUpperCase()}`,
-    time: timeStr,
-    items: cart.map(e => {
-      const item = getItemByRef(e.refId);
-      return { refId: e.refId, qty: e.qty, name: item ? item.name : {}, price: item ? item.price : '' };
-    }),
-    total: getCartTotal()
-  };
-  orderHistory.push(snapshot);
-}
-
-// Render staff view with full history
 function renderStaffHistory() {
   const historyEl = document.getElementById('staff-history');
   if (!historyEl) return;
 
-  if (orderHistory.length === 0) {
-    // Single current order (not yet sent)
-    historyEl.innerHTML = `
-      <div class="staff-order-block">
-        ${cart.map(entry => {
-          const item = getItemByRef(entry.refId);
-          if (!item) return '';
-          return `<div class="staff-list-item"><span class="staff-list-qty">${entry.qty}×</span><span class="staff-list-name">${item.name[currentLang]}</span></div>`;
-        }).join('')}
-      </div>`;
-    return;
-  }
-
-  // Multiple rounds — render each snapshot + current pending
-  historyEl.innerHTML = orderHistory.map((snap, i) => `
-    <div class="staff-order-block ${i > 0 ? 'staff-order-block--subsequent' : ''}">
-      <div class="staff-round-label">${t().orderHistoryLabel} ${i + 1} · ${snap.time} · ${snap.id}</div>
-      ${snap.items.map(e => `
-        <div class="staff-list-item">
-          <span class="staff-list-qty">${e.qty}×</span>
-          <span class="staff-list-name">${e.name[currentLang] || Object.values(e.name)[0] || ''}</span>
-        </div>`).join('')}
-    </div>
-  `).join('') + (cart.length > 0 ? `
-    
-    ` : '');
-}
-
-// Grand total across all history + current cart
-function getGrandTotal() {
-  const historyTotal = orderHistory.reduce((sum, snap) => sum + snap.total, 0);
-  return historyTotal + getCartTotal();
-}
-
-// Update pill to show "Enviado ✓" badge when history exists
-function renderCartPillWithHistory() {
-  renderCartPill();
-  if (orderHistory.length > 0) {
-    const pill = document.getElementById('cart-pill');
-    if (pill) pill.classList.add('has-history');
-    const textEl = document.getElementById('cart-pill-text');
-    if (textEl && cart.length === 0) {
-      // Show last order sent if cart is now empty
-      textEl.textContent = `${t().pillSent} · ${orderHistory.length}×`;
-      pill && pill.classList.add('show');
-      document.body.classList.add('has-cart');
-    }
-  }
+  historyEl.innerHTML = `
+    <div class="staff-order-block">
+      ${cart.map(entry => {
+        const item = getItemByRef(entry.refId);
+        if (!item) return '';
+        return `<div class="staff-list-item"><span class="staff-list-qty">${entry.qty}×</span><span class="staff-list-name">${item.name[currentLang]}</span></div>`;
+      }).join('')}
+    </div>`;
 }
 
 

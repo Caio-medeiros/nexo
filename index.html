@@ -8,7 +8,8 @@
 <meta name="description" content="Menu digital NFC + QR para restaurantes. Mais valor por mesa. Menos fricção no serviço.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,700&family=Barlow:wght@300;400;500&family=Outfit:wght@400;500;600;700&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"></noscript>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -32,7 +33,9 @@
     <ul class="nav-links">
       <li><a href="#problema">Problema</a></li>
       <li><a href="#como-funciona">Processo</a></li>
-      <li><a href="#features">Produto</a></li>
+     <li><a href="#produto">Produto</a></li>
+
+      <li><a href="#features">Funcionalidades</a></li>
       <li><a href="#planos">Planos</a></li>
     </ul>
     <a class="nav-cta" href="#contacto">Pedir proposta</a>
@@ -53,7 +56,9 @@
   <ul class="mob-links">
     <li><a href="#problema">Problema</a></li>
     <li><a href="#como-funciona">Processo</a></li>
-    <li><a href="#features">Produto</a></li>
+     <li><a href="#produto">Produto</a></li>
+
+      <li><a href="#features">Funcionalidades</a></li>
     <li><a href="#planos">Planos</a></li>
   </ul>
   <a href="#contacto" class="mob-cta">Pedir proposta →</a>
@@ -94,8 +99,8 @@
         </div>
         <div class="hs-sep"></div>
         <div class="hs-cell">
-          <span class="hs-val"><span data-count="4">0</span></span>
-          <span class="hs-lbl">idiomas disponíveis</span>
+          <span class="hs-val"><span data-count="16">0</span>+</span>
+          <span class="hs-lbl">Funcionalidades inovadoras</span>
         </div>
         <div class="hs-sep"></div>
         <div class="hs-cell">
@@ -123,7 +128,7 @@
               (ficheiro: _Users_caiomedeiros_nexo_apps_template2_index_html_iPhone_14_Pro_Max_.png)
             -->
             <img
-              src="./img/_Users_caiomedeiros_nexo_apps_template2_index.html(iPhone 14 Pro Max).png"
+              src="./img/_Users_caiomedeiros_nexov1_apps_template2_index.html(iPhone 14 Pro Max).png"
               alt="NEXO — Demo do menu digital"
               class="phone-img"
               draggable="false"
@@ -267,7 +272,7 @@
         </div>
         <div class="hs-text">
           <h3>A review chega sozinha.</h3>
-          <p>Depois da refeição, o menu encaminha para Google, TheFork ou Tripadvisor. Mais avaliações sem depender de nenhum pedido verbal.</p>
+          <p>Depois da refeição, o menu encaminha para Google ou TheFork. Mais avaliações sem depender de nenhum pedido verbal.</p>
           <span class="hs-chip">pedido de review com timing certo</span>
         </div>
       </div>
@@ -286,11 +291,82 @@
   </div>
 </section>
 
+<!-- ── PRODUTO EM CONTEXTO ── -->
+<!-- ── PRODUTO EM CONTEXTO ── -->
+<section class="pc" id="produto">
+  <div class="pc-intro">
+    <span class="pc-eyebrow">03 - O produto real</span>
+    <h2 class="pc-headline">Visto de perto.<br><em>Na mesa certa.</em></h2>
+  </div>
+
+  <div class="pc-stage">
+
+    <div class="pc-col pc-col-a" data-pc-parallax="-0.12">
+      <div class="pc-img-wrap">
+        <img src="./img/hero.png" alt="NEXO em contexto — beach club" class="pc-img" loading="lazy" draggable="false">
+        <div class="pc-img-overlay">
+          <div class="pc-img-label">
+            <span class="pc-label-n">01</span>
+            <div>
+              <strong>No ambiente</strong>
+              <p>O display fica na mesa. O cliente aproxima o telemóvel ou lê o QR. O menu abre em segundos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pc-col-text">
+        <ul class="pc-specs">
+          <li><span>NFC NTAG216</span><span>chip com password lock</span></li>
+          <li><span>QR fallback</span><span>universal, sem instalação</span></li>
+          <li><span>Zero app</span><span>abre direto no browser</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pc-col pc-col-b" data-pc-parallax="0.08">
+      <div class="pc-col-text pc-col-text-top">
+        <p class="pc-pull">"Um toque. Toda a experiência."</p>
+      </div>
+      <div class="pc-img-wrap">
+        <img src="./card/prototype.png" alt="NEXO Display Stand NFC — detalhe" class="pc-img" loading="lazy" draggable="false">
+        <div class="pc-img-overlay">
+          <div class="pc-img-label">
+            <span class="pc-label-n">02</span>
+            <div>
+              <strong>O hardware</strong>
+              <p>Acrílico premium. Resistente à água. Sem bateria. Funciona para sempre.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pc-footer">
+    <div class="pc-footer-stat">
+      <span>3 seg</span>
+      <small>do toque ao menu aberto</small>
+    </div>
+    <div class="pc-footer-divider"></div>
+    <div class="pc-footer-stat">
+      <span>0</span>
+      <small>apps instaladas</small>
+    </div>
+    <div class="pc-footer-divider"></div>
+    <div class="pc-footer-stat">
+      <span>100%</span>
+      <small>telemóveis compatíveis</small>
+    </div>
+    <a href="#contacto" class="pc-footer-cta">Quero o meu display →</a>
+  </div>
+</section>
+
 <!-- ── FEATURES ── -->
 <section class="features" id="features">
   <div class="container">
     <div class="section-head reveal">
-      <span class="eyebrow">03 — O produto</span>
+      <span class="eyebrow">04 — As funcionalidades</span>
       <h2>Não é só um menu.<br><em>É uma ferramenta de venda.</em></h2>
     </div>
     <div class="bento">
@@ -379,29 +455,35 @@
 </section>
 
 <!-- ── PRICING ── -->
+<!-- ── PRICING ── -->
 <section class="pricing" id="planos">
   <div class="container">
     <div class="section-head reveal">
-      <span class="eyebrow">04 — Planos</span>
+      <span class="eyebrow">05 — Planos</span>
       <h2>Escolha o nível<br><em>de impacto que quer gerar.</em></h2>
       <p class="section-sub">Comece por digitalizar o menu ou avance para organizar melhor o serviço, destacar pratos rentáveis e captar mais reviews.</p>
     </div>
+
     <div class="plans">
+
       <article class="plan reveal">
         <div class="plan-top">
           <span class="plan-tier">Base</span>
           <h3>Starter<span>.</span></h3>
         </div>
-        <div class="plan-price"><span>€</span><strong>37</strong><span>/mês</span></div>
-        <span class="plan-daily">≈ €1,23 / dia</span>
+        <div class="plan-price"><span>€</span><strong>39</strong><span>/mês</span></div>
+        <span class="plan-daily">≈ €1,30 / dia</span>
         <ul class="plan-feats">
           <li><span>+</span>Menu digital NFC + QR</li>
-          <li><span>+</span>Alergénios legais incluídos</li>
+          <li><span>+</span>Alergénios UE incluídos</li>
+          <li><span>+</span>Filtros de dieta</li>
+          <li><span>+</span>Identidade visual do restaurante</li>
           <li><span>+</span>Hosting e manutenção</li>
           <li><span>+</span>1 idioma · 1 atualização/mês</li>
         </ul>
         <a href="#contacto" class="plan-cta plan-out">Começar →</a>
       </article>
+
       <article class="plan plan-featured reveal" style="--d:.08s">
         <span class="plan-badge">★ MAIS ESCOLHIDO</span>
         <div class="plan-top">
@@ -410,60 +492,88 @@
         </div>
         <div class="plan-price"><span>€</span><strong>69</strong><span>/mês</span></div>
         <span class="plan-daily">≈ €2,30 / dia</span>
+<div class="plan-urgency">
+  <span class="plan-urgency-dot"></span>
+  Preço de lançamento — restam apenas <strong>10 espaços</strong>
+</div>
         <ul class="plan-feats">
-          <li class="plan-incl"><em>Tudo do Base, e mais:</em></li>
+          <li class="plan-incl"><em>Tudo do Starter, e mais:</em></li>
           <li><span>+</span>Upsell automático</li>
           <li><span>+</span>4 idiomas para turistas</li>
           <li><span>+</span>Destaques inteligentes</li>
+          <li><span>+</span>Wi-Fi integrado</li>
           <li><span>+</span>Mostrar à equipa (zero erros)</li>
           <li><span>+</span>Reviews automáticas</li>
+          <li><span>+</span>Carta de vinhos + Vivino</li>
+          <li><span>+</span>Favoritos e Partilha</li>
+          <li><span>+</span>WhatsApp direto</li>
+          <li><span>+</span>Dividir conta</li>
           <li><span>+</span>Atualizações ilimitadas</li>
         </ul>
         <a href="#contacto" class="plan-cta plan-fill">Quero este plano →</a>
       </article>
-      <article class="plan reveal" style="--d:.16s">
+
+      <article class="plan plan-enterprise reveal" style="--d:.16s">
         <div class="plan-top">
-          <span class="plan-tier">Performance</span>
-          <h3>Pro<span>.</span></h3>
+          <span class="plan-tier">Personalizado</span>
+          <h3>Enterprise<span>.</span></h3>
         </div>
-        <div class="plan-price"><span>€</span><strong>99</strong><span>/mês</span></div>
-        <span class="plan-daily">≈ €3,30 / dia</span>
-        <ul class="plan-feats">
+        <div class="plan-price-custom">Preço<br>sob consulta</div>
+        <ul class="plan-feats" style="margin-top:20px">
           <li class="plan-incl"><em>Tudo do Growth, e mais:</em></li>
           <li><span>+</span>Relatórios de performance</li>
-          <li><span>+</span>Carta de vinhos com Vivino</li>
           <li><span>+</span>Campanhas por horário</li>
           <li><span>+</span>Website institucional incluído</li>
-          <li><span>+</span>Suporte prioritário</li>
+          <li><span>+</span>Integrações personalizadas</li>
+          <li><span>+</span>SLA e suporte dedicado</li>
+          <li><span>+</span>Multi-espaço / franchising</li>
         </ul>
-        <a href="#contacto" class="plan-cta plan-out">Escalar →</a>
+        <a href="#contacto" class="plan-cta plan-out plan-enterprise-cta">Falar connosco →</a>
       </article>
+
     </div>
+
     <div class="pricing-note reveal">
       <span class="pn-i">i</span>
-      <p><strong>Display Stand NFC:</strong> pagamento único por mesa. A mensalidade cobre software, suporte e evolução contínua do produto.</p>
+      <p><strong>Display Stand NFC:</strong> pagamento único por mesa. A mensalidade cobre software, suporte e evolução contínua do produto. Quem entrar agora mantém o preço de lançamento para sempre.</p>
     </div>
-    <div class="rev-eq reveal">
-      <div class="re-l">
-        <span class="eyebrow">A lógica</span>
-        <h3>O impacto vem da <em>sequência certa.</em></h3>
-        <p>Quando o menu contextualiza bem, a decisão fica mais simples e o pedido tende a sair mais completo.</p>
+
+<div class="impact-block reveal">
+  <div class="impact-left">
+    <span class="impact-eyebrow">A conta simples</span>
+    <h3 class="impact-title">O Growth paga-se no<br><em>segundo dia do mês.</em></h3>
+    <p class="impact-sub">Se o menu recuperar +€3 por mesa em extras que já existiam na carta — bebidas, sobremesas, sugestões.</p>
+    <a href="#contacto" class="impact-cta">Quero este plano →</a>
+  </div>
+
+  <div class="impact-right">
+    <div class="impact-math">
+      <div class="impact-cell">
+        <span>+€3</span>
+        <small>por mesa</small>
       </div>
-      <div class="re-r">
-        <div class="re-calc">
-          <div class="re-cell"><span>Sugestão</span><small>produto certo</small></div>
-          <div class="re-op">×</div>
-          <div class="re-cell"><span>Contexto</span><small>foto, descrição, destaque</small></div>
-          <div class="re-op">×</div>
-          <div class="re-cell"><span>Timing</span><small>antes de fechar a escolha</small></div>
-          <div class="re-eq">=</div>
-          <div class="re-result">
-            <strong>Pedido mais completo</strong>
-            <small>sem transformar a mesa num discurso comercial</small>
-          </div>
-        </div>
+      <div class="impact-op">×</div>
+      <div class="impact-cell">
+        <span>20</span>
+        <small>mesas / dia</small>
+      </div>
+      <div class="impact-op">×</div>
+      <div class="impact-cell">
+        <span>30</span>
+        <small>dias</small>
       </div>
     </div>
+    <div class="impact-result">
+      <div class="impact-result-value">+€1.800</div>
+      <div class="impact-result-label">por mês em receita que já existia no menu</div>
+    </div>
+    <div class="impact-vs">
+      <span>Custo do Growth</span>
+      <span class="impact-vs-price">€69 / mês</span>
+    </div>
+  </div>
+</div>
+
   </div>
 </section>
 
@@ -472,7 +582,7 @@
   <div class="container">
     <div class="contact-grid">
       <div class="contact-l">
-        <span class="eyebrow reveal">05 — Comece agora</span>
+        <span class="eyebrow reveal">06 — Comece agora</span>
         <h2 class="reveal">Peça uma demo<br><em>para o seu restaurante.</em></h2>
         <p class="reveal">Mostramos-lhe o produto ao vivo e estimamos o impacto real com base no seu número de mesas e tipo de serviço.</p>
         <ul class="trust-list reveal">
@@ -482,7 +592,7 @@
           <li><span>✓</span>Hosting incluído no plano</li>
         </ul>
         <div class="contact-info reveal">
-          <div class="ci-row"><span class="ci-l">Email</span><a href="mailto:comercial@nexo.pt" class="ci-v">comercial@nexo.pt</a></div>
+          <div class="ci-row"><span class="ci-l">Email</span><a href="mailto:hello.nexosolutions@gmail.com" class="ci-v">hello.nexosolutions@gmail.com</a></div>
           <div class="ci-row"><span class="ci-l">WhatsApp</span><a href="https://wa.me/351000000000" class="ci-v">+351 ███ ███ ███ →</a></div>
           <div class="ci-row"><span class="ci-l">Localização</span><span class="ci-v">Lisboa, Portugal</span></div>
         </div>
@@ -553,14 +663,16 @@
           <ul>
             <li><a href="#problema">Problema</a></li>
             <li><a href="#como-funciona">Processo</a></li>
-            <li><a href="#features">Produto</a></li>
+     <li><a href="#produto">Produto</a></li>
+
+      <li><a href="#features">Funcionalidades</a></li>
             <li><a href="#planos">Planos</a></li>
           </ul>
         </div>
         <div class="foot-col">
           <span class="foot-label">Contacto</span>
           <ul>
-            <li><a href="mailto:comercial@nexo.pt">comercial@nexo.pt</a></li>
+            <li><a href="mailto:hello.nexosolutions@gmail.com">hello.nexosolutions@gmail.com</a></li>
             <li><a href="https://wa.me/351000000000">WhatsApp →</a></li>
           </ul>
         </div>
@@ -575,11 +687,11 @@
     </div>
     <div class="foot-bottom">
       <span>© 2026 NEXO. Lisboa, Portugal</span>
-      <span>PT · LIS · EST. 2025</span>
+      <span>PT · LIS · EST. 2026</span>
     </div>
   </div>
 </footer>
 
-<script src="script.js"></script>
+<script src="script.js" defer></script>
 </body>
 </html>
