@@ -316,45 +316,117 @@ a { color: inherit; text-decoration: none; }
    SPECIAL BANNER — dinâmico por hora
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ═══ BANNER TEMPO-DEPENDENTE ═══ */
 .special-banner {
-  margin: var(--s3) var(--s3) var(--s4);
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
-  color: white;
-  padding: var(--s3);
-  border-radius: var(--r-md);
+  margin: 0 0 var(--s4);
+  background: var(--bg-alt);
+  border-top: 2px solid var(--accent);
+  border-bottom: 1px solid rgba(139, 74, 53, 0.18);
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  min-height: 88px;
+  overflow: hidden;
+  position: relative;
+}
+
+.special-banner-time {
+  flex-shrink: 0;
+  width: 76px;
+  display: flex;
   flex-direction: column;
-  gap: var(--s2);
-  font-size: 13px;
-  font-weight: 600;
-  box-shadow: 0 4px 20px rgba(139, 26, 26, 0.3);
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  border-right: 1px solid rgba(139, 74, 53, 0.15);
+  gap: 2px;
+  padding: 0 4px;
+}
+
+.special-banner-hour {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--accent);
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.special-banner-period {
+  font-family: var(--font-ui);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(139, 74, 53, 0.45);
+  text-align: center;
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.special-banner-body {
+  flex: 1;
+  padding: 16px 18px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   position: relative;
   overflow: hidden;
 }
 
-.special-banner::before {
-  content: '';
+.special-banner-ghost {
   position: absolute;
-  top: -50%; right: -10%;
-  width: 120px; height: 120px;
-  background: radial-gradient(circle, rgba(212, 165, 116, 0.15) 0%, transparent 70%);
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-display);
+  font-size: 90px;
+  font-weight: 300;
+  font-style: italic;
+  color: rgba(139, 74, 53, 0.055);
   pointer-events: none;
+  line-height: 1;
+  letter-spacing: -3px;
+  user-select: none;
+  white-space: nowrap;
 }
 
 .special-banner-label {
-  background: var(--gold-bright);
-  color: var(--accent-dark);
-  font-size: 10px;
-  font-weight: 900;
-  padding: 5px 16px;
-  border-radius: 100px;
-  flex-shrink: 0;
-  text-transform: uppercase;
   font-family: var(--font-ui);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  position: relative;
 }
 
-.special-banner-text { flex: 1; line-height: 1.35; }
+.special-banner-headline {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--navy);
+  line-height: 1.1;
+  letter-spacing: -0.2px;
+  position: relative;
+}
+
+.special-banner-text {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.35;
+  margin-top: 1px;
+  position: relative;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SECTION HEADER (generic)
@@ -485,7 +557,7 @@ a { color: inherit; text-decoration: none; }
 .most-ordered-card-name {
   font-family: var(--font-display);
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text);
   letter-spacing: -0.3px;
   line-height: 1.2;
@@ -838,7 +910,7 @@ a { color: inherit; text-decoration: none; }
 .menu-item-name {
   font-family: var(--font-display);
   font-size: 19px;
-  font-weight: 700 !important;
+  font-weight: 600;
   font-style: italic;
   line-height: 1.15;
   margin-bottom: 5px;
@@ -1085,7 +1157,7 @@ a { color: inherit; text-decoration: none; }
 .wine-card-name {
   font-family: var(--font-display);
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.2;
   margin-bottom: 4px;
   color: var(--text);
@@ -3196,10 +3268,6 @@ body.has-cart {
   50% { opacity: 0.65; }
 }
 
-.special-banner {
-  flex-wrap: wrap;
-  gap: 8px;
-}
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -3350,3 +3418,4 @@ body.has-cart {
   text-align: center;
   padding: var(--s2) 0;
 }
+

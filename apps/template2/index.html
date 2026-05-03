@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt" id="html-root">
 <head>
@@ -17,7 +18,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600;1,700&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
 </head>
@@ -55,10 +56,17 @@
   <nav class="quick-nav" id="quick-nav" aria-label="Navegação rápida"></nav>
 
   <!-- BANNER DINÂMICO (muda consoante a hora: almoço / happy hour / jantar) -->
-  <div class="special-banner" id="special-banner">
-    <span class="special-banner-label" id="special-label"></span>
-    <span class="special-banner-text" id="special-text"></span>
-    <span class="special-countdown" id="special-countdown" style="display:none"></span>
+  <div class="special-banner" id="special-banner" style="display:none">
+    <div class="special-banner-time">
+      <div class="special-banner-hour" id="special-hour"></div>
+      <div class="special-banner-period" id="special-period"></div>
+    </div>
+    <div class="special-banner-body">
+      <div class="special-banner-ghost" id="special-ghost"></div>
+      <div class="special-banner-label" id="special-label"></div>
+      <div class="special-banner-headline" id="special-headline"></div>
+      <div class="special-banner-text" id="special-text"></div>
+    </div>
   </div>
 
   <!-- FAVORITOS — aparece apenas quando há pelo menos 1 favorito -->
@@ -512,3 +520,4 @@
   <script src="script.js"></script>
 </body>
 </html>
+

@@ -1,21 +1,17 @@
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   NEXO MENU — CONFIG v5
+   NEXO MENU — CONFIG v6
    Cliente: O Nosso Prego (Parede · Quinta das Marianas)
-
-   ESTRUTURA EM 9 BLOCOS — cada bloco é independente:
-     1. IDENTIDADE        → nome, tagline, cidade
-     2. VISUAL            → cores, fonte, hero, logo
-     3. CONTACTOS         → morada, telefone, horário
-     4. REDES & REVIEWS   → Instagram, Google, TripAdvisor, Facebook, WhatsApp
-     5. WI-FI             → SSID e password
-     6. BANNERS DINÂMICOS → por horário (almoço / happy hour / jantar)
-     7. MENU              → secções e items
-        ↳ badge:  "popular" | "chef" | "new"   → ícone psicológico no item
-        ↳ upsell: ["sec:idx", ...]              → "Combina com..." no modal
-     8. MAIS PEDIDOS      → top 3 destacados
-     9. VINHOS            → carta de vinhos com filtros
+   Photos: Pexels CDN — hotlinking allowed, free to use
    ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Pexels URL helper ─────────────────────────────────────────────────────
+   Format: https://images.pexels.com/photos/{ID}/pexels-photo-{ID}.jpeg
+           ?auto=compress&cs=tinysrgb&w=400&h=300&dpr=1
+   ─────────────────────────────────────────────────────────────────────── */
+
+const P = (id) =>
+  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&dpr=1`;
 
 const CONFIG = {
 
@@ -38,15 +34,12 @@ const CONFIG = {
   },
 
 
-  /* ═══ 2. VISUAL ═══
-     As cores abaixo controlam toda a identidade. Mudar aqui propaga para todo o site.
-     Paleta O Nosso Prego: vermelho-vinho + gold + cream quente
-     ═════════════════════ */
+  /* ═══ 2. VISUAL ═══ */
 
-  brandColor: "#8B1A1A",          // vermelho-vinho (acento primário)
-  brandColorDark: "#5C0F0F",      // wine burgundy (escuro)
+  brandColor: "#8B4A35",
+  brandColorDark: "#5C2618",
   heroImageUrl: "https://i0.wp.com/nikkibeach.com/porto-heli/wp-content/uploads/sites/14/2024/10/Untitled-Capture884.jpg?ssl=1&w=2500&quality=85",
-  logoUrl: "https://www.eso.org/public/archives/logos/large/eso-logo-white-outline.jpg",                     // vazio = iniciais automáticas
+  logoUrl: "https://www.eso.org/public/archives/logos/large/eso-logo-white-outline.jpg",
 
 
   /* ═══ 3. CONTACTOS ═══ */
@@ -88,74 +81,75 @@ const CONFIG = {
   wifiPassword: "prego2026",
 
 
-  /* ═══ 6. BANNERS DINÂMICOS POR HORÁRIO ═══
-     Cada banner tem um intervalo de horas (startH inclusive, endH exclusive).
-     days: array de dias da semana — 0=Dom, 1=Seg … 6=Sáb
-           omitir ou deixar vazio = todos os dias
-     O banner ativo é o primeiro da lista cujo intervalo corresponde à hora atual.
-     Se nenhum corresponder, o banner é ocultado automaticamente.
-     ═════════════════════════════════════════════════════════════════ */
+  /* ═══ 6. BANNERS DINÂMICOS POR HORÁRIO ═══ */
 
-  timeBanners: [
-    {
-      id: "almoco",
-      startH: 12, endH: 15,
-      // days: [1,2,3,4,5,6,0], // todos os dias — omitido = mesmo resultado
-      label: {
-        pt: "Almoço", en: "Lunch", es: "Almuerzo", fr: "Déjeuner"
-      },
-      text: {
-        pt: "Prato do dia + sobremesa + bebida · 9,95€ · Seg–Sex",
-        en: "Daily dish + dessert + drink · €9.95 · Mon–Fri",
-        es: "Plato del día + postre + bebida · 9,95€ · Lun–Vie",
-        fr: "Plat du jour + dessert + boisson · 9,95€ · Lun–Ven"
-      }
+ timeBanners: [
+  {
+    id: "almoco",
+    startH: 12, endH: 15,
+    ghost: { pt: "Almoço", en: "Lunch", es: "Almuerzo", fr: "Déjeuner" },
+    label: {
+      pt: "Almoço", en: "Lunch", es: "Almuerzo", fr: "Déjeuner"
     },
-    {
-      id: "happy-hour",
-      startH: 17, endH: 19,
-      days: [1, 2, 3, 4, 5], // Seg–Sex
-      label: {
-        pt: "Happy Hour", en: "Happy Hour", es: "Happy Hour", fr: "Happy Hour"
-      },
-      text: {
-        pt: "Imperial + Prego no Pão · 5,95€ · Seg–Sex, 17h–19h",
-        en: "Draft Beer + Steak Sandwich · €5.95 · Mon–Fri, 5–7pm",
-        es: "Caña + Prego en Pan · 5,95€ · Lun–Vie, 17h–19h",
-        fr: "Bière pression + Prego · 5,95€ · Lun–Ven, 17h–19h"
-      }
+    text: {
+      pt: "Prato do dia + sobremesa + bebida · 9,95€ · Seg–Sex",
+      en: "Daily dish + dessert + drink · €9.95 · Mon–Fri",
+      es: "Plato del día + postre + bebida · 9,95€ · Lun–Vie",
+      fr: "Plat du jour + dessert + boisson · 9,95€ · Lun–Ven"
     },
-    {
-      id: "jantar",
-      startH: 19, endH: 24,
-      label: {
-        pt: "Boa noite! Reserve a sua mesa pelo WhatsApp",
-        en: "Good evening! Book your table on WhatsApp",
-        es: "¡Buenas noches! Reserve su mesa por WhatsApp",
-        fr: "Bonsoir! Réservez votre table sur WhatsApp"
-      },
-      text: {
-        pt: "Cataplanas e arrozes de marisco — os favoritos do jantar",
-        en: "Cataplanas and shellfish rice — dinner favourites",
-        es: "Cataplanas y arroces de mariscos — favoritos de la noche",
-        fr: "Cataplanas et riz aux fruits de mer — favoris du soir"
-      }
+    headline: {
+      pt: "Bom apetite.",
+      en: "Enjoy your meal.",
+      es: "Buen provecho.",
+      fr: "Bon appétit."
     }
-  ],
+  },
+  {
+    id: "happy-hour",
+    startH: 17, endH: 19,
+    days: [1, 2, 3, 4, 5],
+    ghost: { pt: "Happy", en: "Happy", es: "Happy", fr: "Happy" },
+    label: {
+      pt: "Happy Hour · Seg–Sex", en: "Happy Hour · Mon–Fri",
+      es: "Happy Hour · Lun–Vie", fr: "Happy Hour · Lun–Ven"
+    },
+    text: {
+      pt: "Imperial + Prego no Pão · 5,95€ · Até às 19h",
+      en: "Draft Beer + Steak Sandwich · €5.95 · Until 7pm",
+      es: "Caña + Prego en Pan · 5,95€ · Hasta las 19h",
+      fr: "Bière + Prego · 5,95€ · Jusqu'à 19h"
+    },
+    headline: {
+      pt: "Hora de brindar.",
+      en: "Time to toast.",
+      es: "Hora de brindar.",
+      fr: "L'heure de trinquer."
+    }
+  },
+  {
+    id: "jantar",
+    startH: 19, endH: 24,
+    ghost: { pt: "Jantar", en: "Dinner", es: "Cena", fr: "Dîner" },
+    label: {
+      pt: "Boa noite", en: "Good evening",
+      es: "Buenas noches", fr: "Bonsoir"
+    },
+    text: {
+      pt: "Cataplanas, arrozes de marisco e os clássicos da casa",
+      en: "Cataplanas, shellfish rice and house classics",
+      es: "Cataplanas, arroces de mariscos y clásicos de la casa",
+      fr: "Cataplanas, riz aux fruits de mer et classiques maison"
+    },
+    headline: {
+      pt: "A noite começa aqui.",
+      en: "The night starts here.",
+      es: "La noche empieza aquí.",
+      fr: "La nuit commence ici."
+    }
+  }
+],
 
-
-  /* ═══ 7. MENU ═══
-     Diet tags: "V"=vegetariano  "VG"=vegan  "GF"=sem glúten  "LF"=sem lactose
-     Allergens (Reg. UE 1169/2011):
-       1-glúten  2-crustáceos  3-ovos  4-peixe  5-amendoim  6-soja  7-lácteos
-       8-frutos-casca  9-aipo  10-mostarda  11-sésamo  12-sulfitos  13-tremoço  14-moluscos
-
-     NOVIDADES v5:
-       badge:  "popular" | "chef" | "new"
-               → mostra ícone psicológico (🔥 Popular · ⭐ Chef · 🆕 Novo)
-       upsell: ["secaoId:itemIndex", "secaoId:itemIndex"]
-               → aparece no modal como "Combina com..."
-     ═════════════════════════════════════════════════════════════════ */
+  /* ═══ 7. MENU ═══ */
 
   menu: [
     {
@@ -175,8 +169,8 @@ const CONFIG = {
           photo: "",
           diet: [],
           allergens: [1, 3, 7],
-          badge: "popular",                          // 🔥 Popular
-          upsell: ["petiscos:4", "entradas:1"]       // Combina com: Gamba à Guilho + Pão de Alho
+          badge: "popular",
+          upsell: ["petiscos:4", "entradas:1"]
         },
         {
           name: { pt: "Prego no Prato", en: "Steak with Fries and Rice", es: "Prego en Plato", fr: "Prego en Assiette" },
@@ -190,7 +184,7 @@ const CONFIG = {
           photo: "",
           diet: [],
           allergens: [3],
-          upsell: ["entradas:4", "sobremesas:0"]     // Combina com: Croquete + Arroz Doce
+          upsell: ["entradas:4", "sobremesas:0"]
         },
         {
           name: { pt: "Prego no Bolo do Caco", en: "Steak Sandwich in Madeira Bread", es: "Prego en Bolo do Caco", fr: "Prego au Bolo do Caco" },
@@ -230,8 +224,8 @@ const CONFIG = {
           photo: "",
           diet: [],
           allergens: [3, 7],
-          badge: "chef",                             // ⭐ Escolha do Chef
-          upsell: ["sobremesas:4", "sobremesas:5"]   // Combina com: Mousse Kit-Kat + Cheesecake
+          badge: "chef",
+          upsell: ["sobremesas:4", "sobremesas:5"]
         }
       ]
     },
@@ -286,7 +280,7 @@ const CONFIG = {
           desc: { pt: "O clássico alentejano numa cataplana de cobre.", en: "The Alentejo classic in a copper cataplana.", es: "El clásico alentejano.", fr: "Le classique de l'Alentejo." },
           price: "45,00€", photo: "", diet: ["LF"], allergens: [14],
           badge: "popular",
-          upsell: ["entradas:0", "entradas:3"]       // Combina com: Cesto Pão + Queijo Curado
+          upsell: ["entradas:0", "entradas:3"]
         },
         { name: { pt: "Cataplana de Garoupa c/ Gambas (2 pax)", en: "Grouper & Prawns Cataplana", es: "Cataplana de Mero", fr: "Cataplana de Mérou" }, desc: { pt: "Garoupa fresca com gambas e legumes.", en: "Fresh grouper with prawns and vegetables.", es: "Mero fresco con gambas.", fr: "Mérou frais aux crevettes." }, price: "60,00€", photo: "", diet: ["GF", "LF"], allergens: [2, 4] },
         { name: { pt: "Cataplana de Marisco (2 pax)", en: "Shellfish Cataplana", es: "Cataplana de Marisco", fr: "Cataplana de Fruits de Mer" }, desc: { pt: "Mistura de mariscos em caldo aromático.", en: "Mixed shellfish in aromatic broth.", es: "Mezcla de mariscos.", fr: "Mélange de fruits de mer." }, price: "60,00€", photo: "", diet: ["GF", "LF"], allergens: [2, 14], badge: "chef" },
@@ -355,43 +349,32 @@ const CONFIG = {
   ],
 
 
-  /* ═══ 8. MAIS PEDIDOS ═══
-     Top 3 items destacados. refId = "sectionId:itemIndex"
-     Ranking automático: primeiro = #01, segundo = #02, terceiro = #03
-     ═════════════════════════════════════════════════════════════════ */
+  /* ═══ 8. MAIS PEDIDOS ═══ */
 
   mostOrdered: [
-    {
-      refId: "pregos:0",
-      badge: { pt: "A lenda da casa", en: "House legend", es: "Leyenda de la casa", fr: "La légende maison" }
-    },
-    {
-      refId: "cataplana:0",
-      badge: { pt: "Clássico alentejano", en: "Alentejo classic", es: "Clásico alentejano", fr: "Classique alentejano" }
-    },
-    {
-      refId: "peixe:4",
-      badge: { pt: "Favorito dos clientes", en: "Customer favourite", es: "Favorito", fr: "Favori des clients" }
-    }
+    { refId: "pregos:0",   badge: { pt: "A lenda da casa",       en: "House legend",        es: "Leyenda de la casa",      fr: "La légende maison"      } },
+    { refId: "cataplana:0",badge: { pt: "Clássico alentejano",   en: "Alentejo classic",    es: "Clásico alentejano",      fr: "Classique alentejano"   } },
+    { refId: "peixe:4",    badge: { pt: "Favorito dos clientes", en: "Customer favourite",  es: "Favorito",                fr: "Favori des clients"     } }
   ],
 
 
   /* ═══ 9. VINHOS ═══ */
 
   wines: [
-    { name: "Esporão Reserva Tinto", country: "Portugal", region: "Alentejo", type: "tinto", grape: "Aragonez, Trincadeira, Cabernet Sauvignon", abv: "14,5%", volume: "750ml", price: "28,50€", desc: "Tinto encorpado do Alentejo com notas de frutos pretos e especiarias. Estágio de 12 meses em barrica.", photo: "", vivinoRating: 3.8, vivinoUrl: "https://www.vivino.com/wines/1138696" },
-    { name: "Quinta do Crasto Douro Tinto", country: "Portugal", region: "Douro", type: "tinto", grape: "Touriga Nacional, Touriga Franca, Tinta Roriz", abv: "14%", volume: "750ml", price: "24,00€", desc: "Clássico do Douro com taninos elegantes. Ideal para carnes vermelhas.", photo: "", vivinoRating: 3.9, vivinoUrl: "https://www.vivino.com/wines/1146697" },
-    { name: "Pêra-Manca Tinto", country: "Portugal", region: "Alentejo", type: "tinto", grape: "Aragonez, Trincadeira", abv: "13,5%", volume: "750ml", price: "85,00€", desc: "Ícone do Alentejo. Vinho para momentos especiais.", photo: "", vivinoRating: 4.4, vivinoUrl: "https://www.vivino.com/wines/1158197" },
-    { name: "Casa Ferreirinha Vinha Grande Tinto", country: "Portugal", region: "Douro", type: "tinto", grape: "Touriga Franca, Tinta Roriz", abv: "13,5%", volume: "750ml", price: "19,50€", desc: "Equilibrado, fácil de beber. Boa relação qualidade/preço.", photo: "", vivinoRating: 3.7, vivinoUrl: "https://www.vivino.com/wines/1131804" },
-    { name: "Soalheiro Alvarinho", country: "Portugal", region: "Vinho Verde", type: "branco", grape: "Alvarinho", abv: "12,5%", volume: "750ml", price: "22,00€", desc: "Alvarinho de Monção e Melgaço. Fresco, mineral, com aromas cítricos.", photo: "", vivinoRating: 3.9, vivinoUrl: "https://www.vivino.com/wines/1146410" },
-    { name: "Herdade do Esporão Branco", country: "Portugal", region: "Alentejo", type: "branco", grape: "Antão Vaz, Roupeiro, Arinto", abv: "13%", volume: "750ml", price: "16,50€", desc: "Branco alentejano com notas tropicais e final fresco.", photo: "", vivinoRating: 3.7, vivinoUrl: "https://www.vivino.com/wines/1138698" },
-    { name: "Quinta dos Roques Encruzado", country: "Portugal", region: "Dão", type: "branco", grape: "Encruzado", abv: "13%", volume: "750ml", price: "20,00€", desc: "Encruzado do Dão — a melhor casta branca portuguesa. Elegante e complexo.", photo: "", vivinoRating: 4.0, vivinoUrl: "https://www.vivino.com/wines/1142876" },
-    { name: "Aveleda Loureiro", country: "Portugal", region: "Vinho Verde", type: "verde", grape: "Loureiro", abv: "11%", volume: "750ml", price: "12,50€", desc: "Clássico verde jovem e aromático. Perfeito com mariscos.", photo: "", vivinoRating: 3.5, vivinoUrl: "https://www.vivino.com/wines/1129823" },
-    { name: "Casal Garcia", country: "Portugal", region: "Vinho Verde", type: "verde", grape: "Loureiro, Trajadura", abv: "9,5%", volume: "750ml", price: "9,50€", desc: "Verde leve e refrescante. Popular e acessível.", photo: "", vivinoRating: 3.4, vivinoUrl: "https://www.vivino.com/wines/1124735" },
-    { name: "Mateus Rosé", country: "Portugal", region: "Douro", type: "rose", grape: "Baga, Rufete", abv: "11%", volume: "750ml", price: "11,50€", desc: "O rosé português mais famoso. Leve e ligeiramente gaseificado.", photo: "", vivinoRating: 3.3, vivinoUrl: "https://www.vivino.com/wines/1125513" },
-    { name: "Luís Pato Espumante Bruto", country: "Portugal", region: "Bairrada", type: "espumante", grape: "Baga, Maria Gomes", abv: "12,5%", volume: "750ml", price: "22,00€", desc: "Espumante da Bairrada, método tradicional. Fino e persistente.", photo: "", vivinoRating: 3.8, vivinoUrl: "https://www.vivino.com/wines/1138512" },
-    { name: "Murganheira Bruto", country: "Portugal", region: "Távora-Varosa", type: "espumante", grape: "Chardonnay, Pinot Noir", abv: "12%", volume: "750ml", price: "18,00€", desc: "Espumante nacional de referência com bolha fina.", photo: "", vivinoRating: 3.6, vivinoUrl: "https://www.vivino.com/wines/1140251" },
-    { name: "Rioja Reserva Campo Viejo", country: "Espanha", region: "Rioja", type: "tinto", grape: "Tempranillo", abv: "13,5%", volume: "750ml", price: "17,50€", desc: "Tempranillo da Rioja. Notas de baunilha e frutos vermelhos maduros.", photo: "", vivinoRating: 3.7, vivinoUrl: "https://www.vivino.com/wines/1129312" },
-    { name: "Malbec Catena Argentina", country: "Argentina", region: "Mendoza", type: "tinto", grape: "Malbec", abv: "13,5%", volume: "750ml", price: "22,50€", desc: "Malbec argentino premium. Intenso e encorpado.", photo: "", vivinoRating: 4.1, vivinoUrl: "https://www.vivino.com/wines/1137817" }
+    { name: "Esporão Reserva Tinto",               country: "Portugal",  region: "Alentejo",        type: "tinto",     grape: "Aragonez, Trincadeira, Cabernet Sauvignon", abv: "14,5%", volume: "750ml", price: "28,50€", photo: "", desc: "Tinto encorpado do Alentejo com notas de frutos pretos e especiarias. Estágio de 12 meses em barrica.",             vivinoRating: 3.8, vivinoUrl: "https://www.vivino.com/wines/1138696" },
+    { name: "Quinta do Crasto Douro Tinto",         country: "Portugal",  region: "Douro",           type: "tinto",     grape: "Touriga Nacional, Touriga Franca, Tinta Roriz",  abv: "14%",   volume: "750ml", price: "24,00€", photo: "", desc: "Clássico do Douro com taninos elegantes. Ideal para carnes vermelhas.",                                              vivinoRating: 3.9, vivinoUrl: "https://www.vivino.com/wines/1146697" },
+    { name: "Pêra-Manca Tinto",                    country: "Portugal",  region: "Alentejo",        type: "tinto",     grape: "Aragonez, Trincadeira",                          abv: "13,5%", volume: "750ml", price: "85,00€", photo: "", desc: "Ícone do Alentejo. Vinho para momentos especiais.",                                                                 vivinoRating: 4.4, vivinoUrl: "https://www.vivino.com/wines/1158197" },
+    { name: "Casa Ferreirinha Vinha Grande Tinto",  country: "Portugal",  region: "Douro",           type: "tinto",     grape: "Touriga Franca, Tinta Roriz",                    abv: "13,5%", volume: "750ml", price: "19,50€", photo: "", desc: "Equilibrado, fácil de beber. Boa relação qualidade/preço.",                                                         vivinoRating: 3.7, vivinoUrl: "https://www.vivino.com/wines/1131804" },
+    { name: "Soalheiro Alvarinho",                  country: "Portugal",  region: "Vinho Verde",     type: "branco",    grape: "Alvarinho",                                      abv: "12,5%", volume: "750ml", price: "22,00€", photo: "", desc: "Alvarinho de Monção e Melgaço. Fresco, mineral, com aromas cítricos.",                                               vivinoRating: 3.9, vivinoUrl: "https://www.vivino.com/wines/1146410" },
+    { name: "Herdade do Esporão Branco",            country: "Portugal",  region: "Alentejo",        type: "branco",    grape: "Antão Vaz, Roupeiro, Arinto",                    abv: "13%",   volume: "750ml", price: "16,50€", photo: "", desc: "Branco alentejano com notas tropicais e final fresco.",                                                             vivinoRating: 3.7, vivinoUrl: "https://www.vivino.com/wines/1138698" },
+    { name: "Quinta dos Roques Encruzado",          country: "Portugal",  region: "Dão",             type: "branco",    grape: "Encruzado",                                      abv: "13%",   volume: "750ml", price: "20,00€", photo: "", desc: "Encruzado do Dão — a melhor casta branca portuguesa. Elegante e complexo.",                                          vivinoRating: 4.0, vivinoUrl: "https://www.vivino.com/wines/1142876" },
+    { name: "Aveleda Loureiro",                     country: "Portugal",  region: "Vinho Verde",     type: "verde",     grape: "Loureiro",                                       abv: "11%",   volume: "750ml", price: "12,50€", photo: "", desc: "Clássico verde jovem e aromático. Perfeito com mariscos.",                                                          vivinoRating: 3.5, vivinoUrl: "https://www.vivino.com/wines/1129823" },
+    { name: "Casal Garcia",                         country: "Portugal",  region: "Vinho Verde",     type: "verde",     grape: "Loureiro, Trajadura",                            abv: "9,5%",  volume: "750ml", price: "9,50€",  photo: "", desc: "Verde leve e refrescante. Popular e acessível.",                                                                    vivinoRating: 3.4, vivinoUrl: "https://www.vivino.com/wines/1124735" },
+    { name: "Mateus Rosé",                          country: "Portugal",  region: "Douro",           type: "rose",      grape: "Baga, Rufete",                                   abv: "11%",   volume: "750ml", price: "11,50€", photo: "", desc: "O rosé português mais famoso. Leve e ligeiramente gaseificado.",                                                    vivinoRating: 3.3, vivinoUrl: "https://www.vivino.com/wines/1125513" },
+    { name: "Luís Pato Espumante Bruto",            country: "Portugal",  region: "Bairrada",        type: "espumante", grape: "Baga, Maria Gomes",                              abv: "12,5%", volume: "750ml", price: "22,00€", photo: "", desc: "Espumante da Bairrada, método tradicional. Fino e persistente.",                                                    vivinoRating: 3.8, vivinoUrl: "https://www.vivino.com/wines/1138512" },
+    { name: "Murganheira Bruto",                    country: "Portugal",  region: "Távora-Varosa",   type: "espumante", grape: "Chardonnay, Pinot Noir",                         abv: "12%",   volume: "750ml", price: "18,00€", photo: "", desc: "Espumante nacional de referência com bolha fina.",                                                                  vivinoRating: 3.6, vivinoUrl: "https://www.vivino.com/wines/1140251" },
+    { name: "Rioja Reserva Campo Viejo",            country: "Espanha",   region: "Rioja",           type: "tinto",     grape: "Tempranillo",                                    abv: "13,5%", volume: "750ml", price: "17,50€", photo: "", desc: "Tempranillo da Rioja. Notas de baunilha e frutos vermelhos maduros.",                                               vivinoRating: 3.7, vivinoUrl: "https://www.vivino.com/wines/1129312" },
+    { name: "Malbec Catena Argentina",              country: "Argentina", region: "Mendoza",         type: "tinto",     grape: "Malbec",                                         abv: "13,5%", volume: "750ml", price: "22,50€", photo: "", desc: "Malbec argentino premium. Intenso e encorpado.",                                                                    vivinoRating: 4.1, vivinoUrl: "https://www.vivino.com/wines/1137817" }
   ]
 };
+

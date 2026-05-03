@@ -555,48 +555,61 @@ function renderSearchBar() {
    Fora de qualquer janela horária → banner oculto.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+// SUBSTITUIR getActiveBanner() — devolve agora ghost + headline
 function getActiveBanner() {
-  // Suporte para o formato legado (specialMode + todaysSpecial)
   if (!CONFIG.timeBanners || CONFIG.timeBanners.length === 0) {
     if (CONFIG.todaysSpecial) {
       const label = CONFIG.specialMode === 'happy-hour' ? t().specialHappyHour : t().specialWeek;
-      return { label, text: CONFIG.todaysSpecial[currentLang] || '' };
+      return { label, headline: label, text: CONFIG.todaysSpecial[currentLang] || '', ghost: label };
     }
     return null;
   }
 
   const now = new Date();
-  const h = now.getHours();
-  const day = now.getDay(); // 0=Dom 1=Seg … 6=Sáb
+  const h   = now.getHours();
+  const day = now.getDay();
 
-  for (const banner of CONFIG.timeBanners) {
-    // Verificar dia da semana (omitir = todos os dias)
-    if (banner.days && banner.days.length > 0 && !banner.days.includes(day)) continue;
-    // Verificar intervalo horário
-    if (h >= banner.startH && h < banner.endH) {
+  for (const b of CONFIG.timeBanners) {
+    if (b.days && b.days.length > 0 && !b.days.includes(day)) continue;
+    if (h >= b.startH && h < b.endH) {
       return {
-        label: (banner.label[currentLang] || banner.label.pt || ''),
-        text:  (banner.text[currentLang]  || banner.text.pt  || '')
+        label:    b.label[currentLang]    || b.label.pt    || '',
+        headline: b.headline              ? (b.headline[currentLang] || b.headline.pt || '') : (b.label[currentLang] || ''),
+        text:     b.text[currentLang]     || b.text.pt     || '',
+        ghost:    b.ghost                 ? (b.ghost[currentLang]    || b.ghost.pt    || '') : ''
       };
     }
   }
-  return null; // fora de qualquer janela → sem banner
+  return null;
 }
 
+// SUBSTITUIR renderSpecialBanner() — usa ghost próprio
 function renderSpecialBanner() {
-  const el = document.getElementById('special-banner');
+  const el     = document.getElementById('special-banner');
   const banner = getActiveBanner();
 
-  if (!banner) {
-    el.style.display = 'none';
-    return;
-  }
+  if (!banner) { el.style.display = 'none'; return; }
+
+  const now  = new Date();
+  const hh   = String(now.getHours()).padStart(2, '0');
+  const mm   = String(now.getMinutes()).padStart(2, '0');
 
   el.style.display = '';
-  document.getElementById('special-label').textContent = banner.label;
-  document.getElementById('special-text').textContent = banner.text;
-}
 
+  const hourEl     = document.getElementById('special-hour');
+  const periodEl   = document.getElementById('special-period');
+  const ghostEl    = document.getElementById('special-ghost');
+  const labelEl    = document.getElementById('special-label');
+  const headlineEl = document.getElementById('special-headline');
+  const textEl     = document.getElementById('special-text');
+
+  if (hourEl)     hourEl.textContent     = `${hh}:${mm}`;
+  if (periodEl)   periodEl.textContent   = banner.label;
+  if (ghostEl)    ghostEl.textContent    = banner.ghost;   // ← palavra curta só
+  if (labelEl)    labelEl.textContent    = banner.label;
+  if (headlineEl) headlineEl.textContent = banner.headline;
+  if (textEl)     textEl.textContent     = banner.text;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    7. RENDER — MAIS PEDIDOS
@@ -2813,3 +2826,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 30000);
 });
+
