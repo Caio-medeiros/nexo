@@ -29,7 +29,7 @@ const CONFIG = {
 
   /* Analytics — preencher com o Measurement ID do GA4 (ex: "G-XXXXXXXXXX")
      Deixar vazio ("") para desactivar. */
-  ga4MeasurementId: "",
+  ga4MeasurementId: "G-PG76WZVLNB",
 
   tagline: {
     pt: "Restaurante, cervejaria e marisqueira",
@@ -94,8 +94,8 @@ const CONFIG = {
      5. WI-FI  ○
      ════════════════════════════════════════════════════════════════════════ */
 
-  wifiSsid:     "NossoPrego_Guest",
-  wifiPassword: "prego2026",
+  wifiSsid:     "NEXO_GUEST",
+  wifiPassword: "nexo2026",
 
 
   /* ════════════════════════════════════════════════════════════════════════
