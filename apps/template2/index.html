@@ -1,4 +1,6 @@
 
+
+
 <!DOCTYPE html>
 <html lang="pt" id="html-root">
 <head>
@@ -31,11 +33,13 @@
 
     <div class="hero-top-bar">
       <div class="table-badge" id="table-badge"></div>
-      <div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language">
-        <button data-lang="pt" class="active">PT</button>
-        <button data-lang="en">EN</button>
-        <button data-lang="es">ES</button>
-        <button data-lang="fr">FR</button>
+      <div class="hero-top-bar-right">
+<div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language">
+          <button data-lang="pt" class="active">PT</button>
+          <button data-lang="en">EN</button>
+          <button data-lang="es">ES</button>
+          <button data-lang="fr">FR</button>
+        </div>
       </div>
     </div>
 
@@ -66,6 +70,7 @@
       <div class="special-banner-label" id="special-label"></div>
       <div class="special-banner-headline" id="special-headline"></div>
       <div class="special-banner-text" id="special-text"></div>
+      <span class="special-countdown" id="special-countdown" style="display:none"></span>
     </div>
   </div>
 
@@ -114,8 +119,18 @@
     <div class="menu-search-meta" id="menu-search-meta" aria-live="polite"></div>
   </div>
 
-  <!-- DIET FILTER -->
-  <div class="diet-filter" id="diet-filter" role="group" aria-label="Filtro de dieta"></div>
+  <!-- DIET FILTER + Allergen legend/filter trigger -->
+  <div class="diet-filter-row">
+    <div class="diet-filter" id="diet-filter" role="group" aria-label="Filtro de dieta"></div>
+    <button class="allergen-legend-btn" id="allergen-legend-btn" aria-label="Ver e filtrar alergénios">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span class="allergen-legend-badge" id="allergen-legend-badge" style="display:none"></span>
+    </button>
+  </div>
 
   <!-- MENU -->
   <main class="menu" id="menu"></main>
@@ -328,6 +343,7 @@
           <div class="review-thankyou-icon" id="review-thankyou-icon"></div>
           <h3 id="review-thanks-title"></h3>
           <p id="review-thanks-sub"></p>
+          <a id="review-thanks-google-link" href="#" target="_blank" rel="noopener noreferrer" class="review-thanks-google-link" style="display:none"></a>
         </div>
       </div>
 
@@ -465,6 +481,10 @@
         <!-- Custom: assign items to people -->
         <div class="split-custom-panel" id="split-custom-panel" style="display:none">
           <div class="split-people-tabs" id="split-people-tabs"></div>
+          <div class="split-rename-hint">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Prima o nome para renomear
+          </div>
           <div class="split-assign-list" id="split-assign-list"></div>
           <div class="split-person-summary" id="split-person-summary"></div>
           <div class="split-podium" id="split-podium" style="display:none"></div>
@@ -516,8 +536,24 @@
     </div>
   </div>
 
+  <!-- ALLERGEN LEGEND + FILTER MODAL -->
+  <div class="modal-overlay" id="allergen-legend-modal" role="dialog" aria-modal="true" aria-label="Alergénios">
+    <div class="modal allergen-legend-modal">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h3 id="allergen-modal-title">Alergénios</h3>
+        <button class="modal-close" id="allergen-legend-close" aria-label="Fechar">✕</button>
+      </div>
+      <p class="allergen-modal-hint" id="allergen-modal-hint"></p>
+      <div class="allergen-legend-list" id="allergen-legend-list"></div>
+      <button class="allergen-clear-btn" id="allergen-clear-btn" style="display:none"></button>
+    </div>
+  </div>
+
   <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+
+
 

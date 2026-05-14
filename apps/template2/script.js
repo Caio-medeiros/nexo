@@ -1,4 +1,3 @@
-
 /* ═══════════════════════════════════════════════════════════════════════════
    NEXO MENU — Script v5
    Novidades desta versão:
@@ -107,17 +106,24 @@ const UI = {
     searchPlaceholder: "Procurar prato, ingrediente ou palavra-chave",
     searchResults: "A mostrar {count} resultados para “{query}”.",
     searchEmpty: "Sem resultados. Experimente outro nome ou ingrediente.",
+    searchReset: "Limpar filtros",
+    favoritesEmpty: "Toca em 🔖 num prato para guardar aqui.",
     // Order history
     orderSent: "Enviado",
     orderHistoryLabel: "Pedido",
     pillSent: "Enviado ✓",
     // Split podium
     splitPodiumTitle: "Quem gastou mais?",
-    splitPodiumWinner: "gastou mais esta noite 👑",
+    splitPodiumWinner: "gastou mais hoje 👑",
     splitPodiumAllEqual: "Iguais! 🤝 Dividam em partes iguais.",
     splitPodiumUnassigned: "Há items sem dono — atribui tudo primeiro.",
     // Happy hour countdown
-    happyHourEnds: "Termina em"
+    happyHourEnds: "Termina em",
+    // Allergen filter
+    allergenFilterLabel: "Evitar alergénios:",
+    soldOut: "Esgotado",
+    // Google rating
+    googleReviews: "avaliações no Google"
   },
   en: {
     specialHappyHour: "Happy Hour", specialWeek: "This week",
@@ -178,14 +184,19 @@ const UI = {
     searchPlaceholder: "Search dish, ingredient or keyword",
     searchResults: "Showing {count} results for “{query}”.",
     searchEmpty: "No results. Try another dish or ingredient.",
+    searchReset: "Clear filters",
+    favoritesEmpty: "Tap 🔖 on any dish to save it here.",
     orderSent: "Sent",
     orderHistoryLabel: "Order",
     pillSent: "Sent ✓",
     splitPodiumTitle: "Who spent the most?",
-    splitPodiumWinner: "spent the most tonight 👑",
+    splitPodiumWinner: "spent the most today 👑",
     splitPodiumAllEqual: "All equal! 🤝 Split evenly.",
     splitPodiumUnassigned: "Some items have no owner — assign everything first.",
-    happyHourEnds: "Ends in"
+    happyHourEnds: "Ends in",
+    allergenFilterLabel: "Avoid allergens:",
+    soldOut: "Sold out",
+    googleReviews: "Google reviews"
   },
   es: {
     specialHappyHour: "Happy Hour", specialWeek: "Esta semana",
@@ -246,14 +257,19 @@ const UI = {
     searchPlaceholder: "Buscar plato, ingrediente o palabra clave.",
     searchResults: "Mostrando {count} resultados para “{query}”.",
     searchEmpty: "Sin resultados. Pruebe otro plato o ingrediente.",
+    searchReset: "Limpiar filtros",
+    favoritesEmpty: "Toca 🔖 en un plato para guardarlo aquí.",
     orderSent: "Enviado",
     orderHistoryLabel: "Pedido",
     pillSent: "Enviado ✓",
     splitPodiumTitle: "¿Quién gastó más?",
-    splitPodiumWinner: "gastó más esta noche 👑",
+    splitPodiumWinner: "gastó más hoy 👑",
     splitPodiumAllEqual: "¡Iguales! 🤝 Dividid a partes iguales.",
     splitPodiumUnassigned: "Hay ítems sin asignar — asígnalos todos primero.",
-    happyHourEnds: "Termina en"
+    happyHourEnds: "Termina en",
+    allergenFilterLabel: "Evitar alérgenos:",
+    soldOut: "Agotado",
+    googleReviews: "reseñas en Google"
   },
   fr: {
     specialHappyHour: "Happy Hour", specialWeek: "Cette semaine",
@@ -314,14 +330,19 @@ const UI = {
     searchPlaceholder: "Rechercher plat, ingrédient ou mot-clé",
     searchResults: "Affichage de {count} résultats pour « {query} ».",
     searchEmpty: "Aucun résultat. Essayez un autre plat ou ingrédient.",
+    searchReset: "Effacer les filtres",
+    favoritesEmpty: "Appuyez sur 🔖 pour sauvegarder un plat ici.",
     orderSent: "Envoyé",
     orderHistoryLabel: "Commande",
     pillSent: "Envoyé ✓",
     splitPodiumTitle: "Qui a dépensé le plus?",
-    splitPodiumWinner: "a dépensé le plus ce soir 👑",
+    splitPodiumWinner: "a dépensé plus aujourd'hui 👑",
     splitPodiumAllEqual: "Égalité! 🤝 Partagez équitablement.",
     splitPodiumUnassigned: "Des articles n'ont pas de propriétaire — assignez tout d'abord.",
-    happyHourEnds: "Termine dans"
+    happyHourEnds: "Termine dans",
+    allergenFilterLabel: "Éviter les allergènes:",
+    soldOut: "Épuisé",
+    googleReviews: "avis sur Google"
   }
 };
 
@@ -334,6 +355,7 @@ let currentLang = 'pt';
 let currentFilter = 'all';
 let currentQuery = '';
 let wineFilters = { country: 'all', type: 'all', grape: 'all' };
+let activeAllergenExcludes = new Set();
 
 /* ─── ORDER SYSTEM STATE ─── */
 // Cart: array de objetos { refId: "sectionId:itemIdx", qty: number }
@@ -351,6 +373,38 @@ function saveFavorites() {
 }
 
 let currentShareItem = null; // item currently open in modal for share
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANALYTICS — Google Analytics 4
+   Measurement ID configurado em config.js (ga4MeasurementId).
+   Deixar vazio para desactivar completamente.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+let lastVisibleItems = 0; // updated by renderMenu(), read by search debounce
+
+function initAnalytics() {
+  const id = CONFIG.ga4MeasurementId;
+  if (!id) return;
+
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+  document.head.appendChild(s);
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function() { window.dataLayer.push(arguments); };
+  gtag('js', new Date());
+  gtag('config', id, { send_page_view: false });
+}
+
+function track(event, params = {}) {
+  if (typeof window.gtag !== 'function') return;
+  window.gtag('event', event, {
+    restaurant: CONFIG.slug,
+    lang: currentLang,
+    ...params
+  });
+}
 
 /* ─── SPLIT BILL STATE & i18n (declared early so renderCartSheet can use ts()) ─── */
 const SPLIT_MAX = 10;
@@ -418,13 +472,24 @@ const t = () => UI[currentLang];
    3. INIT helpers
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ─── shadeColor helper — used by applyBrandColors and share canvas ─── */
+function shadeColor(hex, percent) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, Math.max(0, (num >> 16) + percent));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + percent));
+  const b = Math.min(255, Math.max(0, (num & 0xff) + percent));
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
 function applyBrandColors() {
-  if (CONFIG.brandColor) {
-    document.documentElement.style.setProperty('--accent', CONFIG.brandColor);
-  }
-  if (CONFIG.brandColorDark) {
-    document.documentElement.style.setProperty('--accent-dark', CONFIG.brandColorDark);
-  }
+  if (!CONFIG.brandColor) return;
+  const base = CONFIG.brandColor;
+  document.documentElement.style.setProperty('--accent', base);
+  // Auto-derive dark/bright variants — client only needs to set brandColor
+  const dark = CONFIG.brandColorDark || shadeColor(base, -40);
+  const bright = shadeColor(base, 20);
+  document.documentElement.style.setProperty('--accent-dark', dark);
+  document.documentElement.style.setProperty('--accent-bright', bright);
 }
 
 function detectLang() {
@@ -690,6 +755,17 @@ function renderDietFilter() {
   ).join('');
 }
 
+function renderAllergenFilter() {
+  const badgeEl = document.getElementById('allergen-legend-badge');
+  const legendBtn = document.getElementById('allergen-legend-btn');
+  const count = activeAllergenExcludes.size;
+  if (badgeEl) {
+    badgeEl.textContent = count;
+    badgeEl.style.display = count > 0 ? 'inline-flex' : 'none';
+  }
+  if (legendBtn) legendBtn.classList.toggle('has-active', count > 0);
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TAB INK — deslizante (v5)
@@ -738,20 +814,26 @@ function renderMenu() {
           item.name.fr
         ].filter(Boolean).join(' ').toLowerCase();
         const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
-        const matches = matchesFilter && matchesQuery;
+        const matchesAllergens = activeAllergenExcludes.size === 0 ||
+          !(item.allergens || []).some(a => activeAllergenExcludes.has(a));
+        const matches = matchesFilter && matchesQuery && matchesAllergens;
         if (matches) {
           visibleItems++;
           sectionVisibleItems++;
         }
 
-        // Badge psicológico
-        const badgeHtml = item.badge && ITEM_BADGES[item.badge]
-          ? `<div class="item-badge item-badge-${item.badge}">${ITEM_BADGES[item.badge].emoji} ${ITEM_BADGES[item.badge][currentLang]}</div>`
-          : '';
+        const soldOut = !!item.soldOut;
 
-        // Botão "+" só aparece se item tem preço parseable (€)
+        // Badge psicológico
+        const badgeHtml = soldOut
+          ? `<div class="item-badge item-badge-soldout">${t().soldOut}</div>`
+          : (item.badge && ITEM_BADGES[item.badge]
+            ? `<div class="item-badge item-badge-${item.badge}">${ITEM_BADGES[item.badge].emoji} ${ITEM_BADGES[item.badge][currentLang]}</div>`
+            : '');
+
+        // Botão "+" só aparece se item tem preço parseable (€) e não está esgotado
         const refId = `${sec.id}:${idx}`;
-        const canOrder = parsePriceToNumber(item.price) !== null;
+        const canOrder = !soldOut && parsePriceToNumber(item.price) !== null;
         const inCart = getCartQty(refId);
         const addBtnHtml = canOrder ? `
           <div class="menu-item-order-controls ${inCart > 0 ? 'has-qty' : ''}" data-order-controls="${refId}">
@@ -771,7 +853,7 @@ function renderMenu() {
         ` : '';
 
         return `
-        <article class="menu-item ${matches ? '' : 'hidden'}" data-item="${refId}">
+        <article class="menu-item ${matches ? '' : 'hidden'}${soldOut ? ' sold-out' : ''}" data-item="${refId}">
           <div class="menu-item-body">
             ${badgeHtml}
             <h3 class="menu-item-name">${item.name[currentLang]}</h3>
@@ -793,7 +875,7 @@ function renderMenu() {
           </div>
           ${item.photo
             ? `<img class="menu-item-photo" src="${item.photo}" loading="lazy" alt="${item.name[currentLang]}">`
-            : `<div class="menu-item-photo-placeholder">${item.name[currentLang][0].toUpperCase()}</div>`
+            : `<div class="menu-item-photo-placeholder" data-section="${sec.id}"><span>${item.name[currentLang][0].toUpperCase()}</span></div>`
           }
         </article>
         `;
@@ -809,10 +891,16 @@ function renderMenu() {
   }).join('');
 
   const emptyState = visibleItems === 0
-    ? `<div class="menu-empty-state">${t().searchEmpty}</div>`
+    ? `<div class="menu-empty-state">
+         <div class="menu-empty-icon">🔍</div>
+         <div class="menu-empty-title">${t().searchEmpty}</div>
+         <button class="menu-empty-reset" id="menu-empty-reset">${t().searchReset || 'Limpar filtros'}</button>
+       </div>`
     : '';
 
   document.getElementById('menu').innerHTML = html + emptyState;
+
+  lastVisibleItems = visibleItems;
 
   const meta = document.getElementById('menu-search-meta');
   if (meta) {
@@ -972,7 +1060,8 @@ function renderLoyalty() {
 function renderActions() {
   document.getElementById('btn-review-label').textContent = t().review;
   const tableText = tableNumber ? ` · ${t().tableHint} ${tableNumber}` : '';
-  document.getElementById('btn-review-sub').textContent = `Google · The Fork${tableText}`;
+  const ratingText = CONFIG.googleRating ? `★ ${CONFIG.googleRating} · ` : '';
+  document.getElementById('btn-review-sub').textContent = `${ratingText}Google · TheFork${tableText}`;
 
   document.getElementById('btn-instagram').href = `https://instagram.com/${CONFIG.instagramHandle}`;
   document.getElementById('btn-instagram-label').textContent = t().instagram;
@@ -1093,6 +1182,7 @@ function setupRatingGate() {
     if (!btn) return;
     haptic();
     currentRating = parseInt(btn.dataset.star);
+    track('review_rate', { rating: currentRating, sentiment: currentRating >= 4 ? 'positive' : 'negative' });
 
     // Light up stars permanently
     document.querySelectorAll('.star-btn').forEach((b, i) => {
@@ -1105,7 +1195,7 @@ function setupRatingGate() {
       if (s1) s1.style.display = 'none';
 
       if (currentRating >= 4) {
-        // Happy path: send to Google/TheFork
+        // Happy path: choose platform (Google or TheFork)
         const s2h = document.getElementById('review-step-2-happy');
         if (s2h) s2h.style.display = 'block';
       } else {
@@ -1138,6 +1228,7 @@ function setupRatingGate() {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('click', () => {
+        track('review_platform', { platform: id === 'review-google' ? 'google' : 'thefork' });
         setTimeout(() => showThanks(true), 300);
       });
     }
@@ -1180,6 +1271,7 @@ function renderAll() {
   renderCategoryTabs();
   renderSearchBar();
   renderDietFilter();
+  renderAllergenFilter();
   renderMenu();
   renderWineFilters();
   renderWineList();
@@ -1233,8 +1325,10 @@ function setupLanguage() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      const from = currentLang;
       currentLang = btn.dataset.lang;
       localStorage.setItem('nexo_menu_lang', currentLang);
+      track('language_change', { from, to: currentLang });
       renderAll();
     });
   });
@@ -1262,11 +1356,15 @@ function setupDietFilter() {
     if (!btn) return;
     haptic();
     currentFilter = btn.dataset.filter;
+    track('filter_diet', { filter: currentFilter });
     renderDietFilter();
     renderMenu();
     if (window._attachMenuObserver) window._attachMenuObserver();
   });
 }
+
+// Allergen exclude filter
+
 
 function setupSearch() {
   const input = document.getElementById('menu-search-input');
@@ -1274,11 +1372,23 @@ function setupSearch() {
   const search = document.querySelector('.menu-search');
   if (!input || !clearBtn || !search) return;
 
+  let _searchTrackTimer = null;
   input.addEventListener('input', () => {
     currentQuery = input.value;
     search.classList.toggle('has-value', !!currentQuery.trim());
     renderMenu();
     if (window._attachMenuObserver) window._attachMenuObserver();
+
+    clearTimeout(_searchTrackTimer);
+    if (currentQuery.trim()) {
+      _searchTrackTimer = setTimeout(() => {
+        track('search', {
+          query: currentQuery.trim(),
+          results: lastVisibleItems,
+          has_results: lastVisibleItems > 0
+        });
+      }, 1500);
+    }
   });
 
   clearBtn.addEventListener('click', () => {
@@ -1289,9 +1399,131 @@ function setupSearch() {
     if (window._attachMenuObserver) window._attachMenuObserver();
     input.focus();
   });
+
+  // Reset button inside empty state (delegated)
+  document.getElementById('menu').addEventListener('click', e => {
+    if (e.target.closest('#menu-empty-reset')) {
+      haptic();
+      currentQuery = '';
+      currentFilter = 'all';
+      input.value = '';
+      search.classList.remove('has-value');
+      renderSearchBar();
+      renderDietFilter();
+      renderMenu();
+      if (window._attachMenuObserver) window._attachMenuObserver();
+    }
+  });
 }
 
-// Category tabs + scroll-spy + tab ink
+// Allergen legend modal
+function renderAllergenModal() {
+  const list = document.getElementById('allergen-legend-list');
+  const hint = document.getElementById('allergen-modal-hint');
+  const clearBtn = document.getElementById('allergen-clear-btn');
+  const badgeEl = document.getElementById('allergen-legend-badge');
+  if (!list) return;
+
+  const allergens = ALLERGENS_EU[currentLang] || ALLERGENS_EU.pt;
+  const hints = {
+    pt: 'Toque para excluir pratos que contenham esse alergénio.',
+    en: 'Tap to hide dishes containing that allergen.',
+    es: 'Toca para ocultar platos con ese alérgeno.',
+    fr: 'Touchez pour masquer les plats contenant cet allergène.'
+  };
+  const clearLabels = {
+    pt: 'Limpar filtros de alergénios',
+    en: 'Clear allergen filters',
+    es: 'Borrar filtros de alérgenos',
+    fr: 'Effacer les filtres allergènes'
+  };
+  if (hint) hint.textContent = hints[currentLang] || hints.pt;
+  if (clearBtn) {
+    clearBtn.textContent = clearLabels[currentLang] || clearLabels.pt;
+    clearBtn.style.display = activeAllergenExcludes.size > 0 ? 'block' : 'none';
+  }
+
+  list.innerHTML = Object.entries(allergens).map(([num, name]) => {
+    const id = parseInt(num);
+    const active = activeAllergenExcludes.has(id);
+    return `
+      <button class="allergen-legend-item ${active ? 'excluded' : ''}" data-allergen-toggle="${id}" aria-pressed="${active}">
+        <span class="allergen-legend-num">${num}</span>
+        <span class="allergen-legend-name">${name}</span>
+        <span class="allergen-toggle-icon" aria-hidden="true">${active ? '✕' : ''}</span>
+      </button>`;
+  }).join('');
+
+  // Update badge on ⓘ button
+  const count = activeAllergenExcludes.size;
+  if (badgeEl) {
+    badgeEl.textContent = count;
+    badgeEl.style.display = count > 0 ? 'inline-flex' : 'none';
+  }
+  const legendBtn = document.getElementById('allergen-legend-btn');
+  if (legendBtn) legendBtn.classList.toggle('has-active', count > 0);
+}
+
+function setupAllergenLegend() {
+  const btn = document.getElementById('allergen-legend-btn');
+  const modal = document.getElementById('allergen-legend-modal');
+  const closeBtn = document.getElementById('allergen-legend-close');
+  const clearBtn = document.getElementById('allergen-clear-btn');
+  const list = document.getElementById('allergen-legend-list');
+  if (!btn || !modal) return;
+
+  btn.addEventListener('click', () => {
+    haptic();
+    renderAllergenModal();
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  });
+
+  if (list) {
+    list.addEventListener('click', e => {
+      const item = e.target.closest('[data-allergen-toggle]');
+      if (!item) return;
+      haptic();
+      const id = parseInt(item.dataset.allergenToggle);
+      const wasExcluded = activeAllergenExcludes.has(id);
+      if (wasExcluded) {
+        activeAllergenExcludes.delete(id);
+      } else {
+        activeAllergenExcludes.add(id);
+      }
+      track('filter_allergen', { allergen: id, action: wasExcluded ? 'remove' : 'add' });
+      renderAllergenModal();
+      renderAllergenFilter();
+      renderMenu();
+      if (window._attachMenuObserver) window._attachMenuObserver();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      haptic();
+      activeAllergenExcludes.clear();
+      renderAllergenModal();
+      renderAllergenFilter();
+      renderMenu();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      modal.classList.remove('show');
+      document.body.style.overflow = '';
+    });
+  }
+  modal.addEventListener('click', e => {
+    if (e.target === modal) {
+      modal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+  });
+}
+
+// Scroll-to-top on tab change
 function setupCategoryTabs() {
   const tabsEl = document.getElementById('category-tabs');
 
@@ -1299,6 +1531,7 @@ function setupCategoryTabs() {
     const tab = e.target.closest('[data-category]');
     if (!tab) return;
     haptic();
+    track('category_tap', { category: tab.dataset.category });
     // Activa tab visualmente
     tabsEl.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
@@ -1361,6 +1594,13 @@ function setupMostOrdered() {
 // Menu clicks → modal + bounce tátil
 function setupMenuClicks() {
   document.getElementById('menu').addEventListener('click', e => {
+    // Photo tap → lightbox (not modal)
+    const photoEl = e.target.closest('.menu-item-photo');
+    if (photoEl && photoEl.src) {
+      openPhotoLightbox(photoEl.src, photoEl.alt);
+      return;
+    }
+
     // Ignorar clicks nos controlos de quantidade (tratados pelo setupMenuAddButtons)
     if (e.target.closest('[data-add-ref]') || e.target.closest('[data-decrement-ref]')) return;
     const articleEl = e.target.closest('[data-item]');
@@ -1375,6 +1615,29 @@ function setupMenuClicks() {
     const [sectionId, itemIdx] = articleEl.dataset.item.split(':');
     openItemModal(sectionId, parseInt(itemIdx));
   });
+}
+
+// Photo lightbox
+function openPhotoLightbox(src, alt) {
+  let lb = document.getElementById('photo-lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'photo-lightbox';
+    lb.className = 'photo-lightbox';
+    lb.innerHTML = `<img class="photo-lightbox-img" alt=""><button class="photo-lightbox-close" aria-label="Fechar">✕</button>`;
+    document.body.appendChild(lb);
+    lb.addEventListener('click', e => {
+      if (!e.target.closest('.photo-lightbox-img')) {
+        lb.classList.remove('show');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+  lb.querySelector('.photo-lightbox-img').src = src;
+  lb.querySelector('.photo-lightbox-img').alt = alt || '';
+  lb.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  track('photo_open', { item: alt || '' });
 }
 
 // Abrir modal de item — com upsell (v5)
@@ -1514,6 +1777,7 @@ function openItemModal(sectionId, itemIdx) {
     if (shareLabel) shareLabel.textContent = t().shareDish;
   }
 
+  track('item_open', { item: item.name.pt, section: sectionId, price: item.price });
   openModal('item-modal');
 }
 
@@ -1588,6 +1852,7 @@ function openWineModal(idx) {
     }
   }
 
+  track('wine_open', { name: w.name, price: w.price });
   openModal('wine-modal');
 }
 
@@ -1596,6 +1861,7 @@ function setupReviewButton() {
   document.getElementById('btn-review').addEventListener('click', () => {
     haptic();
     resetReviewModal();
+    track('review_open', { trigger: 'manual' });
     openModal('review-modal');
   });
 }
@@ -1639,6 +1905,7 @@ function setupModalCloses() {
 function setupWifiCopy() {
   document.getElementById('wifi-card').addEventListener('click', () => {
     haptic();
+    track('wifi_copy');
     const pwd = CONFIG.wifiPassword;
     const msg = t().copied;
 
@@ -2136,10 +2403,20 @@ let splitPeople = 2;
 let splitMode = 'equal';
 let splitActivePerson = 0;
 let splitAssign = [];
+let customPersonNames = []; // nomes personalizados nesta sessão
 
-// Inicializa/reset os sets de atribuição
+// Nome de uma pessoa — custom > PERSON_NAMES > fallback
+function getPersonName(i) {
+  return (customPersonNames[i] && customPersonNames[i].trim())
+    || (PERSON_NAMES[currentLang] || PERSON_NAMES.pt)[i]
+    || `P${i + 1}`;
+}
+
+// Inicializa/reset os sets de atribuição — preserva nomes custom
 function initSplitAssign() {
   splitAssign = Array.from({ length: splitPeople }, () => new Set());
+  // Expande o array de nomes sem apagar os existentes
+  while (customPersonNames.length < splitPeople) customPersonNames.push('');
 }
 
 // Total atribuído a uma pessoa (soma por item)
@@ -2151,10 +2428,11 @@ function getPersonTotal(personIdx) {
     const item = getItemByRef(entry.refId);
     if (!item) return sum;
     const price = parsePriceToNumber(item.price) || 0;
-    return sum + price * entry.qty;
+    // Quantas pessoas partilham este item?
+    const sharedBy = splitAssign.filter(s => s && s.has(entry.refId)).length || 1;
+    return sum + (price * entry.qty) / sharedBy;
   }, 0);
 }
-
 // Toggle: atribuir/retirar item de pessoa activa
 function toggleAssign(refId) {
   const set = splitAssign[splitActivePerson];
@@ -2216,11 +2494,10 @@ function renderSplitEqual() {
   if (!el) return;
   const total = getCartTotal();
   const perPerson = total / splitPeople;
-  const names = PERSON_NAMES[currentLang] || PERSON_NAMES.pt;
 
   const rows = Array.from({ length: splitPeople }, (_, i) => `
     <div class="split-eq-row">
-      <span class="split-eq-person">${names[i]}</span>
+      <span class="split-eq-person">${getPersonName(i)}</span>
       <span class="split-eq-amount">${formatPrice(perPerson)}</span>
     </div>
   `).join('');
@@ -2238,14 +2515,17 @@ function renderSplitCustom() {
 function renderSplitPeopleTabs() {
   const el = document.getElementById('split-people-tabs');
   if (!el) return;
-  const names = PERSON_NAMES[currentLang] || PERSON_NAMES.pt;
 
   el.innerHTML = Array.from({ length: splitPeople }, (_, i) => {
     const total = getPersonTotal(i);
     const totalStr = total > 0 ? formatPrice(total) : '—';
+    const isActive = i === splitActivePerson;
     return `
-      <button class="split-person-tab ${i === splitActivePerson ? 'active' : ''}" data-person="${i}">
-        ${names[i]}
+      <button class="split-person-tab ${isActive ? 'active' : ''}" data-person="${i}">
+        <span class="ptab-name" data-rename-idx="${i}">
+          ${getPersonName(i)}
+          ${isActive ? `<svg class="ptab-edit-icon" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>` : ''}
+        </span>
         <span class="ptab-total">${totalStr}</span>
       </button>
     `;
@@ -2269,12 +2549,18 @@ function renderSplitAssignList() {
     const lineTotal = unitPrice * entry.qty;
     const isChecked = assigned.has(entry.refId);
 
+    // Quantas pessoas partilham este item (incluindo a activa se checked)
+    const sharedBy = splitAssign.filter(s => s && s.has(entry.refId)).length || 0;
+    const shareLabel = sharedBy > 1 ? `<span class="split-assign-shared">÷${sharedBy}</span>` : '';
+    const displayPrice = sharedBy > 0 ? formatPrice(lineTotal / sharedBy) : formatPrice(lineTotal);
+
     return `
       <div class="split-assign-item ${isChecked ? 'checked' : ''}" data-assign-ref="${entry.refId}">
         <div class="split-assign-check"></div>
         <span class="split-assign-name">${item.name[currentLang]}</span>
         <span class="split-assign-qty">${entry.qty}×</span>
-        <span class="split-assign-price">${formatPrice(lineTotal)}</span>
+        ${shareLabel}
+        <span class="split-assign-price">${displayPrice}</span>
       </div>
     `;
   }).join('');
@@ -2705,48 +2991,50 @@ function renderStaffHistory() {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function renderSplitPodium() {
-  // Only shown in custom mode when all items are assigned
   const podiumEl = document.getElementById('split-podium');
   if (!podiumEl) return;
 
   if (splitMode !== 'custom') { podiumEl.style.display = 'none'; return; }
 
-  // Check all items assigned
-  const totalAssignedItems = splitAssign.reduce((sum, set) => sum + set.size, 0);
-  const allAssigned = totalAssignedItems >= cart.length && cart.length > 0;
+  // Só mostra depois de todos os items terem pelo menos 1 pessoa atribuída
+  const allAssigned = cart.length > 0 && cart.every(entry =>
+    splitAssign.some(s => s && s.has(entry.refId))
+  );
 
-  if (!allAssigned) { podiumEl.style.display = 'none'; return; }
-
-  // Build sorted leaderboard
-  const names = PERSON_NAMES[currentLang] || PERSON_NAMES.pt;
-  const standings = Array.from({ length: splitPeople }, (_, i) => ({
-    name: names[i],
-    total: getPersonTotal(i),
-    idx: i
-  })).sort((a, b) => b.total - a.total);
-
-  const allEqual = standings.every(s => s.total === standings[0].total);
-
-  if (allEqual) {
-    podiumEl.innerHTML = `<div class="podium-equal">${t().splitPodiumAllEqual}</div>`;
+  if (!allAssigned) {
+    podiumEl.innerHTML = `<div class="split-podium-unassigned">${t().splitPodiumUnassigned}</div>`;
     podiumEl.style.display = 'block';
     return;
   }
 
-  // Podium: top 3 with medal emojis, bar chart for all
+  const standings = Array.from({ length: splitPeople }, (_, i) => ({
+    name: getPersonName(i),
+    total: getPersonTotal(i)
+  })).sort((a, b) => b.total - a.total);
+
+  const max = standings[0]?.total || 1;
   const medals = ['🥇', '🥈', '🥉'];
-  const maxTotal = standings[0].total;
+
+  const allEqual = standings.every(s => Math.abs(s.total - standings[0].total) < 0.01);
+  if (allEqual) {
+    podiumEl.innerHTML = `
+      <div class="split-podium-title">${t().splitPodiumTitle}</div>
+      <div class="split-podium-allequal">${t().splitPodiumAllEqual}</div>`;
+    podiumEl.style.display = 'block';
+    return;
+  }
 
   podiumEl.innerHTML = `
-    <div class="podium-title">${t().splitPodiumTitle}</div>
-    <div class="podium-winner">
-      ${standings[0].name} <span class="podium-winner-suffix">${t().splitPodiumWinner}</span>
+    <div class="split-podium-title">${t().splitPodiumTitle}</div>
+    <div class="split-podium-winner">
+      <span style="color:var(--gold-bright)">${standings[0].name}</span>
+      ${t().splitPodiumWinner}
     </div>
-    <div class="podium-bars">
+    <div class="split-podium-bars">
       ${standings.map((s, rank) => {
-        const pct = maxTotal > 0 ? Math.round((s.total / maxTotal) * 100) : 0;
+        const pct = max > 0 ? (s.total / max) * 100 : 0;
         return `
-          <div class="podium-bar-row">
+          <div class="podium-row">
             <span class="podium-medal">${medals[rank] || ''}</span>
             <span class="podium-name">${s.name}</span>
             <div class="podium-bar-track">
@@ -2762,6 +3050,52 @@ function renderSplitPodium() {
 }
 
 
+/* ─── Rename de pessoa no split ─── */
+function setupPersonRename() {
+  const tabsEl = document.getElementById('split-people-tabs');
+  if (!tabsEl) return;
+
+  let pressTimer = null;
+
+  tabsEl.addEventListener('pointerdown', e => {
+    const nameEl = e.target.closest('.ptab-name');
+    if (!nameEl) return;
+    pressTimer = setTimeout(() => {
+      haptic();
+      const idx = parseInt(nameEl.dataset.renameIdx);
+      const currentName = getPersonName(idx);
+
+      const input = document.createElement('input');
+      input.className = 'ptab-rename-input';
+      input.value = currentName;
+      input.maxLength = 12;
+      input.setAttribute('autocomplete', 'off');
+      input.setAttribute('autocorrect', 'off');
+      input.setAttribute('spellcheck', 'false');
+      nameEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      const save = () => {
+        const newName = input.value.trim();
+        customPersonNames[idx] = newName || '';
+        renderSplitPanel();
+      };
+
+      input.addEventListener('blur', save, { once: true });
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { customPersonNames[idx] = ''; input.blur(); }
+      });
+    }, 450);
+  });
+
+  ['pointerup', 'pointercancel', 'pointermove'].forEach(ev =>
+    tabsEl.addEventListener(ev, () => clearTimeout(pressTimer))
+  );
+}
+
+
 /* ═══════════════════════════════════════════════════════════════════════════
    13. BOOT
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -2769,7 +3103,9 @@ function renderSplitPodium() {
 document.addEventListener('DOMContentLoaded', () => {
   applyBrandColors();
   detectLang();
+  initAnalytics();
   renderAll();
+  track('menu_open');
   setupLanguage();
   setupQuickNav();
   setupSearch();
@@ -2797,11 +3133,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── Split Bill ───
   initSplitAssign();
   setupSplitBill();
+  setupPersonRename();
   // ─── Favorites ───
   setupFavorites();
   renderFavorites();
   // ─── Happy Hour Countdown ───
   setupCountdown();
+  // ─── Allergen Legend + Filter ───
+  setupAllergenLegend();
   // ─── Share Dish ───
   setupShareDish();
 
@@ -2813,6 +3152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('review-modal');
     if (!alreadyRated && !anyOpen) {
       resetReviewModal();
+      track('review_open', { trigger: 'auto_30s' });
       // Mark as auto-triggered and set context label (shown via CSS ::before)
       if (modal) {
         modal.dataset.autoTriggered = '1';
@@ -2826,4 +3166,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 30000);
 });
+
+
 

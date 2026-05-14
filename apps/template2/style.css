@@ -1,4 +1,6 @@
 
+
+
 /* ═══════════════════════════════════════════════════════════════════════════
    NEXO MENU — Identidade O Nosso Prego   v6
    Paleta: cream quente + terracotta + navy profundo
@@ -149,7 +151,6 @@ a { color: inherit; text-decoration: none; }
   padding: 3px;
   border-radius: 100px;
   border: 1px solid rgba(255, 252, 247, 0.18);
-  margin-left: auto;
 }
 
 .lang-toggle button {
@@ -172,7 +173,7 @@ a { color: inherit; text-decoration: none; }
 .hero-content {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  padding: 0 var(--s4)  var(--s4)  var(--s4);
+  padding: 0 var(--s4) var(--s4) var(--s4);
   color: white;
   z-index: 2;
 }
@@ -899,7 +900,8 @@ a { color: inherit; text-decoration: none; }
 
 .item-badge-chef {
   color: var(--navy-mid);
-  border: 1.5px solid rgba(30, 42, 58, 0.28);
+  border: 1.5px solid var(--navy-mid);
+  opacity: 0.75;
 }
 
 .item-badge-new {
@@ -1035,23 +1037,7 @@ a { color: inherit; text-decoration: none; }
   background: var(--bg-alt);
 }
 
-.menu-item-photo-placeholder {
-  width: 88px;
-  height: 88px;
-  border-radius: var(--r-md);
-  flex-shrink: 0;
-  background: var(--bg-alt);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
-  font-family: var(--font-display);
-  font-size: 34px;
-  font-weight: 600;
-  font-style: italic;
-  letter-spacing: 0;
-  border: 1px solid var(--border);
-}
+/* placeholder styles moved to bottom — IMPROVED PHOTO PLACEHOLDER section */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    WINES
@@ -2586,6 +2572,24 @@ body.has-cart {
   line-height: 1;
 }
 
+.split-assign-shared {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(139, 74, 53, 0.1);
+  border-radius: 100px;
+  padding: 2px 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.split-assign-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Equal / Custom mode toggle */
 .split-mode-row {
   display: grid;
@@ -2941,6 +2945,20 @@ body.has-cart {
   color: var(--text-muted);
   line-height: 1.6;
 }
+
+.review-thanks-google-link {
+  display: inline-block;
+  margin-top: var(--s3);
+  padding: 10px 20px;
+  background: var(--brand);
+  color: #fff;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.3px;
+}
+.review-thanks-google-link:active { opacity: 0.85; transform: scale(0.97); }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -3417,5 +3435,428 @@ body.has-cart {
   color: rgba(255,255,255,0.85);
   text-align: center;
   padding: var(--s2) 0;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UX v7 — New features
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Diet filter row ── */
+.diet-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 var(--s3) var(--s2);
+}
+
+.diet-filter-row .diet-filter {
+  flex: 1;
+  padding: 0;
+}
+
+/* Allergen legend trigger button */
+.allergen-legend-btn {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s;
+}
+.allergen-legend-btn:active {
+  transform: scale(0.9);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Allergen legend modal ── */
+.allergen-legend-modal {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.allergen-legend-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.allergen-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border-soft);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.allergen-legend-item:active { transform: scale(0.97); }
+.allergen-legend-item.excluded {
+  background: #FFF0F0;
+  border-color: #C44040;
+}
+.allergen-legend-item.excluded .allergen-legend-name {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.allergen-legend-num {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent);
+  min-width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.allergen-legend-name {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.2;
+  flex: 1;
+}
+
+.allergen-toggle-icon {
+  font-size: 11px;
+  font-weight: 800;
+  color: #C44040;
+  min-width: 12px;
+  text-align: center;
+}
+
+/* Badge on the ⓘ button when allergens are active */
+.allergen-legend-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #C44040;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 100px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  line-height: 1;
+}
+.allergen-legend-btn {
+  position: relative; /* needed for badge absolute positioning */
+}
+
+/* Hint text above list */
+.allergen-modal-hint {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+/* Clear all button */
+.allergen-clear-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: #C44040;
+  background: #FFF0F0;
+  border: 1.5px solid #C44040;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.allergen-clear-btn:active { transform: scale(0.98); }
+
+/* ⓘ button highlight when active */
+.allergen-legend-btn.has-active {
+  border-color: #C44040;
+  color: #C44040;
+}
+
+/* ── Photo lightbox ── */
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.photo-lightbox.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.photo-lightbox-img {
+  max-width: 92vw;
+  max-height: 80vh;
+  border-radius: var(--r-md);
+  object-fit: contain;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  transform: scale(0.94);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.photo-lightbox.show .photo-lightbox-img {
+  transform: scale(1);
+}
+
+.photo-lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+}
+
+/* Add tap-to-zoom cursor on menu photos */
+.menu-item-photo {
+  cursor: zoom-in;
+}
+
+/* ── Empty search state ── */
+.menu-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px var(--s3);
+  text-align: center;
+}
+
+.menu-empty-icon {
+  font-size: 32px;
+  opacity: 0.4;
+}
+
+.menu-empty-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.menu-empty-reset {
+  margin-top: 6px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(139, 74, 53, 0.08);
+  border: 1.5px solid rgba(139, 74, 53, 0.2);
+  padding: 8px 18px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.menu-empty-reset:active {
+  transform: scale(0.96);
+  background: rgba(139, 74, 53, 0.14);
+}
+
+/* ── Favorites ghost state ── */
+/* Ghost state compacto — apenas uma linha, sem header */
+.fav-empty-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px var(--s3);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.6;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.fav-empty-state svg {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+/* ═══ SPLIT — Rename de pessoa ═══ */
+
+/* Ícone de lápis visível na tab activa — indica que é possível renomear */
+.ptab-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.ptab-edit-icon {
+  opacity: 0.55;
+  flex-shrink: 0;
+  margin-top: -1px;
+  transition: opacity 0.15s;
+}
+
+.split-person-tab.active .ptab-edit-icon {
+  opacity: 0.8;
+}
+
+/* Tooltip hint a aparecer debaixo das tabs — só na primeira vez */
+.split-rename-hint {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px 0 2px;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  opacity: 0.7;
+}
+
+/* Input inline dentro da tab quando em rename */
+.ptab-rename-input {
+  background: rgba(255, 255, 255, 0.18);
+  border: none;
+  border-bottom: 1.5px solid var(--gold-bright);
+  color: white;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  width: 72px;
+  text-align: center;
+  outline: none;
+  padding: 2px 4px;
+  border-radius: 2px;
+  caret-color: var(--gold-bright);
+  -webkit-appearance: none;
+}
+
+/* Podium — estado de empate */
+.split-podium-allequal {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-style: italic;
+  color: rgba(255,255,255,0.7);
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* Podium — estado de items não atribuídos */
+.split-podium-unassigned {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  padding: var(--s2) 0;
+  font-style: italic;
+}
+
+.hero-top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-left: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SOLD OUT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.menu-item.sold-out {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.menu-item.sold-out .menu-item-photo,
+.menu-item.sold-out .menu-item-photo-placeholder {
+  filter: grayscale(1);
+}
+.item-badge-soldout {
+  background: #6B6B6B;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  display: inline-block;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   IMPROVED PHOTO PLACEHOLDER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.menu-item-photo-placeholder {
+  width: 88px;
+  height: 88px;
+  border-radius: var(--r-md);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  position: relative;
+}
+
+.menu-item-photo-placeholder[data-section="pregos"]     { background: linear-gradient(135deg, #8B4A35 0%, #C4724F 100%); }
+.menu-item-photo-placeholder[data-section="entradas"]   { background: linear-gradient(135deg, #5A7A55 0%, #8AB085 100%); }
+.menu-item-photo-placeholder[data-section="petiscos"]   { background: linear-gradient(135deg, #B8894E 0%, #D4A574 100%); }
+.menu-item-photo-placeholder[data-section="mariscos-quentes"] { background: linear-gradient(135deg, #2E6B8A 0%, #5A9EBF 100%); }
+.menu-item-photo-placeholder[data-section="cataplana"]  { background: linear-gradient(135deg, #7A4A2E 0%, #B07048 100%); }
+.menu-item-photo-placeholder[data-section="arroz"]      { background: linear-gradient(135deg, #8A7A2E 0%, #C4B04E 100%); }
+.menu-item-photo-placeholder[data-section="carne"]      { background: linear-gradient(135deg, #6B2E2E 0%, #A04848 100%); }
+.menu-item-photo-placeholder[data-section="peixe"]      { background: linear-gradient(135deg, #2E5A7A 0%, #4E8AAA 100%); }
+.menu-item-photo-placeholder[data-section="sobremesas"] { background: linear-gradient(135deg, #7A4A6B 0%, #AA6E9A 100%); }
+
+.menu-item-photo-placeholder span {
+  color: rgba(255,255,255,0.8);
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 600;
+  font-style: italic;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
