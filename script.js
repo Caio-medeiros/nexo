@@ -302,6 +302,28 @@
 
 
 /* ══════════════════════════════
+   FAQ ACCORDION
+   ══════════════════════════════ */
+(function initFaq() {
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item   = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+
+      document.querySelectorAll('.faq-item.open').forEach(i => {
+        i.classList.remove('open');
+        i.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
+      });
+
+      if (!isOpen) {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+})();
+
+/* ══════════════════════════════
    PRODUCT CONTEXT — reveal + parallax
    ══════════════════════════════ */
 (function initProductContext() {
@@ -319,6 +341,12 @@
   }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
 
   pcEls.forEach(el => pcObs.observe(el));
+
+  // FAQ cursor hover
+  document.querySelectorAll('.faq-q, .faq-cta').forEach(el => {
+    el.addEventListener('mouseenter', () => ring?.classList.add('active'));
+    el.addEventListener('mouseleave', () => ring?.classList.remove('active'));
+  });
 
   // Parallax on scroll — desktop only
   if (!matchMedia('(hover: hover)').matches) return;
