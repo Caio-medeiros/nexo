@@ -416,6 +416,10 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.1;
   letter-spacing: -0.2px;
   position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
 }
 
 .special-banner-text {
@@ -3275,14 +3279,15 @@ body.has-cart {
 
 .special-countdown {
   font-family: 'SF Mono', Menlo, monospace;
-  font-size: 13px;
+  font-size: .65rem;
   font-weight: 800;
   background: rgba(255,255,255,0.18);
   padding: 4px 10px;
   border-radius: 100px;
   letter-spacing: 0.5px;
   flex-shrink: 0;
-  color: white;
+  color: var(--text-muted);
+  width: fit-content;
 }
 
 .special-countdown.urgent {

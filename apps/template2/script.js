@@ -665,15 +665,15 @@ function renderSpecialBanner() {
   const periodEl   = document.getElementById('special-period');
   const ghostEl    = document.getElementById('special-ghost');
   const labelEl    = document.getElementById('special-label');
-  const headlineEl = document.getElementById('special-headline');
-  const textEl     = document.getElementById('special-text');
+  const headlineTextEl = document.getElementById('special-headline-text');
+  const textEl         = document.getElementById('special-text');
 
-  if (hourEl)     hourEl.textContent     = `${hh}:${mm}`;
-  if (periodEl)   periodEl.textContent   = banner.label;
-  if (ghostEl)    ghostEl.textContent    = banner.ghost;   // ← palavra curta só
-  if (labelEl)    labelEl.textContent    = banner.label;
-  if (headlineEl) headlineEl.textContent = banner.headline;
-  if (textEl)     textEl.textContent     = banner.text;
+  if (hourEl)         hourEl.textContent          = `${hh}:${mm}`;
+  if (periodEl)       periodEl.textContent        = banner.label;
+  if (ghostEl)        ghostEl.textContent         = banner.ghost;
+  if (labelEl)        labelEl.textContent         = banner.label;
+  if (headlineTextEl) headlineTextEl.textContent  = banner.headline;
+  if (textEl)         textEl.textContent          = banner.text;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2023,6 +2023,8 @@ function addToCart(refId) {
   } else {
     cart.push({ refId, qty: 1 });
   }
+  const it = getItemByRef(refId);
+  if (it) track('add_to_cart', { item: it.name.pt, section: refId.split(':')[0], price: it.price });
   onCartChange();
 }
 
