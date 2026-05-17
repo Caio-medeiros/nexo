@@ -23,9 +23,9 @@ const CONFIG = {
      1. IDENTIDADE  ★
      ════════════════════════════════════════════════════════════════════════ */
 
-  slug:  "o-nosso-prego",
-  name:  "Nexo Restaurante",
-  city:  "Parede · Quinta das Marianas",
+  slug:  "nexo-restaurant",
+  name:  "NEXO Restaurant",
+  city:  "Lisboa, Portugal",
 
   /* Analytics — preencher com o Measurement ID do GA4 (ex: "G-XXXXXXXXXX")
      Deixar vazio ("") para desactivar. */
@@ -56,9 +56,9 @@ const CONFIG = {
      3. CONTACTOS  ★
      ════════════════════════════════════════════════════════════════════════ */
 
-  address:      "Rua Dr. João Baptista Jacquet, 120 · 2775-315 Parede",
-  phone:        "+351 210 186 581",
-  phoneDisplay: "210 186 581",
+  address:      "Rua Exemplo, 1 · 1000-001 Lisboa",
+  phone:        "+351 200 000 000",
+  phoneDisplay: "200 000 000",
 
   hours: {
     pt: "Seg–Dom · 12h–15h · 19h–24h",
@@ -76,17 +76,17 @@ const CONFIG = {
      4. REDES & REVIEWS
      ════════════════════════════════════════════════════════════════════════ */
 
-  googleReviewUrl:  "https://search.google.com/local/writereview?placeid=ChIJW1NKLK_JHg0RqdorOo4nkjA",
+  googleReviewUrl:  "",
   googleRating:     4.6,       // ○ estrelas mostradas no hero (null para esconder)
   googleReviewCount:"1.2k",    // ○ nº de reviews (texto livre)
-  theForkReviewUrl: "https://www.thefork.pt/restaurante/o-nosso-prego-r534661/reviews",
-  instagramHandle:  "onossoprego",
-  whatsappNumber:   "351935438292",
+  theForkReviewUrl: "",
+  instagramHandle:  "nexosolutions",
+  whatsappNumber:   "351200000000",
   whatsappLoyaltyMessage: {
-    pt: "Olá! Gostaria de falar com O Nosso Prego Parede.",
-    en: "Hello! I would like to contact O Nosso Prego Parede.",
-    es: "¡Hola! Me gustaría contactar con O Nosso Prego Parede.",
-    fr: "Bonjour! Je souhaite contacter O Nosso Prego Parede."
+    pt: "Olá! Gostaria de falar com o NEXO Restaurant.",
+    en: "Hello! I would like to contact NEXO Restaurant.",
+    es: "¡Hola! Me gustaría contactar con NEXO Restaurant.",
+    fr: "Bonjour! Je souhaite contacter NEXO Restaurant."
   },
 
 
@@ -153,7 +153,7 @@ const CONFIG = {
     /* ── PREGOS ── */
     {
       id: "pregos",
-      section: { pt: "Os Nossos Pregos", en: "Our Signature Pregos", es: "Nuestros Pregos", fr: "Nos Pregos Signature" },
+      section: { pt: "Pregos Especiais", en: "Signature Pregos", es: "Pregos Especiales", fr: "Pregos Signature" },
       desc: { pt: "A especialidade da casa desde 2009.", en: "Our signature since 2009.", es: "Nuestra especialidad desde 2009.", fr: "Notre spécialité depuis 2009." },
       items: [
         {
@@ -185,7 +185,7 @@ const CONFIG = {
           // Croquete como entrada quente + Baba de Camelo para acabar em grande
         },
         {
-          name: { pt: "Bitoque à Nosso Prego", en: "O Nosso Prego Steak", es: "Bitoque à Nosso Prego", fr: "Bitoque à Nosso Prego" },
+          name: { pt: "Bitoque da Casa", en: "House Steak", es: "Bitoque de la Casa", fr: "Bitoque de la Maison" },
           desc: { pt: "A nossa versão especial do bitoque tradicional português.", en: "Our special version of the traditional Portuguese bitoque.", es: "Nuestra versión del bitoque tradicional.", fr: "Notre version du bitoque traditionnel." },
           price: "15,50€", photo: null, diet: [], allergens: [3,7], badge: "chef",
           upsell: ["entradas:3", "sobremesas:2"]
@@ -317,7 +317,7 @@ const CONFIG = {
           // Amêijoa Bulhão Pato é a versão temperada do mesmo ingrediente + Mexilhão para mesa de bivalves
         },
         {
-          name: { pt: "Amêijoa à Nosso Prego (300g)", en: "O Nosso Prego Clams", es: "Almejas à Nosso Prego", fr: "Palourdes à Nosso Prego" },
+          name: { pt: "Amêijoa da Casa (300g)", en: "House Clams", es: "Almejas de la Casa", fr: "Palourdes Maison" },
           desc: { pt: "Receita exclusiva da casa.", en: "Exclusive house recipe.", es: "Receta exclusiva de la casa.", fr: "Recette exclusive maison." },
           price: "16,00€", photo: null, diet: ["GF","LF"], allergens: [12,14], badge: "chef",
           upsell: ["entradas:0", "cataplana:0"]
@@ -500,7 +500,7 @@ const CONFIG = {
       desc: { pt: "Fresco, do Atlântico.", en: "Fresh, from the Atlantic.", es: "Fresco del Atlántico.", fr: "Frais de l'Atlantique." },
       items: [
         {
-          name: { pt: "Bacalhau à Nosso Prego", en: "O Nosso Prego Codfish", es: "Bacalao à Nosso Prego", fr: "Morue à Nosso Prego" },
+          name: { pt: "Bacalhau da Casa", en: "House Codfish", es: "Bacalao de la Casa", fr: "Morue Maison" },
           desc: { pt: "Receita exclusiva com bacalhau e broa.", en: "Exclusive house recipe with codfish and cornbread.", es: "Receta exclusiva.", fr: "Recette exclusive." },
           price: "12,50€", photo: null, diet: ["LF"], allergens: [1,4], badge: "chef",
           upsell: ["entradas:0", "sobremesas:2"]

@@ -97,12 +97,18 @@ const CONFIG = {
     es: "Mar–Dom · 12h–15h · 19h–23h",
     fr: "Mar–Dim · 12h–15h · 19h–23h"
   },
-  hoursToday: {                    // texto curto mostrado no hero
-    pt: "Aberto até 23h",
-    en: "Open until 11pm",
-    es: "Abierto hasta las 23h",
-    fr: "Ouvert jusqu'à 23h"
-  },
+  // ══════════ HORÁRIO AUTOMÁTICO ══════════
+  // Índice = dia da semana (0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb)
+  // null = fechado | array de slots { open: "HH:MM", close: "HH:MM" }
+  hoursSchedule: [
+    null,                                                                                   // 0 Dom
+    null,                                                                                   // 1 Seg
+    [{ open: "12:00", close: "15:00" }, { open: "19:00", close: "23:00" }],  // 2 Ter
+    [{ open: "12:00", close: "15:00" }, { open: "19:00", close: "23:00" }],  // 3 Qua
+    [{ open: "12:00", close: "15:00" }, { open: "19:00", close: "23:00" }],  // 4 Qui
+    [{ open: "12:00", close: "15:00" }, { open: "19:00", close: "23:00" }],  // 5 Sex
+    [{ open: "12:00", close: "15:00" }, { open: "19:00", close: "23:00" }],  // 6 Sáb
+  ],
 
   // ══════════ MENU ══════════
   // diet: V=vegetariano, VG=vegan, GF=sem glúten, LF=sem lactose
@@ -139,7 +145,8 @@ const CONFIG = {
           price: "8,00€",
           photo: "https://images.unsplash.com/photo-1625944525533-473f1b3d9684?w=400&q=80",
           diet: ["V"],
-          allergens: [1, 3]
+          allergens: [1, 3],
+          unavailable: true
         },
         {
           name: { pt: "Amêijoas à Bulhão Pato", en: "Clams Bulhão Pato", es: "Almejas Bulhão Pato", fr: "Palourdes Bulhão Pato" },
@@ -172,7 +179,8 @@ const CONFIG = {
           price: "14,50€",
           photo: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&q=80",
           diet: ["LF"],
-          allergens: [3, 4]
+          allergens: [3, 4],
+          popular: true
         },
         {
           name: { pt: "Polvo à lagareiro", en: "Grilled octopus", es: "Pulpo a la brasa", fr: "Poulpe grillé" },
@@ -185,7 +193,8 @@ const CONFIG = {
           price: "19,00€",
           photo: "https://images.unsplash.com/photo-1580959375944-abd7e991f971?w=400&q=80",
           diet: ["GF", "LF"],
-          allergens: [14]
+          allergens: [14],
+          popular: true
         },
         {
           name: { pt: "Risotto de cogumelos", en: "Mushroom risotto", es: "Risotto de setas", fr: "Risotto aux champignons" },
@@ -257,7 +266,8 @@ const CONFIG = {
           price: "5,00€",
           photo: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=400&q=80",
           diet: ["VG", "GF", "LF"],
-          allergens: []
+          allergens: [],
+          isNew: true
         }
       ]
     }

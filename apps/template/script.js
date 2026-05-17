@@ -43,7 +43,13 @@ const UI = {
     loyaltyCta: "Aceitar",
     loyaltyMsg: "Olá! Quero receber os pratos especiais da semana de {name}.",
     noAllergens: "Sem alergénios declarados.",
-    allergenListLabel: "Contém"
+    allergenListLabel: "Contém",
+    popular: "Mais pedido",
+    isNew: "Novo",
+    unavailable: "Esgotado",
+    openUntil: "Aberto até",
+    closedOpens: "Fechado · Abre às",
+    closedToday: "Fechado hoje"
   },
   en: {
     special: "This week", menu: "Menu", events: "Events",
@@ -61,7 +67,13 @@ const UI = {
     loyaltyCta: "Accept",
     loyaltyMsg: "Hi! I'd like to receive the weekly specials from {name}.",
     noAllergens: "No allergens declared.",
-    allergenListLabel: "Contains"
+    allergenListLabel: "Contains",
+    popular: "Most ordered",
+    isNew: "New",
+    unavailable: "Unavailable",
+    openUntil: "Open until",
+    closedOpens: "Closed · Opens at",
+    closedToday: "Closed today"
   },
   es: {
     special: "Esta semana", menu: "Menú", events: "Eventos",
@@ -79,7 +91,13 @@ const UI = {
     loyaltyCta: "Aceptar",
     loyaltyMsg: "¡Hola! Quiero recibir los platos especiales de {name}.",
     noAllergens: "Sin alérgenos declarados.",
-    allergenListLabel: "Contiene"
+    allergenListLabel: "Contiene",
+    popular: "Más pedido",
+    isNew: "Nuevo",
+    unavailable: "Agotado",
+    openUntil: "Abierto hasta",
+    closedOpens: "Cerrado · Abre a las",
+    closedToday: "Cerrado hoy"
   },
   fr: {
     special: "Cette semaine", menu: "Menu", events: "Événements",
@@ -97,7 +115,13 @@ const UI = {
     loyaltyCta: "Accepter",
     loyaltyMsg: "Bonjour! Je veux recevoir les plats de la semaine de {name}.",
     noAllergens: "Aucun allergène déclaré.",
-    allergenListLabel: "Contient"
+    allergenListLabel: "Contient",
+    popular: "Plus commandé",
+    isNew: "Nouveau",
+    unavailable: "Épuisé",
+    openUntil: "Ouvert jusqu'à",
+    closedOpens: "Fermé · Ouvre à",
+    closedToday: "Fermé aujourd'hui"
   }
 };
 
@@ -127,6 +151,42 @@ function applyBrandColors() {
   if (CONFIG.brandColorDark) {
     document.documentElement.style.setProperty('--accent-dark', CONFIG.brandColorDark);
   }
+}
+
+function computeHoursToday() {
+  if (!CONFIG.hoursSchedule) {
+    const text = CONFIG.hoursToday ? CONFIG.hoursToday[currentLang] : '';
+    return { text, isOpen: false };
+  }
+
+  const now = new Date();
+  const slots = CONFIG.hoursSchedule[now.getDay()];
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  function toMin(s) { const [h, m] = s.split(':').map(Number); return h * 60 + m; }
+  function fmt(s) {
+    const [h, m] = s.split(':').map(Number);
+    if (currentLang === 'en') {
+      const p = h >= 12 ? 'pm' : 'am';
+      const h12 = h % 12 || 12;
+      return m ? `${h12}:${String(m).padStart(2, '0')}${p}` : `${h12}${p}`;
+    }
+    return `${h}h${m ? String(m).padStart(2, '0') : ''}`;
+  }
+
+  if (!slots) return { text: t().closedToday, isOpen: false };
+
+  for (const slot of slots) {
+    if (nowMin >= toMin(slot.open) && nowMin < toMin(slot.close)) {
+      return { text: `${t().openUntil} ${fmt(slot.close)}`, isOpen: true };
+    }
+  }
+  for (const slot of slots) {
+    if (nowMin < toMin(slot.open)) {
+      return { text: `${t().closedOpens} ${fmt(slot.open)}`, isOpen: false };
+    }
+  }
+  return { text: t().closedToday, isOpen: false };
 }
 
 function detectLang() {
@@ -179,7 +239,11 @@ function renderHero() {
   document.getElementById('hero-name').textContent = CONFIG.name;
   document.getElementById('hero-tagline').textContent = CONFIG.tagline[currentLang];
   document.getElementById('hero-city').textContent = CONFIG.city;
-  document.getElementById('hero-hours-today').textContent = CONFIG.hoursToday[currentLang];
+  const hoursEl = document.getElementById('hero-hours-today');
+  const { text: hoursText, isOpen } = computeHoursToday();
+  hoursEl.textContent = hoursText;
+  hoursEl.classList.toggle('hours-open', isOpen);
+  hoursEl.classList.toggle('hours-closed', !isOpen);
 
   document.title = `${CONFIG.name} — Menu`;
 }
@@ -236,10 +300,19 @@ function renderMenu() {
       ${sec.items.map((item, idx) => {
         const matches = currentFilter === 'all' || (item.diet || []).includes(currentFilter);
         const dataIdx = `${sec.id}-${idx}`;
+        const isUnavailable = item.unavailable === true;
+        const hasBadges = item.popular || item.isNew || isUnavailable;
 
         return `
-        <article class="menu-item ${matches ? '' : 'hidden'}" data-item="${dataIdx}">
+        <article class="menu-item ${matches ? '' : 'hidden'} ${isUnavailable ? 'menu-item-unavailable' : ''}" data-item="${dataIdx}">
           <div class="menu-item-body">
+            ${hasBadges ? `
+              <div class="item-badges">
+                ${item.popular ? `<span class="item-badge badge-popular">${t().popular}</span>` : ''}
+                ${item.isNew ? `<span class="item-badge badge-new">${t().isNew}</span>` : ''}
+                ${isUnavailable ? `<span class="item-badge badge-unavailable">${t().unavailable}</span>` : ''}
+              </div>
+            ` : ''}
             <h3 class="menu-item-name">${item.name[currentLang]}</h3>
             ${item.desc && item.desc[currentLang] ? `<p class="menu-item-desc">${item.desc[currentLang]}</p>` : ''}
             <div class="menu-item-meta">
@@ -312,7 +385,9 @@ function renderLoyalty() {
 
 function renderFooter() {
   document.getElementById('footer-addr-label').textContent = t().address;
-  document.getElementById('footer-address').textContent = CONFIG.address;
+  const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(CONFIG.address)}`;
+  document.getElementById('footer-address').innerHTML =
+    `<a href="${mapsUrl}" target="_blank" rel="noopener" class="footer-address-link">${CONFIG.address}</a>`;
   document.getElementById('footer-hours-label').textContent = t().hours;
   document.getElementById('footer-hours').textContent = CONFIG.hours[currentLang];
   document.getElementById('share-label').textContent = t().share;
@@ -474,6 +549,12 @@ function openItemModal(sectionId, itemIdx) {
   // Textos
   document.getElementById('item-modal-name').textContent = item.name[currentLang];
   document.getElementById('item-modal-price').textContent = item.price;
+
+  // Badges (popular, novo) no modal
+  document.getElementById('item-modal-badges').innerHTML = [
+    item.popular ? `<span class="item-badge badge-popular">${t().popular}</span>` : '',
+    item.isNew   ? `<span class="item-badge badge-new">${t().isNew}</span>`       : ''
+  ].join('');
   const descEl = document.getElementById('item-modal-desc');
   if (item.desc && item.desc[currentLang]) {
     descEl.textContent = item.desc[currentLang];
@@ -517,7 +598,7 @@ function setupMenuClicks() {
     }
 
     const item = e.target.closest('[data-item]');
-    if (!item) return;
+    if (!item || item.classList.contains('menu-item-unavailable')) return;
     const [sectionId, itemIdx] = item.dataset.item.split('-');
     openItemModal(sectionId, parseInt(itemIdx));
   });

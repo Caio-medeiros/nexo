@@ -1053,6 +1053,82 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   BADGES DE ITEM — popular, novo, esgotado
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.item-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.item-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 100px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.badge-popular {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.badge-new {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.badge-unavailable {
+  background: #F3F4F6;
+  color: #6B7280;
+}
+
+/* Item esgotado — acinzentado, não clicável */
+.menu-item-unavailable {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+.menu-item-unavailable .menu-item-price {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* Badges no modal do prato */
+.item-modal-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: var(--s2);
+}
+.item-modal-badges:empty { display: none; }
+.item-modal-badges .item-badge { font-size: 10px; padding: 4px 9px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOOTER — morada clicável (Maps)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.footer-address-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--border);
+  transition: color 0.15s;
+}
+.footer-address-link:active { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO — indicador de aberto / fechado
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.hours-open  { color: #86EFAC; }
+.hours-closed { color: #FCA5A5; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ANIMAÇÕES
    ═══════════════════════════════════════════════════════════════════════════ */
 
