@@ -52,6 +52,17 @@
   window.addEventListener('scroll', onScroll, { passive:true });
   onScroll();
 
+  /* logo click pulse */
+  const logoEl = document.querySelector('.logo');
+  if (logoEl) {
+    logoEl.addEventListener('click', () => {
+      logoEl.classList.remove('logo-pulse');
+      void logoEl.offsetWidth;
+      logoEl.classList.add('logo-pulse');
+      logoEl.addEventListener('animationend', () => logoEl.classList.remove('logo-pulse'), { once: true });
+    });
+  }
+
   /* ══════════════════════════════════════════
      HAMBURGER / MOBILE MENU
 
@@ -163,6 +174,19 @@
   }, { threshold:0.25 });
   document.querySelectorAll('.hero-stats, .stats').forEach(el => countObs.observe(el));
 
+  /* ── stats stagger ── */
+  const statObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll('.stat').forEach((stat, i) => {
+          setTimeout(() => stat.classList.add('visible'), i * 110);
+        });
+        statObs.unobserve(e.target);
+      }
+    });
+  }, { threshold:0.15 });
+  document.querySelectorAll('.stats').forEach(el => statObs.observe(el));
+
   /* ══════════════════════════════════════════
      PHONE PARALLAX TILT
      ══════════════════════════════════════════ */
@@ -237,6 +261,15 @@
   const form     = document.getElementById('nexoForm');
   const formMsg  = document.getElementById('formMsg');
   const formStat = document.getElementById('formStatus');
+
+  /* floating label: track select value */
+  form?.querySelectorAll('select').forEach(sel => {
+    const fg = sel.closest('.fg');
+    if (!fg) return;
+    const update = () => fg.classList.toggle('has-value', !!sel.value);
+    sel.addEventListener('change', update);
+    update();
+  });
 
   function encodeForm(data) {
     return new URLSearchParams(data).toString();

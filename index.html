@@ -409,9 +409,9 @@
             <div class="bvu-suggest">
               <div class="bvus-head">◇ Combina com…</div>
               <div class="bvus-pills">
-                <span class="bvus-p bvus-on">🍷 Vinho da casa <em>+4€</em></span>
-                <span class="bvus-p">🍮 Pudim <em>+3,50€</em></span>
-                <span class="bvus-p">🧀 Queijo <em>+3€</em></span>
+                <span class="bvus-p bvus-on">Vinho da casa <em>+4€</em></span>
+                <span class="bvus-p">Pudim <em>+3,50€</em></span>
+                <span class="bvus-p">Queijo <em>+3€</em></span>
               </div>
               <div class="bvus-result">+€4 · sem a equipa intervir</div>
             </div>
@@ -677,7 +677,7 @@
       <p><strong>Display Stand NFC:</strong> €5 por unidade, pagamento único. A mensalidade cobre software, suporte e evolução contínua do produto. Quem entrar agora mantém o preço de lançamento para sempre.</p>
     </div>
 
-<p class="annual-note reveal">💡 Plano anual disponível — 1 mês grátis. <a href="#contacto">Fale connosco →</a></p>
+<p class="annual-note reveal">Plano anual disponível — 1 mês grátis. <a href="#contacto">Fale connosco →</a></p>
 
 <div class="impact-block reveal">
   <div class="impact-left">
@@ -871,11 +871,11 @@
         </p>
         <div class="fg">
           <label for="nome">Nome <em>*</em></label>
-          <input type="text" id="nome" name="nome" placeholder="O seu nome" required>
+          <input type="text" id="nome" name="nome" placeholder="O seu nome" required autocomplete="name">
         </div>
         <div class="fg">
           <label for="email">Email <em>*</em></label>
-          <input type="email" id="email" name="email" placeholder="email@restaurante.pt" required>
+          <input type="email" id="email" name="email" placeholder="email@restaurante.pt" required autocomplete="email">
         </div>
         <div class="fg">
           <label for="tipo">Tipo de negócio <em>*</em></label>
@@ -886,12 +886,16 @@
             <option>Evento</option><option>Outro</option>
           </select>
         </div>
+        <div class="fg">
+          <label for="mensagem">Mensagem</label>
+          <textarea id="mensagem" name="mensagem" placeholder="Conte-nos um pouco sobre o seu negócio…" rows="3"></textarea>
+        </div>
         <button type="submit" class="form-submit">
           <span>Enviar</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </button>
         <p class="form-helper">Respondemos em menos de 24 horas com uma demo personalizada.</p>
-        <div class="form-msg" id="formMsg"></div>
+        <div class="form-msg" id="formMsg" role="status" aria-live="polite" aria-atomic="true"></div>
       </form>
     </div>
   </div>

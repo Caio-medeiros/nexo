@@ -655,25 +655,17 @@ function renderSpecialBanner() {
 
   if (!banner) { el.style.display = 'none'; return; }
 
-  const now  = new Date();
-  const hh   = String(now.getHours()).padStart(2, '0');
-  const mm   = String(now.getMinutes()).padStart(2, '0');
-
   el.style.display = '';
 
-  const hourEl     = document.getElementById('special-hour');
-  const periodEl   = document.getElementById('special-period');
-  const ghostEl    = document.getElementById('special-ghost');
-  const labelEl    = document.getElementById('special-label');
+  const ghostEl        = document.getElementById('special-ghost');
+  const labelEl        = document.getElementById('special-label');
   const headlineTextEl = document.getElementById('special-headline-text');
   const textEl         = document.getElementById('special-text');
 
-  if (hourEl)         hourEl.textContent          = `${hh}:${mm}`;
-  if (periodEl)       periodEl.textContent        = banner.label;
-  if (ghostEl)        ghostEl.textContent         = banner.ghost;
-  if (labelEl)        labelEl.textContent         = banner.label;
-  if (headlineTextEl) headlineTextEl.textContent  = banner.headline;
-  if (textEl)         textEl.textContent          = banner.text;
+  if (ghostEl)        ghostEl.textContent        = banner.ghost;
+  if (labelEl)        labelEl.textContent        = banner.label;
+  if (headlineTextEl) headlineTextEl.textContent = banner.headline;
+  if (textEl)         textEl.textContent         = banner.text;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -866,17 +858,19 @@ function renderMenu() {
                 </div>
               ` : ''}
               <div class="menu-item-actions">
-                <button class="menu-item-bookmark ${isFavorited(refId) ? 'saved' : ''}" data-bookmark-ref="${refId}" aria-label="Guardar favorito" type="button">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
-                </button>
                 ${addBtnHtml}
               </div>
             </div>
           </div>
-          ${item.photo
-            ? `<img class="menu-item-photo" src="${item.photo}" loading="lazy" alt="${item.name[currentLang]}">`
-            : `<div class="menu-item-photo-placeholder" data-section="${sec.id}"><span>${item.name[currentLang][0].toUpperCase()}</span></div>`
-          }
+          <div class="menu-item-visual">
+            ${item.photo
+              ? `<img class="menu-item-photo" src="${item.photo}" loading="lazy" alt="${item.name[currentLang]}">`
+              : `<div class="menu-item-photo-placeholder" data-section="${sec.id}"><span>${item.name[currentLang][0].toUpperCase()}</span></div>`
+            }
+            <button class="menu-item-bookmark ${isFavorited(refId) ? 'saved' : ''}" data-bookmark-ref="${refId}" aria-label="Guardar favorito" type="button">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+            </button>
+          </div>
         </article>
         `;
       }).join('');
@@ -1132,10 +1126,10 @@ function resetReviewModal() {
   const s2h = document.getElementById('review-step-2-happy');
   const s2u = document.getElementById('review-step-2-unhappy');
   const s3 = document.getElementById('review-step-3');
-  if (s1) s1.style.display = 'block';
-  if (s2h) s2h.style.display = 'none';
-  if (s2u) s2u.style.display = 'none';
-  if (s3) s3.style.display = 'none';
+  showReviewStep(s1);
+  hideReviewStep(s2h);
+  hideReviewStep(s2u);
+  hideReviewStep(s3);
   // Reset stars
   document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('lit'));
   const label = document.getElementById('star-label');
@@ -1145,28 +1139,43 @@ function resetReviewModal() {
   if (ta) ta.value = '';
 }
 
+function showReviewStep(el) {
+  if (!el) return;
+  el.style.display = 'block';
+  el.classList.remove('review-step-enter');
+  void el.offsetWidth;
+  el.classList.add('review-step-enter');
+}
+function hideReviewStep(el) {
+  if (!el) return;
+  el.style.display = 'none';
+  el.classList.remove('review-step-enter');
+}
+
 function setupRatingGate() {
   const picker = document.getElementById('star-picker');
   if (!picker) return;
 
-  // Hover: light up stars up to hovered index
+  // Hover: light up stars up to hovered index (instant \u2014 no stagger on hover)
   picker.addEventListener('mouseover', e => {
     const btn = e.target.closest('.star-btn');
     if (!btn) return;
     const n = parseInt(btn.dataset.star);
     document.querySelectorAll('.star-btn').forEach((b, i) => {
+      b.style.setProperty('--star-d', '0ms');
       b.classList.toggle('lit', i < n);
     });
     const label = document.getElementById('star-label');
     if (label) {
       label.textContent = t().starLabels[n] || '';
-      label.className = 'star-label ' + (n >= 4 ? 'positive' : 'negative');
+      label.className = 'star-label pop ' + (n >= 4 ? 'positive' : 'negative');
     }
   });
 
   picker.addEventListener('mouseleave', () => {
-    // Restore to currentRating state
+    // Restore to currentRating state (instant)
     document.querySelectorAll('.star-btn').forEach((b, i) => {
+      b.style.setProperty('--star-d', '0ms');
       b.classList.toggle('lit', i < currentRating);
     });
     const label = document.getElementById('star-label');
@@ -1184,24 +1193,20 @@ function setupRatingGate() {
     currentRating = parseInt(btn.dataset.star);
     track('review_rate', { rating: currentRating, sentiment: currentRating >= 4 ? 'positive' : 'negative' });
 
-    // Light up stars permanently
+    // Light up stars permanently with stagger
     document.querySelectorAll('.star-btn').forEach((b, i) => {
+      b.style.setProperty('--star-d', `${i * 45}ms`);
       b.classList.toggle('lit', i < currentRating);
     });
 
     // Brief pause then advance to step 2
     setTimeout(() => {
-      const s1 = document.getElementById('review-step-1');
-      if (s1) s1.style.display = 'none';
+      hideReviewStep(document.getElementById('review-step-1'));
 
       if (currentRating >= 4) {
-        // Happy path: choose platform (Google or TheFork)
-        const s2h = document.getElementById('review-step-2-happy');
-        if (s2h) s2h.style.display = 'block';
+        showReviewStep(document.getElementById('review-step-2-happy'));
       } else {
-        // Unhappy path: private feedback
-        const s2u = document.getElementById('review-step-2-unhappy');
-        if (s2u) s2u.style.display = 'block';
+        showReviewStep(document.getElementById('review-step-2-unhappy'));
         const ta = document.getElementById('review-textarea');
         if (ta) setTimeout(() => ta.focus(), 50);
       }
@@ -1223,6 +1228,22 @@ function setupRatingGate() {
     });
   }
 
+  // Char counter for private feedback textarea
+  const reviewTa = document.getElementById('review-textarea');
+  if (reviewTa) {
+    const counter = document.createElement('p');
+    counter.className = 'review-char-counter';
+    reviewTa.insertAdjacentElement('afterend', counter);
+    const maxLen = parseInt(reviewTa.getAttribute('maxlength') || 500);
+    function updateCharCounter() {
+      const used = reviewTa.value.length;
+      counter.textContent = `${used}/${maxLen}`;
+      counter.classList.toggle('review-char-warn', maxLen - used < 60);
+    }
+    reviewTa.addEventListener('input', updateCharCounter);
+    updateCharCounter();
+  }
+
   // When user clicks a platform link on happy path → show thanks after
   ['review-google', 'review-thefork'].forEach(id => {
     const el = document.getElementById(id);
@@ -1239,9 +1260,9 @@ function showThanks(happy) {
   const s2h = document.getElementById('review-step-2-happy');
   const s2u = document.getElementById('review-step-2-unhappy');
   const s3 = document.getElementById('review-step-3');
-  if (s2h) s2h.style.display = 'none';
-  if (s2u) s2u.style.display = 'none';
-  if (s3) s3.style.display = 'block';
+  hideReviewStep(s2h);
+  hideReviewStep(s2u);
+  showReviewStep(s3);
 
   const icon = document.getElementById('review-thankyou-icon');
   const title = document.getElementById('review-thanks-title');
@@ -1340,6 +1361,10 @@ function setupQuickNav() {
     const btn = e.target.closest('[data-target]');
     if (!btn) return;
     haptic();
+    btn.classList.remove('tap-bounce');
+    void btn.offsetWidth;
+    btn.classList.add('tap-bounce');
+    btn.addEventListener('animationend', () => btn.classList.remove('tap-bounce'), { once: true });
     if (btn.classList.contains('quick-nav-review')) {
       resetReviewModal();
       openModal('review-modal');
@@ -2017,6 +2042,8 @@ function getCartQty(refId) {
 
 // Adiciona 1x ao cart (ou incrementa)
 function addToCart(refId) {
+  const pill = document.getElementById('cart-pill');
+  const wasVisible = pill?.classList.contains('show');
   const entry = cart.find(c => c.refId === refId);
   if (entry) {
     entry.qty += 1;
@@ -2026,6 +2053,12 @@ function addToCart(refId) {
   const it = getItemByRef(refId);
   if (it) track('add_to_cart', { item: it.name.pt, section: refId.split(':')[0], price: it.price });
   onCartChange();
+  if (wasVisible && pill) {
+    pill.classList.remove('pop');
+    void pill.offsetWidth;
+    pill.classList.add('pop');
+    setTimeout(() => pill.classList.remove('pop'), 450);
+  }
 }
 
 // Decrementa 1x (se 0, remove)
@@ -2104,8 +2137,15 @@ function renderCartPill() {
 
   const total = getCartTotal();
   if (total > 0) {
+    const prev = totalEl.textContent;
     totalEl.textContent = formatPrice(total);
     totalEl.classList.remove('hidden');
+    if (prev !== totalEl.textContent) {
+      totalEl.classList.remove('pulse');
+      void totalEl.offsetWidth;
+      totalEl.classList.add('pulse');
+      totalEl.addEventListener('animationend', () => totalEl.classList.remove('pulse'), { once: true });
+    }
   } else {
     totalEl.classList.add('hidden');
   }
@@ -2219,7 +2259,14 @@ function updateOpenItemModalControls() {
   if (!addBtn || !addLabel || !addBtn.dataset.addRef) return;
 
   const qty = getCartQty(addBtn.dataset.addRef);
-  addLabel.textContent = qty > 0 ? `${qty} ${t().inOrder}` : t().addToOrder;
+  const newLabel = qty > 0 ? `${qty} ${t().inOrder}` : t().addToOrder;
+  if (addLabel.textContent !== newLabel) {
+    addLabel.textContent = newLabel;
+    addLabel.classList.remove('qty-update');
+    void addLabel.offsetWidth;
+    addLabel.classList.add('qty-update');
+    addLabel.addEventListener('animationend', () => addLabel.classList.remove('qty-update'), { once: true });
+  }
   if (orderBar) {
     orderBar.classList.toggle('has-decrement', qty > 0);
   }
@@ -2688,6 +2735,10 @@ function toggleFavorite(refId) {
   // Update all bookmark buttons for this refId in menu
   document.querySelectorAll(`[data-bookmark-ref="${refId}"]`).forEach(btn => {
     btn.classList.toggle('saved', favorites.has(refId));
+    btn.classList.remove('bookmark-pop');
+    void btn.offsetWidth;
+    btn.classList.add('bookmark-pop');
+    btn.addEventListener('animationend', () => btn.classList.remove('bookmark-pop'), { once: true });
   });
   // Update modal bookmark button if open on this item
   const modalBtn = document.getElementById('item-bookmark-btn');
@@ -2707,11 +2758,14 @@ function renderFavorites() {
 
   if (titleEl) titleEl.textContent = t().favoritesTitle;
 
+  const countEl = document.getElementById('favorites-count');
+
   if (favorites.size === 0) {
     section.style.display = 'none';
     return;
   }
 
+  if (countEl) countEl.textContent = favorites.size;
   section.style.display = 'block';
   list.innerHTML = [...favorites].map(refId => {
     const item = getItemByRef(refId);
@@ -2720,7 +2774,9 @@ function renderFavorites() {
       <div class="fav-chip" data-fav-open="${refId}">
         <span class="fav-chip-name">${item.name[currentLang]}</span>
         <span class="fav-chip-price">${item.price}</span>
-        <button class="fav-chip-remove" data-fav-remove="${refId}" aria-label="Remover" type="button">✕</button>
+        <button class="fav-chip-remove" data-fav-remove="${refId}" aria-label="Remover" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
     `;
   }).filter(Boolean).join('');
@@ -2804,15 +2860,25 @@ function getCountdownBanner() {
 }
 
 function setupCountdown() {
+  function setDigit(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const str = String(val).padStart(2, '0');
+    if (el.textContent !== str) {
+      el.textContent = str;
+      el.classList.remove('tick');
+      void el.offsetWidth;
+      el.classList.add('tick');
+      el.addEventListener('animationend', () => el.classList.remove('tick'), { once: true });
+    }
+  }
+
   function tick() {
     const banner = getCountdownBanner();
-    const el = document.getElementById('special-countdown');
-    if (!el) return;
+    const block = document.getElementById('special-countdown');
+    if (!block) return;
 
-    if (!banner) {
-      el.style.display = 'none';
-      return;
-    }
+    if (!banner) { block.style.display = 'none'; return; }
 
     const now = new Date();
     const endTime = new Date();
@@ -2820,32 +2886,29 @@ function setupCountdown() {
     const diffMs = endTime - now;
 
     if (diffMs <= 0) {
-      el.style.display = 'none';
-      // Banner expired — re-render to hide it
+      block.style.display = 'none';
       renderSpecialBanner();
       return;
     }
 
     const totalMins = Math.floor(diffMs / 60000);
-    const mins = totalMins % 60;
     const hours = Math.floor(totalMins / 60);
-    const secs = Math.floor((diffMs % 60000) / 1000);
+    const mins  = totalMins % 60;
+    const secs  = Math.floor((diffMs % 60000) / 1000);
 
-    let label;
-    if (hours > 0) {
-      label = `⏳ ${hours}h ${String(mins).padStart(2,'0')}m`;
-    } else {
-      label = `⏳ ${mins}m ${String(secs).padStart(2,'0')}s`;
-    }
+    setDigit('cd-h', hours);
+    setDigit('cd-m', mins);
+    setDigit('cd-s', secs);
 
-    el.textContent = label;
-    el.style.display = 'inline-block';
-    // Pulse when < 10 min
-    el.classList.toggle('urgent', totalMins < 10);
+    const topEl = document.getElementById('special-cd-top');
+    if (topEl) topEl.textContent = t().happyHourEnds;
+
+    block.style.display = '';
+    block.classList.toggle('urgent', totalMins < 10);
   }
 
   if (_countdownInterval) clearInterval(_countdownInterval);
-  tick(); // immediate first render
+  tick();
   _countdownInterval = setInterval(tick, 1000);
 }
 

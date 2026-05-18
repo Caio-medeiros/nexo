@@ -5,7 +5,7 @@
 <html lang="pt" id="html-root">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#F4EDE0">
   <title>NEXO Restaurant — Menu Digital</title>
   <meta name="robots" content="noindex,follow">
@@ -70,29 +70,35 @@
 
   <!-- BANNER DINÂMICO (muda consoante a hora: almoço / happy hour / jantar) -->
   <div class="special-banner" id="special-banner" style="display:none">
-    <div class="special-banner-time">
-      <div class="special-banner-hour" id="special-hour"></div>
-      <div class="special-banner-period" id="special-period"></div>
-    </div>
     <div class="special-banner-body">
       <div class="special-banner-ghost" id="special-ghost"></div>
       <div class="special-banner-label" id="special-label"></div>
-      <div class="special-banner-headline" id="special-headline">
-        <span id="special-headline-text"></span>
-        <span class="special-countdown" id="special-countdown" style="display:none"></span>
-      </div>
+      <div class="special-banner-headline" id="special-headline-text"></div>
       <div class="special-banner-text" id="special-text"></div>
+      <div class="special-cd" id="special-countdown" style="display:none">
+        <span class="special-cd-top" id="special-cd-top"></span>
+        <div class="special-cd-digits">
+          <div class="cd-unit"><span class="cd-digit" id="cd-h">00</span><span class="cd-unit-lbl">h</span></div>
+          <span class="cd-colon">:</span>
+          <div class="cd-unit"><span class="cd-digit" id="cd-m">00</span><span class="cd-unit-lbl">m</span></div>
+          <span class="cd-colon">:</span>
+          <div class="cd-unit"><span class="cd-digit" id="cd-s">00</span><span class="cd-unit-lbl">s</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- FAVORITOS — aparece apenas quando há pelo menos 1 favorito -->
   <section class="favorites-section" id="section-favorites" style="display:none">
     <div class="favorites-header">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M5 3h14a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/>
-</svg>
+      <span class="favorites-icon">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M5 3h14a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+      </span>
       <h2 class="favorites-title" id="favorites-title"></h2>
-      <button class="favorites-clear" id="favorites-clear" aria-label="Limpar favoritos">✕</button>
+      <span class="favorites-count" id="favorites-count" aria-hidden="true"></span>
+      <button class="favorites-clear" id="favorites-clear" aria-label="Limpar favoritos">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
     <div class="favorites-list" id="favorites-list"></div>
   </section>
@@ -124,7 +130,7 @@
         <circle cx="11" cy="11" r="7"></circle>
         <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
       </svg>
-      <input id="menu-search-input" type="search" inputmode="search" autocomplete="off">
+      <input id="menu-search-input" type="search" inputmode="search" autocomplete="off" aria-label="Pesquisar no menu">
       <button class="menu-search-clear" id="menu-search-clear" type="button" aria-label="Limpar pesquisa">✕</button>
     </label>
     <div class="menu-search-meta" id="menu-search-meta" aria-live="polite"></div>
@@ -273,7 +279,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <!-- REVIEW MODAL — 2-step rating gate -->
-  <div class="modal-overlay" id="review-modal" role="dialog" aria-modal="true">
+  <div class="modal-overlay" id="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-step1-title">
     <div class="modal">
       <div class="modal-handle"></div>
 
@@ -362,7 +368,7 @@
   </div>
 
   <!-- MODAL ITEM — com secção upsell "Combina com..." -->
-  <div class="modal-overlay modal-item" id="item-modal" role="dialog" aria-modal="true">
+  <div class="modal-overlay modal-item" id="item-modal" role="dialog" aria-modal="true" aria-labelledby="item-modal-name">
     <div class="modal modal-item-content">
       <button class="modal-item-close" data-close="item-modal" aria-label="Fechar">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -440,8 +446,8 @@
 
       <!-- Tabs: Pedido / Dividir -->
       <div class="cart-tabs" id="cart-tabs">
-        <button class="cart-tab active" data-tab="order" id="tab-order">🧾 Pedido</button>
-        <button class="cart-tab" data-tab="split" id="tab-split">➗ Dividir</button>
+        <button class="cart-tab active" data-tab="order" id="tab-order">Pedido</button>
+        <button class="cart-tab" data-tab="split" id="tab-split">Dividir</button>
       </div>
 
       <!-- Panel: Pedido -->
@@ -506,7 +512,7 @@
   </div>
 
   <!-- STAFF FULLSCREEN VIEW — high contrast for staff to read -->
-  <div class="staff-view" id="staff-view" role="dialog" aria-modal="true">
+  <div class="staff-view" id="staff-view" role="dialog" aria-modal="true" aria-label="Vista de staff">
     <button class="staff-close" id="staff-close" aria-label="Fechar">✕</button>
     <div class="staff-inner">
       <div class="staff-helper" id="staff-helper"></div>
@@ -518,7 +524,7 @@
     </div>
   </div>
 
-  <div class="modal-overlay modal-item" id="wine-modal" role="dialog" aria-modal="true">
+  <div class="modal-overlay modal-item" id="wine-modal" role="dialog" aria-modal="true" aria-labelledby="wine-modal-name">
     <div class="modal modal-item-content">
       <button class="modal-item-close" data-close="wine-modal" aria-label="Fechar">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">

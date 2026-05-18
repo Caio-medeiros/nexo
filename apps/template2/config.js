@@ -81,7 +81,7 @@ const CONFIG = {
   googleReviewCount:"1.2k",    // ○ nº de reviews (texto livre)
   theForkReviewUrl: "",
   instagramHandle:  "nexosolutions",
-  whatsappNumber:   "351200000000",
+  whatsappNumber:   "351918104266",
   whatsappLoyaltyMessage: {
     pt: "Olá! Gostaria de falar com o NEXO Restaurant.",
     en: "Hello! I would like to contact NEXO Restaurant.",
