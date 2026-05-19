@@ -2662,7 +2662,7 @@ body.has-cart {
   border-radius: var(--r-md);
   padding: var(--s3);
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text);
   resize: none;
   outline: none;
