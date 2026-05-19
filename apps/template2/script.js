@@ -427,6 +427,7 @@ const SPLIT_UI = {
     totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} pessoas`,
     myItems: 'Os meus itens',
     subtotal: 'Subtotal',
+    renameHint: 'Toque em ✎ para renomear',
   },
   en: {
     tabOrder: '🧾 Order', tabSplit: '➗ Split',
@@ -437,6 +438,7 @@ const SPLIT_UI = {
     totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} people`,
     myItems: 'My items',
     subtotal: 'Subtotal',
+    renameHint: 'Tap ✎ to rename',
   },
   es: {
     tabOrder: '🧾 Pedido', tabSplit: '➗ Dividir',
@@ -447,6 +449,7 @@ const SPLIT_UI = {
     totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} personas`,
     myItems: 'Mis ítems',
     subtotal: 'Subtotal',
+    renameHint: 'Toca ✎ para renombrar',
   },
   fr: {
     tabOrder: '🧾 Commande', tabSplit: '➗ Partager',
@@ -457,6 +460,7 @@ const SPLIT_UI = {
     totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} personnes`,
     myItems: 'Mes articles',
     subtotal: 'Sous-total',
+    renameHint: 'Touchez ✎ pour renommer',
   }
 };
 
@@ -2513,6 +2517,9 @@ function renderSplitPanel() {
   if (modeEqualEl) modeEqualEl.textContent = ts().modeEqual;
   if (modeCustomEl) modeCustomEl.textContent = ts().modeCustom;
 
+  const renameHintLabel = document.getElementById('split-rename-hint-label');
+  if (renameHintLabel) renameHintLabel.textContent = ts().renameHint;
+
   // Active state dos mode buttons
   if (modeEqualEl) modeEqualEl.classList.toggle('active', splitMode === 'equal');
   if (modeCustomEl) modeCustomEl.classList.toggle('active', splitMode === 'custom');
@@ -2573,7 +2580,7 @@ function renderSplitPeopleTabs() {
       <button class="split-person-tab ${isActive ? 'active' : ''}" data-person="${i}">
         <span class="ptab-name" data-rename-idx="${i}">
           ${getPersonName(i)}
-          ${isActive ? `<svg class="ptab-edit-icon" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>` : ''}
+          <svg class="ptab-edit-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </span>
         <span class="ptab-total">${totalStr}</span>
       </button>
@@ -3120,44 +3127,51 @@ function setupPersonRename() {
   const tabsEl = document.getElementById('split-people-tabs');
   if (!tabsEl) return;
 
-  let pressTimer = null;
+  tabsEl.addEventListener('click', e => {
+    const editIcon = e.target.closest('.ptab-edit-icon');
+    if (!editIcon) return;
+    e.stopPropagation();
 
-  tabsEl.addEventListener('pointerdown', e => {
-    const nameEl = e.target.closest('.ptab-name');
+    const nameEl = editIcon.closest('.ptab-name');
     if (!nameEl) return;
-    pressTimer = setTimeout(() => {
-      haptic();
-      const idx = parseInt(nameEl.dataset.renameIdx);
-      const currentName = getPersonName(idx);
 
-      const input = document.createElement('input');
-      input.className = 'ptab-rename-input';
-      input.value = currentName;
-      input.maxLength = 12;
-      input.setAttribute('autocomplete', 'off');
-      input.setAttribute('autocorrect', 'off');
-      input.setAttribute('spellcheck', 'false');
-      nameEl.replaceWith(input);
-      input.focus();
-      input.select();
+    haptic();
+    const idx = parseInt(nameEl.dataset.renameIdx);
 
-      const save = () => {
-        const newName = input.value.trim();
-        customPersonNames[idx] = newName || '';
-        renderSplitPanel();
-      };
+    // Switch active person first if needed, then re-query the name element
+    if (splitActivePerson !== idx) {
+      splitActivePerson = idx;
+      renderSplitPeopleTabs();
+      renderSplitAssignList();
+      renderSplitPersonSummary();
+    }
 
-      input.addEventListener('blur', save, { once: true });
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
-        if (e.key === 'Escape') { customPersonNames[idx] = ''; input.blur(); }
-      });
-    }, 450);
+    const freshNameEl = tabsEl.querySelector(`[data-rename-idx="${idx}"]`);
+    if (!freshNameEl) return;
+
+    const input = document.createElement('input');
+    input.className = 'ptab-rename-input';
+    input.value = getPersonName(idx);
+    input.maxLength = 12;
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('spellcheck', 'false');
+    freshNameEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const save = () => {
+      const newName = input.value.trim();
+      customPersonNames[idx] = newName || '';
+      renderSplitPanel();
+    };
+
+    input.addEventListener('blur', save, { once: true });
+    input.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter')  { ev.preventDefault(); input.blur(); }
+      if (ev.key === 'Escape') { customPersonNames[idx] = ''; input.blur(); }
+    });
   });
-
-  ['pointerup', 'pointercancel', 'pointermove'].forEach(ev =>
-    tabsEl.addEventListener(ev, () => clearTimeout(pressTimer))
-  );
 }
 
 

@@ -3946,25 +3946,32 @@ body.has-cart {
 }
 /* ═══ SPLIT — Rename de pessoa ═══ */
 
-/* Ícone de lápis visível na tab activa — indica que é possível renomear */
+/* Ícone de lápis em todas as tabs — indica que é possível renomear */
 .ptab-name {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  touch-action: none;
+  touch-action: manipulation;
   user-select: none;
 }
 
 .ptab-edit-icon {
-  opacity: 0.55;
+  opacity: 0.38;
   flex-shrink: 0;
   margin-top: -1px;
   transition: opacity 0.15s;
+  padding: 3px;
+  margin: -3px;
+  box-sizing: content-box;
 }
 
 .split-person-tab.active .ptab-edit-icon {
-  opacity: 0.8;
+  opacity: 0.85;
+}
+
+.ptab-edit-icon:hover {
+  opacity: 1;
 }
 
 /* Tooltip hint a aparecer debaixo das tabs — só na primeira vez */
