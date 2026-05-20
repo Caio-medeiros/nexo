@@ -279,10 +279,12 @@
     e.preventDefault();
     form.querySelectorAll('.fg').forEach(g => g.classList.remove('error'));
     let ok = true;
-    const nome  = form.querySelector('#nome');
-    const email = form.querySelector('#email');
-    const tipo  = form.querySelector('#tipo');
-    if (!nome?.value.trim())  { nome.closest('.fg').classList.add('error');  ok = false }
+    const nome       = form.querySelector('#nome');
+    const restaurante = form.querySelector('#restaurante');
+    const email      = form.querySelector('#email');
+    const tipo       = form.querySelector('#tipo');
+    if (!nome?.value.trim())        { nome.closest('.fg').classList.add('error');        ok = false }
+    if (!restaurante?.value.trim()) { restaurante.closest('.fg').classList.add('error'); ok = false }
     if (!email?.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
       email.closest('.fg').classList.add('error'); ok = false;
     }

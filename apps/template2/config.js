@@ -76,10 +76,10 @@ const CONFIG = {
      4. REDES & REVIEWS
      ════════════════════════════════════════════════════════════════════════ */
 
-  googleReviewUrl:  "",
+  googleReviewUrl:  "https://search.google.com/local/writereview?placeid=ChIJUzfB1lbJHg0R6f3asKfGros",
   googleRating:     4.6,       // ○ estrelas mostradas no hero (null para esconder)
   googleReviewCount:"1.2k",    // ○ nº de reviews (texto livre)
-  theForkReviewUrl: "",
+  theForkReviewUrl: "https://www.thefork.pt/restaurante/prego-de-ouro-r852491",
   instagramHandle:  "nexosolutions",
   whatsappNumber:   "351918104266",
   whatsappLoyaltyMessage: {
