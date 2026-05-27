@@ -386,6 +386,11 @@ function initAnalytics() {
   const id = CONFIG.ga4MeasurementId;
   if (!id) return;
 
+  // Skip script injection if GA4 already loaded via HTML head
+  if (window.dataLayer && document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
+    return;
+  }
+
   const s = document.createElement('script');
   s.async = true;
   s.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
@@ -397,13 +402,17 @@ function initAnalytics() {
   gtag('config', id, { send_page_view: false });
 }
 
-function track(event, params = {}) {
-  if (typeof window.gtag !== 'function') return;
-  window.gtag('event', event, {
-    restaurant: CONFIG.slug,
+function track(event, params) {
+  const enriched = {
+    espaco_slug: (typeof ESPACO_SLUG !== 'undefined' ? ESPACO_SLUG : null) || CONFIG.slug,
     lang: currentLang,
-    ...params
-  });
+    ...(params || {}),
+  };
+  if (typeof window.nexoTrack === 'function') {
+    window.nexoTrack(event, enriched);
+  } else if (typeof window.gtag === 'function') {
+    window.gtag('event', event, { ...enriched, nexo_version: '1.0' });
+  }
 }
 
 /* ─── SPLIT BILL STATE & i18n (declared early so renderCartSheet can use ts()) ─── */
@@ -652,12 +661,18 @@ function getActiveBanner() {
   return null;
 }
 
+let _happyHourTracked = false;
 // SUBSTITUIR renderSpecialBanner() — usa ghost próprio
 function renderSpecialBanner() {
   const el     = document.getElementById('special-banner');
   const banner = getActiveBanner();
 
   if (!banner) { el.style.display = 'none'; return; }
+
+  if (!_happyHourTracked) {
+    _happyHourTracked = true;
+    track('happy_hour_viewed');
+  }
 
   el.style.display = '';
 
@@ -1195,7 +1210,11 @@ function setupRatingGate() {
     if (!btn) return;
     haptic();
     currentRating = parseInt(btn.dataset.star);
-    track('review_rate', { rating: currentRating, sentiment: currentRating >= 4 ? 'positive' : 'negative' });
+    if (currentRating >= 4) {
+      track('review_positive', { rating: currentRating });
+    } else {
+      track('review_negative', { rating: currentRating });
+    }
 
     // Light up stars permanently with stagger
     document.querySelectorAll('.star-btn').forEach((b, i) => {
@@ -1222,6 +1241,7 @@ function setupRatingGate() {
   if (sendBtn) {
     sendBtn.addEventListener('click', () => {
       haptic();
+      track('review_whatsapp_clicked');
       const ta = document.getElementById('review-textarea');
       const text = ta ? ta.value.trim() : '';
       const stars = '★'.repeat(currentRating) + '☆'.repeat(5 - currentRating);
@@ -1253,7 +1273,11 @@ function setupRatingGate() {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('click', () => {
-        track('review_platform', { platform: id === 'review-google' ? 'google' : 'thefork' });
+        if (id === 'review-google') {
+          track('review_google_clicked');
+        } else {
+          track('review_thefork_clicked');
+        }
         setTimeout(() => showThanks(true), 300);
       });
     }
@@ -1353,7 +1377,7 @@ function setupLanguage() {
       const from = currentLang;
       currentLang = btn.dataset.lang;
       localStorage.setItem('nexo_menu_lang', currentLang);
-      track('language_change', { from, to: currentLang });
+      track('language_changed', { from_language: from, to_language: currentLang });
       renderAll();
     });
   });
@@ -1560,7 +1584,7 @@ function setupCategoryTabs() {
     const tab = e.target.closest('[data-category]');
     if (!tab) return;
     haptic();
-    track('category_tap', { category: tab.dataset.category });
+    track('category_browsed', { category_name: tab.dataset.category });
     // Activa tab visualmente
     tabsEl.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
@@ -1806,7 +1830,7 @@ function openItemModal(sectionId, itemIdx) {
     if (shareLabel) shareLabel.textContent = t().shareDish;
   }
 
-  track('item_open', { item: item.name.pt, section: sectionId, price: item.price });
+  track('item_viewed', { item_name: item.name.pt, item_category: sectionId, item_price: parsePriceToNumber(item.price) || 0 });
   openModal('item-modal');
 }
 
@@ -1890,7 +1914,7 @@ function setupReviewButton() {
   document.getElementById('btn-review').addEventListener('click', () => {
     haptic();
     resetReviewModal();
-    track('review_open', { trigger: 'manual' });
+    track('review_prompted');
     openModal('review-modal');
   });
 }
@@ -2055,7 +2079,7 @@ function addToCart(refId) {
     cart.push({ refId, qty: 1 });
   }
   const it = getItemByRef(refId);
-  if (it) track('add_to_cart', { item: it.name.pt, section: refId.split(':')[0], price: it.price });
+  if (it) track('item_added', { item_name: it.name.pt, item_category: refId.split(':')[0], item_price: parsePriceToNumber(it.price) || 0 });
   onCartChange();
   if (wasVisible && pill) {
     pill.classList.remove('pop');
@@ -2071,6 +2095,8 @@ function decrementCart(refId) {
   if (!entry) return;
   entry.qty -= 1;
   if (entry.qty <= 0) {
+    const _removedItem = getItemByRef(refId);
+    if (_removedItem) track('item_removed', { item_name: _removedItem.name.pt });
     cart = cart.filter(c => c.refId !== refId);
   }
   onCartChange();
@@ -2078,6 +2104,8 @@ function decrementCart(refId) {
 
 // Remove completamente
 function removeFromCart(refId) {
+  const _removedItem = getItemByRef(refId);
+  if (_removedItem) track('item_removed', { item_name: _removedItem.name.pt });
   cart = cart.filter(c => c.refId !== refId);
   onCartChange();
 }
@@ -2283,6 +2311,11 @@ function updateOpenItemModalControls() {
 function openStaffView() {
   if (cart.length === 0) return;
 
+  track('order_placed', {
+    item_count: cart.reduce((s, e) => s + e.qty, 0),
+    order_total: getCartTotal(),
+  });
+
   const staffView = document.getElementById('staff-view');
   const tableEl = document.getElementById('staff-table');
   const orderIdEl = document.getElementById('staff-order-id');
@@ -2417,6 +2450,10 @@ function setupCartSheet() {
   if (staffBtn) {
     staffBtn.addEventListener('click', () => {
       haptic();
+      const _splitPanel = document.getElementById('panel-split');
+      if (_splitPanel && _splitPanel.style.display !== 'none') {
+        track('split_bill_completed', { split_mode: splitMode, people_count: splitPeople });
+      }
       openStaffView();
     });
   }
@@ -2646,6 +2683,7 @@ function setupSplitBill() {
       document.getElementById('panel-order').style.display = tabName === 'order' ? 'block' : 'none';
       document.getElementById('panel-split').style.display = tabName === 'split' ? 'block' : 'none';
       if (tabName === 'split') {
+        track('split_bill_opened', { split_mode: splitMode });
         // Garante que o assign está inicializado com pessoas correctas
         if (splitAssign.length !== splitPeople) initSplitAssign();
         renderSplitPanel();
@@ -2736,6 +2774,8 @@ function toggleFavorite(refId) {
     favorites.delete(refId);
   } else {
     favorites.add(refId);
+    const _favItem = getItemByRef(refId);
+    if (_favItem) track('item_bookmarked', { item_name: _favItem.name.pt });
   }
   saveFavorites();
   renderFavorites();
@@ -3184,7 +3224,10 @@ document.addEventListener('DOMContentLoaded', () => {
   detectLang();
   initAnalytics();
   renderAll();
-  track('menu_open');
+  track('menu_opened', {
+    espaco_tipo: (typeof ESPACO_TIPO !== 'undefined' ? ESPACO_TIPO : 'rest'),
+    menu_language: currentLang,
+  });
   setupLanguage();
   setupQuickNav();
   setupSearch();
@@ -3231,7 +3274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('review-modal');
     if (!alreadyRated && !anyOpen) {
       resetReviewModal();
-      track('review_open', { trigger: 'auto_30s' });
+      track('review_prompted');
       // Mark as auto-triggered and set context label (shown via CSS ::before)
       if (modal) {
         modal.dataset.autoTriggered = '1';

@@ -30,6 +30,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap"></noscript>
+<!-- NEXO Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id={{GA4_MEASUREMENT_ID}}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{GA4_MEASUREMENT_ID}}', {
+    page_location: window.location.href,
+    page_title: document.title,
+  });
+</script>
+<script src="/nexo-analytics.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -59,7 +71,7 @@
       <li><a href="#planos">Planos</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
-    <a class="nav-cta" href="#contacto">Pedir proposta</a>
+    <a class="nav-cta" href="#contacto" onclick="nexoTrack('proposal_cta_clicked',{position:'nav'})">Pedir proposta</a>
 
     <!-- Hamburger: display:flex on mobile, display:none on 1024px+ via CSS -->
     <button id="hamburger" class="hamburger" aria-label="Abrir menu" aria-expanded="false">
@@ -83,11 +95,17 @@
     <li><a href="#planos">Planos</a></li>
     <li><a href="#faq">FAQ</a></li>
   </ul>
-  <a href="#contacto" class="mob-cta">Pedir proposta →</a>
+  <a href="#contacto" class="mob-cta" onclick="nexoTrack('proposal_cta_clicked',{position:'nav'})">Pedir proposta →</a>
 </div>
 
 <!-- ── HERO ── -->
 <section class="hero" id="hero">
+  <div class="hero-grid-reveal" id="heroGridReveal" aria-hidden="true"></div>
+  <div class="hero-ambient" aria-hidden="true">
+    <div class="hero-amb-blob hero-amb-1"></div>
+    <div class="hero-amb-blob hero-amb-2"></div>
+    <div class="hero-amb-blob hero-amb-3"></div>
+  </div>
   <div class="hero-inner">
 
     <div class="hero-left">
@@ -106,11 +124,11 @@
       </p>
 
       <div class="hero-ctas">
-        <a class="btn btn-primary" href="./apps/template2/index.html" target="_blank">
+        <a class="btn btn-primary" href="./apps/template2/index.html" target="_blank" onclick="nexoTrack('demo_cta_clicked',{position:'hero'})">
           Ver demo ao vivo
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </a>
-        <a class="btn btn-ghost" href="#contacto">Pedir proposta</a>
+        <a class="btn btn-ghost" href="#contacto" onclick="nexoTrack('proposal_cta_clicked',{position:'hero'})">Pedir proposta</a>
       </div>
 
       <div class="hero-stats">
@@ -314,7 +332,7 @@
 
 <!-- ── SOCIAL PROOF STRIP ── -->
 <div class="sp-strip">
-  <p class="sp-headline">Já em produção em Portugal — <a href="./apps/template2/index.html" target="_blank">Ver demo ao vivo →</a></p>
+  <p class="sp-headline">Já em produção em Portugal — <a href="./apps/template2/index.html" target="_blank" onclick="nexoTrack('demo_cta_clicked',{position:'section_02'})">Ver demo ao vivo →</a></p>
   <div class="sp-chips">
     <span class="sp-chip">&lt; 3 seg do toque ao menu</span>
     <span class="sp-chip">0 apps necessárias</span>
@@ -623,7 +641,7 @@
           <li><span>+</span>Hosting e manutenção</li>
           <li><span>+</span>1 idioma · 1 atualização/mês</li>
         </ul>
-        <a href="#contacto" class="plan-cta plan-out">Começar →</a>
+        <a href="#contacto" class="plan-cta plan-out" onclick="nexoTrack('plan_cta_clicked',{plan_name:'starter'})">Começar →</a>
       </article>
 
       <article class="plan plan-featured reveal" style="--d:.08s">
@@ -649,7 +667,7 @@
           <li><span>+</span>Analytics em tempo real</li>
           <li><span>+</span>Atualizações ilimitadas</li>
         </ul>
-        <a href="#contacto" class="plan-cta plan-fill">Quero este plano →</a>
+        <a href="#contacto" class="plan-cta plan-fill" onclick="nexoTrack('plan_cta_clicked',{plan_name:'growth'})">Quero este plano →</a>
       </article>
 
       <article class="plan plan-enterprise reveal" style="--d:.16s">
@@ -667,7 +685,7 @@
           <li><span>+</span>SLA e suporte dedicado</li>
           <li><span>+</span>Multi-espaço / franchising</li>
         </ul>
-        <a href="#contacto" class="plan-cta plan-out plan-enterprise-cta">Falar connosco →</a>
+        <a href="#contacto" class="plan-cta plan-out plan-enterprise-cta" onclick="nexoTrack('plan_cta_clicked',{plan_name:'enterprise'})">Falar connosco →</a>
       </article>
 
     </div>
@@ -677,14 +695,14 @@
       <p><strong>Display Stand NFC:</strong> €5 por unidade, pagamento único. A mensalidade cobre software, suporte e evolução contínua do produto. Quem entrar agora mantém o preço de lançamento para sempre.</p>
     </div>
 
-<p class="annual-note reveal">Plano anual disponível — 1 mês grátis. <a href="#contacto">Fale connosco →</a></p>
+<p class="annual-note reveal">Plano anual disponível — 1 mês grátis. <a href="#contacto" onclick="nexoTrack('annual_pricing_clicked')">Fale connosco →</a></p>
 
 <div class="impact-block reveal">
   <div class="impact-left">
     <span class="impact-eyebrow">A conta simples</span>
     <h3 class="impact-title">O Growth paga-se no<br><em>segundo dia do mês.</em></h3>
     <p class="impact-sub">Se o menu recuperar +€3 por mesa em extras que já existiam na carta — bebidas, sobremesas, sugestões.</p>
-    <a href="#contacto" class="impact-cta">Quero este plano →</a>
+    <a href="#contacto" class="impact-cta" onclick="nexoTrack('plan_cta_clicked',{plan_name:'growth'})">Quero este plano →</a>
   </div>
 
   <div class="impact-right">

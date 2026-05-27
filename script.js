@@ -316,7 +316,11 @@
         formMsg.textContent = 'Recebido. Respondemos em menos de 24 horas.';
         formMsg.className = 'form-msg show ok';
       }
+      const _tipoValue = form.querySelector('#tipo')?.value || 'unknown';
       form.reset();
+      if (typeof nexoTrack === 'function') {
+        nexoTrack('contact_form_submitted', { espaco_tipo: _tipoValue });
+      }
     } catch (error) {
       console.error(error);
       if (formStat) formStat.textContent = 'ERROR';
@@ -353,6 +357,10 @@
       if (!isOpen) {
         item.classList.add('open');
         btn.setAttribute('aria-expanded', 'true');
+        const _faqN = btn.querySelector('.faq-n');
+        if (typeof nexoTrack === 'function') {
+          nexoTrack('faq_item_opened', { faq_index: _faqN ? parseInt(_faqN.textContent) : 0 });
+        }
       }
     });
   });
@@ -409,4 +417,81 @@
       ticking = false;
     });
   }, { passive: true });
+})();
+
+
+/* ══════════════════════════════
+   NEXO Analytics — section visibility
+   ══════════════════════════════ */
+(function initSectionTracking() {
+  if (typeof nexoTrack !== 'function') return;
+
+  const pricingSection = document.querySelector('#planos');
+  if (pricingSection) {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          nexoTrack('pricing_section_viewed');
+          obs.disconnect();
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(pricingSection);
+  }
+
+  const howSection = document.querySelector('#como-funciona');
+  if (howSection) {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          nexoTrack('how_it_works_viewed');
+          obs.disconnect();
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(howSection);
+  }
+})();
+
+/* ══════════════════════════════
+   HERO — infinite scrolling grid + mouse reveal
+   ══════════════════════════════ */
+(function initHeroGrid() {
+  const hero = document.getElementById('hero');
+  if (!hero) return;
+
+  const CELL  = 48;
+  const SPEED = 0.25;  // px/frame — slower = smoother drift
+  const EASE  = 0.07;  // lerp factor for reveal circle (lower = more lag)
+
+  let offX = 24, offY = 24;
+  let mx   = -9999, my = -9999;   // current interpolated reveal center
+  let txMx = -9999, txMy = -9999; // target (raw mouse)
+
+  function tick() {
+    offX = (offX + SPEED) % CELL;
+    offY = (offY + SPEED) % CELL;
+    hero.style.setProperty('--hero-grid-x', `-${offX.toFixed(2)}px`);
+    hero.style.setProperty('--hero-grid-y', `-${offY.toFixed(2)}px`);
+
+    mx += (txMx - mx) * EASE;
+    my += (txMy - my) * EASE;
+    hero.style.setProperty('--hero-mx', `${mx.toFixed(1)}px`);
+    hero.style.setProperty('--hero-my', `${my.toFixed(1)}px`);
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  hero.addEventListener('mousemove', (e) => {
+    const r = hero.getBoundingClientRect();
+    txMx = e.clientX - r.left;
+    txMy = e.clientY - r.top;
+    if (mx < -100) { mx = txMx; my = txMy; } // snap on first entry, no fly-in
+  }, { passive: true });
+
+  hero.addEventListener('mouseleave', () => {
+    txMx = -9999; txMy = -9999;
+    mx   = -9999; my   = -9999;
+  });
 })();

@@ -27,6 +27,35 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600;1,700&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 
+  <!--
+    NEXO Menu — Deploy Checklist (Analytics)
+    Before going live, replace:
+    1. {{GA4_MEASUREMENT_ID}} → real GA4 ID (same for all menus)
+    2. {{ESPACO_SLUG}}        → e.g. rest-solcarioca-lisboa
+    3. {{ESPACO_TIPO}}        → e.g. rest
+  -->
+  <!-- NEXO Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PG76WZVLNB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    // NEXO menu config — set these per deployment
+    var ESPACO_SLUG = 'nexo-restaurant';
+    var ESPACO_TIPO = 'rest';
+
+    gtag('config', 'G-PG76WZVLNB', {
+      page_location: window.location.href,
+      page_title: document.title,
+      custom_map: {
+        'dimension1': 'espaco_slug',
+        'dimension2': 'espaco_tipo',
+        'dimension3': 'menu_language',
+      }
+    });
+  </script>
+  <script src="/nexo-analytics.js"></script>
   <link rel="stylesheet" href="style.css">
   <noscript>
     <style>body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#181818;color:#fff;font-family:Outfit,sans-serif;text-align:center;padding:24px}</style>
