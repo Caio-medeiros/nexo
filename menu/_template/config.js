@@ -54,6 +54,11 @@ const CONFIG = {
      Deixar vazio ("") para desactivar. */
   ga4MeasurementId: "G-PG76WZVLNB",
 
+  /* Tópico ntfy.sh para notificações "Chamar Atendente"
+     Garçons instalam app ntfy (iOS/Android) e subscrevem este tópico.
+     Deixar vazio '' para desativar o botão. */
+  callStaffTopic: '{{CALL_STAFF_TOPIC}}',
+
   tagline: {
     pt: "Restaurante, cervejaria e marisqueira",
     en: "Restaurant, brewery and seafood house",
@@ -111,6 +116,13 @@ const CONFIG = {
     es: "¡Hola! Me gustaría contactar con NEXO Restaurant.",
     fr: "Bonjour! Je souhaite contacter NEXO Restaurant."
   },
+
+  orderWhatsapp: '{{ESPACO_WHATSAPP}}',
+  // WhatsApp do restaurante para receber pedidos (ex: 351912345678).
+  // Deixar vazio '' para desativar a opção WhatsApp.
+
+  tableInputEnabled: true,
+  // Se true: o ecrã de confirmação pede número/nome da mesa antes de enviar.
 
 
   /* ════════════════════════════════════════════════════════════════════════
@@ -650,7 +662,17 @@ const CONFIG = {
     { name: "Murganheira Bruto",                   country: "Portugal",  region: "Távora-Varosa", type: "espumante", grape: "Chardonnay, Pinot Noir",                         abv: "12%",   volume: "750ml", price: "18,00€", photo: "https://www.vinha.pt/wp-content/uploads/2015/05/100121.png", desc: "Espumante nacional de referência com bolha fina.",                              vivinoRating: 3.6, vivinoUrl: "https://www.vivino.com/wines/1140251" },
     { name: "Rioja Reserva Campo Viejo",           country: "Espanha",   region: "Rioja",         type: "tinto",     grape: "Tempranillo",                                    abv: "13,5%", volume: "750ml", price: "17,50€", photo: "https://www.bodeboca.pt/sites/default/files/wines/2026-01/bot-campoviejo-reserva-2021.jpg", desc: "Tempranillo da Rioja. Notas de baunilha e frutos vermelhos maduros.",          vivinoRating: 3.7, vivinoUrl: "https://www.vivino.com/wines/1129312" },
     { name: "Malbec Catena Argentina",             country: "Argentina", region: "Mendoza",       type: "tinto",     grape: "Malbec",                                         abv: "13,5%", volume: "750ml", price: "22,50€", photo: "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcTYi90oTdgWYUiDN4T0fuuK3IZfCSrNnpr29LWSEb8FLiAxN7kqBzVNdNUOOvYt735R6fwxcdwsW8glw8B_cO1881KXzIg52wVLDDQlJbdLuSe4XRckiHDq2UnA6M1XIWoTow&usqp=CAc1", desc: "Malbec argentino premium. Intenso e encorpado.",                               vivinoRating: 4.1, vivinoUrl: "https://www.vivino.com/wines/1137817" }
-  ]
+  ],
+
+
+  /* ════════════════════════════════════════════════════════════════════════
+     10. FEATURES  ○
+     ════════════════════════════════════════════════════════════════════════ */
+
+  features: {
+    callStaff: true,
+    // Set false to hide "Chamar Empregado" button entirely
+  }
 };
 
 

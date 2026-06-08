@@ -53,6 +53,9 @@ Find and replace these strings in the new folder:
 | `{{ESPACO_NOME}}`       | e.g. `Sol Carioca`                 |
 | `{{ESPACO_TIPO}}`       | e.g. `rest`                        |
 | `{{GA4_MEASUREMENT_ID}}`| NEXO GA4 ID (same for all menus)   |
+| `{{ESPACO_WHATSAPP}}`   | WhatsApp do restaurante para pedidos (ex: `351912345678`). Deixar vazio `''` para desativar opção WhatsApp. |
+| `{{SUPABASE_URL}}`      | URL do projeto Supabase (ex: `https://xxx.supabase.co`). Necessário para "Chamar Empregado". |
+| `{{SUPABASE_ANON_KEY}}` | Chave anon pública do Supabase (Project Settings → API). |
 
 Run a search for `{{` in the folder after replacing.
 Zero occurrences = ready to proceed.
@@ -107,6 +110,9 @@ Check:
 - [ ] Languages switching
 - [ ] Review gate working (test tap on rating)
 - [ ] GA4 receiving events (check GA4 Realtime view)
+- [ ] "Chamar" button visible (only if `features.callStaff: true` and Supabase configured)
+- [ ] Staff call sheet opens, sends, and closes correctly
+- [ ] 30s cooldown prevents double-tap spam
 
 ---
 
