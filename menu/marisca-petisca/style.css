@@ -1761,8 +1761,7 @@ a { color: inherit; text-decoration: none; }
   background: var(--border);
   border-radius: 2px;
   margin: 0 auto var(--s3);
-  touch-action: none;
-  cursor: grab;
+
 }
 
 .modal-header {
@@ -1921,7 +1920,7 @@ a { color: inherit; text-decoration: none; }
 .wine-modal-photo.is-placeholder { font-size: clamp(40px, 8vw, 60px); }
 
 .item-modal-body {
-  padding: var(--s4) var(--s3) calc(var(--s4) + env(safe-area-inset-bottom));
+  padding: var(--s4) var(--s3) var(--s3);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   flex: 1; /* takes all remaining height after photo */
@@ -2380,14 +2379,10 @@ body.has-cart {
   display: flex;
   gap: 10px;
   align-items: stretch;
-  margin-top: var(--s3);
-  position: sticky;
-  bottom: 0;
-  z-index: 3;
-  padding-top: 12px;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(235, 242, 248, 0) 0%, rgba(235, 242, 248, 0.92) 24%, var(--bg) 100%);
+  flex-shrink: 0;
+  padding: 12px var(--s3) calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg);
 }
 
 .item-modal-step-btn {
@@ -2409,9 +2404,6 @@ body.has-cart {
   display: flex;
 }
 
-.item-modal-order-bar > * {
-  pointer-events: auto;
-}
 
 .item-modal-add span {
   display: block;
