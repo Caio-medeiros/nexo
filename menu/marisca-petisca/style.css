@@ -3510,14 +3510,6 @@ body.has-cart {
   flex-shrink: 0;
 }
 
-.vivino-score {
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 800;
-  color: #9B1B30;
-  letter-spacing: -0.2px;
-  line-height: 1;
-}
 
 .vivino-logo {
   font-size: 10px;
@@ -3528,24 +3520,17 @@ body.has-cart {
   opacity: 0.7;
 }
 
-/* Vivino block in the wine modal */
+/* Vivino rating badge in the wine modal */
 .vivino-modal-block {
-  margin-top: var(--s3);
-  padding: var(--s3);
-  background: #FDF6F7;
-  border: 1px solid #F2DDE0;
-  border-radius: var(--r-md);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s3);
-}
-
-.vivino-modal-left {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  margin-top: var(--s3);
+  padding: 7px 12px;
+  background: #FDF6F7;
+  border: 1px solid #F2DDE0;
+  border-radius: 100px;
+  width: fit-content;
 }
 
 .vivino-modal-stars {
@@ -3555,49 +3540,21 @@ body.has-cart {
 }
 
 .vivino-modal-stars .vs {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   color: #9B1B30;
   flex-shrink: 0;
 }
 
-.vivino-modal-score {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 900;
-  color: #9B1B30;
-  letter-spacing: -0.4px;
-  line-height: 1;
-}
 
 .vivino-modal-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: #9B1B30;
-  opacity: 0.6;
+  opacity: 0.55;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  align-self: flex-end;
-  margin-bottom: 1px;
-}
-
-.vivino-modal-link {
-  flex-shrink: 0;
-  background: #9B1B30;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 100px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-decoration: none;
-  transition: transform 0.1s, background 0.15s;
-  white-space: nowrap;
-}
-
-.vivino-modal-link:active {
-  transform: scale(0.95);
-  background: #7A1526;
+  letter-spacing: 0.6px;
+  line-height: 1;
 }
 
 

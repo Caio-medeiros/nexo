@@ -65,10 +65,10 @@ const UI = {
     navMenu: "Menu", navTop: "Mais pedidos", navWines: "Drinks",
     navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Avaliar",navInsta: "Instagram",
     wineFilterCountry: "País", wineFilterType: "Tipo", wineFilterGrape: "Marca",
+    wineFilterWines: "Vinhos",
     wineEmpty: "Nenhuma bebida corresponde a estes filtros.",
     wineSpecCountry: "País", wineSpecRegion: "Região", wineSpecGrape: "Marca",
     wineSpecAbv: "Álcool", wineSpecVolume: "Volume",
-    vivinoSeeMore: "Ver no Vivino →",
     upsellTitle: "Combina com...",
     // Order system
     addToOrder: "Adicionar ao pedido", addedToOrder: "Adicionado ✓",
@@ -161,10 +161,10 @@ const UI = {
     navMenu: "Menu", navTop: "Most ordered", navWines: "Drinks",
     navWifi: "Wi-Fi", navContact: "Contact", navReview: "Rate", navInsta: "Instagram",
     wineFilterCountry: "Country", wineFilterType: "Type", wineFilterGrape: "Brand",
+    wineFilterWines: "Wines",
     wineEmpty: "No drinks match these filters.",
     wineSpecCountry: "Country", wineSpecRegion: "Region", wineSpecGrape: "Brand",
     wineSpecAbv: "ABV", wineSpecVolume: "Volume",
-    vivinoSeeMore: "See on Vivino →",
     upsellTitle: "Goes well with...",
     addToOrder: "Add to order", addedToOrder: "Added ✓",
     inOrder: "In order", viewOrder: "View order", reduceQty: "Decrease quantity", increaseQty: "Increase quantity",
@@ -247,10 +247,10 @@ const UI = {
     navMenu: "Menú", navTop: "Más pedidos", navWines: "Drinks",
     navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Valorar",navInsta: "Instagram",
     wineFilterCountry: "País", wineFilterType: "Tipo", wineFilterGrape: "Marca",
+    wineFilterWines: "Vinos",
     wineEmpty: "Ninguna bebida coincide con estos filtros.",
     wineSpecCountry: "País", wineSpecRegion: "Región", wineSpecGrape: "Marca",
     wineSpecAbv: "Alcohol", wineSpecVolume: "Volumen",
-    vivinoSeeMore: "Ver en Vivino →",
     upsellTitle: "Combina con...",
     addToOrder: "Añadir al pedido", addedToOrder: "Añadido ✓",
     inOrder: "En el pedido", viewOrder: "Ver pedido", reduceQty: "Reducir cantidad", increaseQty: "Aumentar cantidad",
@@ -333,10 +333,10 @@ const UI = {
     navMenu: "Menu", navTop: "Plus commandés", navWines: "Drinks",
     navWifi: "Wi-Fi", navContact: "Contact", navReview: "Évaluer", navInsta: "Instagram",
     wineFilterCountry: "Pays", wineFilterType: "Type", wineFilterGrape: "Marque",
+    wineFilterWines: "Vins",
     wineEmpty: "Aucune boisson ne correspond à ces filtres.",
     wineSpecCountry: "Pays", wineSpecRegion: "Région", wineSpecGrape: "Marque",
     wineSpecAbv: "Alcool", wineSpecVolume: "Volume",
-    vivinoSeeMore: "Voir sur Vivino →",
     upsellTitle: "Se marie avec...",
     addToOrder: "Ajouter à la commande", addedToOrder: "Ajouté ✓",
     inOrder: "Dans la commande", viewOrder: "Voir la commande", reduceQty: "Réduire la quantité", increaseQty: "Augmenter la quantité",
@@ -1010,10 +1010,20 @@ function renderWineFilters() {
     `<button class="wine-chip ${wineFilters.country === c ? 'active' : ''}" data-filter-type="country" data-filter-value="${c}">${c === 'all' ? t().all : c}</button>`
   ).join('');
 
-  document.getElementById('wine-filter-type').innerHTML = types.map(ty => {
-    const label = ty === 'all' ? t().all : (WINE_TYPE_LABELS[currentLang][ty] || ty);
-    return `<button class="wine-chip ${wineFilters.type === ty ? 'active' : ''}" data-filter-type="type" data-filter-value="${ty}">${label}</button>`;
-  }).join('');
+  const WINE_TYPES = ['tinto','branco','verde','rose','espumante'];
+  const presentTypes = [...new Set(CONFIG.wines.map(w => w.type))];
+  const hasWines = presentTypes.some(ty => WINE_TYPES.includes(ty));
+  const nonWineTypes = presentTypes.filter(ty => !WINE_TYPES.includes(ty));
+
+  const typeChips = [
+    `<button class="wine-chip ${wineFilters.type === 'all' ? 'active' : ''}" data-filter-type="type" data-filter-value="all">${t().all}</button>`,
+    ...(hasWines ? [`<button class="wine-chip ${wineFilters.type === 'vinhos' ? 'active' : ''}" data-filter-type="type" data-filter-value="vinhos">${t().wineFilterWines}</button>`] : []),
+    ...nonWineTypes.map(ty => {
+      const label = WINE_TYPE_LABELS[currentLang][ty] || ty;
+      return `<button class="wine-chip ${wineFilters.type === ty ? 'active' : ''}" data-filter-type="type" data-filter-value="${ty}">${label}</button>`;
+    })
+  ];
+  document.getElementById('wine-filter-type').innerHTML = typeChips.join('');
 
   document.getElementById('wine-filter-grape').innerHTML = grapes.map(g =>
     `<button class="wine-chip ${wineFilters.grape === g ? 'active' : ''}" data-filter-type="grape" data-filter-value="${g}">${g === 'all' ? t().all : g}</button>`
@@ -1055,7 +1065,8 @@ function renderWineList() {
 
   const filtered = CONFIG.wines.filter(w => {
     if (wineFilters.country !== 'all' && w.country !== wineFilters.country) return false;
-    if (wineFilters.type !== 'all' && w.type !== wineFilters.type) return false;
+    if (wineFilters.type === 'vinhos' && !['tinto','branco','verde','rose','espumante'].includes(w.type)) return false;
+    else if (wineFilters.type !== 'all' && wineFilters.type !== 'vinhos' && w.type !== wineFilters.type) return false;
     if (wineFilters.grape !== 'all' && !w.grape.toLowerCase().includes(wineFilters.grape.toLowerCase())) return false;
     return true;
   });
@@ -1079,7 +1090,6 @@ function renderWineList() {
     const vivinoHtml = w.vivinoRating ? `
       <div class="wine-card-vivino">
         ${renderVivinoStars(w.vivinoRating)}
-        <span class="vivino-score"></span>
         <span class="vivino-logo">Vivino</span>
       </div>
     ` : '';
@@ -1973,20 +1983,13 @@ function openWineModal(idx) {
     </div>
   `).join('');
 
-  // Vivino rating + link (optional — only if wine has rating)
+  // Vivino rating (no link — rating only)
   const vivinoBlock = document.getElementById('wine-modal-vivino');
   if (vivinoBlock) {
-    if (w.vivinoRating && w.vivinoUrl) {
+    if (w.vivinoRating) {
       vivinoBlock.style.display = 'flex';
       const starsEl = vivinoBlock.querySelector('.vivino-modal-stars');
-      const scoreEl = vivinoBlock.querySelector('.vivino-modal-score');
-      const linkEl = vivinoBlock.querySelector('.vivino-modal-link');
       if (starsEl) starsEl.innerHTML = renderVivinoStars(w.vivinoRating);
-      if (scoreEl) scoreEl.textContent = w.vivinoRating.toFixed(1);
-      if (linkEl) {
-        linkEl.href = w.vivinoUrl;
-        linkEl.textContent = t().vivinoSeeMore;
-      }
     } else {
       vivinoBlock.style.display = 'none';
     }
