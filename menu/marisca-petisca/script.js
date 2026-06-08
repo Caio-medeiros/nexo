@@ -2007,6 +2007,72 @@ function setupReviewButton() {
 }
 
 // Close modals
+function setupSwipeToDismiss() {
+  function attachSwipe(sheet, onDismiss) {
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    sheet.addEventListener('touchstart', e => {
+      const fromHandle = !!e.target.closest('.modal-handle, .nexo-sheet-handle');
+      if (!fromHandle && sheet.scrollTop > 0) return;
+      startY = e.touches[0].clientY;
+      currentY = startY;
+      isDragging = true;
+      sheet.style.transition = 'none';
+    }, { passive: true });
+
+    sheet.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+      currentY = e.touches[0].clientY;
+      const delta = Math.max(0, currentY - startY);
+      sheet.style.transform = `translateY(${delta}px)`;
+    }, { passive: true });
+
+    sheet.addEventListener('touchend', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      const delta = currentY - startY;
+      if (delta > 100) {
+        sheet.style.transition = 'transform 0.28s cubic-bezier(0.4, 0, 1, 1)';
+        sheet.style.transform = 'translateY(110%)';
+        setTimeout(() => {
+          sheet.style.transform = '';
+          sheet.style.transition = '';
+          onDismiss();
+        }, 280);
+      } else {
+        sheet.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+        sheet.style.transform = '';
+        setTimeout(() => { sheet.style.transition = ''; }, 300);
+      }
+    });
+  }
+
+  // All .modal-overlay bottom sheets
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    const sheet = overlay.querySelector('.modal');
+    if (!sheet) return;
+    attachSwipe(sheet, () => {
+      if (overlay.id === 'review-modal') {
+        try { sessionStorage.setItem('nexo_rated', '1'); } catch(e) {}
+      }
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    });
+  });
+
+  // "Chamar Empregado" sheet — different DOM structure
+  const callSheet = document.getElementById('nexo-call-sheet');
+  const callCard  = callSheet && callSheet.querySelector('.nexo-sheet-card');
+  if (callCard) {
+    attachSwipe(callCard, () => {
+      callSheet.classList.remove('open');
+      setTimeout(() => callSheet.classList.add('hidden'), 350);
+    });
+  }
+}
+
 function setupModalCloses() {
   document.querySelectorAll('[data-close]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2628,7 +2694,6 @@ function validateTableInput() {
     if (errorEl) errorEl.style.display = 'none';
     return true;
   }
-  // Show error + shake
   if (field) {
     field.classList.add('error', 'shake');
     field.addEventListener('animationend', () => field.classList.remove('shake'), { once: true });
@@ -2639,7 +2704,7 @@ function validateTableInput() {
 }
 
 function generateOrderMessage(cartItems, tableValue) {
-  const n = (tableValue && tableValue.trim()) ? tableValue.trim() : '—';
+  const n = tableValue?.trim() || 'Mesa não especificada';
   const prefix = 'Mesa';
 
   const itemLines = cartItems.map(entry => {
@@ -3713,6 +3778,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupWineClicks();
   setupReviewButton();
   setupModalCloses();
+  setupSwipeToDismiss();
   setupRatingGate();
   resetReviewModal();
   setupWifiCopy();
@@ -3961,7 +4027,7 @@ function setupCallStaff() {
       sendBtn.style.background = '';
       sendBtn.style.color = '';
     }
-    if (btnText) btnText.textContent = '🙋 Chamar Atendente';
+    if (btnText) btnText.textContent = '🙋 Chamar Empregado';
   }
 
   function setSuccessState() {
@@ -4034,7 +4100,7 @@ function setupCallStaff() {
         await sendNtfyNotification(mesa);
 
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        if (btnText) btnText.textContent = '✓ Atendente notificado!';
+        if (btnText) btnText.textContent = '✓ Empregado notificado!';
         if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
         track('staff_called', { table_label: mesa || null });
         setTimeout(() => { closeSheet(); setSuccessState(); }, 1200);

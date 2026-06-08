@@ -7,20 +7,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#F4EDE0">
-  <title>NEXO Restaurant — Menu Digital</title>
+  <title>Marisca Petisca — Menu Digital | NEXO.</title>
   <meta name="robots" content="noindex,follow">
-  <link rel="canonical" href="https://nexosolutions.pt/apps/template2/index.html">
+  <link rel="canonical" href="https://nexosolutions.pt/menu/marisca-petisca/">
   <link rel="icon" href="/img/nexo.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/img/nexo.png">
   <link rel="manifest" href="/site.webmanifest">
 
-  <meta property="og:title" content="NEXO Restaurant — Menu Digital">
-  <meta property="og:description" content="Abra o menu sem app. NFC + QR. Desenvolvido com NEXO.">
+  <meta property="og:title" content="Marisca Petisca — Menu Digital">
+  <meta property="og:description" content="Menu digital de Marisca Petisca. Abra sem app, explore a carta e chame a equipa — tudo no seu telemóvel.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nexosolutions.pt/menu/marisca-petisca/">
+  <!-- TODO: replace with a custom image of this venue -->
   <meta property="og:image" content="https://nexosolutions.pt/img/hero.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="NEXO Restaurant — Menu Digital">
-  <meta name="twitter:description" content="Abra o menu sem app. NFC + QR. Desenvolvido com NEXO.">
+  <meta name="twitter:title" content="Marisca Petisca — Menu Digital">
+  <meta name="twitter:description" content="Menu digital de Marisca Petisca. Abra sem app, explore a carta e chame a equipa — tudo no seu telemóvel.">
   <meta name="twitter:image" content="https://nexosolutions.pt/img/hero.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -643,7 +645,7 @@
           <span class="confirm-table-prefix" id="confirm-table-prefix">Mesa</span>
           <input type="text" id="confirm-table-input" class="confirm-table-input"
             inputmode="numeric" pattern="[0-9]*" placeholder="4"
-            autocomplete="off" autocorrect="off">
+            maxlength="3" autocomplete="off" autocorrect="off">
         </div>
         <p class="confirm-table-error" id="confirm-table-error" style="display:none">Indique o número da mesa para continuar.</p>
       </div>
@@ -675,7 +677,7 @@
     <div class="nexo-sheet-card">
       <div class="nexo-sheet-handle"></div>
       <div class="nexo-sheet-header">
-        <span class="nexo-sheet-title" id="nexo-sheet-title">Chamar Atendente</span>
+        <span class="nexo-sheet-title" id="nexo-sheet-title">Chamar Empregado</span>
         <button class="nexo-sheet-close" id="nexo-call-sheet-close" aria-label="Fechar">✕</button>
       </div>
       <div class="nexo-sheet-body">
@@ -689,7 +691,7 @@
             inputmode="numeric"
             pattern="[0-9]*"
             placeholder="4"
-            maxlength="10"
+            maxlength="3"
             autocomplete="off"
             autocorrect="off"
           />
@@ -697,7 +699,7 @@
       </div>
       <div class="nexo-sheet-footer">
         <button id="nexo-call-send-btn" class="nexo-call-send-btn" type="button">
-          <span id="nexo-call-btn-text">🙋 Chamar Atendente</span>
+          <span id="nexo-call-btn-text">🙋 Chamar Empregado</span>
         </button>
       </div>
     </div>
@@ -708,7 +710,7 @@
   <!-- BOTTOM BAR — Chamar | Ver pedido | Voltar ao topo -->
   <div class="nexo-bottom-bar" id="nexo-bottom-bar">
 
-    <div id="nexo-call-staff-btn" role="button" tabindex="0" aria-label="Chamar atendente">
+    <div id="nexo-call-staff-btn" role="button" tabindex="0" aria-label="Chamar empregado">
       <svg class="nexo-call-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
