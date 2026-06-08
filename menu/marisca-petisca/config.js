@@ -21,8 +21,9 @@ const CONFIG = {
 
   ga4MeasurementId: "",
 
-  /* Tópico ntfy.sh — garçons instalam app ntfy e subscrevem este tópico */
-  callStaffTopic: 'nexoteste',
+  /* Tópico ntfy.sh — staff instala app ntfy.sh (ntfy.sh público, NÃO "outro servidor")
+     e subscreve este tópico. Usar nome difícil de adivinhar. */
+  callStaffTopic: 'marisca-petisca-staff-2026',
 
   tagline: {
     pt: "Marisqueira e restaurante à beira-mar",

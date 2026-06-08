@@ -1206,10 +1206,24 @@ function resetReviewModal() {
   hideReviewStep(s2h);
   hideReviewStep(s2u);
   hideReviewStep(s3);
-  // Reset stars
-  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('lit'));
+  // Pre-select 5 stars \u2014 user can reduce if unhappy
+  currentRating = 5;
+  document.querySelectorAll('.star-btn').forEach((b, i) => {
+    b.style.setProperty('--star-d', `${i * 60}ms`);
+    b.classList.toggle('lit', true);
+  });
   const label = document.getElementById('star-label');
-  if (label) { label.textContent = '\u200B'; label.className = 'star-label'; }
+  if (label) {
+    label.textContent = t().starLabels[5] || 'Excelente!';
+    label.className = 'star-label pop positive';
+  }
+  // Show quick CTA
+  const quickCta = document.getElementById('review-quick-cta');
+  if (quickCta) {
+    quickCta.href = CONFIG.googleReviewUrl || '#';
+    setTimeout(() => quickCta.classList.add('visible'), 320);
+    quickCta.onclick = () => { track('review_google_clicked'); setTimeout(() => showThanks(true), 400); };
+  }
   // Clear textarea
   const ta = document.getElementById('review-textarea');
   if (ta) ta.value = '';
@@ -1278,6 +1292,9 @@ function setupRatingGate() {
       b.style.setProperty('--star-d', `${i * 45}ms`);
       b.classList.toggle('lit', i < currentRating);
     });
+    // Hide quick CTA when user taps a star (they're committing)
+    const qc = document.getElementById('review-quick-cta');
+    if (qc) qc.classList.remove('visible');
 
     // Brief pause then advance to step 2
     setTimeout(() => {
@@ -2248,9 +2265,20 @@ function renderCartPill() {
     return;
   }
 
-  const label = count === 1 ? t().cartItem : t().cartItems;
-  textEl.textContent = `${t().viewOrder} · ${count} ${label}`;
-  pill.setAttribute('aria-label', `${t().viewOrder}: ${count} ${label}`);
+  // Count badge
+  const countEl = document.getElementById('cart-pill-count');
+  if (countEl) {
+    const prev = countEl.textContent;
+    countEl.textContent = count;
+    if (prev !== String(count)) {
+      countEl.classList.remove('tick'); void countEl.offsetWidth; countEl.classList.add('tick');
+      countEl.addEventListener('animationend', () => countEl.classList.remove('tick'), { once: true });
+    }
+  }
+  // Action label
+  const labels = { pt: 'Fazer pedido', en: 'Place order', es: 'Hacer pedido', fr: 'Passer commande' };
+  textEl.textContent = labels[currentLang] || labels.pt;
+  pill.setAttribute('aria-label', `${textEl.textContent}: ${count} ${count === 1 ? t().cartItem : t().cartItems}`);
 
   const total = getCartTotal();
   if (total > 0) {
@@ -2386,11 +2414,16 @@ function updateAddBtnBadges() {
     if (qty > 0) {
       if (existingBadge) {
         existingBadge.textContent = qty;
+        existingBadge.classList.remove('tick');
+        void existingBadge.offsetWidth;
+        existingBadge.classList.add('tick');
+        existingBadge.addEventListener('animationend', () => existingBadge.classList.remove('tick'), { once: true });
       } else {
         const badge = document.createElement('span');
-        badge.className = 'qty-badge';
+        badge.className = 'qty-badge tick';
         badge.textContent = qty;
         addBtn.appendChild(badge);
+        badge.addEventListener('animationend', () => badge.classList.remove('tick'), { once: true });
       }
     } else if (existingBadge) {
       existingBadge.remove();
@@ -2738,6 +2771,11 @@ function setupMenuAddButtons() {
     e.preventDefault();
     haptic();
     if (btn) {
+      // Ripple micro-interaction
+      btn.classList.remove('ripple');
+      void btn.offsetWidth;
+      btn.classList.add('ripple');
+      btn.addEventListener('animationend', () => btn.classList.remove('ripple'), { once: true });
       addToCart(btn.dataset.addRef);
     } else if (decBtn) {
       decrementCart(decBtn.dataset.decrementRef);
@@ -3728,7 +3766,148 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── Call Staff ───
   setupCallStaff();
+  setupNumericInputs();
+
+  // ─── WOW EFFECTS ───
+  setupHeroParallax();
+  setupScrollReveal();
+  setupBannerFish();
 });
+
+/* ── Numbers-only inputs (table number fields) ── */
+function setupNumericInputs() {
+  ['confirm-table-input', 'nexo-call-table-input'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      const clean = el.value.replace(/\D/g, '');
+      if (el.value !== clean) {
+        el.value = clean;
+        el.classList.add('shake');
+        el.addEventListener('animationend', () => el.classList.remove('shake'), { once: true });
+        // Show/create hint
+        let hint = el.parentElement.querySelector('.numeric-hint');
+        if (!hint) {
+          hint = document.createElement('p');
+          hint.className = 'numeric-hint';
+          hint.textContent = 'Apenas números';
+          el.parentElement.appendChild(hint);
+        }
+        hint.classList.add('show');
+        clearTimeout(hint._t);
+        hint._t = setTimeout(() => hint.classList.remove('show'), 1800);
+      }
+    });
+    el.addEventListener('keydown', e => {
+      const allowed = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
+      if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WOW EFFECTS — mobile-first, GPU only (transform + opacity)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Hero parallax — image scrolls slower than content ── */
+function setupHeroParallax() {
+  const heroImg = document.getElementById('hero-image');
+  if (!heroImg) return;
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const y = window.scrollY;
+      if (y < 400) heroImg.style.transform = `translateY(${y * 0.35}px)`;
+      ticking = false;
+    });
+  }, { passive: true });
+}
+
+/* ── 2. Scroll reveal — menu items & cards stagger in ── */
+function setupScrollReveal() {
+  const targets = document.querySelectorAll(
+    '.menu-item, .most-ordered-card, .wine-card-item, .section-header-elite, .menu-section-title'
+  );
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('sr-visible');
+      obs.unobserve(entry.target);
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+  targets.forEach((el, i) => {
+    el.classList.add('sr-hidden');
+    el.style.transitionDelay = `${(i % 5) * 45}ms`;
+    obs.observe(el);
+  });
+
+  // Re-attach after renderAll() re-renders menu
+  const origRenderMenu = window.renderMenuOrig || renderMenu;
+  window.renderMenuOrig = origRenderMenu;
+  const _patchReveal = () => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.menu-item:not(.sr-hidden):not(.sr-visible)').forEach((el, i) => {
+        el.classList.add('sr-hidden');
+        el.style.transitionDelay = `${(i % 5) * 45}ms`;
+        obs.observe(el);
+      });
+    });
+  };
+  document.getElementById('menu').addEventListener('DOMSubtreeModified', _patchReveal, { once: false });
+}
+
+/* ── 3. Banner fish — swims across on tap ── */
+function setupBannerFish() {
+  const banner = document.getElementById('special-banner');
+  if (!banner) return;
+  const fishG = banner.querySelector('.banner-art g');
+  if (!fishG) return;
+
+  let swimming = false;
+  banner.addEventListener('click', () => {
+    if (swimming) return;
+    swimming = true;
+    fishG.style.animation = 'fish-swim 1.4s cubic-bezier(0.45,0,0.55,1) forwards';
+    fishG.addEventListener('animationend', () => {
+      fishG.style.animation = '';
+      swimming = false;
+    }, { once: true });
+  });
+}
+
+/* ── 4. Confetti burst on WhatsApp order sent ── */
+function launchConfetti() {
+  const colors = ['#1A4FA0','#7DD4F0','#FFD700','#ffffff','#22C55E'];
+  const count  = 48;
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden';
+  document.body.appendChild(container);
+
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    const size = 6 + Math.random() * 8;
+    const x = 20 + Math.random() * 60; // % from left
+    const dur = 0.8 + Math.random() * 0.7;
+    const delay = Math.random() * 0.3;
+    const rot = Math.random() * 720 - 360;
+    el.style.cssText = `
+      position:absolute;
+      left:${x}%;top:60%;
+      width:${size}px;height:${size * 0.55}px;
+      background:${colors[i % colors.length]};
+      border-radius:2px;
+      opacity:1;
+      animation: confetti-fall ${dur}s ${delay}s ease-out forwards;
+      --rot:${rot}deg;
+      --tx:${(Math.random()-0.5)*200}px;
+    `;
+    container.appendChild(el);
+  }
+  setTimeout(() => container.remove(), 2000);
+}
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -3785,6 +3964,50 @@ function setupCallStaff() {
     if (btnText) btnText.textContent = '🙋 Chamar Atendente';
   }
 
+  function setSuccessState() {
+    if (callBtn) {
+      callBtn.classList.add('success');
+      const icon  = callBtn.querySelector('.nexo-call-icon');
+      const label = callBtn.querySelector('.nexo-call-label');
+      if (icon) { icon.setAttribute('width','20'); icon.setAttribute('height','20'); icon.innerHTML = '<polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>'; }
+      if (label) label.textContent = '';
+    }
+    cooldownActive = true;
+    setTimeout(() => {
+      cooldownActive = false;
+      if (callBtn) {
+        callBtn.classList.remove('success');
+        const icon  = callBtn.querySelector('.nexo-call-icon');
+        const label = callBtn.querySelector('.nexo-call-label');
+        if (icon)  icon.innerHTML  = '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>';
+        if (label) label.textContent = 'Chamar';
+      }
+    }, 30000);
+  }
+
+  async function sendNtfyNotification(mesa) {
+    const body = mesa
+      ? `🔔 Mesa ${mesa} precisa de atendimento`
+      : `🔔 Atendimento solicitado`;
+
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const r = await fetch(`https://ntfy.sh/${TOPIC}`, {
+        method: 'POST',
+        signal: ctrl.signal,
+        headers: { 'Content-Type': 'text/plain' },
+        body,
+      });
+      clearTimeout(t);
+      if (r.ok || r.status === 0) return true;
+      throw new Error(`HTTP ${r.status}`);
+    } catch (e) {
+      clearTimeout(t);
+      throw e;
+    }
+  }
+
   if (callBtn) callBtn.addEventListener('click', openSheet);
   if (closeBtn) closeBtn.addEventListener('click', closeSheet);
   if (backdrop) backdrop.addEventListener('click', closeSheet);
@@ -3794,60 +4017,46 @@ function setupCallStaff() {
       if (cooldownActive) return;
 
       const mesa = tableInput ? tableInput.value.trim() : '';
-      const msg  = mesa
-        ? 'Mesa ' + mesa + ' a pedir atendimento'
-        : 'A pedir atendimento (mesa não indicada)';
+
+      if (!mesa) {
+        if (tableInput) {
+          tableInput.classList.add('shake');
+          tableInput.focus();
+          tableInput.addEventListener('animationend', () => tableInput.classList.remove('shake'), { once: true });
+        }
+        return;
+      }
 
       sendBtn.classList.add('loading');
       if (btnText) btnText.textContent = 'A enviar...';
 
       try {
-        const response = await fetch(`https://ntfy.sh/${TOPIC}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain',
-            'Title': 'Chamada de Mesa',
-            'Priority': '4',
-            'Tags': 'bell',
-          },
-          body: msg,
-        });
+        await sendNtfyNotification(mesa);
 
-        if (response.ok) {
-          if (btnText) btnText.textContent = '✓ A caminho!';
-          if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
-          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        if (btnText) btnText.textContent = '✓ Atendente notificado!';
+        if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
+        track('staff_called', { table_label: mesa || null });
+        setTimeout(() => { closeSheet(); setSuccessState(); }, 1200);
 
-          setTimeout(() => {
-            closeSheet();
-            if (callBtn) {
-              callBtn.classList.add('success');
-              const icon = callBtn.querySelector('.nexo-call-icon');
-              const label = callBtn.querySelector('.nexo-call-label');
-              if (icon) icon.innerHTML = '<polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>';
-              if (label) label.textContent = '';
-            }
-            cooldownActive = true;
-            setTimeout(() => {
-              cooldownActive = false;
-              if (callBtn) {
-                callBtn.classList.remove('success');
-                const icon = callBtn.querySelector('.nexo-call-icon');
-                const label = callBtn.querySelector('.nexo-call-label');
-                if (icon) icon.innerHTML = '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>';
-                if (label) label.textContent = 'Chamar';
-              }
-            }, 30000);
-          }, 1500);
-
-          track('staff_called', { table_label: mesa || null });
-        } else {
-          throw new Error('HTTP ' + response.status);
-        }
       } catch (err) {
-        if (btnText) btnText.textContent = '✕ Erro — tente novamente';
-        if (sendBtn) sendBtn.style.background = 'rgba(239,68,68,0.2)';
-        setTimeout(resetSendBtnState, 2500);
+        // ntfy blocked (restricted network) — fallback to WhatsApp
+        const waNumber = (CONFIG.orderWhatsapp || CONFIG.whatsappNumber || '').replace(/\D/g, '');
+        const mesa = tableInput ? tableInput.value.trim() : '';
+        const waMsg = mesa ? `🔔 Mesa ${mesa} precisa de atendimento` : `🔔 Atendimento solicitado`;
+        if (waNumber) {
+          if (btnText) btnText.textContent = '↗ A abrir WhatsApp...';
+          if (sendBtn) { sendBtn.style.background = '#25D366'; sendBtn.style.color = 'white'; }
+          setTimeout(() => {
+            window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(waMsg)}`, '_blank');
+            closeSheet();
+            setSuccessState();
+          }, 500);
+        } else {
+          if (btnText) btnText.textContent = '✕ Sem ligação';
+          if (sendBtn) sendBtn.style.background = 'rgba(239,68,68,0.18)';
+          setTimeout(resetSendBtnState, 3000);
+        }
       }
     });
   }
