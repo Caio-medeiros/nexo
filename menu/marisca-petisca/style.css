@@ -1788,6 +1788,25 @@ a { color: inherit; text-decoration: none; }
 
 .review-options { display: grid; gap: var(--s2); }
 
+/* Solo Google option — full width, prominent */
+.review-options-solo { margin-top: var(--s2); }
+.review-option-google-only {
+  padding: var(--s3) var(--s4);
+  border-color: rgba(66,133,244,0.25);
+  background: rgba(66,133,244,0.04);
+}
+.review-option-google-only:hover {
+  border-color: rgba(66,133,244,0.45);
+  background: rgba(66,133,244,0.07);
+}
+.review-option-google-only .review-option-name { font-size: 15px; }
+.review-option-google-only .review-icon-google {
+  width: 44px; height: 44px;
+  background: white;
+  border: 1px solid rgba(66,133,244,0.2);
+  box-shadow: 0 2px 8px rgba(66,133,244,0.15);
+}
+
 .review-option {
   display: flex;
   align-items: center;
@@ -4818,6 +4837,7 @@ body.has-cart {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
   padding: 0 18px 0 14px;
   height: 50px;
@@ -4826,11 +4846,21 @@ body.has-cart {
   border: 1px solid rgba(255,255,255,0.14);
   box-shadow: 0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
   cursor: pointer;
-  transition: transform 130ms ease, box-shadow 130ms ease;
+  transition: transform 130ms ease, box-shadow 130ms ease, width 200ms ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   color: rgba(255,255,255,0.9);
   pointer-events: auto;
+}
+
+/* Mobile: icon-only — same size as back-to-top */
+@media (max-width: 519px) {
+  #nexo-call-staff-btn {
+    width: 50px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .nexo-call-label { display: none; }
 }
 
 .nexo-call-icon {

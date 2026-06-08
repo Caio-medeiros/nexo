@@ -1279,17 +1279,12 @@ function setupRatingGate() {
       b.classList.toggle('lit', i < currentRating);
     });
 
-    // Brief pause then advance
+    // Brief pause then advance to step 2
     setTimeout(() => {
       hideReviewStep(document.getElementById('review-step-1'));
 
       if (currentRating >= 4) {
-        // Redirect direto para Google — sem escolha de plataforma
-        track('review_google_clicked', { rating: currentRating });
-        showThanks(true);
-        setTimeout(() => {
-          window.open(CONFIG.googleReviewUrl, '_blank');
-        }, 600);
+        showReviewStep(document.getElementById('review-step-2-happy'));
       } else {
         showReviewStep(document.getElementById('review-step-2-unhappy'));
         const ta = document.getElementById('review-textarea');
@@ -3807,20 +3802,19 @@ function setupCallStaff() {
       if (btnText) btnText.textContent = 'A enviar...';
 
       try {
-        const response = await fetch('https://ntfy.sh/', {
+        const response = await fetch(`https://ntfy.sh/${TOPIC}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            topic:    TOPIC,
-            title:    'Chamada de Mesa',
-            message:  msg,
-            priority: 4,
-            tags:     ['bell'],
-          }),
+          headers: {
+            'Content-Type': 'text/plain',
+            'Title': 'Chamada de Mesa',
+            'Priority': '4',
+            'Tags': 'bell',
+          },
+          body: msg,
         });
 
         if (response.ok) {
-          if (btnText) btnText.textContent = '✓ Atendente a caminho!';
+          if (btnText) btnText.textContent = '✓ A caminho!';
           if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
           if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
@@ -3828,14 +3822,20 @@ function setupCallStaff() {
             closeSheet();
             if (callBtn) {
               callBtn.classList.add('success');
-              callBtn.querySelector('.nexo-call-label').textContent = 'A caminho ✓';
+              const icon = callBtn.querySelector('.nexo-call-icon');
+              const label = callBtn.querySelector('.nexo-call-label');
+              if (icon) icon.innerHTML = '<polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>';
+              if (label) label.textContent = '';
             }
             cooldownActive = true;
             setTimeout(() => {
               cooldownActive = false;
               if (callBtn) {
                 callBtn.classList.remove('success');
-                callBtn.querySelector('.nexo-call-label').textContent = 'Chamar';
+                const icon = callBtn.querySelector('.nexo-call-icon');
+                const label = callBtn.querySelector('.nexo-call-label');
+                if (icon) icon.innerHTML = '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>';
+                if (label) label.textContent = 'Chamar';
               }
             }, 30000);
           }, 1500);

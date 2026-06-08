@@ -69,7 +69,7 @@ const CONFIG = {
      4. REDES & REVIEWS
      ════════════════════════════════════════════════════════════════════════ */
 
-  googleReviewUrl:  "https://www.google.com/maps/search/Marisca+Petisca+Carcavelos/@38.6817,-9.3409,17z",
+  googleReviewUrl:  "https://search.google.com/local/writereview?placeid=ChIJi1LgvkjJHg0R4FtaofXmCZg",
   googleRating:     4.3,
   googleReviewCount:"412",
   theForkReviewUrl: null,
