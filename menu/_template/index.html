@@ -706,13 +706,10 @@
     <div class="confirm-wa-toast" id="confirm-wa-toast" aria-live="polite"></div>
   </div>
 
-  <!-- CHAMAR EMPREGADO — floating button -->
-  <div id="nexo-call-staff-btn" role="button" tabindex="0" aria-label="Chamar empregado">
-    <span class="nexo-call-icon">🙋</span>
-    <span class="nexo-call-label">Atendente</span>
-  </div>
+  <!-- CHAMAR ATENDENTE — floating button -->
+  <div id="nexo-call-staff-btn" role="button" tabindex="0" aria-label="Chamar atendente">🙋</div>
 
-  <!-- CHAMAR EMPREGADO — bottom sheet -->
+  <!-- CHAMAR ATENDENTE — bottom sheet -->
   <div id="nexo-call-sheet" class="nexo-sheet-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="nexo-sheet-title">
     <div class="nexo-sheet-backdrop"></div>
     <div class="nexo-sheet-card">
@@ -722,18 +719,21 @@
         <button class="nexo-sheet-close" id="nexo-call-sheet-close" aria-label="Fechar">✕</button>
       </div>
       <div class="nexo-sheet-body">
-        <p class="nexo-sheet-desc">Um membro da equipa irá ter consigo em instantes.</p>
-        <label class="nexo-input-label" for="nexo-call-table-input">Número ou nome da mesa</label>
-        <input
-          type="text"
-          id="nexo-call-table-input"
-          class="nexo-input"
-          placeholder="ex: Mesa 4, Terraço, Varanda..."
-          maxlength="30"
-          autocomplete="off"
-          autocorrect="off"
-        />
-        <p class="nexo-input-hint">Opcional — ajuda a equipa a encontrá-lo</p>
+        <p class="nexo-call-field-label">Número da mesa</p>
+        <div class="nexo-call-table-field">
+          <span class="nexo-call-table-prefix">Mesa</span>
+          <input
+            type="text"
+            id="nexo-call-table-input"
+            class="nexo-call-table-input"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            placeholder="4"
+            maxlength="10"
+            autocomplete="off"
+            autocorrect="off"
+          />
+        </div>
       </div>
       <div class="nexo-sheet-footer">
         <button id="nexo-call-send-btn" class="nexo-call-send-btn" type="button">

@@ -4836,54 +4836,49 @@ body.has-cart {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CHAMAR EMPREGADO — Call Staff System
+   CHAMAR ATENDENTE — Call Staff System
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Circle button — bottom-left, same level as cart pill */
 #nexo-call-staff-btn {
   position: fixed;
-  bottom: calc(88px + env(safe-area-inset-bottom));
-  left: 20px;
-  z-index: 900;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  left: 16px;
+  z-index: 160;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(20, 20, 20, 0.92);
-  border: 1px solid rgba(255,255,255,0.15);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: white;
-  padding: 10px 16px;
-  border-radius: 100px;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 500;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  background: rgba(13, 13, 13, 0.82);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  transition: transform 120ms ease, opacity 120ms ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  transition: transform 120ms ease, background 200ms ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-#nexo-call-staff-btn:active {
-  transform: scale(0.95);
-}
-
-#nexo-call-staff-btn.hidden {
-  display: none;
-}
+#nexo-call-staff-btn:active { transform: scale(0.88); }
+#nexo-call-staff-btn.hidden { display: none; }
 
 #nexo-call-staff-btn.success {
-  background: rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.22);
   border-color: rgba(34, 197, 94, 0.4);
+  font-size: 18px;
   pointer-events: none;
 }
 
-#nexo-call-staff-btn.loading {
-  opacity: 0.6;
-  pointer-events: none;
+@media (min-width: 560px) {
+  #nexo-call-staff-btn { left: calc(50% - 260px + 16px); }
 }
 
-/* Sheet overlay */
+/* ── Sheet overlay ── */
 .nexo-sheet-overlay {
   position: fixed;
   inset: 0;
@@ -4892,15 +4887,12 @@ body.has-cart {
   flex-direction: column;
   justify-content: flex-end;
 }
-
-.nexo-sheet-overlay.hidden {
-  display: none;
-}
+.nexo-sheet-overlay.hidden { display: none; }
 
 .nexo-sheet-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.55);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
@@ -4909,20 +4901,17 @@ body.has-cart {
   position: relative;
   background: #181818;
   border-radius: 20px 20px 0 0;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding: 0 0 env(safe-area-inset-bottom);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: env(safe-area-inset-bottom);
   transform: translateY(100%);
-  transition: transform 350ms cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform 340ms cubic-bezier(0.32, 0.72, 0, 1);
 }
-
-.nexo-sheet-overlay.open .nexo-sheet-card {
-  transform: translateY(0);
-}
+.nexo-sheet-overlay.open .nexo-sheet-card { transform: translateY(0); }
 
 .nexo-sheet-handle {
   width: 36px;
   height: 4px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.18);
   border-radius: 2px;
   margin: 12px auto 0;
 }
@@ -4931,19 +4920,17 @@ body.has-cart {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-
 .nexo-sheet-title {
   font-family: var(--font-ui);
   font-size: 16px;
   font-weight: 600;
   color: #F5F5F5;
 }
-
 .nexo-sheet-close {
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.35);
   font-size: 16px;
   background: none;
   border: none;
@@ -4953,61 +4940,71 @@ body.has-cart {
   font-family: var(--font-ui);
 }
 
-.nexo-sheet-body {
-  padding: 20px 20px 8px;
-}
+/* ── Body: label + mesa input (same style as confirm screen) ── */
+.nexo-sheet-body { padding: 20px 20px 12px; }
 
-.nexo-sheet-desc {
-  font-family: var(--font-ui);
-  font-size: 14px;
-  color: rgba(255,255,255,0.55);
-  margin: 0 0 20px;
-  line-height: 1.5;
-}
-
-.nexo-input-label {
+.nexo-call-field-label {
   display: block;
   font-family: var(--font-ui);
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: rgba(255,255,255,0.4);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.nexo-input {
-  width: 100%;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  padding: 12px 16px;
+.nexo-call-table-field {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.18s;
+}
+.nexo-call-table-field:focus-within {
+  border-color: rgba(255,255,255,0.4);
+}
+
+.nexo-call-table-prefix {
+  padding: 0 4px 0 18px;
   font-family: var(--font-ui);
-  font-size: 15px;
-  color: #F5F5F5;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.nexo-call-table-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 16px 18px 16px 8px;
+  font-family: var(--font-ui);
+  font-size: 26px;
+  font-weight: 700;
+  color: white;
   outline: none;
-  box-sizing: border-box;
-  transition: border-color 150ms ease;
+  -webkit-appearance: none;
+  min-width: 0;
+  letter-spacing: 0.02em;
+}
+.nexo-call-table-input::placeholder {
+  color: rgba(255,255,255,0.18);
+  font-weight: 400;
 }
 
-.nexo-input:focus {
-  border-color: rgba(255,255,255,0.35);
-}
-
-.nexo-input-hint {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  color: rgba(255,255,255,0.3);
-  margin: 6px 0 0;
-}
-
+/* ── Footer: send button ── */
 .nexo-sheet-footer {
-  padding: 16px 20px 20px;
+  padding: 12px 20px 20px;
 }
-
 .nexo-call-send-btn {
   width: 100%;
   height: 54px;
-  border-radius: 12px;
+  border-radius: 14px;
   background: #F5F5F5;
   color: #0D0D0D;
   font-family: var(--font-ui);
@@ -5015,16 +5012,9 @@ body.has-cart {
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: transform 120ms ease, opacity 120ms ease;
+  transition: transform 120ms ease, opacity 120ms ease, background 200ms ease;
   -webkit-tap-highlight-color: transparent;
 }
-
-.nexo-call-send-btn:active {
-  transform: scale(0.98);
-}
-
-.nexo-call-send-btn.loading {
-  opacity: 0.6;
-  pointer-events: none;
-}
+.nexo-call-send-btn:active { transform: scale(0.98); }
+.nexo-call-send-btn.loading { opacity: 0.6; pointer-events: none; }
 

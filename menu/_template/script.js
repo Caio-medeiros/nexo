@@ -2607,7 +2607,7 @@ function validateTableInput() {
 
 function generateOrderMessage(cartItems, tableValue) {
   const n = (tableValue && tableValue.trim()) ? tableValue.trim() : '—';
-  const prefix = t().confirmTablePrefix || 'Mesa';
+  const prefix = 'Mesa';
 
   const itemLines = cartItems.map(entry => {
     const item = getItemByRef(entry.refId);
@@ -2615,7 +2615,8 @@ function generateOrderMessage(cartItems, tableValue) {
     const qty = entry.qty > 1 ? `${entry.qty}x ` : '';
     const price = ((parsePriceToNumber(item.price) || 0) * entry.qty)
       .toFixed(2).replace('.', ',');
-    let line = `${qty}${item.name[currentLang]} — €${price}`;
+    const itemName = item.name['pt'] || item.name[currentLang];
+    let line = `${qty}${itemName} — €${price}`;
     if (entry.note && entry.note.trim()) {
       line += `\n   _${entry.note.trim()}_`;
     }
@@ -3759,9 +3760,12 @@ function setupCallStaff() {
     if (cooldownActive) return;
     if (sheet) {
       sheet.classList.remove('hidden');
-      requestAnimationFrame(() => sheet.classList.add('open'));
+      requestAnimationFrame(() => {
+        sheet.classList.add('open');
+        // Focus + select immediately so numeric keyboard appears and value is ready to replace
+        if (tableInput) { tableInput.focus(); tableInput.select(); }
+      });
     }
-    setTimeout(() => { if (tableInput) tableInput.focus(); }, 400);
   }
 
   function closeSheet() {
@@ -3819,14 +3823,14 @@ function setupCallStaff() {
             closeSheet();
             if (callBtn) {
               callBtn.classList.add('success');
-              callBtn.innerHTML = '<span>✓</span><span>Enviado</span>';
+              callBtn.textContent = '✓';
             }
             cooldownActive = true;
             setTimeout(() => {
               cooldownActive = false;
               if (callBtn) {
                 callBtn.classList.remove('success');
-                callBtn.innerHTML = '<span class="nexo-call-icon">🙋</span><span class="nexo-call-label">Chamar</span>';
+                callBtn.textContent = '🙋';
               }
             }, 30000);
           }, 1500);

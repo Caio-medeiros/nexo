@@ -97,6 +97,9 @@
   <!-- QUICK NAV -->
   <nav class="quick-nav" id="quick-nav" aria-label="Navegação rápida"></nav>
 
+  <!-- ZONA ESCURA: banner + favoritos + mais pedidos — fundo contínuo -->
+  <div class="dark-zone">
+
   <!-- BANNER DINÂMICO (muda consoante a hora: almoço / happy hour / jantar) -->
   <div class="special-banner" id="special-banner" style="display:none">
     <div class="special-banner-body">
@@ -115,51 +118,14 @@
         </div>
       </div>
     </div>
-    <!-- Full-width ocean scene -->
+    <!-- Decorative fish -->
     <div class="banner-art" aria-hidden="true">
       <svg viewBox="0 0 390 90" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-        <!-- Ocean — pushed to bottom strip, below text -->
-        <path class="oc oc3"
-          d="M-20,68 C50,60 130,70 210,63 C290,56 360,68 420,61 L420,90 L-20,90 Z"
-          fill="rgba(18,78,158,0.78)"/>
-        <path class="oc oc2"
-          d="M-20,74 C50,66 130,76 210,69 C290,62 360,74 420,67 L420,90 L-20,90 Z"
-          fill="rgba(10,48,112,0.9)"/>
-        <path class="oc oc1"
-          d="M-20,80 C50,72 130,82 210,75 C290,68 360,80 420,73 L420,90 L-20,90 Z"
-          fill="rgba(6,28,78,0.97)"/>
-        <!-- surface glint line -->
-        <path class="oc oc3"
-          d="M-20,68 C50,60 130,70 210,63 C290,56 360,68 420,61"
-          fill="none" stroke="rgba(175,232,255,0.6)" stroke-width="1.4"/>
-
-        <!-- Splash -->
-        <g transform="translate(272,68)">
-          <line x1="-7"  y1="0" x2="-11" y2="-9"  stroke="rgba(165,228,252,0.65)" stroke-width="1.6" stroke-linecap="round"/>
-          <line x1="0"   y1="0" x2="-1"  y2="-12" stroke="rgba(180,236,252,0.75)" stroke-width="1.6" stroke-linecap="round"/>
-          <line x1="9"   y1="0" x2="13"  y2="-9"  stroke="rgba(165,228,252,0.62)" stroke-width="1.6" stroke-linecap="round"/>
-          <circle cx="-10" cy="-11" r="1.2" fill="rgba(192,240,255,0.52)"/>
-          <circle cx="0"   cy="-15" r="1.0" fill="rgba(192,240,255,0.48)"/>
-          <circle cx="14"  cy="-11" r="0.9" fill="rgba(192,240,255,0.44)"/>
-        </g>
-
-        <!-- Fish — tail exits water at the new surface (y≈68) -->
-        <g transform="translate(292,50) rotate(-33)">
-          <!-- forked tail -->
-          <path d="M-30,0 C-36,-5 -44,-13 -41,-9 C-38,-5 -33,-1 -33,0 C-33,1 -38,5 -41,9 C-44,13 -36,5 -30,0 Z"
-            fill="#2370A0"/>
-          <!-- body -->
-          <path d="M26,0 C20,-12 -2,-14 -18,-9 C-28,-5 -30,-2 -30,0 C-30,2 -28,5 -18,9 C-2,14 20,12 26,0 Z"
-            fill="#3AACDA"/>
-          <!-- belly -->
-          <path d="M20,0 C15,-8 -2,-9 -14,-5 C-22,-2 -23,0 -23,2 C-22,4 -14,6 -2,7 C12,8 18,5 20,0 Z"
-            fill="rgba(210,245,255,0.2)"/>
-          <!-- dorsal fin -->
-          <path d="M4,-14 Q-6,-24 -20,-12 Q-10,-13 4,-14 Z" fill="#2270A0" opacity="0.82"/>
-          <!-- eye -->
-          <circle cx="19" cy="-2" r="3.5" fill="white"/>
-          <circle cx="19.6" cy="-2" r="1.9" fill="#0B1E33"/>
-          <circle cx="20.5" cy="-2.9" r="0.7" fill="white"/>
+        <g transform="translate(330,45) rotate(-8)" opacity="0.18">
+          <path d="M-30,0 C-36,-5 -44,-13 -41,-9 C-38,-5 -33,-1 -33,0 C-33,1 -38,5 -41,9 C-44,13 -36,5 -30,0 Z" fill="white"/>
+          <path d="M26,0 C20,-12 -2,-14 -18,-9 C-28,-5 -30,-2 -30,0 C-30,2 -28,5 -18,9 C-2,14 20,12 26,0 Z" fill="white"/>
+          <path d="M4,-14 Q-6,-24 -20,-12 Q-10,-13 4,-14 Z" fill="white" opacity="0.7"/>
+          <circle cx="19" cy="-2" r="3" fill="white" opacity="0.6"/>
         </g>
       </svg>
     </div>
@@ -194,6 +160,8 @@
     </div>
     <div class="most-ordered-list" id="most-ordered-list"></div>
   </section>
+
+  </div><!-- /dark-zone -->
 
   <!-- CATEGORY TABS — underline deslizante -->
   <nav class="category-tabs" id="category-tabs" aria-label="Categorias do menu">
@@ -706,13 +674,10 @@
     <div class="confirm-wa-toast" id="confirm-wa-toast" aria-live="polite"></div>
   </div>
 
-  <!-- CHAMAR EMPREGADO — floating button -->
-  <div id="nexo-call-staff-btn" role="button" tabindex="0" aria-label="Chamar empregado">
-    <span class="nexo-call-icon">🙋</span>
-    <span class="nexo-call-label">Atendente</span>
-  </div>
+  <!-- CHAMAR ATENDENTE — floating button -->
+  <div id="nexo-call-staff-btn" role="button" tabindex="0" aria-label="Chamar atendente">🙋</div>
 
-  <!-- CHAMAR EMPREGADO — bottom sheet -->
+  <!-- CHAMAR ATENDENTE — bottom sheet -->
   <div id="nexo-call-sheet" class="nexo-sheet-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="nexo-sheet-title">
     <div class="nexo-sheet-backdrop"></div>
     <div class="nexo-sheet-card">
@@ -722,18 +687,21 @@
         <button class="nexo-sheet-close" id="nexo-call-sheet-close" aria-label="Fechar">✕</button>
       </div>
       <div class="nexo-sheet-body">
-        <p class="nexo-sheet-desc">Um membro da equipa irá ter consigo em instantes.</p>
-        <label class="nexo-input-label" for="nexo-call-table-input">Número ou nome da mesa</label>
-        <input
-          type="text"
-          id="nexo-call-table-input"
-          class="nexo-input"
-          placeholder="ex: Mesa 4, Terraço, Varanda..."
-          maxlength="30"
-          autocomplete="off"
-          autocorrect="off"
-        />
-        <p class="nexo-input-hint">Opcional — ajuda a equipa a encontrá-lo</p>
+        <p class="nexo-call-field-label">Número da mesa</p>
+        <div class="nexo-call-table-field">
+          <span class="nexo-call-table-prefix">Mesa</span>
+          <input
+            type="text"
+            id="nexo-call-table-input"
+            class="nexo-call-table-input"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            placeholder="4"
+            maxlength="10"
+            autocomplete="off"
+            autocorrect="off"
+          />
+        </div>
       </div>
       <div class="nexo-sheet-footer">
         <button id="nexo-call-send-btn" class="nexo-call-send-btn" type="button">

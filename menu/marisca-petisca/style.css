@@ -336,9 +336,30 @@ a { color: inherit; text-decoration: none; }
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ═══ BANNER TEMPO-DEPENDENTE ═══ */
+/* ── Dark zone: banner + favorites + most-ordered share one background ── */
+.dark-zone {
+  background-color: #071B38;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.045) 1px, transparent 1px);
+  background-size: 22px 22px;
+  position: relative;
+}
+
+/* Wave exit at bottom of dark zone → page background */
+.dark-zone::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20preserveAspectRatio%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M0%2C40%20C18%2C22%2035%2C52%2050%2C32%20C65%2C14%2082%2C44%20100%2C26%20L100%2C100%20L0%2C100%20Z%22%20fill%3D%22%23EBF2F8%22%2F%3E%3C%2Fsvg%3E");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 3;
+}
+
 .special-banner {
   margin: 0;
-  background: linear-gradient(160deg, #0D3468 0%, #0A2545 60%, #071B38 100%);
+  background: transparent;
   border: none;
   display: flex;
   align-items: stretch;
@@ -352,29 +373,20 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(93, 187, 218, 0.5), var(--gold-bright), rgba(93, 187, 218, 0.5), transparent);
-}
-
-.special-banner::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 32px;
-  background: linear-gradient(to bottom, transparent 0%, rgba(10,32,64,0.55) 100%);
-  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, var(--gold-bright) 40%, rgba(93,187,218,0.4) 100%);
 }
 
 .special-banner-body {
   flex: 1;
-  padding: 18px 20px 28px 22px;
+  padding: 20px 22px 22px 22px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   position: relative;
   z-index: 1;
 }
 
-/* ── Full-width ocean scene illustration ── */
+/* Decorative fish — subtle silhouette */
 .banner-art {
   position: absolute;
   inset: 0;
@@ -389,37 +401,16 @@ a { color: inherit; text-decoration: none; }
   display: block;
 }
 
-/* Gentle water surface drift */
-@keyframes oc-a { from { transform: translateX(-18px); } to { transform: translateX(18px); } }
-@keyframes oc-b { from { transform: translateX(12px);  } to { transform: translateX(-12px); } }
-@keyframes oc-c { from { transform: translateX(-8px);  } to { transform: translateX(8px); } }
-
-.oc.oc1 { animation: oc-a 5s ease-in-out infinite alternate; }
-.oc.oc2 { animation: oc-b 7s ease-in-out infinite alternate; }
-.oc.oc3 { animation: oc-c 9s ease-in-out infinite alternate; }
-
+/* Ghost text hidden */
 .special-banner-ghost {
-  position: absolute;
-  right: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: var(--font-display);
-  font-size: 90px;
-  font-weight: 300;
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.05);
-  pointer-events: none;
-  line-height: 1;
-  letter-spacing: -3px;
-  user-select: none;
-  white-space: nowrap;
+  display: none;
 }
 
 .special-banner-label {
   font-family: var(--font-ui);
   font-size: 8px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
   text-transform: uppercase;
   color: var(--gold-bright);
   position: relative;
@@ -427,12 +418,12 @@ a { color: inherit; text-decoration: none; }
 
 .special-banner-headline {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   font-style: italic;
   color: white;
   line-height: 1.1;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   position: relative;
 }
 
@@ -441,9 +432,9 @@ a { color: inherit; text-decoration: none; }
   font-size: 13px;
   font-style: italic;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.35;
-  margin-top: 1px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.4;
+  margin-top: 2px;
   position: relative;
 }
 
@@ -587,36 +578,16 @@ a { color: inherit; text-decoration: none; }
    MAIS PEDIDOS — OCEAN BLUE EDITION
    ═══════════════════════════════════════════════════════════════════════════ */
 .most-ordered {
-  margin: 0 0 var(--s4);
+  margin: 0;
   padding: var(--s4) 0 calc(var(--s5) + 24px);
-  background: linear-gradient(180deg, #071B38 0%, #0D2B54 40%, #0A2040 100%);
+  background: transparent;
   position: relative;
   overflow: hidden;
   scroll-margin-top: calc(var(--quick-nav-h) + 12px);
 }
 
-/* Dot grid texture */
-.most-ordered::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
-  background-size: 22px 22px;
-  pointer-events: none;
-}
-
-/* Wave bottom — transitions back to page background */
-.most-ordered::after {
-  content: '';
-  position: absolute;
-  bottom: -1px; left: 0; right: 0;
-  height: 40px;
-  background-image: url("data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20preserveAspectRatio%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M0%2C40%20C18%2C22%2035%2C52%2050%2C32%20C65%2C14%2082%2C44%20100%2C26%20L100%2C100%20L0%2C100%20Z%22%20fill%3D%22%23EBF2F8%22%2F%3E%3C%2Fsvg%3E");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  pointer-events: none;
-  z-index: 3;
-}
+/* Dot grid lives on .dark-zone — no duplicate here */
+.most-ordered::before { display: none; }
 
 .most-ordered-list {
   display: flex;
@@ -3462,8 +3433,8 @@ body.has-cart {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .favorites-section {
-  border-top: 1.5px solid var(--border-soft);
-  border-bottom: 1.5px solid var(--border-soft);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   padding: var(--s2) 0;
   margin: 0 0 var(--s2);
   animation: fadeIn 0.25s ease;
@@ -4836,46 +4807,45 @@ body.has-cart {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CHAMAR EMPREGADO — Call Staff System
+   CHAMAR ATENDENTE — Call Staff System
    ═══════════════════════════════════════════════════════════════════════════ */
 
 #nexo-call-staff-btn {
   position: fixed;
-  bottom: calc(88px + env(safe-area-inset-bottom));
-  left: 20px;
-  z-index: 900;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  left: 16px;
+  z-index: 160;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(20, 20, 20, 0.92);
-  border: 1px solid rgba(255,255,255,0.15);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: white;
-  padding: 10px 16px;
-  border-radius: 100px;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 500;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  background: rgba(13, 13, 13, 0.82);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  transition: transform 120ms ease, opacity 120ms ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  transition: transform 120ms ease, background 200ms ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-#nexo-call-staff-btn:active { transform: scale(0.95); }
+#nexo-call-staff-btn:active { transform: scale(0.88); }
 #nexo-call-staff-btn.hidden { display: none; }
 
 #nexo-call-staff-btn.success {
-  background: rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.22);
   border-color: rgba(34, 197, 94, 0.4);
+  font-size: 18px;
   pointer-events: none;
 }
 
-#nexo-call-staff-btn.loading {
-  opacity: 0.6;
-  pointer-events: none;
+@media (min-width: 560px) {
+  #nexo-call-staff-btn { left: calc(50% - 260px + 16px); }
 }
 
 .nexo-sheet-overlay {
@@ -4886,13 +4856,12 @@ body.has-cart {
   flex-direction: column;
   justify-content: flex-end;
 }
-
 .nexo-sheet-overlay.hidden { display: none; }
 
 .nexo-sheet-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.55);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
@@ -4901,18 +4870,17 @@ body.has-cart {
   position: relative;
   background: #181818;
   border-radius: 20px 20px 0 0;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding: 0 0 env(safe-area-inset-bottom);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: env(safe-area-inset-bottom);
   transform: translateY(100%);
-  transition: transform 350ms cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform 340ms cubic-bezier(0.32, 0.72, 0, 1);
 }
-
 .nexo-sheet-overlay.open .nexo-sheet-card { transform: translateY(0); }
 
 .nexo-sheet-handle {
   width: 36px;
   height: 4px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.18);
   border-radius: 2px;
   margin: 12px auto 0;
 }
@@ -4921,19 +4889,17 @@ body.has-cart {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-
 .nexo-sheet-title {
   font-family: var(--font-ui);
   font-size: 16px;
   font-weight: 600;
   color: #F5F5F5;
 }
-
 .nexo-sheet-close {
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.35);
   font-size: 16px;
   background: none;
   border: none;
@@ -4943,55 +4909,66 @@ body.has-cart {
   font-family: var(--font-ui);
 }
 
-.nexo-sheet-body { padding: 20px 20px 8px; }
+.nexo-sheet-body { padding: 20px 20px 12px; }
 
-.nexo-sheet-desc {
-  font-family: var(--font-ui);
-  font-size: 14px;
-  color: rgba(255,255,255,0.55);
-  margin: 0 0 20px;
-  line-height: 1.5;
-}
-
-.nexo-input-label {
+.nexo-call-field-label {
   display: block;
   font-family: var(--font-ui);
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: rgba(255,255,255,0.4);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.nexo-input {
-  width: 100%;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  padding: 12px 16px;
+.nexo-call-table-field {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.18s;
+}
+.nexo-call-table-field:focus-within { border-color: rgba(255,255,255,0.4); }
+
+.nexo-call-table-prefix {
+  padding: 0 4px 0 18px;
   font-family: var(--font-ui);
-  font-size: 15px;
-  color: #F5F5F5;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.nexo-call-table-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 16px 18px 16px 8px;
+  font-family: var(--font-ui);
+  font-size: 26px;
+  font-weight: 700;
+  color: white;
   outline: none;
-  box-sizing: border-box;
-  transition: border-color 150ms ease;
+  -webkit-appearance: none;
+  min-width: 0;
+  letter-spacing: 0.02em;
+}
+.nexo-call-table-input::placeholder {
+  color: rgba(255,255,255,0.18);
+  font-weight: 400;
 }
 
-.nexo-input:focus { border-color: rgba(255,255,255,0.35); }
-
-.nexo-input-hint {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  color: rgba(255,255,255,0.3);
-  margin: 6px 0 0;
-}
-
-.nexo-sheet-footer { padding: 16px 20px 20px; }
+.nexo-sheet-footer { padding: 12px 20px 20px; }
 
 .nexo-call-send-btn {
   width: 100%;
   height: 54px;
-  border-radius: 12px;
+  border-radius: 14px;
   background: #F5F5F5;
   color: #0D0D0D;
   font-family: var(--font-ui);
@@ -4999,10 +4976,9 @@ body.has-cart {
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: transform 120ms ease, opacity 120ms ease;
+  transition: transform 120ms ease, opacity 120ms ease, background 200ms ease;
   -webkit-tap-highlight-color: transparent;
 }
-
 .nexo-call-send-btn:active { transform: scale(0.98); }
 .nexo-call-send-btn.loading { opacity: 0.6; pointer-events: none; }
 
