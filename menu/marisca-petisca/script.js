@@ -1279,12 +1279,17 @@ function setupRatingGate() {
       b.classList.toggle('lit', i < currentRating);
     });
 
-    // Brief pause then advance to step 2
+    // Brief pause then advance
     setTimeout(() => {
       hideReviewStep(document.getElementById('review-step-1'));
 
       if (currentRating >= 4) {
-        showReviewStep(document.getElementById('review-step-2-happy'));
+        // Redirect direto para Google — sem escolha de plataforma
+        track('review_google_clicked', { rating: currentRating });
+        showThanks(true);
+        setTimeout(() => {
+          window.open(CONFIG.googleReviewUrl, '_blank');
+        }, 600);
       } else {
         showReviewStep(document.getElementById('review-step-2-unhappy'));
         const ta = document.getElementById('review-textarea');
@@ -3823,14 +3828,14 @@ function setupCallStaff() {
             closeSheet();
             if (callBtn) {
               callBtn.classList.add('success');
-              callBtn.textContent = '✓';
+              callBtn.querySelector('.nexo-call-label').textContent = 'A caminho ✓';
             }
             cooldownActive = true;
             setTimeout(() => {
               cooldownActive = false;
               if (callBtn) {
                 callBtn.classList.remove('success');
-                callBtn.textContent = '🙋';
+                callBtn.querySelector('.nexo-call-label').textContent = 'Chamar';
               }
             }, 30000);
           }, 1500);

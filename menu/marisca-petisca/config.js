@@ -69,7 +69,7 @@ const CONFIG = {
      4. REDES & REVIEWS
      ════════════════════════════════════════════════════════════════════════ */
 
-  googleReviewUrl:  "https://search.google.com/local/writereview?placeid=PLACEHOLDER",
+  googleReviewUrl:  "https://www.google.com/maps/search/Marisca+Petisca+Carcavelos/@38.6817,-9.3409,17z",
   googleRating:     4.3,
   googleReviewCount:"412",
   theForkReviewUrl: null,
@@ -651,35 +651,35 @@ const CONFIG = {
   wines: [
 
     /* ── ÁGUAS ── */
-    { name: "Água Sem Gás 33cl",       country: "Portugal", region: "—", type: "agua",        grape: "—",          abv: "0%",    volume: "33cl",  price: "1,80€",  photo: null, desc: "Água natural sem gás." },
-    { name: "Água Sem Gás 75cl",       country: "Portugal", region: "—", type: "agua",        grape: "—",          abv: "0%",    volume: "75cl",  price: "3,00€",  photo: null, desc: "Água natural sem gás, garrafa grande." },
-    { name: "Água Com Gás 33cl",       country: "Portugal", region: "—", type: "agua",        grape: "—",          abv: "0%",    volume: "33cl",  price: "2,00€",  photo: null, desc: "Água mineral com gás." },
+    { name: "Água Sem Gás 33cl",       country: "Portugal", region: "—", type: "agua",        grape: "—",          abv: "0%",    volume: "33cl",  price: "1,80€",  photo: "https://www.continente.pt/on/demandware.static/-/Sites-col-master-catalog/default/dw80f88d16/images/col/211/2119809-frente.jpg", desc: "Água natural sem gás." },
+    { name: "Água Sem Gás 75cl",       country: "Portugal", region: "—", type: "agua",        grape: "—",          abv: "0%",    volume: "75cl",  price: "3,00€",  photo: "https://www.continente.pt/dw/image/v2/BDVS_PRD/on/demandware.static/-/Sites-col-master-catalog/default/dw0cae1308/images/col/383/3831366-frente.jpg?sw=2000&sh=2000", desc: "Água natural sem gás, garrafa grande." },
+    { name: "Água Com Gás 33cl",       country: "Portugal", region: "—", type: "agua",        grape: "—",          abv: "0%",    volume: "33cl",  price: "2,00€",  photo: "https://cdn-shopkit.com/usercontent/aminhamercearia/media/images/1e48630-150438-gua-das-pedras-33cl.jpg", desc: "Água mineral com gás." },
 
     /* ── REFRIGERANTES ── */
-    { name: "Coca-Cola",               country: "EUA",      region: "—", type: "refrigerante", grape: "Coca-Cola",  abv: "0%",   volume: "33cl",  price: "3,50€",  photo: null, desc: "O refrigerante mais famoso do mundo. Fresco e icónico." },
-    { name: "Coca-Cola Zero",          country: "EUA",      region: "—", type: "refrigerante", grape: "Coca-Cola",  abv: "0%",   volume: "33cl",  price: "3,50€",  photo: null, desc: "Todo o sabor da Coca-Cola, sem açúcar." },
-    { name: "Sumol Laranja",           country: "Portugal", region: "—", type: "refrigerante", grape: "Sumol",      abv: "0%",   volume: "33cl",  price: "3,50€",  photo: null, desc: "O clássico refrigerante português de laranja." },
-    { name: "Sumol Ananás",            country: "Portugal", region: "—", type: "refrigerante", grape: "Sumol",      abv: "0%",   volume: "33cl",  price: "3,50€",  photo: null, desc: "Refrigerante português de ananás — verão num copo." },
+    { name: "Coca-Cola",               country: "EUA",      region: "—", type: "refrigerante", grape: "Coca-Cola",  abv: "0%",   volume: "33cl",  price: "3,50€",  photo: "https://www.sushicome.com/cdn/shop/files/3ba5b36a37562cbb63ee68619ffeb68448bc97af_1024_1024_8a6687d6-0b8f-4a85-831e-d16daef95651.jpg?v=1734453067&width=480", desc: "O refrigerante mais famoso do mundo. Fresco e icónico." },
+    { name: "Coca-Cola Zero",          country: "EUA",      region: "—", type: "refrigerante", grape: "Coca-Cola",  abv: "0%",   volume: "33cl",  price: "3,50€",  photo: "https://www.lacasadelasgolosinas.com/7061-large_default/coca-cola-zero-lata-33cl-pack-8-unidades.jpg", desc: "Todo o sabor da Coca-Cola, sem açúcar." },
+    { name: "Sumol Laranja",           country: "Portugal", region: "—", type: "refrigerante", grape: "Sumol",      abv: "0%",   volume: "33cl",  price: "3,50€",  photo: "https://gostobastante.pt/wp-content/uploads/2023/03/Prancheta-1-copiar-8.png", desc: "O clássico refrigerante português de laranja." },
+    { name: "Sumol Ananás",            country: "Portugal", region: "—", type: "refrigerante", grape: "Sumol",      abv: "0%",   volume: "33cl",  price: "3,50€",  photo: "https://gostobastante.pt/wp-content/uploads/2023/03/Prancheta-1-copiar-9.png", desc: "Refrigerante português de ananás — verão num copo." },
 
     /* ── SUMOS ── */
-    { name: "Sumo Natural de Laranja", country: "Portugal", region: "—", type: "sumo",         grape: "Natural",    abv: "0%",   volume: "25cl",  price: "4,50€",  photo: null, desc: "Sumo de laranja espremido na hora." },
+    { name: "Sumo Natural de Laranja", country: "Portugal", region: "—", type: "sumo",         grape: "Natural",    abv: "0%",   volume: "25cl",  price: "4,50€",  photo: "https://joiadocampo.com/wp-content/uploads/2016/10/sumo-laranja-natural-refrigerante-5lt.jpg", desc: "Sumo de laranja espremido na hora." },
 
     /* ── CERVEJAS ── */
-    { name: "Super Bock Imperial",     country: "Portugal", region: "Porto",  type: "cerveja",  grape: "Super Bock", abv: "5,2%", volume: "20cl",  price: "2,50€",  photo: null, desc: "A imperial portuguesa por excelência. Fresca e bem servida." },
-    { name: "Super Bock Garrafa",      country: "Portugal", region: "Porto",  type: "cerveja",  grape: "Super Bock", abv: "5,2%", volume: "33cl",  price: "3,50€",  photo: null, desc: "Super Bock em garrafa — perfeita com marisco." },
-    { name: "Sagres",                  country: "Portugal", region: "Lisboa", type: "cerveja",  grape: "Sagres",     abv: "5%",   volume: "33cl",  price: "3,50€",  photo: null, desc: "Cerveja portuguesa leve e refrescante." },
-    { name: "Super Bock Sem Álcool",   country: "Portugal", region: "Porto",  type: "cerveja",  grape: "Super Bock", abv: "0%",   volume: "33cl",  price: "3,00€",  photo: null, desc: "Super Bock sem álcool — todo o sabor, zero álcool." },
+    { name: "Super Bock Imperial",     country: "Portugal", region: "Porto",  type: "cerveja",  grape: "Super Bock", abv: "5,2%", volume: "20cl",  price: "2,50€",  photo: "https://comportugal.com/fichuprelanex/fx1718959777.png", desc: "A imperial portuguesa por excelência. Fresca e bem servida." },
+    { name: "Super Bock Garrafa",      country: "Portugal", region: "Porto",  type: "cerveja",  grape: "Super Bock", abv: "5,2%", volume: "33cl",  price: "3,50€",  photo: "https://glood.b-cdn.net/static/product/6287/300/super-bock-garrafa-33cl.png?t=250604153626", desc: "Super Bock em garrafa — perfeita com marisco." },
+    { name: "Sagres",                  country: "Portugal", region: "Lisboa", type: "cerveja",  grape: "Sagres",     abv: "5%",   volume: "33cl",  price: "3,50€",  photo: "https://gostobastante.pt/wp-content/uploads/2023/04/Prancheta-1-copiar-2.png", desc: "Cerveja portuguesa leve e refrescante." },
+    { name: "Super Bock Sem Álcool",   country: "Portugal", region: "Porto",  type: "cerveja",  grape: "Super Bock", abv: "0%",   volume: "33cl",  price: "3,00€",  photo: "https://www.apolonia.com/fotos/produtos/13/1326147_01_03-01-2024_g.jpg", desc: "Super Bock sem álcool — todo o sabor, zero álcool." },
 
     /* ── COCKTAILS ── */
-    { name: "Caipirinha",              country: "Brasil",   region: "Cachaça", type: "cocktail", grape: "Cachaça",   abv: "15%",  volume: "25cl",  price: "9,00€",  photo: null, desc: "A clássica caipirinha com cachaça, lima e açúcar. Irresistível à beira-mar." },
-    { name: "Mojito",                  country: "Cuba",     region: "Rum",     type: "cocktail", grape: "Rum",       abv: "10%",  volume: "30cl",  price: "9,00€",  photo: null, desc: "Rum branco, hortelã, lima e água com gás — o cocktail do verão." },
-    { name: "Sangria Branca",          country: "Portugal", region: "—",       type: "cocktail", grape: "Vinho",     abv: "8%",   volume: "30cl",  price: "7,00€",  photo: null, desc: "Sangria branca com vinho verde, frutas frescas e hortelã. Perfeita partilhada." },
+    { name: "Caipirinha",              country: "Brasil",   region: "Cachaça", type: "cocktail", grape: "Cachaça",   abv: "15%",  volume: "25cl",  price: "9,00€",  photo: "https://www.allrecipes.com/thmb/Xv7FI7O3UL7oE__5077haA9fYWs=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/20210-caipirinha-PICS-Beauty-4x3-d4a5aed5d6534d579225b81de111b53a.jpg", desc: "A clássica caipirinha com cachaça, lima e açúcar. Irresistível à beira-mar." },
+    { name: "Mojito",                  country: "Cuba",     region: "Rum",     type: "cocktail", grape: "Rum",       abv: "10%",  volume: "30cl",  price: "9,00€",  photo: "https://www.saveur.com/uploads/2007/02/SAVEUR_Mojito_1149-Edit-scaled.jpg?format=auto&optimize=high&width=1440", desc: "Rum branco, hortelã, lima e água com gás — o cocktail do verão." },
+    { name: "Sangria Branca",          country: "Portugal", region: "—",       type: "cocktail", grape: "Vinho",     abv: "8%",   volume: "30cl",  price: "7,00€",  photo: "https://aveledashop.pt/wp-content/uploads/2020/04/CasalGarcia_Sangria_Branca-scaled.jpg", desc: "Sangria branca com vinho verde, frutas frescas e hortelã. Perfeita partilhada." },
 
     /* ── VINHOS (com Vivino) ── */
-    { name: "Soalheiro Alvarinho",     country: "Portugal", region: "Vinho Verde",   type: "branco",    grape: "Alvarinho",          abv: "12,5%", volume: "750ml", price: "22,00€", photo: null, desc: "Alvarinho premium de Monção. Fresco, mineral — o parceiro ideal do marisco.",    vivinoRating: 3.9, vivinoUrl: "https://www.vivino.com/wines/1146410" },
-    { name: "Casal Garcia",            country: "Portugal", region: "Vinho Verde",   type: "verde",     grape: "Loureiro, Trajadura", abv: "9,5%",  volume: "750ml", price: "9,50€",  photo: null, desc: "Verde leve e refrescante. Acessível e ideal com frutos do mar.",                 vivinoRating: 3.4, vivinoUrl: "https://www.vivino.com/wines/1124735" },
-    { name: "Mateus Rosé",             country: "Portugal", region: "Douro",         type: "rose",      grape: "Baga, Rufete",        abv: "11%",   volume: "750ml", price: "11,50€", photo: null, desc: "O rosé português mais famoso. Leve e refrescante — o verão numa garrafa.",         vivinoRating: 3.3, vivinoUrl: "https://www.vivino.com/wines/1125513" },
-    { name: "Murganheira Bruto",       country: "Portugal", region: "Távora-Varosa", type: "espumante", grape: "Chardonnay, Pinot Noir", abv: "12%", volume: "750ml", price: "18,00€", photo: null, desc: "Espumante nacional com bolha fina. Ideal para abrir uma mesa de mariscos.",      vivinoRating: 3.6, vivinoUrl: "https://www.vivino.com/wines/1140251" }
+    { name: "Soalheiro Alvarinho",     country: "Portugal", region: "Vinho Verde",   type: "branco",    grape: "Alvarinho",          abv: "12,5%", volume: "750ml", price: "22,00€", photo: "https://cdnx.jumpseller.com/vinhalvarinho-pt/image/21851030/Soalheiro-Alvarinho-Classico-2020.jpg?1652801739", desc: "Alvarinho premium de Monção. Fresco, mineral — o parceiro ideal do marisco.",    vivinoRating: 3.9, vivinoUrl: "https://www.vivino.com/wines/1146410" },
+    { name: "Casal Garcia",            country: "Portugal", region: "Vinho Verde",   type: "verde",     grape: "Loureiro, Trajadura", abv: "9,5%",  volume: "750ml", price: "9,50€",  photo: "https://aveledashop.pt/wp-content/uploads/2020/04/CasalGarcia_Branco-scaled.jpg", desc: "Verde leve e refrescante. Acessível e ideal com frutos do mar.",                 vivinoRating: 3.4, vivinoUrl: "https://www.vivino.com/wines/1124735" },
+    { name: "Mateus Rosé",             country: "Portugal", region: "Douro",         type: "rose",      grape: "Baga, Rufete",        abv: "11%",   volume: "750ml", price: "11,50€", photo: "https://www.vinha.pt/wp-content/uploads/2015/05/100556.png", desc: "O rosé português mais famoso. Leve e refrescante — o verão numa garrafa.",         vivinoRating: 3.3, vivinoUrl: "https://www.vivino.com/wines/1125513" },
+    { name: "Murganheira Bruto",       country: "Portugal", region: "Távora-Varosa", type: "espumante", grape: "Chardonnay, Pinot Noir", abv: "12%", volume: "750ml", price: "18,00€", photo: "https://www.vinha.pt/wp-content/uploads/2015/05/100121.png", desc: "Espumante nacional com bolha fina. Ideal para abrir uma mesa de mariscos.",      vivinoRating: 3.6, vivinoUrl: "https://www.vivino.com/wines/1140251" }
   ],
 
 
