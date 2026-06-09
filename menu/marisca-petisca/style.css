@@ -1565,22 +1565,21 @@ a { color: inherit; text-decoration: none; }
 
 .back-to-top {
   flex-shrink: 0;
-  width: 54px;
-  height: 54px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: none;
-  border: none;
-  color: var(--text);
+  background: #071428;
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.9);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
   opacity: 0;
-  transform: scale(0.7);
-  transition: opacity 0.25s, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  transform: scale(0.8);
+  transition: opacity 0.25s, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
-  -webkit-tap-highlight-color: transparent;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.18));
 }
 
 .back-to-top.visible {
@@ -1590,7 +1589,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .back-to-top:active {
-  transform: scale(0.85) rotate(12deg);
+  transform: scale(0.9);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2351,14 +2350,14 @@ body.has-cart {
 
 /* ─── Modal: "Adicionar ao pedido" primary button ─── */
 .item-modal-add {
-  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
-  min-height: 58px;
+  min-height: 56px;
   background: var(--accent);
   color: white;
   border: none;
-  padding: 0 20px;
-  border-radius: 16px;
+  padding: 16px 20px;
+  border-radius: var(--r-md);
   font-family: var(--font-ui);
   font-weight: 700;
   font-size: 15px;
@@ -2368,53 +2367,41 @@ body.has-cart {
   justify-content: center;
   gap: 8px;
   margin-top: 0;
-  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), background 0.15s ease, box-shadow 0.15s ease;
+  transition: all 0.15s;
   letter-spacing: 0.2px;
   line-height: 1.2;
   text-align: center;
-  box-shadow: 0 4px 16px rgba(13,46,101,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
-  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px rgba(13, 46, 101, 0.3);
 }
 
 .item-modal-order-bar {
   width: 100%;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: stretch;
   flex-shrink: 0;
-  padding: 12px var(--s3) calc(14px + env(safe-area-inset-bottom));
+  padding: 12px var(--s3) calc(12px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--border-soft);
   background: var(--bg);
 }
 
 .item-modal-step-btn {
+  width: 100%;
   min-width: 0;
-  min-height: 58px;
-  width: 58px;
-  flex-shrink: 0;
-  border: 1.5px solid var(--border);
+  min-height: 56px;
+  border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  border-radius: 16px;
+  border-radius: var(--r-md);
   display: none;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
-              background 0.15s ease,
-              color 0.15s ease,
-              border-color 0.15s ease;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .item-modal-step-btn.show {
   display: flex;
-  animation: stepBtnIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both;
-}
-
-@keyframes stepBtnIn {
-  from { opacity: 0; transform: scale(0.6) translateX(-8px); }
-  to   { opacity: 1; transform: none; }
 }
 
 
@@ -2431,17 +2418,28 @@ body.has-cart {
   width: auto;
 }
 
+.item-modal-order-bar.has-decrement .item-modal-step-btn.show {
+  flex: 0 0 clamp(60px, 20%, 84px);
+}
+
+.item-modal-order-bar.has-decrement .item-modal-add {
+  flex: 1 1 80%;
+}
+
+.item-modal-order-bar:not(.has-decrement) .item-modal-add {
+  flex: 1 1 100%;
+}
+
 .item-modal-step-btn:active {
-  transform: scale(0.88);
+  transform: scale(0.97);
   background: var(--text);
   color: white;
   border-color: var(--text);
 }
 
 .item-modal-add:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
   background: var(--accent-dark);
-  box-shadow: 0 2px 8px rgba(13,46,101,0.3);
 }
 
 .item-modal-add.just-added {
@@ -2494,39 +2492,34 @@ body.has-cart {
   background: var(--accent);
   color: white;
   border: none;
-  padding: 0 16px;
-  height: 46px;
+  padding: 0 18px;
+  height: 50px;
   border-radius: 100px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 700;
-  box-shadow: 0 4px 16px rgba(13,46,101,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+  box-shadow:
+    0 10px 32px rgba(13, 46, 101, 0.45),
+    0 2px 8px rgba(13, 46, 101, 0.25);
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.88);
-  max-width: 0;
-  overflow: hidden;
-  transition:
-    transform 0.38s cubic-bezier(0.34,1.56,0.64,1),
-    opacity 0.28s ease,
-    max-width 0.38s cubic-bezier(0.16,1,0.3,1);
+  transform: translateY(6px) scale(0.97);
+  transition: transform 0.35s cubic-bezier(0.16, 1.3, 0.3, 1), opacity 0.3s;
   justify-content: center;
 }
 
 .cart-pill.show {
   opacity: 1;
-  transform: scale(1);
+  transform: none;
   pointer-events: auto;
-  max-width: 320px;
 }
 
 .cart-pill:active {
-  transform: scale(0.94);
-  box-shadow: 0 2px 8px rgba(13,46,101,0.4);
+  transform: scale(0.96);
 }
 
 /* Count badge */
@@ -4968,7 +4961,6 @@ body.has-cart {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Unified bottom bar ── */
-/* ── Bottom bar: unified floating pill ── */
 .nexo-bottom-bar {
   position: fixed;
   bottom: calc(20px + env(safe-area-inset-bottom));
@@ -4989,30 +4981,33 @@ body.has-cart {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 0 20px 0 16px;
-  height: 54px;
+  padding: 0 18px 0 14px;
+  height: 50px;
   border-radius: 100px;
-  background: none;
-  border: none;
+  background: #071428;
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
   cursor: pointer;
-  transition: transform 150ms cubic-bezier(0.34,1.56,0.64,1), opacity 150ms ease;
+  transition: transform 130ms ease, box-shadow 130ms ease, width 200ms ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  color: var(--text);
+  color: rgba(255,255,255,0.9);
   pointer-events: auto;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.18));
 }
 
+/* Mobile: icon-only — same size as back-to-top */
 @media (max-width: 519px) {
-  #nexo-call-staff-btn { padding: 0; width: 54px; border-radius: 50%; }
+  #nexo-call-staff-btn {
+    width: 50px;
+    padding: 0;
+    border-radius: 50%;
+  }
   .nexo-call-label { display: none; }
 }
 
 .nexo-call-icon {
   flex-shrink: 0;
-  color: var(--text);
-  width: 22px;
-  height: 22px;
+  color: rgba(255,255,255,0.72);
 }
 
 .nexo-call-label {
@@ -5024,20 +5019,28 @@ body.has-cart {
 }
 
 #nexo-call-staff-btn:active {
-  transform: scale(0.88);
-  opacity: 0.7;
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
 }
 
 #nexo-call-staff-btn.hidden { visibility: hidden; pointer-events: none; }
 
 #nexo-call-staff-btn.success {
-  color: #16a34a;
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
   pointer-events: none;
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4);
   gap: 0;
   justify-content: center;
 }
-#nexo-call-staff-btn.success .nexo-call-icon { color: #16a34a; margin: 0 auto; }
-#nexo-call-staff-btn.success .nexo-call-label { display: none; }
+#nexo-call-staff-btn.success .nexo-call-icon {
+  color: #ffffff;
+  margin: 0 auto;
+}
+#nexo-call-staff-btn.success .nexo-call-label {
+  display: none;
+}
 
 .nexo-sheet-overlay {
   position: fixed;
