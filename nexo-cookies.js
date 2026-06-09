@@ -55,7 +55,7 @@
         position: fixed;
         left: 50%;
         bottom: 16px;
-        width: min(1120px, calc(100vw - 24px));
+        width: min(1360px, calc(100vw - 48px));
         z-index: 99999;
         background: rgba(28, 28, 28, 0.96);
         border: 1px solid rgba(255,255,255,0.1);
