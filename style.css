@@ -880,14 +880,7 @@ background: radial-gradient(ellipse 90% 90% at 50% 50%, transparent 40%, rgba(0,
 .feat-list strong { font-size:15px; font-weight:500; display:block; margin-bottom:2px; letter-spacing:-.01em }
 .feat-list p { font-size:13px; color:var(--muted) }
 
-/* ── SERVICE TRIO ── */
-.svc { background:#F7F7F5; padding:100px 0; border-top:1px solid var(--line) }
-
-.svc-grid {
-  display:grid;
-  grid-template-columns:1fr;
-  gap:12px;
-}
+/* ── SERVICE CARDS (inside bento) ── */
 
 /* ── Card shell ── */
 .svc-card {
@@ -1135,20 +1128,6 @@ background: radial-gradient(ellipse 90% 90% at 50% 50%, transparent 40%, rgba(0,
   transition:transform .2s var(--ease), background .2s;
 }
 .svc-screen-cta:hover { transform:scale(1.02) }
-
-/* ── Responsive ── */
-@media(min-width:768px) {
-  .svc-grid { grid-template-columns:1fr 1fr }
-  .svc-card-hero { grid-column:1/-1 }
-  .svc-card-hero .svc-vis { flex-direction:row; justify-content:center; min-height:160px }
-  .svc-wa { max-width:300px }
-}
-@media(min-width:1024px) {
-  .svc-grid { grid-template-columns:1fr 1fr 1fr }
-  .svc-card-hero { grid-column:auto }
-  .svc-card-hero .svc-vis { flex-direction:column; min-height:200px }
-  .svc-wa { max-width:260px }
-}
 
 /* ── PRICING ── */
 .plan-urgency {
@@ -1954,11 +1933,11 @@ footer { background:var(--dark); color:var(--white); padding:72px 0 36px }
 }
 
 .ana-panel {
-  padding: 22px 24px;
+  padding: 14px 16px;
   background: var(--ink);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .ana-phead {
@@ -1970,7 +1949,7 @@ footer { background:var(--dark); color:var(--white); padding:72px 0 36px }
 }
 
 /* ── Bar chart (most viewed) ── */
-.ana-bars { display: flex; flex-direction: column; gap: 9px }
+.ana-bars { display: flex; flex-direction: column; gap: 6px }
 
 .ana-row {
   display: grid;
@@ -2023,7 +2002,7 @@ footer { background:var(--dark); color:var(--white); padding:72px 0 36px }
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .ana-searches li {
@@ -2071,7 +2050,7 @@ footer { background:var(--dark); color:var(--white); padding:72px 0 36px }
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  padding: 10px 12px;
+  padding: 7px 10px;
   background: rgba(251,191,36,.07);
   border: 1px solid rgba(251,191,36,.15);
   border-radius: 4px;
@@ -2088,7 +2067,7 @@ footer { background:var(--dark); color:var(--white); padding:72px 0 36px }
 }
 
 /* ── Funnel ── */
-.ana-funnel { display: flex; flex-direction: column; gap: 8px }
+.ana-funnel { display: flex; flex-direction: column; gap: 5px }
 
 .ana-funnel-row {
   display: grid;
@@ -2130,7 +2109,7 @@ footer { background:var(--dark); color:var(--white); padding:72px 0 36px }
 .bc-e.visible .ana-f-fill { width: var(--fw) }
 
 /* ── Languages ── */
-.ana-langs { display: flex; flex-direction: column; gap: 7px }
+.ana-langs { display: flex; flex-direction: column; gap: 5px }
 
 .ana-lang-row {
   display: grid;
@@ -2179,7 +2158,7 @@ footer { background:var(--dark); color:var(--white); padding:72px 0 36px }
     grid-template-columns: 1fr auto;
     align-items: end;
     gap: 32px;
-    padding: 20px 24px 24px;
+    padding: 16px 20px 20px;
   }
   .bc-e .bc-text h3 { margin-bottom: 0 }
   .bc-e .bc-text p { grid-column: 1; max-width: 55ch }
