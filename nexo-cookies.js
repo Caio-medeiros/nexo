@@ -1,7 +1,7 @@
 // NEXO Cookie Consent — RGPD Compliant v1.0
 (function() {
   const STORAGE_KEY = 'nexo_cookie_consent';
-  const CONSENT_VERSION = '1.0';
+  const CONSENT_VERSION = '1.1';
 
   const stored = localStorage.getItem(STORAGE_KEY);
   let consent = null;
@@ -18,13 +18,22 @@
   }
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function() {};
+  window.gtag = function() { window.dataLayer.push(arguments); };
+  window.gtag('consent', 'default', {
+    analytics_storage: 'denied',
+    ad_storage: 'denied',
+    functionality_storage: 'granted',
+    personalization_storage: 'denied',
+    security_storage: 'granted',
+  });
 
   document.addEventListener('DOMContentLoaded', showBanner);
 
   function showBanner() {
     const banner = document.createElement('div');
     banner.id = 'nexo-cookie-banner';
+    banner.setAttribute('role', 'dialog');
+    banner.setAttribute('aria-label', 'Consentimento de cookies');
     banner.innerHTML = `
       <div class="ncb-inner">
         <div class="ncb-text">
@@ -44,21 +53,29 @@
     style.textContent = `
       #nexo-cookie-banner {
         position: fixed;
-        bottom: 0; left: 0; right: 0;
+        left: 50%;
+        bottom: 16px;
+        width: min(1120px, calc(100vw - 24px));
         z-index: 99999;
-        background: #1C1C1C;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        padding: 16px 20px;
+        background: rgba(28, 28, 28, 0.96);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 18px;
+        box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        padding: 18px 20px;
         font-family: inherit;
-        transform: translateY(100%);
-        transition: transform 400ms cubic-bezier(0.32,0.72,0,1);
+        transform: translate3d(-50%, 120%, 0);
+        opacity: 0;
+        pointer-events: auto;
+        transition: transform 400ms cubic-bezier(0.32,0.72,0,1), opacity 220ms ease;
       }
       #nexo-cookie-banner.visible {
-        transform: translateY(0);
+        transform: translate3d(-50%, 0, 0);
+        opacity: 1;
       }
       .ncb-inner {
-        max-width: 900px;
-        margin: 0 auto;
+        width: 100%;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -76,15 +93,18 @@
         font-size: 13px;
         margin: 0;
         line-height: 1.5;
+        max-width: 70ch;
       }
       .ncb-link {
         color: rgba(255,255,255,0.7);
         text-decoration: underline;
+        text-underline-offset: 2px;
       }
       .ncb-actions {
         display: flex;
         gap: 10px;
         flex-shrink: 0;
+        flex-wrap: wrap;
       }
       .ncb-btn {
         height: 38px;
@@ -97,6 +117,10 @@
         transition: opacity 150ms ease;
       }
       .ncb-btn:hover { opacity: 0.85; }
+      .ncb-btn:focus-visible {
+        outline: 2px solid rgba(255,255,255,0.75);
+        outline-offset: 2px;
+      }
       .ncb-primary {
         background: #F5F5F5;
         color: #0D0D0D;
@@ -106,14 +130,47 @@
         color: rgba(255,255,255,0.55);
         border: 1px solid rgba(255,255,255,0.15) !important;
       }
+      .nexo-manage-cookies-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
       #nexo-manage-cookies {
         background: none;
         border: none;
-        color: rgba(255,255,255,0.3);
+        color: rgba(255,255,255,0.38);
         font-size: 11px;
         cursor: pointer;
         text-decoration: underline;
+        text-underline-offset: 2px;
         padding: 0;
+      }
+      #nexo-manage-cookies:hover {
+        color: rgba(255,255,255,0.75);
+      }
+      #nexo-manage-cookies:focus-visible {
+        outline: 2px solid rgba(255,255,255,0.65);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+      @media (max-width: 640px) {
+        #nexo-cookie-banner {
+          bottom: 12px;
+          width: calc(100vw - 16px);
+          padding: 16px;
+        }
+        .ncb-inner {
+          align-items: flex-start;
+        }
+        .ncb-actions {
+          width: 100%;
+        }
+        .ncb-btn {
+          flex: 1 1 140px;
+        }
       }
     `;
 
@@ -127,26 +184,30 @@
       saveConsent(true);
       hideBanner(banner);
       loadGA4();
+      window.gtag('consent', 'update', { analytics_storage: 'granted' });
       addManageButton();
     });
 
     document.getElementById('ncb-reject').addEventListener('click', () => {
       saveConsent(false);
       hideBanner(banner);
+      window.gtag('consent', 'update', { analytics_storage: 'denied' });
       addManageButton();
     });
   }
 
   function hideBanner(banner) {
-    banner.style.transform = 'translateY(100%)';
-    setTimeout(() => banner.remove(), 400);
+    banner.style.transform = 'translate3d(-50%, 120%, 0)';
+    banner.style.opacity = '0';
+    setTimeout(() => banner.remove(), 420);
   }
 
   function saveConsent(analytics) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: CONSENT_VERSION,
       analytics,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      necessary: true
     }));
   }
 
@@ -173,15 +234,22 @@
   function addManageButton() {
     const footer = document.querySelector('footer') || document.querySelector('.footer');
     if (!footer || document.getElementById('nexo-manage-cookies')) return;
+    const legalCol = footer.querySelector('.foot-col:last-child ul');
+    if (!legalCol) return;
+
+    const wrap = document.createElement('li');
+    wrap.className = 'nexo-manage-cookies-wrap';
 
     const btn = document.createElement('button');
     btn.id = 'nexo-manage-cookies';
-    btn.textContent = 'Gerir Cookies';
+    btn.type = 'button';
+    btn.textContent = 'Gerir cookies';
     btn.addEventListener('click', () => {
       localStorage.removeItem(STORAGE_KEY);
       location.reload();
     });
-    footer.appendChild(btn);
+    wrap.appendChild(btn);
+    legalCol.appendChild(wrap);
   }
 
 })();
