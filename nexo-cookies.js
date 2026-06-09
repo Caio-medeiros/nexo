@@ -179,6 +179,8 @@
     requestAnimationFrame(() => {
       requestAnimationFrame(() => banner.classList.add('visible'));
     });
+    banner.addEventListener('mouseenter', () => window.__nexoSetCursorActive?.(true));
+    banner.addEventListener('mouseleave', () => window.__nexoSetCursorActive?.(false));
 
     document.getElementById('ncb-accept').addEventListener('click', () => {
       saveConsent(true);

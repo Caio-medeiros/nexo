@@ -13,6 +13,13 @@
   let rx = mx, ry = my;
   let seen = false;
 
+  function setCursorActive(active, text = '') {
+    ring?.classList.toggle('active', active);
+    if (label) label.textContent = active ? text : '';
+  }
+
+  window.__nexoSetCursorActive = setCursorActive;
+
   document.addEventListener('mousemove', e => {
     mx = e.clientX; my = e.clientY;
     if (!seen) { seen = true; document.body.classList.add('cursor-ready') }
@@ -28,12 +35,10 @@
 
   document.querySelectorAll('a, button, .bc, .plan').forEach(el => {
     el.addEventListener('mouseenter', () => {
-      ring?.classList.add('active');
-      if (label) label.textContent = el.getAttribute('data-cursor') === 'arrow' ? '→' : '';
+      setCursorActive(true, el.getAttribute('data-cursor') === 'arrow' ? '→' : '');
     });
     el.addEventListener('mouseleave', () => {
-      ring?.classList.remove('active');
-      if (label) label.textContent = '';
+      setCursorActive(false);
     });
   });
 
