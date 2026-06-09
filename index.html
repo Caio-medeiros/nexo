@@ -30,17 +30,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap"></noscript>
-<!-- NEXO Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={{GA4_MEASUREMENT_ID}}"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', '{{GA4_MEASUREMENT_ID}}', {
-    page_location: window.location.href,
-    page_title: document.title,
-  });
-</script>
 <script src="/nexo-analytics.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -1040,8 +1029,8 @@
         <div class="foot-col">
           <span class="foot-label">Legal</span>
           <ul>
-            <li><a href="./termos.html">Termos</a></li>
-            <li><a href="./privacidade.html">Privacidade</a></li>
+            <li><a href="/termos/">Termos de Serviço</a></li>
+            <li><a href="/privacidade/">Privacidade</a></li>
           </ul>
         </div>
       </div>
@@ -1054,6 +1043,7 @@
 </footer>
 
 <script src="script.js" defer></script>
+<script src="/nexo-cookies.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",

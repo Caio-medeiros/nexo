@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estado dos Serviços — NEXO.</title>
+  <meta name="robots" content="noindex,follow">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0D0D0D;
+      color: #F5F5F5;
+      font-family: 'Geist', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+    .header { margin-bottom: 40px; }
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      margin-bottom: 24px;
+    }
+    .logo a {
+      color: #F5F5F5;
+      text-decoration: none;
+    }
+    .overall {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .overall.operational {
+      background: rgba(34,197,94,0.08);
+      border-color: rgba(34,197,94,0.2);
+    }
+    .overall.degraded {
+      background: rgba(245,158,11,0.08);
+      border-color: rgba(245,158,11,0.2);
+    }
+    .overall.outage {
+      background: rgba(239,68,68,0.08);
+      border-color: rgba(239,68,68,0.2);
+    }
+    .overall.checking {
+      background: rgba(255,255,255,0.03);
+    }
+    .overall-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.2);
+    }
+    .overall.operational .overall-dot { background: #22C55E; }
+    .overall.degraded .overall-dot { background: #F59E0B; }
+    .overall.outage .overall-dot { background: #EF4444; }
+    .overall-text { font-size: 15px; font-weight: 600; }
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 12px;
+    }
+    .services {
+      background: #141414;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+    .service-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .service-row:last-child { border-bottom: none; }
+    .service-name { font-size: 14px; font-weight: 500; }
+    .service-detail {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 2px;
+    }
+    .service-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.checking {
+      background: rgba(255,255,255,0.3);
+      animation: pulse 1.5s infinite;
+    }
+    .status-dot.up { background: #22C55E; }
+    .status-dot.down { background: #EF4444; }
+    .status-dot.slow { background: #F59E0B; }
+    .status-text.checking { color: rgba(255,255,255,0.3); }
+    .status-text.up { color: #22C55E; }
+    .status-text.down { color: #EF4444; }
+    .status-text.slow { color: #F59E0B; }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .footer-note {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      text-align: center;
+    }
+    .footer-note a {
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+    }
+    .footer-note a:hover { color: #F5F5F5; }
+    .last-checked {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo"><a href="/">NEXO.</a></div>
+    <h1 style="font-size:24px;font-weight:700;margin-bottom:8px;">
+      Estado dos Serviços
+    </h1>
+    <p style="color:rgba(255,255,255,0.45);font-size:14px;">
+      Disponibilidade em tempo real dos menus e plataforma NEXO.
+    </p>
+  </div>
+
+  <div id="overall-status" class="overall checking">
+    <div class="overall-dot"></div>
+    <span class="overall-text">A verificar...</span>
+  </div>
+
+  <div class="last-checked" id="last-checked"></div>
+
+  <div class="section-label">Serviços</div>
+  <div class="services" id="services-list">
+    <!-- Populated by JS -->
+  </div>
+
+  <div class="footer-note">
+    <p>Problemas? Contacte
+      <a href="mailto:hello@nexosolutions.pt">hello@nexosolutions.pt</a>
+    </p>
+    <p style="margin-top:8px;">
+      <a href="/">← nexosolutions.pt</a>
+    </p>
+  </div>
+
+</div>
+
+<script>
+const SERVICES = [
+  {
+    id: 'landing',
+    name: 'Website NEXO.',
+    detail: 'nexosolutions.pt',
+    url: 'https://nexosolutions.pt/',
+  },
+  {
+    id: 'menu-demo',
+    name: 'Menu Demo',
+    detail: 'nexosolutions.pt/menu/rest-nexo-lisboa/',
+    url: 'https://nexosolutions.pt/menu/rest-nexo-lisboa/',
+  },
+  {
+    id: 'menus',
+    name: 'Infraestrutura de Menus',
+    detail: 'Netlify CDN — todos os menus activos',
+    url: 'https://nexosolutions.pt/menu/marisca-petisca/',
+  },
+];
+
+const STATUS_LABELS = {
+  checking: 'A verificar',
+  up:       'Operacional',
+  slow:     'Lentidão',
+  down:     'Indisponível',
+};
+
+async function checkService(service) {
+  const start = Date.now();
+  try {
+    await fetch(service.url, {
+      method: 'HEAD',
+      mode: 'no-cors',
+      cache: 'no-store'
+    });
+    const ms = Date.now() - start;
+    return ms > 3000 ? 'slow' : 'up';
+  } catch {
+    return 'down';
+  }
+}
+
+async function runChecks() {
+  const list = document.getElementById('services-list');
+  const overallEl = document.getElementById('overall-status');
+  const lastChecked = document.getElementById('last-checked');
+
+  list.innerHTML = SERVICES.map(s => `
+    <div class="service-row" id="row-${s.id}">
+      <div>
+        <div class="service-name">${s.name}</div>
+        <div class="service-detail">${s.detail}</div>
+      </div>
+      <div class="service-status">
+        <div class="status-dot checking"></div>
+        <span class="status-text checking">${STATUS_LABELS.checking}</span>
+      </div>
+    </div>
+  `).join('');
+
+  const results = await Promise.all(
+    SERVICES.map(async s => ({
+      id: s.id,
+      status: await checkService(s)
+    }))
+  );
+
+  results.forEach(({ id, status }) => {
+    const row = document.getElementById(`row-${id}`);
+    if (!row) return;
+    const dot = row.querySelector('.status-dot');
+    const text = row.querySelector('.status-text');
+    dot.className = `status-dot ${status}`;
+    text.className = `status-text ${status}`;
+    text.textContent = STATUS_LABELS[status];
+  });
+
+  const hasDown = results.some(r => r.status === 'down');
+  const hasSlow = results.some(r => r.status === 'slow');
+  const overallStatus = hasDown ? 'outage' : hasSlow ? 'degraded' : 'operational';
+
+  const overallTexts = {
+    operational: 'Todos os serviços operacionais',
+    degraded:    'Lentidão detectada em alguns serviços',
+    outage:      'Interrupção detectada',
+  };
+
+  overallEl.className = `overall ${overallStatus}`;
+  overallEl.querySelector('.overall-text').textContent = overallTexts[overallStatus];
+
+  const now = new Date();
+  lastChecked.textContent = `Última verificação: ${now.toLocaleTimeString('pt-PT')}`;
+}
+
+runChecks();
+setInterval(runChecks, 60000);
+</script>
+</body>
+</html>

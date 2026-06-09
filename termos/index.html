@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Termos de Serviço — NEXO.</title>
+<meta name="description" content="Termos de Serviço da NEXO — menu digital NFC+QR para restaurantes. Condições de uso, planos, SLA e política de cancelamento.">
+<link rel="canonical" href="https://nexosolutions.pt/termos/">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#181818">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nexosolutions.pt/termos/">
+<meta property="og:title" content="Termos de Serviço — NEXO.">
+<meta property="og:description" content="Condições de utilização do serviço NEXO de menus digitais NFC+QR para restaurantes.">
+<link rel="icon" href="/img/nexo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/img/nexo.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap"></noscript>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { background: #181818; color: #F5F5F5; }
+
+  .legal-hero {
+    padding: 120px 0 56px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .legal-hero .eyebrow { color: rgba(255,255,255,0.4); }
+  .legal-hero h1 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 300;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: .95;
+    letter-spacing: -.03em;
+    color: #F5F5F5;
+    margin-bottom: 16px;
+  }
+  .legal-hero h1 em { font-style: italic; font-weight: 400; }
+  .legal-hero .lh-meta {
+    font-size: 13px;
+    color: rgba(255,255,255,0.3);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: .04em;
+    margin-top: 24px;
+  }
+
+  .legal-body { padding: 64px 0 96px; }
+
+  .ls-item {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 0 32px;
+    padding: 40px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .ls-item:last-child { border-bottom: none; }
+  .ls-n {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: .06em;
+    padding-top: 6px;
+  }
+  .ls-content h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 400;
+    font-size: clamp(18px, 2.2vw, 24px);
+    color: #F5F5F5;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .ls-content p {
+    font-family: 'Barlow', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 12px;
+  }
+  .ls-content p:last-child { margin-bottom: 0; }
+  .ls-content ul, .ls-content ol {
+    margin: 12px 0 12px 0;
+    padding-left: 0;
+    list-style: none;
+  }
+  .ls-content li {
+    font-family: 'Barlow', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.6);
+    padding: 3px 0 3px 20px;
+    position: relative;
+  }
+  .ls-content li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: rgba(255,255,255,0.25);
+    font-size: 12px;
+    top: 7px;
+  }
+  .ls-content strong { color: rgba(255,255,255,0.85); font-weight: 500; }
+  .ls-content a { color: rgba(255,255,255,0.7); text-decoration: underline; }
+  .ls-content a:hover { color: #F5F5F5; }
+
+  .ls-callout {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-top: 16px;
+  }
+  .ls-callout p { margin: 0; }
+
+  .legal-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 48px;
+    transition: color .2s;
+  }
+  .legal-back:hover { color: #F5F5F5; }
+
+  @media (max-width: 640px) {
+    .ls-item { grid-template-columns: 1fr; gap: 8px 0; }
+    .ls-n { padding-top: 0; }
+    .legal-hero { padding: 100px 0 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+<div class="cursor-ring" id="cursorRing" aria-hidden="true"><span class="cursor-label" id="cursorLabel"></span></div>
+<div class="scroll-bar"><div class="scroll-fill" id="scrollFill"></div></div>
+<div class="wipe" id="wipe" aria-hidden="true"></div>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="/" class="logo">NEXO<span class="dot">.</span></a>
+    <ul class="nav-links">
+      <li><a href="/#problema">Problema</a></li>
+      <li><a href="/#como-funciona">Processo</a></li>
+      <li><a href="/#produto">Produto</a></li>
+      <li><a href="/#features">Funcionalidades</a></li>
+      <li><a href="/#planos">Planos</a></li>
+      <li><a href="/#faq">FAQ</a></li>
+    </ul>
+    <a class="nav-cta" href="/#contacto">Pedir proposta</a>
+    <button id="hamburger" class="hamburger" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div id="mob-menu" class="mob-menu" aria-hidden="true">
+  <ul class="mob-links">
+    <li><a href="/#problema">Problema</a></li>
+    <li><a href="/#como-funciona">Processo</a></li>
+    <li><a href="/#produto">Produto</a></li>
+    <li><a href="/#features">Funcionalidades</a></li>
+    <li><a href="/#planos">Planos</a></li>
+    <li><a href="/#faq">FAQ</a></li>
+  </ul>
+  <a href="/#contacto" class="mob-cta">Pedir proposta →</a>
+</div>
+
+<!-- ── HERO ── -->
+<section class="legal-hero">
+  <div class="container">
+    <a href="/" class="legal-back">← nexosolutions.pt</a>
+    <span class="eyebrow">08 — Legal</span>
+    <h1>Termos de<br><em>Serviço.</em></h1>
+    <p class="lh-meta">NEXO · nexosolutions.pt · Última atualização: Junho 2026</p>
+  </div>
+</section>
+
+<!-- ── CONTENT ── -->
+<section class="legal-body">
+  <div class="container">
+
+    <div class="ls-item">
+      <span class="ls-n">01</span>
+      <div class="ls-content">
+        <h3>Identificação</h3>
+        <p>NEXO é um serviço de menus digitais NFC+QR para restaurantes e espaços de hospitalidade, operado através de <strong>nexosolutions.pt</strong>.</p>
+        <p>Contacto: <a href="mailto:hello@nexosolutions.pt">hello@nexosolutions.pt</a></p>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">02</span>
+      <div class="ls-content">
+        <h3>Objeto do Serviço</h3>
+        <p>A NEXO disponibiliza ao Cliente:</p>
+        <ul>
+          <li>Menu digital acessível por NFC e QR Code</li>
+          <li>Alojamento e manutenção do menu</li>
+          <li>Painel de analytics de utilização</li>
+          <li>Suporte técnico conforme plano contratado</li>
+          <li>Displays NFC físicos (hardware, pagamento único)</li>
+        </ul>
+        <div class="ls-callout">
+          <p>O serviço <strong>não inclui</strong>: sistema de pagamentos integrado, integração com software de gestão (POS), ou emissão de faturas ao consumidor final.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">03</span>
+      <div class="ls-content">
+        <h3>Planos e Preçário</h3>
+        <ul>
+          <li><strong>Starter — €39/mês:</strong> 1 atualização de conteúdo por mês</li>
+          <li><strong>Growth — €69/mês:</strong> atualizações ilimitadas</li>
+          <li><strong>Enterprise:</strong> preço sob consulta</li>
+          <li><strong>Hardware (Display NFC) — €5 por unidade:</strong> pagamento único, não reembolsável</li>
+        </ul>
+        <p>Preços em euros, com IVA incluído à taxa legal em vigor.</p>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">04</span>
+      <div class="ls-content">
+        <h3>Pagamento</h3>
+        <p>O pagamento é processado mensalmente por débito automático via Stripe. A subscrição renova automaticamente até cancelamento.</p>
+        <p>Em caso de falha de pagamento, o serviço pode ser suspenso após 7 dias sem regularização.</p>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">05</span>
+      <div class="ls-content">
+        <h3>Cancelamento</h3>
+        <p>O Cliente pode cancelar a qualquer momento com aviso prévio de 30 dias. Não há reembolso de períodos já pagos.</p>
+        <p>O hardware adquirido não é devolvível após instalação.</p>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">06</span>
+      <div class="ls-content">
+        <h3>Acordo de Nível de Serviço (SLA)</h3>
+        <ul>
+          <li><strong>Uptime garantido:</strong> 99,9% mensal</li>
+          <li><strong>Resposta a suporte:</strong> &lt; 4h dias úteis</li>
+          <li><strong>Update Request (Growth):</strong> resolução &lt; 24h dias úteis</li>
+          <li><strong>Update Request (Starter):</strong> resolução &lt; 48h dias úteis</li>
+          <li><strong>Onboarding:</strong> 5 dias úteis após receção de conteúdo</li>
+          <li><strong>Notificação de incidente:</strong> &lt; 30 min após deteção</li>
+        </ul>
+        <div class="ls-callout">
+          <p>Em caso de incumprimento do uptime garantido, o Cliente tem direito a crédito proporcional no mês seguinte.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">07</span>
+      <div class="ls-content">
+        <h3>Propriedade Intelectual</h3>
+        <p>O conteúdo do menu (textos, preços, imagens) é propriedade do Cliente.</p>
+        <p>O software, design e tecnologia NEXO são propriedade exclusiva da NEXO. É proibida a reprodução ou utilização da tecnologia NEXO sem autorização expressa.</p>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">08</span>
+      <div class="ls-content">
+        <h3>Limitação de Responsabilidade</h3>
+        <p>A NEXO não se responsabiliza por:</p>
+        <ul>
+          <li>Perdas de negócio decorrentes de indisponibilidade do serviço dentro dos limites do SLA</li>
+          <li>Conteúdo introduzido pelo Cliente no menu</li>
+          <li>Falhas de conectividade do lado do utilizador final</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">09</span>
+      <div class="ls-content">
+        <h3>Alterações aos Termos</h3>
+        <p>A NEXO pode atualizar estes Termos com aviso prévio de 30 dias por email. A continuação do uso do serviço implica aceitação das novas condições.</p>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">10</span>
+      <div class="ls-content">
+        <h3>Lei Aplicável</h3>
+        <p>Estes Termos regem-se pela lei portuguesa. Foro competente: comarca de Lisboa.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <span class="foot-logo">NEXO.</span>
+        <p>Mais valor por mesa.<br>Menos fricção no serviço.</p>
+      </div>
+      <div class="foot-nav">
+        <div class="foot-col">
+          <span class="foot-label">Site</span>
+          <ul>
+            <li><a href="/#problema">Problema</a></li>
+            <li><a href="/#como-funciona">Processo</a></li>
+            <li><a href="/#produto">Produto</a></li>
+            <li><a href="/#features">Funcionalidades</a></li>
+            <li><a href="/#planos">Planos</a></li>
+            <li><a href="/#faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <span class="foot-label">Contacto</span>
+          <ul>
+            <li><a href="mailto:hello@nexosolutions.pt">hello@nexosolutions.pt</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <span class="foot-label">Legal</span>
+          <ul>
+            <li><a href="/termos/">Termos de Serviço</a></li>
+            <li><a href="/privacidade/">Privacidade</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 NEXO. Lisboa, Portugal</span>
+      <span>PT · LIS · EST. 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/script.js" defer></script>
+<script src="/nexo-cookies.js"></script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidade — NEXO.</title>
+<meta name="description" content="Política de Privacidade da NEXO — como tratamos os seus dados, base legal RGPD, subprocessadores e os seus direitos.">
+<link rel="canonical" href="https://nexosolutions.pt/privacidade/">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#181818">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nexosolutions.pt/privacidade/">
+<meta property="og:title" content="Política de Privacidade — NEXO.">
+<meta property="og:description" content="Como a NEXO trata os seus dados pessoais. Conformidade RGPD, subprocessadores e direitos dos titulares.">
+<link rel="icon" href="/img/nexo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/img/nexo.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap"></noscript>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { background: #181818; color: #F5F5F5; }
+
+  .legal-hero {
+    padding: 120px 0 56px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .legal-hero .eyebrow { color: rgba(255,255,255,0.4); }
+  .legal-hero h1 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 300;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: .95;
+    letter-spacing: -.03em;
+    color: #F5F5F5;
+    margin-bottom: 16px;
+  }
+  .legal-hero h1 em { font-style: italic; font-weight: 400; }
+  .legal-hero .lh-meta {
+    font-size: 13px;
+    color: rgba(255,255,255,0.3);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: .04em;
+    margin-top: 24px;
+  }
+
+  .legal-body { padding: 64px 0 96px; }
+
+  .ls-item {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 0 32px;
+    padding: 40px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .ls-item:last-child { border-bottom: none; }
+  .ls-n {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: .06em;
+    padding-top: 6px;
+  }
+  .ls-content h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 400;
+    font-size: clamp(18px, 2.2vw, 24px);
+    color: #F5F5F5;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .ls-content h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin: 24px 0 10px;
+  }
+  .ls-content h4:first-of-type { margin-top: 16px; }
+  .ls-content p {
+    font-family: 'Barlow', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 12px;
+  }
+  .ls-content p:last-child { margin-bottom: 0; }
+  .ls-content ul, .ls-content ol {
+    margin: 12px 0;
+    padding-left: 0;
+    list-style: none;
+  }
+  .ls-content li {
+    font-family: 'Barlow', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.6);
+    padding: 3px 0 3px 20px;
+    position: relative;
+  }
+  .ls-content li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: rgba(255,255,255,0.25);
+    font-size: 12px;
+    top: 7px;
+  }
+  .ls-content strong { color: rgba(255,255,255,0.85); font-weight: 500; }
+  .ls-content a { color: rgba(255,255,255,0.7); text-decoration: underline; }
+  .ls-content a:hover { color: #F5F5F5; }
+
+  .ls-callout {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-top: 16px;
+  }
+  .ls-callout p { margin: 0; }
+
+  .ls-sub {
+    background: rgba(255,255,255,0.03);
+    border-left: 2px solid rgba(255,255,255,0.1);
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .ls-sub p { margin-bottom: 6px; font-size: 14px; }
+  .ls-sub p:last-child { margin-bottom: 0; }
+
+  .legal-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 48px;
+    transition: color .2s;
+  }
+  .legal-back:hover { color: #F5F5F5; }
+
+  @media (max-width: 640px) {
+    .ls-item { grid-template-columns: 1fr; gap: 8px 0; }
+    .ls-n { padding-top: 0; }
+    .legal-hero { padding: 100px 0 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+<div class="cursor-ring" id="cursorRing" aria-hidden="true"><span class="cursor-label" id="cursorLabel"></span></div>
+<div class="scroll-bar"><div class="scroll-fill" id="scrollFill"></div></div>
+<div class="wipe" id="wipe" aria-hidden="true"></div>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="/" class="logo">NEXO<span class="dot">.</span></a>
+    <ul class="nav-links">
+      <li><a href="/#problema">Problema</a></li>
+      <li><a href="/#como-funciona">Processo</a></li>
+      <li><a href="/#produto">Produto</a></li>
+      <li><a href="/#features">Funcionalidades</a></li>
+      <li><a href="/#planos">Planos</a></li>
+      <li><a href="/#faq">FAQ</a></li>
+    </ul>
+    <a class="nav-cta" href="/#contacto">Pedir proposta</a>
+    <button id="hamburger" class="hamburger" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div id="mob-menu" class="mob-menu" aria-hidden="true">
+  <ul class="mob-links">
+    <li><a href="/#problema">Problema</a></li>
+    <li><a href="/#como-funciona">Processo</a></li>
+    <li><a href="/#produto">Produto</a></li>
+    <li><a href="/#features">Funcionalidades</a></li>
+    <li><a href="/#planos">Planos</a></li>
+    <li><a href="/#faq">FAQ</a></li>
+  </ul>
+  <a href="/#contacto" class="mob-cta">Pedir proposta →</a>
+</div>
+
+<!-- ── HERO ── -->
+<section class="legal-hero">
+  <div class="container">
+    <a href="/" class="legal-back">← nexosolutions.pt</a>
+    <span class="eyebrow">09 — Privacidade</span>
+    <h1>Política de<br><em>Privacidade.</em></h1>
+    <p class="lh-meta">NEXO · RGPD · Última atualização: Junho 2026</p>
+  </div>
+</section>
+
+<!-- ── CONTENT ── -->
+<section class="legal-body">
+  <div class="container">
+
+    <div class="ls-item">
+      <span class="ls-n">01</span>
+      <div class="ls-content">
+        <h3>Responsável pelo Tratamento</h3>
+        <p>Os seus dados são tratados pela <strong>NEXO</strong>, contactável em <a href="mailto:hello@nexosolutions.pt">hello@nexosolutions.pt</a>.</p>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">02</span>
+      <div class="ls-content">
+        <h3>Dados Recolhidos e Finalidade</h3>
+
+        <h4>2.1 Formulário de Contacto (nexosolutions.pt)</h4>
+        <div class="ls-sub">
+          <p><strong>Dados:</strong> nome, email, tipo de negócio</p>
+          <p><strong>Finalidade:</strong> responder ao pedido de informação</p>
+          <p><strong>Base legal:</strong> execução de diligências pré-contratuais</p>
+          <p><strong>Retenção:</strong> 2 anos ou até pedido de eliminação</p>
+        </div>
+
+        <h4>2.2 Google Analytics 4</h4>
+        <div class="ls-sub">
+          <p><strong>Dados:</strong> comportamento de navegação anonimizado, páginas visitadas, tempo de sessão, dispositivo</p>
+          <p><strong>Finalidade:</strong> melhoria do website</p>
+          <p><strong>Base legal:</strong> consentimento (opt-in via banner)</p>
+          <p><strong>Processador:</strong> Google Ireland Ltd (Dublin, Irlanda)</p>
+          <p><strong>Retenção:</strong> 14 meses (configuração GA4)</p>
+        </div>
+
+        <h4>2.3 Menus Digitais NEXO</h4>
+        <div class="ls-sub">
+          <p><strong>Dados:</strong> interações com o menu (pratos visualizados, idioma selecionado, pedidos submetidos)</p>
+          <p>Estes dados são anonimizados e agregados. Não é recolhida informação pessoal identificável dos utilizadores finais do menu.</p>
+        </div>
+
+        <h4>2.4 Pedidos por WhatsApp</h4>
+        <div class="ls-sub">
+          <p>Quando um utilizador envia um pedido via WhatsApp, o número de telefone fica visível ao restaurante. A NEXO não armazena este número. O tratamento a partir daí é da responsabilidade do restaurante.</p>
+        </div>
+
+        <h4>2.5 Notificações Push (NEXO OS)</h4>
+        <div class="ls-sub">
+          <p><strong>Dados:</strong> endpoint de subscrição push do dispositivo</p>
+          <p><strong>Finalidade:</strong> envio de alertas operacionais ao staff</p>
+          <p><strong>Base legal:</strong> consentimento explícito</p>
+          <p><strong>Retenção:</strong> até cancelamento da subscrição</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">03</span>
+      <div class="ls-content">
+        <h3>Partilha de Dados</h3>
+        <p>A NEXO não vende nem cede dados a terceiros. Utilizamos os seguintes subprocessadores:</p>
+        <ul>
+          <li><strong>Supabase Inc.</strong> (base de dados) — EUA, cláusulas contratuais tipo UE</li>
+          <li><strong>Netlify Inc.</strong> (alojamento) — EUA, Privacy Shield</li>
+          <li><strong>Google Ireland Ltd.</strong> (Analytics) — Dublin, UE</li>
+          <li><strong>Stripe Inc.</strong> (pagamentos) — certificado PCI DSS</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">04</span>
+      <div class="ls-content">
+        <h3>Direitos do Titular</h3>
+        <p>Nos termos do RGPD, tem direito a:</p>
+        <ul>
+          <li>Acesso aos seus dados pessoais</li>
+          <li>Retificação de dados incorretos</li>
+          <li>Eliminação ("direito ao esquecimento")</li>
+          <li>Portabilidade dos dados</li>
+          <li>Oposição ao tratamento</li>
+          <li>Reclamação à CNPD (<a href="https://www.cnpd.pt" target="_blank" rel="noopener">cnpd.pt</a>)</li>
+        </ul>
+        <div class="ls-callout">
+          <p>Para exercer estes direitos, contacte <a href="mailto:hello@nexosolutions.pt">hello@nexosolutions.pt</a>. Respondemos em 30 dias.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">05</span>
+      <div class="ls-content">
+        <h3>Cookies</h3>
+        <p>Consulte a nossa política de cookies no banner apresentado na sua primeira visita. Pode alterar as suas preferências a qualquer momento clicando em "Gerir Cookies" no rodapé.</p>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">06</span>
+      <div class="ls-content">
+        <h3>Segurança</h3>
+        <p>Os dados são transmitidos via HTTPS. O acesso à base de dados é restrito e autenticado. Realizamos backups diários.</p>
+      </div>
+    </div>
+
+    <div class="ls-item">
+      <span class="ls-n">07</span>
+      <div class="ls-content">
+        <h3>Contacto</h3>
+        <p>Para questões de privacidade: <a href="mailto:hello@nexosolutions.pt">hello@nexosolutions.pt</a></p>
+        <p>Encarregado de Proteção de Dados: não obrigatório para empresas de pequena dimensão nos termos do RGPD.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <span class="foot-logo">NEXO.</span>
+        <p>Mais valor por mesa.<br>Menos fricção no serviço.</p>
+      </div>
+      <div class="foot-nav">
+        <div class="foot-col">
+          <span class="foot-label">Site</span>
+          <ul>
+            <li><a href="/#problema">Problema</a></li>
+            <li><a href="/#como-funciona">Processo</a></li>
+            <li><a href="/#produto">Produto</a></li>
+            <li><a href="/#features">Funcionalidades</a></li>
+            <li><a href="/#planos">Planos</a></li>
+            <li><a href="/#faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <span class="foot-label">Contacto</span>
+          <ul>
+            <li><a href="mailto:hello@nexosolutions.pt">hello@nexosolutions.pt</a></li>
+          </ul>
+        </div>
+        <div class="foot-col">
+          <span class="foot-label">Legal</span>
+          <ul>
+            <li><a href="/termos/">Termos de Serviço</a></li>
+            <li><a href="/privacidade/">Privacidade</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 NEXO. Lisboa, Portugal</span>
+      <span>PT · LIS · EST. 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/script.js" defer></script>
+<script src="/nexo-cookies.js"></script>
+</body>
+</html>
