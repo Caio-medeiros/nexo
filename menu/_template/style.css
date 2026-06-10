@@ -331,6 +331,15 @@ a { color: inherit; text-decoration: none; }
 }
 .quick-nav-btn.quick-nav-review svg { color: rgba(255,255,255,0.85); }
 
+.quick-nav-btn.quick-nav-mesa {
+  background: rgba(26, 79, 160, 0.08);
+  border: 1px solid rgba(26, 79, 160, 0.35);
+  color: var(--accent);
+  font-weight: 700;
+}
+.quick-nav-btn.quick-nav-mesa svg { color: var(--accent); }
+.quick-nav-btn.quick-nav-mesa:active { background: rgba(26, 79, 160, 0.16); }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    SPECIAL BANNER — dinâmico por hora
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -4654,6 +4663,15 @@ body.has-cart {
   margin-left: 2px;
 }
 
+.confirm-table-optional {
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: rgba(255,255,255,0.3);
+  margin-left: 4px;
+}
+
 /* Mesa prefix + number input side by side */
 .confirm-table-field {
   display: flex;
@@ -4809,6 +4827,14 @@ body.has-cart {
 .staff-list-name-wrap {
   flex: 1;
   text-align: left;
+}
+
+.staff-item-member {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.45);
 }
 
 .staff-item-note {

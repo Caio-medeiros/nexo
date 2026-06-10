@@ -678,7 +678,7 @@
       </div>
 
       <div class="confirm-table-wrap" id="confirm-table-wrap" style="display:none">
-        <label class="confirm-field-label" id="confirm-table-label" for="confirm-table-input">Número da mesa <span class="confirm-table-required-mark">*</span></label>
+        <label class="confirm-field-label" id="confirm-table-label" for="confirm-table-input">Número da mesa <span class="confirm-table-required-mark">*</span> <span class="confirm-table-optional">(opcional para mostrar ao staff)</span></label>
         <div class="confirm-table-field" id="confirm-table-field">
           <span class="confirm-table-prefix" id="confirm-table-prefix">Mesa</span>
           <input type="text" id="confirm-table-input" class="confirm-table-input"
@@ -765,16 +765,19 @@
       <!-- View: Create -->
       <div id="nexo-shared-view-create" class="nexo-sheet-body" style="display:none">
         <p class="nexo-shared-sub">Partilhe este código com a mesa</p>
-        <div id="nexo-shared-code-display" class="nexo-shared-code">—</div>
-        <div class="nexo-sheet-footer" style="padding-left:0;padding-right:0;padding-top:16px">
-          <button id="nexo-shared-create-confirm" class="nexo-call-send-btn" type="button">Criar</button>
+        <div class="nexo-shared-code-box">
+          <div id="nexo-shared-code-display" class="nexo-shared-code">—</div>
+        </div>
+        <p class="nexo-shared-hint">Cada pessoa abre o menu e escolhe “Juntar-me a um carrinho” com este código.</p>
+        <div class="nexo-sheet-footer" style="padding-left:0;padding-right:0;padding-top:8px">
+          <button id="nexo-shared-create-confirm" class="nexo-call-send-btn" type="button">Criar carrinho</button>
         </div>
       </div>
       <!-- View: Join -->
       <div id="nexo-shared-view-join" class="nexo-sheet-body" style="display:none">
         <p class="nexo-call-field-label">Código da mesa</p>
         <input id="nexo-shared-join-code" type="text" class="nexo-call-table-input nexo-shared-code-input"
-          placeholder="A4F7" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" inputmode="text">
+          placeholder="A4F7B2" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="characters" inputmode="text">
         <p id="nexo-shared-join-error" class="nexo-shared-error" style="display:none"></p>
         <div class="nexo-sheet-footer" style="padding-left:0;padding-right:0;padding-top:16px">
           <button id="nexo-shared-join-confirm" class="nexo-call-send-btn" type="button">Juntar</button>
@@ -785,20 +788,25 @@
 
   <style>
   /* ─── Shared Cart ─── */
-  .nexo-shared-trigger{display:flex;align-items:center;gap:6px;width:100%;padding:9px 0;background:none;border:none;border-bottom:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;text-align:left;margin-bottom:8px;font-family:var(--font-ui);-webkit-tap-highlight-color:transparent;}
-  .nexo-shared-trigger span{color:var(--accent);font-weight:500;}
-  .nexo-shared-header{display:flex;align-items:center;gap:8px;padding:8px 0 10px;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:8px;flex-wrap:wrap;}
-  .nexo-shared-header strong{font-family:monospace;letter-spacing:0.15em;}
-  .shared-cart-members{color:var(--muted);font-size:12px;}
-  .shared-cart-leave-btn{margin-left:auto;background:none;border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--font-ui);}
+  .nexo-shared-trigger{display:flex;align-items:center;gap:8px;margin:8px var(--s3) 4px;padding:11px 14px;background:rgba(26,79,160,0.06);border:1px solid rgba(26,79,160,0.18);border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;text-align:left;font-family:var(--font-ui);-webkit-tap-highlight-color:transparent;transition:background 0.15s;}
+  .nexo-shared-trigger:active{background:rgba(26,79,160,0.12);}
+  .nexo-shared-trigger span{margin-left:auto;background:var(--accent);color:white;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;white-space:nowrap;letter-spacing:0.01em;}
+  .nexo-shared-header{display:flex;align-items:center;gap:8px;margin:4px var(--s3) 8px;padding:10px 14px;background:rgba(26,79,160,0.08);border:1px solid rgba(26,79,160,0.25);border-radius:12px;font-size:13px;flex-wrap:nowrap;}
+  .shared-cart-label{color:var(--muted);font-size:12px;white-space:nowrap;}
+  .shared-cart-code-chip{font-family:monospace;font-weight:700;font-size:13px;letter-spacing:0.15em;background:rgba(26,79,160,0.12);border:1px solid rgba(26,79,160,0.2);border-radius:6px;padding:2px 8px;color:var(--accent);cursor:pointer;transition:background 0.15s;}
+  .shared-cart-code-chip:active{background:rgba(26,79,160,0.24);}
+  .shared-cart-members{font-size:12px;color:var(--muted);white-space:nowrap;}
+  .shared-cart-leave-btn{margin-left:auto;background:none;border:1px solid rgba(26,79,160,0.25);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--accent);cursor:pointer;font-family:var(--font-ui);white-space:nowrap;font-weight:600;}
   .cart-item-name-col{display:flex;flex-direction:column;flex:1;min-width:0;}
   .cart-item-member{display:block;font-size:11px;color:var(--muted);margin-top:1px;}
   .cart-item-note-readonly{display:block;font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;}
-  .staff-item-member{display:block;font-size:11px;color:rgba(255,255,255,0.45);margin-top:1px;}
+  .staff-item-member{display:block;font-size:11px;color:rgba(0,0,0,0.45);margin-top:1px;}
   /* Sheet */
   .nexo-shared-intro{color:rgba(255,255,255,0.55);font-size:14px;margin:0 0 24px;line-height:1.5;}
-  .nexo-shared-sub{color:rgba(255,255,255,0.55);font-size:13px;text-align:center;margin:0 0 8px;}
-  .nexo-shared-code{font-size:36px;font-weight:700;letter-spacing:0.3em;font-family:monospace;text-align:center;color:white;padding:12px 0 24px;}
+  .nexo-shared-sub{color:rgba(255,255,255,0.55);font-size:13px;text-align:center;margin:0 0 14px;}
+  .nexo-shared-code-box{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:20px 16px;margin:0 0 14px;}
+  .nexo-shared-code{font-size:38px;font-weight:700;letter-spacing:0.34em;font-family:monospace;text-align:center;color:white;padding:0;text-indent:0.34em;}
+  .nexo-shared-hint{color:rgba(255,255,255,0.42);font-size:12px;text-align:center;line-height:1.5;margin:0 0 4px;}
   .nexo-shared-code-input{width:100%;text-align:center;font-size:28px !important;letter-spacing:0.3em;font-family:monospace;}
   .nexo-shared-name-input{width:100%;border-radius:10px !important;font-size:20px !important;}
   .nexo-shared-join-ghost{background:transparent !important;border:1px solid rgba(255,255,255,0.2) !important;color:white !important;}

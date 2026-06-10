@@ -677,14 +677,14 @@ function renderQuickNav() {
       label: t().navWifi, target: 'wifi-card',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`
     },
-    {
-      label: t().navContact, target: 'loyalty-card',
-      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>`
-    },
     ...(hasSupabase ? [{
       label: t().navMesa, target: null, isMesa: true,
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`
     }] : []),
+    {
+      label: t().navContact, target: 'loyalty-card',
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>`
+    },
   ];
 
   nav.innerHTML = buttons.map(b => {
@@ -2341,6 +2341,10 @@ function setItemNote(refId, note) {
 }
 
 function getItemNote(refId) {
+  if (sharedCart) {
+    const item = _myCartItems.find(i => i.item_id === refId);
+    return item ? (item.note || '') : '';
+  }
   const entry = cart.find(c => c.refId === refId);
   return entry ? (entry.note || '') : '';
 }
@@ -2386,7 +2390,7 @@ function renderCartPill() {
   // Action label
   const labels = { pt: 'Fazer pedido', en: 'Place order', es: 'Hacer pedido', fr: 'Passer commande' };
   const pillLabel = labels[currentLang] || labels.pt;
-  textEl.textContent = sharedCart ? `👥 ${pillLabel}` : pillLabel;
+  textEl.textContent = sharedCart ? `${pillLabel}` : pillLabel;
   pill.setAttribute('aria-label', `${textEl.textContent}: ${count} ${count === 1 ? t().cartItem : t().cartItems}`);
 
   const total = getCartTotal();
@@ -2842,19 +2846,33 @@ function generateOrderMessage(cartItems, tableValue) {
   const n = tableValue?.trim() || 'Mesa não especificada';
   const prefix = 'Mesa';
 
-  const itemLines = cartItems.map(entry => {
-    const item = getItemByRef(entry.refId);
-    if (!item) return '';
-    const qty = entry.qty > 1 ? `${entry.qty}x ` : '';
-    const price = ((parsePriceToNumber(item.price) || 0) * entry.qty)
-      .toFixed(2).replace('.', ',');
-    const itemName = item.name['pt'] || item.name[currentLang];
-    let line = `${qty}${itemName} — €${price}`;
-    if (entry.note && entry.note.trim()) {
-      line += `\n   _${entry.note.trim()}_`;
-    }
-    return line;
-  }).filter(Boolean).join('\n');
+  let itemLines;
+  if (sharedCart) {
+    itemLines = sharedCartItems.map(row => {
+      const item = getItemByRef(row.item_id);
+      const name = item ? (item.name['pt'] || item.name[currentLang]) : row.item_name;
+      const price = item ? (parsePriceToNumber(item.price) || 0) : (row.item_price || 0);
+      const qty = row.quantity > 1 ? `${row.quantity}x ` : '';
+      const total = (price * row.quantity).toFixed(2).replace('.', ',');
+      let line = `${qty}${name} — €${total} (${row.member_name})`;
+      if (row.note && row.note.trim()) line += `\n   _${row.note.trim()}_`;
+      return line;
+    }).filter(Boolean).join('\n');
+  } else {
+    itemLines = cartItems.map(entry => {
+      const item = getItemByRef(entry.refId);
+      if (!item) return '';
+      const qty = entry.qty > 1 ? `${entry.qty}x ` : '';
+      const price = ((parsePriceToNumber(item.price) || 0) * entry.qty)
+        .toFixed(2).replace('.', ',');
+      const itemName = item.name['pt'] || item.name[currentLang];
+      let line = `${qty}${itemName} — €${price}`;
+      if (entry.note && entry.note.trim()) {
+        line += `\n   _${entry.note.trim()}_`;
+      }
+      return line;
+    }).filter(Boolean).join('\n');
+  }
 
   const total = getCartTotal().toFixed(2).replace('.', ',');
 
@@ -2912,7 +2930,6 @@ function setupConfirmScreen() {
   if (staffBtn) {
     staffBtn.addEventListener('click', () => {
       haptic();
-      if (!validateTableInput()) return;
       const tableInput = document.getElementById('confirm-table-input');
       const tableVal = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
       confirmTableValue = tableVal;
@@ -3112,7 +3129,7 @@ function saveNoteFromInput(input) {
   const note = input.value.trim();
   const oldNote = getItemNote(refId);
   if (note !== oldNote) {
-    setItemNote(refId, note);
+    setItemNote(refId, note || null);
     renderCartSheet();
   }
 }
@@ -3745,12 +3762,22 @@ function renderStaffHistory() {
   const historyEl = document.getElementById('staff-history');
   if (!historyEl) return;
 
+  const rows = sharedCart
+    ? sharedCartItems.map(row => ({
+        qty: row.quantity,
+        name: (getItemByRef(row.item_id)?.name[currentLang]) || row.item_name,
+        note: row.note || '',
+        member: row.member_name,
+      }))
+    : cart.map(entry => {
+        const item = getItemByRef(entry.refId);
+        return item ? { qty: entry.qty, name: item.name[currentLang], note: entry.note || '', member: null } : null;
+      }).filter(Boolean);
+
   historyEl.innerHTML = `
     <div class="staff-order-block">
-      ${cart.map(entry => {
-        const item = getItemByRef(entry.refId);
-        if (!item) return '';
-        const note = entry.note ? entry.note.trim() : '';
+      ${rows.map(r => {
+        const note = r.note ? r.note.trim() : '';
         const noteHtml = note ? `
           <div class="staff-item-note">
             <svg class="staff-note-pencil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -3761,9 +3788,10 @@ function renderStaffHistory() {
           </div>` : '';
         return `
           <div class="staff-list-item${note ? ' has-note' : ''}">
-            <span class="staff-list-qty">${entry.qty}×</span>
+            <span class="staff-list-qty">${r.qty}×</span>
             <div class="staff-list-name-wrap">
-              <span class="staff-list-name">${item.name[currentLang]}</span>
+              <span class="staff-list-name">${r.name}</span>
+              ${r.member ? `<span class="staff-item-member">${r.member}</span>` : ''}
               ${noteHtml}
             </div>
           </div>`;
@@ -3895,7 +3923,7 @@ function setupPersonRename() {
 
 function generateCartCode() {
   const C = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({length: 4}, () => C[Math.floor(Math.random() * C.length)]).join('');
+  return Array.from({length: 6}, () => C[Math.floor(Math.random() * C.length)]).join('');
 }
 
 async function loadSupabase() {
@@ -3952,6 +3980,7 @@ async function _trackMyPresence() {
   // Optimistic local update
   _memberStates[_myPresenceKey] = { name: sharedMemberName, items: _myCartItems };
   syncSharedCartItems();
+  _saveSharedSession();
   // Broadcast to all other channel members
   try {
     await _sharedCartChannel.send({
@@ -4054,6 +4083,7 @@ async function createSharedCart(name, code) {
   _memberStates[_myPresenceKey] = { name, items: _myCartItems };
   localStorage.setItem('nexo_member_name', name);
   syncSharedCartItems();
+  _saveSharedSession();
 
   const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
   _sharedCartChannel = channel;
@@ -4089,6 +4119,7 @@ async function joinSharedCart(code, name) {
   _memberStates[_myPresenceKey] = { name, items: [] };
   localStorage.setItem('nexo_member_name', name);
   syncSharedCartItems();
+  _saveSharedSession();
 
   const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
   _sharedCartChannel = channel;
@@ -4133,7 +4164,68 @@ async function leaveSharedCart() {
   _memberStates = {};
   _myPresenceKey = null;
   cart = [];
+  _clearSharedSession();
   onCartChange();
+}
+
+/* ─── Session persistence ─── */
+const _SESSION_TTL = 2 * 60 * 60 * 1000; // 2 hours
+
+function _saveSharedSession() {
+  if (!sharedCart || !_myPresenceKey) return;
+  try {
+    localStorage.setItem('nexo_shared_session_' + CONFIG.slug, JSON.stringify({
+      code: sharedCart.code,
+      memberKey: _myPresenceKey,
+      name: sharedMemberName,
+      items: _myCartItems,
+      ts: Date.now(),
+    }));
+  } catch(e) {}
+}
+
+function _clearSharedSession() {
+  try { localStorage.removeItem('nexo_shared_session_' + CONFIG.slug); } catch(e) {}
+}
+
+async function restoreSharedSession() {
+  try {
+    const raw = localStorage.getItem('nexo_shared_session_' + CONFIG.slug);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (!s?.code || !s?.memberKey || !s?.ts) return;
+    if (Date.now() - s.ts > _SESSION_TTL) { _clearSharedSession(); return; }
+
+    _myPresenceKey = s.memberKey;
+    _myCartItems = s.items || [];
+    sharedMemberName = s.name || 'Anfitrião';
+    _memberStates = { [_myPresenceKey]: { name: sharedMemberName, items: _myCartItems } };
+    sharedCart = { code: s.code };
+    syncSharedCartItems();
+
+    const sb = await loadSupabase();
+    const channel = sb.channel('nexo-' + CONFIG.slug + '-' + s.code);
+    _sharedCartChannel = channel;
+    _setupChannelListeners(channel);
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        try {
+          await channel.send({ type: 'broadcast', event: 'hello',
+            payload: { memberKey: _myPresenceKey, name: sharedMemberName, items: _myCartItems } });
+        } catch(_) {}
+        _saveSharedSession();
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        sharedCart = null;
+        _sharedCartChannel = null;
+        _clearSharedSession();
+        try { sb.removeChannel(channel); } catch(_) {}
+        onCartChange();
+      }
+    });
+  } catch(e) {
+    console.warn('[SharedCart] restore failed', e);
+  }
 }
 
 /* ─── UI helpers ─── */
@@ -4144,9 +4236,18 @@ function renderSharedCartHeader() {
   const memberCount = Object.keys(_memberStates).length || 1;
   el.style.display = 'flex';
   el.innerHTML =
-    `<span>👥 Carrinho de mesa · <strong>${sharedCart.code}</strong></span>`
+    `<span class="shared-cart-label">👥 Mesa partilhada</span>`
+    + `<span class="shared-cart-code-chip" id="nexo-shared-code-chip" title="Clique para copiar">${sharedCart.code}</span>`
     + `<span class="shared-cart-members">${memberCount} ${memberCount === 1 ? 'pessoa' : 'pessoas'}</span>`
     + `<button class="shared-cart-leave-btn" id="nexo-shared-leave-btn">Sair</button>`;
+
+  document.getElementById('nexo-shared-code-chip')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(sharedCart.code);
+      const chip = document.getElementById('nexo-shared-code-chip');
+      if (chip) { const orig = chip.textContent; chip.textContent = '✓ Copiado'; setTimeout(() => { if (chip) chip.textContent = orig; }, 1500); }
+    } catch(_) {}
+  });
   document.getElementById('nexo-shared-leave-btn')?.addEventListener('click', () => {
     if (confirm('Sair do carrinho de mesa? O teu pedido não será enviado.')) leaveSharedCart();
   });
@@ -4353,6 +4454,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupHeroParallax();
   setupScrollReveal();
   setupBannerFish();
+  // ─── Restore shared cart session (survives refresh, 2h TTL) ───
+  restoreSharedSession();
 });
 
 /* ── Numbers-only inputs (table number fields) ── */
