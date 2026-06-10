@@ -1776,7 +1776,7 @@ a { color: inherit; text-decoration: none; }
 .modal-overlay.show { display: flex; }
 
 .modal {
-  background: var(--bg);
+  background: var(--bg-alt);
   width: 100%;
   max-width: 520px;
   border-radius: var(--r-lg) var(--r-lg) 0 0;
@@ -2461,7 +2461,7 @@ body.has-cart {
 .cart-sheet-overlay { align-items: flex-end; }
 
 .cart-sheet {
-  background: var(--bg);
+  background: var(--bg-alt);
   padding: var(--s3) 0 0;
   max-height: 80vh;
   display: flex;

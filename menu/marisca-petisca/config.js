@@ -25,6 +25,10 @@ const CONFIG = {
      e subscreve este tópico. Usar nome difícil de adivinhar. */
   callStaffTopic: 'marisca-petisca-staff-2026',
 
+  /* Supabase — necessário para Carrinho de Mesa (Shared Cart) */
+  supabaseUrl: 'https://kgbrtbpeekhkroibsgqq.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYnJ0YnBlZWtoa3JvaWJzZ3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDAwMTMsImV4cCI6MjA5NjYxNjAxM30.vFvSLysnS3456WWKa2a659YuIVuOceYHG4NMd79Jerc',
+
   tagline: {
     pt: "Marisqueira e restaurante à beira-mar",
     en: "Seafood & restaurant by the sea",
@@ -690,5 +694,6 @@ const CONFIG = {
 
   features: {
     callStaff: true,
+    sharedCart: true,
   }
 };

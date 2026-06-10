@@ -63,7 +63,7 @@ const UI = {
     noAllergens: "Sem alergénios declarados.",
     allergenListLabel: "Contém",
     navMenu: "Menu", navTop: "Mais pedidos", navWines: "Drinks",
-    navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Avaliar",navInsta: "Instagram",
+    navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Avaliar",navInsta: "Instagram", navMesa: "Mesa",
     wineFilterCountry: "País", wineFilterType: "Tipo", wineFilterGrape: "Marca",
     wineFilterWines: "Vinhos",
     wineEmpty: "Nenhuma bebida corresponde a estes filtros.",
@@ -159,7 +159,7 @@ const UI = {
     noAllergens: "No allergens declared.",
     allergenListLabel: "Contains",
     navMenu: "Menu", navTop: "Most ordered", navWines: "Drinks",
-    navWifi: "Wi-Fi", navContact: "Contact", navReview: "Rate", navInsta: "Instagram",
+    navWifi: "Wi-Fi", navContact: "Contact", navReview: "Rate", navInsta: "Instagram", navMesa: "Table",
     wineFilterCountry: "Country", wineFilterType: "Type", wineFilterGrape: "Brand",
     wineFilterWines: "Wines",
     wineEmpty: "No drinks match these filters.",
@@ -245,7 +245,7 @@ const UI = {
     noAllergens: "Sin alérgenos declarados.",
     allergenListLabel: "Contiene",
     navMenu: "Menú", navTop: "Más pedidos", navWines: "Drinks",
-    navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Valorar",navInsta: "Instagram",
+    navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Valorar",navInsta: "Instagram", navMesa: "Mesa",
     wineFilterCountry: "País", wineFilterType: "Tipo", wineFilterGrape: "Marca",
     wineFilterWines: "Vinos",
     wineEmpty: "Ninguna bebida coincide con estos filtros.",
@@ -331,7 +331,7 @@ const UI = {
     noAllergens: "Aucun allergène déclaré.",
     allergenListLabel: "Contient",
     navMenu: "Menu", navTop: "Plus commandés", navWines: "Drinks",
-    navWifi: "Wi-Fi", navContact: "Contact", navReview: "Évaluer", navInsta: "Instagram",
+    navWifi: "Wi-Fi", navContact: "Contact", navReview: "Évaluer", navInsta: "Instagram", navMesa: "Table",
     wineFilterCountry: "Pays", wineFilterType: "Type", wineFilterGrape: "Marque",
     wineFilterWines: "Vins",
     wineEmpty: "Aucune boisson ne correspond à ces filtres.",
@@ -414,6 +414,17 @@ let activeAllergenExcludes = new Set();
 // Cart: array de objetos { refId: "sectionId:itemIdx", qty: number, note: string }
 // Nunca persiste (intencional) — estado morre ao fechar o separador
 let cart = [];
+
+/* ─── SHARED CART STATE ─── */
+let sharedCart       = null;  // { code } when active, null otherwise
+let sharedMemberName = '';    // current user's display name
+let sharedCartItems  = [];    // aggregated from all members' Broadcast states
+let _myCartItems     = [];    // this member's own items
+let _memberStates    = {};    // { [memberKey]: { name, items[] } }
+let _pendingCartCode = null;  // code pre-generated for the CREATE flow
+let _supabaseClient  = null;
+let _sharedCartChannel = null;
+let _myPresenceKey   = null;  // unique key for this member
 
 let confirmTableValue = '';     // mesa atual no ecrã de confirmação
 let pulseTimerFired = false;    // pulse do botão Confirmar (só uma vez por sessão)
@@ -562,21 +573,26 @@ function applyBrandColors() {
   document.documentElement.style.setProperty('--accent-bright', bright);
 }
 
-function detectLang() {
-  const savedLang = localStorage.getItem('nexo_menu_lang');
-  const forcedInitial = localStorage.getItem('nexo_initial_force_pt');
+// NEXO — Auto Language Detection
+let _langAutoDetected = false;
 
-  if (!forcedInitial) {
-    currentLang = 'pt';
-    localStorage.setItem('nexo_initial_force_pt', '1');
-    localStorage.setItem('nexo_menu_lang', 'pt');
-  } else if (savedLang && UI[savedLang]) {
-    currentLang = savedLang;
-  } else {
-    currentLang = 'pt';
-  }
-  
-  // Atualiza botões
+function detectInitialLanguage() {
+  const SUPPORTED = ['pt', 'en', 'es', 'fr'];
+  const STORAGE_KEY = 'nexo_lang_' + CONFIG.slug;
+
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved && SUPPORTED.includes(saved)) return { lang: saved, auto: false };
+
+  const browserLang = (navigator.language || 'pt').slice(0, 2).toLowerCase();
+  const detected = SUPPORTED.includes(browserLang) ? browserLang : 'pt';
+  return { lang: detected, auto: true };
+}
+
+function detectLang() {
+  const { lang, auto } = detectInitialLanguage();
+  currentLang = lang;
+  _langAutoDetected = auto;
+
   document.querySelectorAll('.lang-toggle button').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === currentLang);
   });
@@ -639,12 +655,16 @@ function renderHero() {
 function renderQuickNav() {
   const nav = document.getElementById('quick-nav');
 
-const buttons = [
-  {
-    label: t().navReview, target: 'review-modal', isReview: true,
-    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
-  },
-  // ... resto dos botões que já tens
+  const hasSupabase = CONFIG.supabaseUrl && CONFIG.supabaseAnonKey
+    && CONFIG.supabaseUrl !== '{{SUPABASE_URL}}'
+    && CONFIG.supabaseAnonKey !== '{{SUPABASE_ANON_KEY}}'
+    && CONFIG.features?.sharedCart !== false;
+
+  const buttons = [
+    {
+      label: t().navReview, target: 'review-modal', isReview: true,
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+    },
     {
       label: t().navMenu, target: 'menu',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`
@@ -660,15 +680,19 @@ const buttons = [
     {
       label: t().navContact, target: 'loyalty-card',
       icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>`
-    }
-
+    },
+    ...(hasSupabase ? [{
+      label: t().navMesa, target: null, isMesa: true,
+      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`
+    }] : []),
   ];
 
-nav.innerHTML = buttons.map(b => {
-  const classes = ['quick-nav-btn'];
-  if (b.isReview) classes.push('quick-nav-review');
-  return `<button class="${classes.join(' ')}" data-target="${b.target}">${b.icon}<span>${b.label}</span></button>`;
-}).join('');
+  nav.innerHTML = buttons.map(b => {
+    const classes = ['quick-nav-btn'];
+    if (b.isReview) classes.push('quick-nav-review');
+    if (b.isMesa) classes.push('quick-nav-mesa');
+    return `<button class="${classes.join(' ')}" data-target="${b.target || ''}">${b.icon}<span>${b.label}</span></button>`;
+  }).join('');
 }
 
 function renderSearchBar() {
@@ -1460,10 +1484,69 @@ function setupLanguage() {
       btn.classList.add('active');
       const from = currentLang;
       currentLang = btn.dataset.lang;
-      localStorage.setItem('nexo_menu_lang', currentLang);
+      localStorage.setItem('nexo_lang_' + CONFIG.slug, currentLang);
       track('language_changed', { from_language: from, to_language: currentLang });
       renderAll();
     });
+  });
+}
+
+// PT override prompt — shown when auto-detect picks a non-PT language
+function showLangPrompt() {
+  if (!_langAutoDetected || currentLang === 'pt') return;
+
+  track('language_autodetected', { espaco_slug: CONFIG.slug, detected_language: currentLang });
+
+  const style = document.createElement('style');
+  style.textContent = '#nexo-lang-prompt{position:fixed;top:16px;left:50%;'
+    + 'transform:translateX(-50%) translateY(-140%);'
+    + 'background:rgba(20,20,20,0.92);'
+    + 'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);'
+    + 'border:1px solid rgba(255,255,255,0.12);border-radius:999px;'
+    + 'padding:8px 14px;font-size:13px;color:#fff;line-height:1;'
+    + 'display:flex;align-items:center;gap:8px;'
+    + 'z-index:99999;white-space:nowrap;'
+    + 'transition:transform 300ms cubic-bezier(0.34,1.56,0.64,1);}'
+    + '#nexo-lang-prompt.visible{transform:translateX(-50%) translateY(0);}'
+    + '#nexo-lang-sim{background:rgba(255,255,255,0.18);border:none;border-radius:999px;'
+    + 'color:#fff;font-size:12px;padding:4px 10px;cursor:pointer;font-weight:600;}'
+    + '#nexo-lang-dismiss{background:none;border:none;color:rgba(255,255,255,0.6);'
+    + 'font-size:14px;cursor:pointer;padding:0 2px;line-height:1;}';
+  document.head.appendChild(style);
+
+  const pill = document.createElement('div');
+  pill.id = 'nexo-lang-prompt';
+  pill.innerHTML = '<span>\uD83C\uDDF5\uD83C\uDDF9 Prefere portugu\u00eas?</span>'
+    + '<button id="nexo-lang-sim">Sim</button>'
+    + '<button id="nexo-lang-dismiss" aria-label="Fechar">\u2715</button>';
+  document.body.appendChild(pill);
+
+  let autoDismissTimer;
+  const showTimer = setTimeout(() => {
+    pill.classList.add('visible');
+    autoDismissTimer = setTimeout(() => dismiss(null), 6000);
+  }, 1000);
+
+  function dismiss(saveLang) {
+    clearTimeout(showTimer);
+    clearTimeout(autoDismissTimer);
+    pill.classList.remove('visible');
+    setTimeout(() => pill.remove(), 350);
+    if (saveLang !== null) localStorage.setItem('nexo_lang_' + CONFIG.slug, saveLang);
+  }
+
+  document.getElementById('nexo-lang-sim').addEventListener('click', () => {
+    currentLang = 'pt';
+    localStorage.setItem('nexo_lang_' + CONFIG.slug, 'pt');
+    document.querySelectorAll('.lang-toggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === 'pt');
+    });
+    renderAll();
+    dismiss(null);
+  });
+
+  document.getElementById('nexo-lang-dismiss').addEventListener('click', () => {
+    dismiss(currentLang);
   });
 }
 
@@ -1480,6 +1563,14 @@ function setupQuickNav() {
     if (btn.classList.contains('quick-nav-review')) {
       resetReviewModal();
       openModal('review-modal');
+      return;
+    }
+    if (btn.classList.contains('quick-nav-mesa')) {
+      if (sharedCart) {
+        openModal('cart-sheet');
+      } else {
+        openSharedCartSheet();
+      }
       return;
     }
     scrollToTarget(btn.dataset.target);
@@ -2155,12 +2246,14 @@ function formatPrice(num) {
 
 // Retorna quantidade do item no cart (0 se não existe)
 function getCartQty(refId) {
+  if (sharedCart) return sharedCartItems.filter(r => r.item_id === refId).reduce((s, r) => s + r.quantity, 0);
   const entry = cart.find(c => c.refId === refId);
   return entry ? entry.qty : 0;
 }
 
 // Adiciona 1x ao cart (ou incrementa)
 function addToCart(refId) {
+  if (sharedCart) { sharedAddToCart(refId); return; }
   const pill = document.getElementById('cart-pill');
   const wasVisible = pill?.classList.contains('show');
   const entry = cart.find(c => c.refId === refId);
@@ -2182,6 +2275,7 @@ function addToCart(refId) {
 
 // Decrementa 1x (se 0, remove)
 function decrementCart(refId) {
+  if (sharedCart) { sharedDecrementCart(refId); return; }
   const entry = cart.find(c => c.refId === refId);
   if (!entry) return;
   entry.qty -= 1;
@@ -2195,6 +2289,7 @@ function decrementCart(refId) {
 
 // Remove completamente
 function removeFromCart(refId) {
+  if (sharedCart) { sharedRemoveFromCart(refId); return; }
   const _removedItem = getItemByRef(refId);
   if (_removedItem) track('item_removed', { item_name: _removedItem.name.pt });
   cart = cart.filter(c => c.refId !== refId);
@@ -2203,12 +2298,20 @@ function removeFromCart(refId) {
 
 // Limpa tudo
 function clearCart() {
+  if (sharedCart) { sharedClearCart(); return; }
   cart = [];
   onCartChange();
 }
 
 // Total do cart em número
 function getCartTotal() {
+  if (sharedCart) {
+    return sharedCartItems.reduce((sum, row) => {
+      const item = getItemByRef(row.item_id);
+      const price = item ? (parsePriceToNumber(item.price) || 0) : (row.item_price || 0);
+      return sum + price * row.quantity;
+    }, 0);
+  }
   return cart.reduce((sum, entry) => {
     const item = getItemByRef(entry.refId);
     if (!item) return sum;
@@ -2219,6 +2322,7 @@ function getCartTotal() {
 
 // Total de items (soma das quantidades)
 function getCartItemCount() {
+  if (sharedCart) return sharedCartItems.reduce((s, r) => s + r.quantity, 0);
   return cart.reduce((sum, entry) => sum + entry.qty, 0);
 }
 
@@ -2281,7 +2385,8 @@ function renderCartPill() {
   }
   // Action label
   const labels = { pt: 'Fazer pedido', en: 'Place order', es: 'Hacer pedido', fr: 'Passer commande' };
-  textEl.textContent = labels[currentLang] || labels.pt;
+  const pillLabel = labels[currentLang] || labels.pt;
+  textEl.textContent = sharedCart ? `👥 ${pillLabel}` : pillLabel;
   pill.setAttribute('aria-label', `${textEl.textContent}: ${count} ${count === 1 ? t().cartItem : t().cartItems}`);
 
   const total = getCartTotal();
@@ -2331,6 +2436,77 @@ function renderCartSheet() {
   const hasNotes = hasAnyNotes();
   if (notesBadge) notesBadge.style.display = hasNotes ? 'flex' : 'none';
   if (notesBadgeText) notesBadgeText.textContent = t().cartNotesBadge;
+
+  // Shared Cart: update header, toggle trigger
+  renderSharedCartHeader();
+  const _scTrigger = document.getElementById('nexo-shared-cart-trigger');
+  if (_scTrigger) _scTrigger.style.display = sharedCart ? 'none' : '';
+
+  if (sharedCart) {
+    const sharedItems = sharedCartItems;
+    if (sharedItems.length === 0) {
+      listEl.innerHTML = `<div class="cart-empty">${t().cartEmpty}</div>`;
+      if (totalValue) totalValue.textContent = formatPrice(0);
+      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.style.opacity = '0.4'; }
+      if (clearBtn) clearBtn.style.display = 'none';
+      return;
+    }
+    if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.style.opacity = ''; }
+    if (clearBtn) clearBtn.style.display = 'block';
+    listEl.innerHTML = sharedItems.map(row => {
+      const item = getItemByRef(row.item_id);
+      const nm   = item ? item.name[currentLang] : row.item_name;
+      const price = item ? (parsePriceToNumber(item.price) || 0) : (row.item_price || 0);
+      const lineTotal = price * row.quantity;
+      const isOwn = row.member_key === _myPresenceKey;
+      const note  = row.note || '';
+      const safeNote = note.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const safeId = row.item_id.replace(/"/g,'');
+      const noteHtml = isOwn
+        ? (note
+          ? `<div class="cart-item-note-wrap" data-note-wrap="${safeId}">
+              <div class="cart-item-note-preview">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <span class="cart-note-text" data-note-reopen="${safeId}">${note}</span>
+                <button class="cart-note-clear" data-note-clear="${safeId}" aria-label="Remover nota" type="button">×</button>
+              </div>
+              <div class="cart-item-note-input-wrap" id="note-input-wrap-${safeId}" style="display:none">
+                <input type="text" class="cart-item-note-input" data-note-refid="${safeId}"
+                  placeholder="${t().notePlaceholder}" value="${safeNote}">
+              </div>
+            </div>`
+          : `<div class="cart-item-note-wrap" data-note-wrap="${safeId}">
+              <button class="cart-item-note-add" data-note-add="${safeId}" type="button">${t().noteAdd}</button>
+              <div class="cart-item-note-input-wrap" id="note-input-wrap-${safeId}" style="display:none">
+                <input type="text" class="cart-item-note-input" data-note-refid="${safeId}"
+                  placeholder="${t().notePlaceholder}" value="">
+              </div>
+            </div>`)
+        : (note ? `<span class="cart-item-note-readonly">${note}</span>` : '');
+      return `
+        <div class="cart-list-item">
+          <div class="cart-item-main-row">
+            <span class="cart-item-qty">${row.quantity}×</span>
+            <div class="cart-item-name-col">
+              <span class="cart-item-name">${nm}</span>
+              <span class="cart-item-member">adicionado por ${row.member_name}</span>
+            </div>
+            <span class="cart-item-price">${formatPrice(lineTotal)}</span>
+            <div class="cart-item-controls"${isOwn ? '' : ' style="visibility:hidden"'}>
+              <button class="cart-qty-btn" data-cart-decrement="${safeId}" aria-label="Menos">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <button class="cart-qty-btn" data-cart-increment="${safeId}" aria-label="Mais">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+          </div>
+          ${noteHtml}
+        </div>`;
+    }).join('');
+    if (totalValue) totalValue.textContent = formatPrice(getCartTotal());
+    return;
+  }
 
   if (cart.length === 0) {
     listEl.innerHTML = `<div class="cart-empty">${t().cartEmpty}</div>`;
@@ -2470,7 +2646,7 @@ function updateOpenItemModalControls() {
 
 // STAFF VIEW — fullscreen
 function openStaffView(tableOverride) {
-  if (cart.length === 0) return;
+  if (!sharedCart && cart.length === 0) return;
 
   track('order_placed', {
     item_count: cart.reduce((s, e) => s + e.qty, 0),
@@ -2529,7 +2705,7 @@ function closeStaffView() {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function openConfirmScreen() {
-  if (cart.length === 0) return;
+  if (!sharedCart && cart.length === 0) return;
   if (navigator.vibrate) navigator.vibrate(8);
   renderConfirmScreen();
   const screen = document.getElementById('confirm-screen');
@@ -2583,23 +2759,44 @@ function renderConfirmScreen() {
   if (!itemsEl) return;
 
   // Render order summary
-  itemsEl.innerHTML = cart.map((entry, i) => {
-    const item = getItemByRef(entry.refId);
-    if (!item) return '';
-    const unitPrice = parsePriceToNumber(item.price) || 0;
-    const lineTotal = unitPrice * entry.qty;
-    const noteHtml = (entry.note && entry.note.trim())
-      ? `<div class="confirm-item-note">↳ ${entry.note.trim()}</div>` : '';
-    return `
-      <div class="confirm-item-row${i > 0 ? ' with-divider' : ''}">
-        <span class="confirm-item-qty">×${entry.qty}</span>
-        <div class="confirm-item-info">
-          <span class="confirm-item-name">${item.name[currentLang]}</span>
-          ${noteHtml}
-        </div>
-        <span class="confirm-item-price">${formatPrice(lineTotal)}</span>
-      </div>`;
-  }).join('');
+  if (sharedCart) {
+    itemsEl.innerHTML = sharedCartItems.map((row, i) => {
+      const item = getItemByRef(row.item_id);
+      const nm = item ? item.name[currentLang] : row.item_name;
+      const price = item ? (parsePriceToNumber(item.price) || 0) : (row.item_price || 0);
+      const lineTotal = price * row.quantity;
+      const noteHtml = (row.note && row.note.trim())
+        ? `<div class="confirm-item-note">↳ ${row.note.trim()}</div>` : '';
+      return `
+        <div class="confirm-item-row${i > 0 ? ' with-divider' : ''}">
+          <span class="confirm-item-qty">×${row.quantity}</span>
+          <div class="confirm-item-info">
+            <span class="confirm-item-name">${nm}</span>
+            <span class="confirm-item-member-tag">${row.member_name}</span>
+            ${noteHtml}
+          </div>
+          <span class="confirm-item-price">${formatPrice(lineTotal)}</span>
+        </div>`;
+    }).join('');
+  } else {
+    itemsEl.innerHTML = cart.map((entry, i) => {
+      const item = getItemByRef(entry.refId);
+      if (!item) return '';
+      const unitPrice = parsePriceToNumber(item.price) || 0;
+      const lineTotal = unitPrice * entry.qty;
+      const noteHtml = (entry.note && entry.note.trim())
+        ? `<div class="confirm-item-note">↳ ${entry.note.trim()}</div>` : '';
+      return `
+        <div class="confirm-item-row${i > 0 ? ' with-divider' : ''}">
+          <span class="confirm-item-qty">×${entry.qty}</span>
+          <div class="confirm-item-info">
+            <span class="confirm-item-name">${item.name[currentLang]}</span>
+            ${noteHtml}
+          </div>
+          <span class="confirm-item-price">${formatPrice(lineTotal)}</span>
+        </div>`;
+    }).join('');
+  }
 
   // Total
   if (totalEl) totalEl.textContent = formatPrice(getCartTotal());
@@ -2884,7 +3081,7 @@ function setupCartSheet() {
   const confirmBtn = document.getElementById('cart-confirm-btn');
   if (confirmBtn) {
     confirmBtn.addEventListener('click', () => {
-      if (cart.length === 0) return;
+      if (!sharedCart && cart.length === 0) return;
       haptic();
       closeModal('cart-sheet');
       setTimeout(() => openConfirmScreen(), 100);
@@ -3693,6 +3890,385 @@ function setupPersonRename() {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   12b. SHARED CART — Mesa em Grupo (Realtime Broadcast — no SQL tables needed)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function generateCartCode() {
+  const C = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 4}, () => C[Math.floor(Math.random() * C.length)]).join('');
+}
+
+async function loadSupabase() {
+  if (_supabaseClient) return _supabaseClient;
+  const { supabaseUrl, supabaseAnonKey } = CONFIG;
+  if (!supabaseUrl || !supabaseAnonKey) throw new Error('Supabase not configured');
+  if (typeof window.supabase !== 'undefined') {
+    _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+    return _supabaseClient;
+  }
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s.onload = () => {
+      _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+      resolve(_supabaseClient);
+    };
+    s.onerror = () => reject(new Error('Failed to load Supabase'));
+    document.head.appendChild(s);
+  });
+}
+
+function showCartToast(msg) {
+  let el = document.getElementById('nexo-cart-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'nexo-cart-toast';
+    el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);'
+      + 'background:rgba(20,20,20,0.92);color:#fff;font-size:13px;padding:8px 16px;'
+      + 'border-radius:20px;z-index:99998;opacity:0;transition:opacity 0.25s;pointer-events:none;'
+      + 'max-width:280px;text-align:center;white-space:pre-wrap;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 3500);
+}
+
+/* ─── Broadcast-based sync ─── */
+function syncSharedCartItems() {
+  const items = [];
+  for (const [key, member] of Object.entries(_memberStates)) {
+    for (const item of (member.items || [])) {
+      items.push({ ...item, member_name: member.name || 'Convidado', member_key: key });
+    }
+  }
+  sharedCartItems = items;
+  onCartChange();
+}
+
+async function _trackMyPresence() {
+  if (!_sharedCartChannel) return;
+  // Optimistic local update
+  _memberStates[_myPresenceKey] = { name: sharedMemberName, items: _myCartItems };
+  syncSharedCartItems();
+  // Broadcast to all other channel members
+  try {
+    await _sharedCartChannel.send({
+      type: 'broadcast', event: 'state',
+      payload: { memberKey: _myPresenceKey, name: sharedMemberName, items: _myCartItems },
+    });
+  } catch (e) { console.warn('[SharedCart] broadcast error', e); }
+}
+
+function _setupChannelListeners(channel) {
+  channel
+    .on('broadcast', { event: 'state' }, ({ payload }) => {
+      if (!payload?.memberKey) return;
+      _memberStates[payload.memberKey] = { name: payload.name, items: payload.items || [] };
+      syncSharedCartItems();
+    })
+    .on('broadcast', { event: 'hello' }, ({ payload }) => {
+      // New member joined — register them immediately, then reply with our state
+      if (payload?.memberKey) {
+        _memberStates[payload.memberKey] = { name: payload.name || 'Convidado', items: payload.items || [] };
+        syncSharedCartItems();
+      }
+      _trackMyPresence();
+    })
+    .on('broadcast', { event: 'bye' }, ({ payload }) => {
+      if (!payload?.memberKey) return;
+      delete _memberStates[payload.memberKey];
+      syncSharedCartItems();
+    });
+}
+
+/* ─── Cart mutation helpers ─── */
+function sharedAddToCart(refId) {
+  const item = getItemByRef(refId);
+  if (!item) return;
+  const existing = _myCartItems.find(i => i.item_id === refId);
+  if (existing) {
+    existing.quantity++;
+  } else {
+    _myCartItems.push({
+      item_id: refId,
+      item_name: item.name?.[currentLang] || item.name?.pt || refId,
+      item_price: parsePriceToNumber(item.price) || 0,
+      quantity: 1,
+    });
+  }
+  track('item_added', { item_name: item.name?.pt, item_category: refId.split(':')[0], item_price: parsePriceToNumber(item.price) || 0 });
+  _trackMyPresence();
+}
+
+function sharedDecrementCart(refId) {
+  const idx = _myCartItems.findIndex(i => i.item_id === refId);
+  if (idx < 0) return;
+  if (_myCartItems[idx].quantity <= 1) {
+    _myCartItems.splice(idx, 1);
+  } else {
+    _myCartItems[idx].quantity--;
+  }
+  _trackMyPresence();
+}
+
+function sharedRemoveFromCart(refId) {
+  _myCartItems = _myCartItems.filter(i => i.item_id !== refId);
+  _trackMyPresence();
+}
+
+function sharedClearCart() {
+  _myCartItems = [];
+  _trackMyPresence();
+}
+
+function sharedSetItemNote(refId, note) {
+  const item = _myCartItems.find(i => i.item_id === refId);
+  if (item) { item.note = note || null; _trackMyPresence(); }
+}
+
+/* ─── Create / Join / Leave ─── */
+async function createSharedCart(name, code) {
+  const sb = await loadSupabase();
+  code = code.toUpperCase();
+  _myPresenceKey = 'host-' + Date.now();
+  _memberStates = {};
+
+  // Migrate local cart items
+  _myCartItems = cart.map(entry => {
+    const item = getItemByRef(entry.refId);
+    return {
+      item_id: entry.refId,
+      item_name: item?.name?.[currentLang] || item?.name?.pt || entry.refId,
+      item_price: parsePriceToNumber(item?.price) || 0,
+      quantity: entry.qty,
+      note: entry.note || null,
+    };
+  });
+  cart = [];
+
+  // Activate shared mode BEFORE any render so migrated items stay visible
+  sharedCart = { code };
+  sharedMemberName = name;
+  _memberStates[_myPresenceKey] = { name, items: _myCartItems };
+  localStorage.setItem('nexo_member_name', name);
+  syncSharedCartItems();
+
+  const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
+  _sharedCartChannel = channel;
+  _setupChannelListeners(channel);
+
+  await new Promise((resolve, reject) => {
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await _trackMyPresence(); // broadcast initial state
+        resolve();
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        sharedCart = null;
+        _sharedCartChannel = null;
+        try { sb.removeChannel(channel); } catch (_) {}
+        reject(new Error('Realtime connection failed'));
+      }
+    });
+  });
+
+  track('shared_cart_created', { espaco_slug: CONFIG.slug });
+}
+
+async function joinSharedCart(code, name) {
+  const sb = await loadSupabase();
+  code = code.toUpperCase().trim();
+  _myPresenceKey = 'guest-' + Date.now();
+  _memberStates = {};
+
+  // Activate shared mode BEFORE any render
+  sharedCart = { code };
+  sharedMemberName = name;
+  _myCartItems = [];
+  _memberStates[_myPresenceKey] = { name, items: [] };
+  localStorage.setItem('nexo_member_name', name);
+  syncSharedCartItems();
+
+  const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
+  _sharedCartChannel = channel;
+  _setupChannelListeners(channel);
+
+  await new Promise((resolve, reject) => {
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        // Announce ourselves (with name+items) — others register us and reply with their state
+        try {
+          await channel.send({
+            type: 'broadcast', event: 'hello',
+            payload: { memberKey: _myPresenceKey, name: sharedMemberName, items: _myCartItems },
+          });
+        } catch (_) {}
+        resolve();
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        sharedCart = null;
+        _sharedCartChannel = null;
+        try { sb.removeChannel(channel); } catch (_) {}
+        reject(new Error('Realtime connection failed'));
+      }
+    });
+  });
+
+  track('shared_cart_joined', { espaco_slug: CONFIG.slug });
+}
+
+async function leaveSharedCart() {
+  if (_sharedCartChannel) {
+    try {
+      await _sharedCartChannel.send({ type: 'broadcast', event: 'bye', payload: { memberKey: _myPresenceKey } });
+      const sb = await loadSupabase();
+      sb.removeChannel(_sharedCartChannel);
+    } catch (_) {}
+    _sharedCartChannel = null;
+  }
+  sharedCart = null;
+  sharedMemberName = '';
+  sharedCartItems = [];
+  _myCartItems = [];
+  _memberStates = {};
+  _myPresenceKey = null;
+  cart = [];
+  onCartChange();
+}
+
+/* ─── UI helpers ─── */
+function renderSharedCartHeader() {
+  const el = document.getElementById('nexo-shared-cart-header');
+  if (!el) return;
+  if (!sharedCart) { el.style.display = 'none'; return; }
+  const memberCount = Object.keys(_memberStates).length || 1;
+  el.style.display = 'flex';
+  el.innerHTML =
+    `<span>👥 Carrinho de mesa · <strong>${sharedCart.code}</strong></span>`
+    + `<span class="shared-cart-members">${memberCount} ${memberCount === 1 ? 'pessoa' : 'pessoas'}</span>`
+    + `<button class="shared-cart-leave-btn" id="nexo-shared-leave-btn">Sair</button>`;
+  document.getElementById('nexo-shared-leave-btn')?.addEventListener('click', () => {
+    if (confirm('Sair do carrinho de mesa? O teu pedido não será enviado.')) leaveSharedCart();
+  });
+}
+
+function _showSharedView(view) {
+  ['initial', 'create', 'join'].forEach(v => {
+    const el = document.getElementById('nexo-shared-view-' + v);
+    if (el) el.style.display = v === view ? '' : 'none';
+  });
+  if (view === 'create') {
+    _pendingCartCode = generateCartCode();
+    const codeEl = document.getElementById('nexo-shared-code-display');
+    if (codeEl) codeEl.textContent = _pendingCartCode;
+  }
+  if (view === 'join') {
+    setTimeout(() => document.getElementById('nexo-shared-join-code')?.focus(), 100);
+  }
+}
+
+function openSharedCartSheet() {
+  const sheet = document.getElementById('nexo-shared-sheet');
+  if (!sheet) return;
+  _showSharedView('initial');
+  sheet.classList.remove('hidden');
+  requestAnimationFrame(() => sheet.classList.add('open'));
+}
+
+function closeSharedCartSheet() {
+  const sheet = document.getElementById('nexo-shared-sheet');
+  if (!sheet) return;
+  sheet.classList.remove('open');
+  setTimeout(() => sheet.classList.add('hidden'), 350);
+}
+
+function setupSharedCart() {
+  const hasSupabase = CONFIG.supabaseUrl
+    && CONFIG.supabaseAnonKey
+    && CONFIG.supabaseUrl !== '{{SUPABASE_URL}}'
+    && CONFIG.supabaseAnonKey !== '{{SUPABASE_ANON_KEY}}';
+
+  const trigger = document.getElementById('nexo-shared-cart-trigger');
+
+  if (!hasSupabase || CONFIG.features?.sharedCart === false) {
+    if (trigger) trigger.style.display = 'none';
+    return;
+  }
+
+  if (trigger) {
+    trigger.addEventListener('click', () => {
+      haptic();
+      closeModal('cart-sheet');
+      openSharedCartSheet();
+    });
+  }
+
+  const sheet    = document.getElementById('nexo-shared-sheet');
+  const backdrop = sheet?.querySelector('.nexo-sheet-backdrop');
+  const closeBtn = document.getElementById('nexo-shared-close');
+
+  if (closeBtn)  closeBtn.addEventListener('click',  closeSharedCartSheet);
+  if (backdrop)  backdrop.addEventListener('click',  closeSharedCartSheet);
+
+  // Create flow
+  document.getElementById('nexo-shared-create-btn')?.addEventListener('click', () => {
+    _showSharedView('create');
+  });
+
+  document.getElementById('nexo-shared-create-confirm')?.addEventListener('click', async () => {
+    const btn = document.getElementById('nexo-shared-create-confirm');
+    if (btn) { btn.disabled = true; btn.textContent = 'A criar...'; }
+    try {
+      await createSharedCart('Anfitrião', _pendingCartCode || generateCartCode());
+      closeSharedCartSheet();
+      setTimeout(() => openModal('cart-sheet'), 200);
+    } catch (e) {
+      console.error('[SharedCart] create error', e);
+      const msg = e?.message || e?.error_description || JSON.stringify(e);
+      showCartToast('Erro ao criar carrinho:\n' + msg);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Criar'; }
+    }
+  });
+
+  // Join flow
+  document.getElementById('nexo-shared-join-btn')?.addEventListener('click', () => {
+    _showSharedView('join');
+  });
+
+  const joinCode  = document.getElementById('nexo-shared-join-code');
+  const joinError = document.getElementById('nexo-shared-join-error');
+
+  async function doJoin() {
+    const code = joinCode?.value.trim() || '';
+    const btn  = document.getElementById('nexo-shared-join-confirm');
+    if (code.length !== 4) { joinCode?.focus(); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'A juntar...'; }
+    if (joinError) joinError.style.display = 'none';
+    try {
+      await joinSharedCart(code, 'Convidado');
+      closeSharedCartSheet();
+      setTimeout(() => openModal('cart-sheet'), 200);
+    } catch (e) {
+      showCartToast('Erro de ligação — tenta novamente.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Juntar'; }
+    }
+  }
+
+  if (joinCode) {
+    joinCode.addEventListener('input', () => {
+      joinCode.value = joinCode.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 4);
+      if (joinError) joinError.style.display = 'none';
+      if (joinCode.value.length === 4) doJoin();
+    });
+  }
+
+  document.getElementById('nexo-shared-join-confirm')?.addEventListener('click', doJoin);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
    13. BOOT
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -3701,11 +4277,13 @@ document.addEventListener('DOMContentLoaded', () => {
   detectLang();
   initAnalytics();
   renderAll();
+  showLangPrompt();
   track('menu_opened', {
     espaco_tipo: (typeof ESPACO_TIPO !== 'undefined' ? ESPACO_TIPO : 'rest'),
     menu_language: currentLang,
   });
   setupLanguage();
+  setupSharedCart();
   setupQuickNav();
   setupSearch();
   setupDietFilter();

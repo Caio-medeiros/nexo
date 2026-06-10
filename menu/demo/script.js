@@ -362,6 +362,14 @@ let activeAllergenExcludes = new Set();
 // Nunca persiste (intencional) — estado morre ao fechar o separador
 let cart = [];
 
+/* ─── SHARED CART STATE ─── */
+let sharedCart       = null;
+let sharedMemberName = '';
+let sharedCartItems  = [];
+let _pendingCartCode = null;
+let _supabaseClient  = null;
+let _sharedCartChannel = null;
+
 // Order ID curto, gerado uma vez por sessão (staff referencia se várias mesas mostram)
 const ORDER_ID = Math.random().toString(36).substring(2, 6).toUpperCase();
 
@@ -505,21 +513,26 @@ function applyBrandColors() {
   document.documentElement.style.setProperty('--accent-bright', bright);
 }
 
-function detectLang() {
-  const savedLang = localStorage.getItem('nexo_menu_lang');
-  const forcedInitial = localStorage.getItem('nexo_initial_force_pt');
+// NEXO — Auto Language Detection
+let _langAutoDetected = false;
 
-  if (!forcedInitial) {
-    currentLang = 'pt';
-    localStorage.setItem('nexo_initial_force_pt', '1');
-    localStorage.setItem('nexo_menu_lang', 'pt');
-  } else if (savedLang && UI[savedLang]) {
-    currentLang = savedLang;
-  } else {
-    currentLang = 'pt';
-  }
-  
-  // Atualiza botões
+function detectInitialLanguage() {
+  const SUPPORTED = ['pt', 'en', 'es', 'fr'];
+  const STORAGE_KEY = 'nexo_lang_' + CONFIG.slug;
+
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved && SUPPORTED.includes(saved)) return { lang: saved, auto: false };
+
+  const browserLang = (navigator.language || 'pt').slice(0, 2).toLowerCase();
+  const detected = SUPPORTED.includes(browserLang) ? browserLang : 'pt';
+  return { lang: detected, auto: true };
+}
+
+function detectLang() {
+  const { lang, auto } = detectInitialLanguage();
+  currentLang = lang;
+  _langAutoDetected = auto;
+
   document.querySelectorAll('.lang-toggle button').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === currentLang);
   });
@@ -1376,10 +1389,69 @@ function setupLanguage() {
       btn.classList.add('active');
       const from = currentLang;
       currentLang = btn.dataset.lang;
-      localStorage.setItem('nexo_menu_lang', currentLang);
+      localStorage.setItem('nexo_lang_' + CONFIG.slug, currentLang);
       track('language_changed', { from_language: from, to_language: currentLang });
       renderAll();
     });
+  });
+}
+
+// PT override prompt — shown when auto-detect picks a non-PT language
+function showLangPrompt() {
+  if (!_langAutoDetected || currentLang === 'pt') return;
+
+  track('language_autodetected', { espaco_slug: CONFIG.slug, detected_language: currentLang });
+
+  const style = document.createElement('style');
+  style.textContent = '#nexo-lang-prompt{position:fixed;top:16px;left:50%;'
+    + 'transform:translateX(-50%) translateY(-140%);'
+    + 'background:rgba(20,20,20,0.92);'
+    + 'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);'
+    + 'border:1px solid rgba(255,255,255,0.12);border-radius:999px;'
+    + 'padding:8px 14px;font-size:13px;color:#fff;line-height:1;'
+    + 'display:flex;align-items:center;gap:8px;'
+    + 'z-index:99999;white-space:nowrap;'
+    + 'transition:transform 300ms cubic-bezier(0.34,1.56,0.64,1);}'
+    + '#nexo-lang-prompt.visible{transform:translateX(-50%) translateY(0);}'
+    + '#nexo-lang-sim{background:rgba(255,255,255,0.18);border:none;border-radius:999px;'
+    + 'color:#fff;font-size:12px;padding:4px 10px;cursor:pointer;font-weight:600;}'
+    + '#nexo-lang-dismiss{background:none;border:none;color:rgba(255,255,255,0.6);'
+    + 'font-size:14px;cursor:pointer;padding:0 2px;line-height:1;}';
+  document.head.appendChild(style);
+
+  const pill = document.createElement('div');
+  pill.id = 'nexo-lang-prompt';
+  pill.innerHTML = '<span>\uD83C\uDDF5\uD83C\uDDF9 Prefere portugu\u00eas?</span>'
+    + '<button id="nexo-lang-sim">Sim</button>'
+    + '<button id="nexo-lang-dismiss" aria-label="Fechar">\u2715</button>';
+  document.body.appendChild(pill);
+
+  let autoDismissTimer;
+  const showTimer = setTimeout(() => {
+    pill.classList.add('visible');
+    autoDismissTimer = setTimeout(() => dismiss(null), 6000);
+  }, 1000);
+
+  function dismiss(saveLang) {
+    clearTimeout(showTimer);
+    clearTimeout(autoDismissTimer);
+    pill.classList.remove('visible');
+    setTimeout(() => pill.remove(), 350);
+    if (saveLang !== null) localStorage.setItem('nexo_lang_' + CONFIG.slug, saveLang);
+  }
+
+  document.getElementById('nexo-lang-sim').addEventListener('click', () => {
+    currentLang = 'pt';
+    localStorage.setItem('nexo_lang_' + CONFIG.slug, 'pt');
+    document.querySelectorAll('.lang-toggle button').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === 'pt');
+    });
+    renderAll();
+    dismiss(null);
+  });
+
+  document.getElementById('nexo-lang-dismiss').addEventListener('click', () => {
+    dismiss(currentLang);
   });
 }
 
@@ -2064,12 +2136,14 @@ function formatPrice(num) {
 
 // Retorna quantidade do item no cart (0 se não existe)
 function getCartQty(refId) {
+  if (sharedCart) return sharedCartItems.filter(r => r.item_id === refId).reduce((s, r) => s + r.quantity, 0);
   const entry = cart.find(c => c.refId === refId);
   return entry ? entry.qty : 0;
 }
 
 // Adiciona 1x ao cart (ou incrementa)
 function addToCart(refId) {
+  if (sharedCart) { sharedAddToCart(refId); return; }
   const pill = document.getElementById('cart-pill');
   const wasVisible = pill?.classList.contains('show');
   const entry = cart.find(c => c.refId === refId);
@@ -2091,6 +2165,7 @@ function addToCart(refId) {
 
 // Decrementa 1x (se 0, remove)
 function decrementCart(refId) {
+  if (sharedCart) { sharedDecrementCart(refId); return; }
   const entry = cart.find(c => c.refId === refId);
   if (!entry) return;
   entry.qty -= 1;
@@ -2104,6 +2179,7 @@ function decrementCart(refId) {
 
 // Remove completamente
 function removeFromCart(refId) {
+  if (sharedCart) { sharedRemoveFromCart(refId); return; }
   const _removedItem = getItemByRef(refId);
   if (_removedItem) track('item_removed', { item_name: _removedItem.name.pt });
   cart = cart.filter(c => c.refId !== refId);
@@ -2112,12 +2188,20 @@ function removeFromCart(refId) {
 
 // Limpa tudo
 function clearCart() {
+  if (sharedCart) { sharedClearCart(); return; }
   cart = [];
   onCartChange();
 }
 
 // Total do cart em número
 function getCartTotal() {
+  if (sharedCart) {
+    return sharedCartItems.reduce((sum, row) => {
+      const item = getItemByRef(row.item_id);
+      const price = item ? (parsePriceToNumber(item.price) || 0) : (row.item_price || 0);
+      return sum + price * row.quantity;
+    }, 0);
+  }
   return cart.reduce((sum, entry) => {
     const item = getItemByRef(entry.refId);
     if (!item) return sum;
@@ -2128,6 +2212,7 @@ function getCartTotal() {
 
 // Total de items (soma das quantidades)
 function getCartItemCount() {
+  if (sharedCart) return sharedCartItems.reduce((s, r) => s + r.quantity, 0);
   return cart.reduce((sum, entry) => sum + entry.qty, 0);
 }
 
@@ -2164,7 +2249,9 @@ function renderCartPill() {
   }
 
   const label = count === 1 ? t().cartItem : t().cartItems;
-  textEl.textContent = `${t().viewOrder} · ${count} ${label}`;
+  textEl.textContent = sharedCart
+    ? `👥 ${t().viewOrder} · ${count} ${label}`
+    : `${t().viewOrder} · ${count} ${label}`;
   pill.setAttribute('aria-label', `${t().viewOrder}: ${count} ${label}`);
 
   const total = getCartTotal();
@@ -2207,6 +2294,51 @@ function renderCartSheet() {
   const tabSplitEl = document.getElementById('tab-split');
   if (tabOrderEl) tabOrderEl.textContent = ts().tabOrder;
   if (tabSplitEl) tabSplitEl.textContent = ts().tabSplit;
+
+  // Shared Cart: update header, toggle trigger
+  renderSharedCartHeader();
+  const _scTrigger = document.getElementById('nexo-shared-cart-trigger');
+  if (_scTrigger) _scTrigger.style.display = sharedCart ? 'none' : '';
+
+  if (sharedCart) {
+    const sharedItems = sharedCartItems;
+    if (sharedItems.length === 0) {
+      listEl.innerHTML = `<div class="cart-empty">${t().cartEmpty}</div>`;
+      if (totalValue) totalValue.textContent = formatPrice(0);
+      if (showStaffBtn) showStaffBtn.style.display = 'none';
+      if (clearBtn) clearBtn.style.display = 'none';
+      return;
+    }
+    if (showStaffBtn) showStaffBtn.style.display = 'flex';
+    if (clearBtn) clearBtn.style.display = 'block';
+    listEl.innerHTML = sharedItems.map(row => {
+      const item = getItemByRef(row.item_id);
+      const nm   = item ? item.name[currentLang] : row.item_name;
+      const price = item ? (parsePriceToNumber(item.price) || 0) : (row.item_price || 0);
+      const lineTotal = price * row.quantity;
+      const isOwn = row.member_name === sharedMemberName;
+      const safeId = row.item_id.replace(/"/g,'');
+      return `
+        <div class="cart-list-item">
+          <span class="cart-item-qty">${row.quantity}×</span>
+          <div class="cart-item-name-col">
+            <span class="cart-item-name">${nm}</span>
+            <span class="cart-item-member">adicionado por ${row.member_name}</span>
+          </div>
+          <span class="cart-item-price">${formatPrice(lineTotal)}</span>
+          <div class="cart-item-controls"${isOwn ? '' : ' style="visibility:hidden"'}>
+            <button class="cart-qty-btn" data-cart-decrement="${safeId}" aria-label="Menos">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <button class="cart-qty-btn" data-cart-increment="${safeId}" aria-label="Mais">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+    if (totalValue) totalValue.textContent = formatPrice(getCartTotal());
+    return;
+  }
 
   if (cart.length === 0) {
     listEl.innerHTML = `<div class="cart-empty">${t().cartEmpty}</div>`;
@@ -2309,11 +2441,12 @@ function updateOpenItemModalControls() {
 
 // STAFF VIEW — fullscreen
 function openStaffView() {
-  if (cart.length === 0) return;
+  if (getCartItemCount() === 0) return;
 
   track('order_placed', {
-    item_count: cart.reduce((s, e) => s + e.qty, 0),
+    item_count: getCartItemCount(),
     order_total: getCartTotal(),
+    shared: sharedCart !== null,
   });
 
   const staffView = document.getElementById('staff-view');
@@ -3087,13 +3220,28 @@ function renderStaffHistory() {
   const historyEl = document.getElementById('staff-history');
   if (!historyEl) return;
 
+  const rows = sharedCart
+    ? sharedCartItems.map(row => ({
+        qty: row.quantity,
+        name: (getItemByRef(row.item_id)?.name[currentLang]) || row.item_name,
+        note: row.note || '',
+        member: row.member_name,
+      }))
+    : cart.map(entry => {
+        const item = getItemByRef(entry.refId);
+        return item ? { qty: entry.qty, name: item.name[currentLang], note: '', member: null } : null;
+      }).filter(Boolean);
+
   historyEl.innerHTML = `
     <div class="staff-order-block">
-      ${cart.map(entry => {
-        const item = getItemByRef(entry.refId);
-        if (!item) return '';
-        return `<div class="staff-list-item"><span class="staff-list-qty">${entry.qty}×</span><span class="staff-list-name">${item.name[currentLang]}</span></div>`;
-      }).join('')}
+      ${rows.map(r => `
+        <div class="staff-list-item">
+          <span class="staff-list-qty">${r.qty}×</span>
+          <div class="staff-list-name-wrap">
+            <span class="staff-list-name">${r.name}</span>
+            ${r.member ? `<span class="staff-item-member">${r.member}</span>` : ''}
+          </div>
+        </div>`).join('')}
     </div>`;
 }
 
@@ -3224,11 +3372,13 @@ document.addEventListener('DOMContentLoaded', () => {
   detectLang();
   initAnalytics();
   renderAll();
+  showLangPrompt();
   track('menu_opened', {
     espaco_tipo: (typeof ESPACO_TIPO !== 'undefined' ? ESPACO_TIPO : 'rest'),
     menu_language: currentLang,
   });
   setupLanguage();
+  setupSharedCart();
   setupQuickNav();
   setupSearch();
   setupDietFilter();
@@ -3288,6 +3438,395 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 30000);
 });
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   15. SHARED CART — Mesa em Grupo
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function generateCartCode() {
+  const C = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 4}, () => C[Math.floor(Math.random() * C.length)]).join('');
+}
+
+async function loadSupabase() {
+  if (_supabaseClient) return _supabaseClient;
+  const { supabaseUrl, supabaseAnonKey } = CONFIG;
+  if (!supabaseUrl || !supabaseAnonKey) throw new Error('Supabase not configured');
+  if (typeof window.supabase !== 'undefined') {
+    _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+    return _supabaseClient;
+  }
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s.onload = () => {
+      _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+      resolve(_supabaseClient);
+    };
+    s.onerror = () => reject(new Error('Failed to load Supabase'));
+    document.head.appendChild(s);
+  });
+}
+
+function showCartToast(msg) {
+  let el = document.getElementById('nexo-cart-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'nexo-cart-toast';
+    el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);'
+      + 'background:rgba(20,20,20,0.92);color:#fff;font-size:13px;padding:8px 16px;'
+      + 'border-radius:20px;z-index:99998;opacity:0;transition:opacity 0.25s;pointer-events:none;'
+      + 'max-width:280px;text-align:center;white-space:pre-wrap;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 3500);
+}
+
+/* ─── Supabase ops ─── */
+async function syncSharedCartItems() {
+  if (!sharedCart) return;
+  try {
+    const sb = await loadSupabase();
+    const { data, error } = await sb
+      .from('shared_cart_items')
+      .select('*')
+      .eq('cart_id', sharedCart.id)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    sharedCartItems = data || [];
+  } catch (e) {
+    console.warn('[SharedCart] sync error', e);
+  }
+  onCartChange();
+}
+
+async function subscribeSharedCart(cartId) {
+  const sb = await loadSupabase();
+  if (_sharedCartChannel) { try { sb.removeChannel(_sharedCartChannel); } catch (_) {} }
+  _sharedCartChannel = sb.channel('nexo-cart-' + cartId)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'shared_cart_items',
+      filter: 'cart_id=eq.' + cartId,
+    }, () => syncSharedCartItems())
+    .subscribe(status => {
+      if (status === 'CHANNEL_ERROR') showCartToast('Ligação perdida — a tentar reconectar...');
+    });
+}
+
+async function sharedAddToCart(refId) {
+  const item = getItemByRef(refId);
+  if (!item) return;
+  const existing = sharedCartItems.find(r => r.item_id === refId && r.member_name === sharedMemberName);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    sharedCartItems.push({
+      id: 'opt-' + Date.now(),
+      cart_id: sharedCart.id,
+      member_name: sharedMemberName,
+      item_id: refId,
+      item_name: item.name.pt || item.name[currentLang],
+      item_price: parsePriceToNumber(item.price) || 0,
+      quantity: 1,
+      note: null,
+      created_at: new Date().toISOString(),
+    });
+  }
+  onCartChange();
+  try {
+    const sb = await loadSupabase();
+    if (existing && !String(existing.id).startsWith('opt-')) {
+      const { error } = await sb.from('shared_cart_items')
+        .update({ quantity: existing.quantity }).eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await sb.from('shared_cart_items').insert({
+        cart_id: sharedCart.id,
+        member_name: sharedMemberName,
+        item_id: refId,
+        item_name: item.name.pt || item.name[currentLang],
+        item_price: parsePriceToNumber(item.price) || 0,
+        quantity: 1,
+        note: null,
+      });
+      if (error) throw error;
+    }
+    track('item_added', { item_name: item.name.pt, item_category: refId.split(':')[0], item_price: parsePriceToNumber(item.price) || 0 });
+    await syncSharedCartItems();
+  } catch (e) {
+    console.warn('[SharedCart] add error', e);
+    showCartToast('Erro ao adicionar item');
+    await syncSharedCartItems();
+  }
+}
+
+async function sharedDecrementCart(refId) {
+  const existing = sharedCartItems.find(r => r.item_id === refId && r.member_name === sharedMemberName);
+  if (!existing) return;
+  const prevQty = existing.quantity;
+  if (existing.quantity <= 1) {
+    sharedCartItems = sharedCartItems.filter(r => r !== existing);
+  } else {
+    existing.quantity -= 1;
+  }
+  onCartChange();
+  try {
+    const sb = await loadSupabase();
+    if (prevQty <= 1) {
+      const { error } = await sb.from('shared_cart_items').delete().eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await sb.from('shared_cart_items')
+        .update({ quantity: existing.quantity }).eq('id', existing.id);
+      if (error) throw error;
+    }
+    await syncSharedCartItems();
+  } catch (e) {
+    console.warn('[SharedCart] decrement error', e);
+    showCartToast('Erro ao atualizar item');
+    await syncSharedCartItems();
+  }
+}
+
+async function sharedRemoveFromCart(refId) {
+  const existing = sharedCartItems.find(r => r.item_id === refId && r.member_name === sharedMemberName);
+  if (!existing) return;
+  sharedCartItems = sharedCartItems.filter(r => r !== existing);
+  onCartChange();
+  try {
+    const sb = await loadSupabase();
+    const { error } = await sb.from('shared_cart_items').delete().eq('id', existing.id);
+    if (error) throw error;
+    await syncSharedCartItems();
+  } catch (e) {
+    console.warn('[SharedCart] remove error', e);
+    await syncSharedCartItems();
+  }
+}
+
+async function sharedClearCart() {
+  sharedCartItems = sharedCartItems.filter(r => r.member_name !== sharedMemberName);
+  onCartChange();
+  try {
+    const sb = await loadSupabase();
+    const { error } = await sb.from('shared_cart_items')
+      .delete().eq('cart_id', sharedCart.id).eq('member_name', sharedMemberName);
+    if (error) throw error;
+    await syncSharedCartItems();
+  } catch (e) {
+    console.warn('[SharedCart] clear error', e);
+    await syncSharedCartItems();
+  }
+}
+
+/* ─── Create / Join / Leave ─── */
+async function createSharedCart(name, code) {
+  const sb = await loadSupabase();
+  const { data: exists } = await sb.from('shared_carts').select('id')
+    .eq('espaco_slug', CONFIG.slug).eq('code', code).maybeSingle();
+  if (exists) code = generateCartCode();
+
+  const { data, error } = await sb.from('shared_carts')
+    .insert({ espaco_slug: CONFIG.slug, code })
+    .select().single();
+  if (error) throw error;
+
+  sharedCart = { id: data.id, code: data.code };
+  sharedMemberName = name;
+  localStorage.setItem('nexo_member_name', name);
+
+  for (const entry of cart) {
+    const item = getItemByRef(entry.refId);
+    if (!item) continue;
+    await sb.from('shared_cart_items').insert({
+      cart_id: data.id,
+      member_name: name,
+      item_id: entry.refId,
+      item_name: item.name.pt || item.name[currentLang],
+      item_price: parsePriceToNumber(item.price) || 0,
+      quantity: entry.qty,
+      note: entry.note || null,
+    });
+  }
+  cart = [];
+
+  await subscribeSharedCart(data.id);
+  await syncSharedCartItems();
+  track('shared_cart_created', { espaco_slug: CONFIG.slug });
+}
+
+async function joinSharedCart(code, name) {
+  const sb = await loadSupabase();
+  const { data, error } = await sb.from('shared_carts').select('*')
+    .eq('espaco_slug', CONFIG.slug)
+    .eq('code', code.toUpperCase().trim())
+    .gte('expires_at', new Date().toISOString())
+    .maybeSingle();
+  if (error || !data) throw new Error('cart_not_found');
+
+  sharedCart = { id: data.id, code: data.code };
+  sharedMemberName = name;
+  localStorage.setItem('nexo_member_name', name);
+
+  await subscribeSharedCart(data.id);
+  await syncSharedCartItems();
+
+  const members = new Set(sharedCartItems.map(i => i.member_name));
+  track('shared_cart_joined', { espaco_slug: CONFIG.slug, member_count: members.size });
+}
+
+async function leaveSharedCart() {
+  if (_sharedCartChannel) {
+    try { const sb = await loadSupabase(); sb.removeChannel(_sharedCartChannel); } catch (_) {}
+    _sharedCartChannel = null;
+  }
+  sharedCart = null;
+  sharedMemberName = '';
+  sharedCartItems = [];
+  cart = [];
+  onCartChange();
+}
+
+/* ─── UI helpers ─── */
+function renderSharedCartHeader() {
+  const el = document.getElementById('nexo-shared-cart-header');
+  if (!el) return;
+  if (!sharedCart) { el.style.display = 'none'; return; }
+  const members = [...new Set(sharedCartItems.map(r => r.member_name))];
+  el.style.display = 'flex';
+  el.innerHTML =
+    `<span>👥 Carrinho de mesa · <strong>${sharedCart.code}</strong></span>`
+    + `<span class="shared-cart-members">${members.length} ${members.length === 1 ? 'pessoa' : 'pessoas'}</span>`
+    + `<button class="shared-cart-leave-btn" id="nexo-shared-leave-btn">Sair</button>`;
+  document.getElementById('nexo-shared-leave-btn')?.addEventListener('click', () => {
+    if (confirm('Sair do carrinho de mesa? O teu pedido não será enviado.')) leaveSharedCart();
+  });
+}
+
+function _showSharedView(view) {
+  ['initial', 'create', 'join'].forEach(v => {
+    const el = document.getElementById('nexo-shared-view-' + v);
+    if (el) el.style.display = v === view ? '' : 'none';
+  });
+  if (view === 'create') {
+    _pendingCartCode = generateCartCode();
+    const codeEl = document.getElementById('nexo-shared-code-display');
+    if (codeEl) codeEl.textContent = _pendingCartCode;
+    const savedName = localStorage.getItem('nexo_member_name') || '';
+    const nameEl = document.getElementById('nexo-shared-create-name');
+    if (nameEl && !nameEl.value) nameEl.value = savedName;
+    setTimeout(() => document.getElementById('nexo-shared-create-name')?.focus(), 100);
+  }
+  if (view === 'join') {
+    const savedName = localStorage.getItem('nexo_member_name') || '';
+    const nameEl = document.getElementById('nexo-shared-join-name');
+    if (nameEl && !nameEl.value) nameEl.value = savedName;
+    setTimeout(() => document.getElementById('nexo-shared-join-code')?.focus(), 100);
+  }
+}
+
+function openSharedCartSheet() {
+  const sheet = document.getElementById('nexo-shared-sheet');
+  if (!sheet) return;
+  _showSharedView('initial');
+  sheet.classList.remove('hidden');
+  requestAnimationFrame(() => sheet.classList.add('open'));
+}
+
+function closeSharedCartSheet() {
+  const sheet = document.getElementById('nexo-shared-sheet');
+  if (!sheet) return;
+  sheet.classList.remove('open');
+  setTimeout(() => sheet.classList.add('hidden'), 350);
+}
+
+function setupSharedCart() {
+  const hasSupabase = CONFIG.supabaseUrl
+    && CONFIG.supabaseAnonKey
+    && CONFIG.supabaseUrl !== '{{SUPABASE_URL}}'
+    && CONFIG.supabaseAnonKey !== '{{SUPABASE_ANON_KEY}}';
+
+  const trigger = document.getElementById('nexo-shared-cart-trigger');
+
+  if (!hasSupabase || CONFIG.features?.sharedCart === false) {
+    if (trigger) trigger.style.display = 'none';
+    return;
+  }
+
+  if (trigger) {
+    trigger.addEventListener('click', () => {
+      haptic();
+      closeModal('cart-sheet');
+      openSharedCartSheet();
+    });
+  }
+
+  const sheet    = document.getElementById('nexo-shared-sheet');
+  const backdrop = sheet?.querySelector('.nexo-sheet-backdrop');
+  const closeBtn = document.getElementById('nexo-shared-close');
+
+  if (closeBtn)  closeBtn.addEventListener('click',  closeSharedCartSheet);
+  if (backdrop)  backdrop.addEventListener('click',  closeSharedCartSheet);
+
+  // Create flow
+  document.getElementById('nexo-shared-create-btn')?.addEventListener('click', () => {
+    _showSharedView('create');
+  });
+
+  document.getElementById('nexo-shared-create-confirm')?.addEventListener('click', async () => {
+    const nameInput = document.getElementById('nexo-shared-create-name');
+    const name = nameInput?.value.trim() || 'Convidado';
+    const btn = document.getElementById('nexo-shared-create-confirm');
+    if (btn) { btn.disabled = true; btn.textContent = 'A criar...'; }
+    try {
+      await createSharedCart(name, _pendingCartCode || generateCartCode());
+      closeSharedCartSheet();
+      setTimeout(() => openModal('cart-sheet'), 200);
+    } catch (e) {
+      console.error('[SharedCart] create error', e);
+      showCartToast('Erro ao criar carrinho. Tenta novamente.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Criar'; }
+    }
+  });
+
+  // Join flow
+  document.getElementById('nexo-shared-join-btn')?.addEventListener('click', () => {
+    _showSharedView('join');
+  });
+
+  const joinCode  = document.getElementById('nexo-shared-join-code');
+  const joinError = document.getElementById('nexo-shared-join-error');
+
+  if (joinCode) {
+    joinCode.addEventListener('input', () => {
+      joinCode.value = joinCode.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 4);
+      if (joinError) joinError.style.display = 'none';
+    });
+  }
+
+  document.getElementById('nexo-shared-join-confirm')?.addEventListener('click', async () => {
+    const code = joinCode?.value.trim() || '';
+    const name = document.getElementById('nexo-shared-join-name')?.value.trim() || 'Convidado';
+    const btn  = document.getElementById('nexo-shared-join-confirm');
+    if (code.length !== 4) { joinCode?.focus(); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'A juntar...'; }
+    if (joinError) joinError.style.display = 'none';
+    try {
+      await joinSharedCart(code, name);
+      closeSharedCartSheet();
+      setTimeout(() => openModal('cart-sheet'), 200);
+    } catch (e) {
+      if (joinError) { joinError.textContent = 'Código não encontrado. Confirma com a mesa.'; joinError.style.display = 'block'; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Juntar'; }
+    }
+  });
+}
 
 
 

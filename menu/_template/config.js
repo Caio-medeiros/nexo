@@ -59,6 +59,11 @@ const CONFIG = {
      Deixar vazio '' para desativar o botão. */
   callStaffTopic: '{{CALL_STAFF_TOPIC}}',
 
+  /* Supabase — necessário para Carrinho de Mesa (Shared Cart)
+     Preencher com as credenciais do projeto Supabase. Deixar vazio para desativar. */
+  supabaseUrl: 'https://kgbrtbpeekhkroibsgqq.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYnJ0YnBlZWtoa3JvaWJzZ3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDAwMTMsImV4cCI6MjA5NjYxNjAxM30.vFvSLysnS3456WWKa2a659YuIVuOceYHG4NMd79Jerc',
+
   tagline: {
     pt: "Restaurante, cervejaria e marisqueira",
     en: "Restaurant, brewery and seafood house",
@@ -672,6 +677,8 @@ const CONFIG = {
   features: {
     callStaff: true,
     // Set false to hide "Chamar Empregado" button entirely
+    sharedCart: true,
+    // Set false to disable Shared Cart (Mesa em Grupo) feature
   }
 };
 

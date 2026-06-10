@@ -503,6 +503,8 @@
 
       <!-- Panel: Pedido -->
       <div class="cart-panel" id="panel-order">
+        <button id="nexo-shared-cart-trigger" class="nexo-shared-trigger" type="button">👥 Mesa em grupo? <span>Partilhar carrinho</span></button>
+        <div id="nexo-shared-cart-header" class="nexo-shared-header" style="display:none"></div>
         <div class="cart-notes-badge" id="cart-notes-badge" style="display:none">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
           <span id="cart-notes-badge-text"></span>
@@ -700,6 +702,61 @@
       </div>
     </div>
   </div>
+
+  <!-- SHARED CART — bottom sheet -->
+  <div id="nexo-shared-sheet" class="nexo-sheet-overlay hidden" role="dialog" aria-modal="true">
+    <div class="nexo-sheet-backdrop"></div>
+    <div class="nexo-sheet-card">
+      <div class="nexo-sheet-handle"></div>
+      <div class="nexo-sheet-header">
+        <span class="nexo-sheet-title">👥 Carrinho de Mesa</span>
+        <button class="nexo-sheet-close" id="nexo-shared-close" aria-label="Fechar">✕</button>
+      </div>
+      <div id="nexo-shared-view-initial" class="nexo-sheet-body">
+        <p class="nexo-shared-intro">Partilha o carrinho com toda a mesa para um pedido conjunto.</p>
+        <div class="nexo-sheet-footer" style="padding-left:0;padding-right:0">
+          <button id="nexo-shared-create-btn" class="nexo-call-send-btn" type="button">Criar carrinho de mesa</button>
+          <button id="nexo-shared-join-btn" class="nexo-call-send-btn nexo-shared-join-ghost" type="button" style="margin-top:10px">Juntar-me a um carrinho</button>
+        </div>
+      </div>
+      <div id="nexo-shared-view-create" class="nexo-sheet-body" style="display:none">
+        <p class="nexo-shared-sub">Partilhe este código com a mesa</p>
+        <div id="nexo-shared-code-display" class="nexo-shared-code">—</div>
+        <div class="nexo-sheet-footer" style="padding-left:0;padding-right:0;padding-top:16px">
+          <button id="nexo-shared-create-confirm" class="nexo-call-send-btn" type="button">Criar</button>
+        </div>
+      </div>
+      <div id="nexo-shared-view-join" class="nexo-sheet-body" style="display:none">
+        <p class="nexo-call-field-label">Código da mesa</p>
+        <input id="nexo-shared-join-code" type="text" class="nexo-call-table-input nexo-shared-code-input"
+          placeholder="A4F7" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" inputmode="text">
+        <p id="nexo-shared-join-error" class="nexo-shared-error" style="display:none"></p>
+        <div class="nexo-sheet-footer" style="padding-left:0;padding-right:0;padding-top:16px">
+          <button id="nexo-shared-join-confirm" class="nexo-call-send-btn" type="button">Juntar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+  .nexo-shared-trigger{display:flex;align-items:center;gap:6px;width:100%;padding:9px 0;background:none;border:none;border-bottom:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;text-align:left;margin-bottom:8px;font-family:var(--font-ui);-webkit-tap-highlight-color:transparent;}
+  .nexo-shared-trigger span{color:var(--accent);font-weight:500;}
+  .nexo-shared-header{display:flex;align-items:center;gap:8px;padding:8px 0 10px;font-size:13px;border-bottom:1px solid var(--border);margin-bottom:8px;flex-wrap:wrap;}
+  .nexo-shared-header strong{font-family:monospace;letter-spacing:0.15em;}
+  .shared-cart-members{color:var(--muted);font-size:12px;}
+  .shared-cart-leave-btn{margin-left:auto;background:none;border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--font-ui);}
+  .cart-item-name-col{display:flex;flex-direction:column;flex:1;min-width:0;}
+  .cart-item-member{display:block;font-size:11px;color:var(--muted);margin-top:1px;}
+  .cart-item-note-readonly{display:block;font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;}
+  .staff-item-member{display:block;font-size:11px;color:rgba(255,255,255,0.45);margin-top:1px;}
+  .nexo-shared-intro{color:rgba(255,255,255,0.55);font-size:14px;margin:0 0 24px;line-height:1.5;}
+  .nexo-shared-sub{color:rgba(255,255,255,0.55);font-size:13px;text-align:center;margin:0 0 8px;}
+  .nexo-shared-code{font-size:36px;font-weight:700;letter-spacing:0.3em;font-family:monospace;text-align:center;color:white;padding:12px 0 24px;}
+  .nexo-shared-code-input{width:100%;text-align:center;font-size:28px !important;letter-spacing:0.3em;font-family:monospace;}
+  .nexo-shared-name-input{width:100%;border-radius:10px !important;font-size:20px !important;}
+  .nexo-shared-join-ghost{background:transparent !important;border:1px solid rgba(255,255,255,0.2) !important;color:white !important;}
+  .nexo-shared-error{color:#ff6b6b;font-size:13px;margin:8px 0 0;}
+  </style>
 
   <script src="config.js"></script>
   <script src="script.js"></script>

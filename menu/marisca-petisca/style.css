@@ -1745,7 +1745,7 @@ a { color: inherit; text-decoration: none; }
 .modal-overlay.show { display: flex; }
 
 .modal {
-  background: var(--bg);
+  background: var(--bg-alt);
   width: 100%;
   max-width: 520px;
   border-radius: var(--r-lg) var(--r-lg) 0 0;
@@ -2574,7 +2574,7 @@ body.has-cart {
 .cart-sheet-overlay { align-items: flex-end; }
 
 .cart-sheet {
-  background: var(--bg);
+  background: var(--bg-alt);
   padding: var(--s3) 0 0;
   max-height: 85vh;
   display: flex;
@@ -4723,6 +4723,12 @@ body.has-cart {
   margin-top: 2px;
 }
 
+.confirm-item-member-tag {
+  font-size: 11px;
+  color: rgba(255,255,255,0.38);
+  margin-top: 1px;
+}
+
 .confirm-item-price {
   font-size: 14px;
   font-weight: 500;
@@ -5062,7 +5068,7 @@ body.has-cart {
 
 .nexo-sheet-card {
   position: relative;
-  background: #071428;
+  background: #040E1E;
   border-radius: 20px 20px 0 0;
   border-top: 1px solid rgba(255,255,255,0.08);
   padding-bottom: env(safe-area-inset-bottom);
