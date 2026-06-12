@@ -1,0 +1,359 @@
+// NEXO Portal — shared utils + auth + layout
+// Requires: @supabase/supabase-js CDN + icons.js loaded before this file.
+// ─────────────────────────────────────────────────────────
+
+// ─── SUPABASE ────────────────────────────
+const SUPABASE_URL = 'https://kgbrtbpeekhkroibsgqq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYnJ0YnBlZWtoa3JvaWJzZ3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDAwMTMsImV4cCI6MjA5NjYxNjAxM30.vFvSLysnS3456WWKa2a659YuIVuOceYHG4NMd79Jerc';
+
+let db = null;
+if (typeof supabase === 'undefined') {
+  console.error('NEXO Portal: Supabase CDN não carregou.');
+} else {
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+
+// ─── AUTH ─────────────────────────────────
+async function requireAuth() {
+  if (!db) {
+    showToast('Sem ligação. Verifique a internet e recarregue.', 'error');
+    return null;
+  }
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) {
+    window.location.href = '/portal/?redirect=' +
+      encodeURIComponent(window.location.pathname);
+    return null;
+  }
+  return session;
+}
+
+async function getClientData() {
+  const session = await requireAuth();
+  if (!session) return null;
+
+  // 1) Cliente — query simples, sem embeds (robusta a cache/duplicados)
+  const { data: clients, error } = await db
+    .from('clients')
+    .select('*')
+    .eq('auth_user_id', session.user.id)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    renderFatalError('Erro ao carregar dados. Tente novamente.', error);
+    return null;
+  }
+  if (!clients || clients.length === 0) {
+    renderFatalError('A sua conta ainda não está configurada. Contacte a NEXO para activar o portal.');
+    return null;
+  }
+
+  const client = clients[0];
+
+  // 2) Menus + onboarding em paralelo — falhas aqui NÃO derrubam o portal
+  const [menusRes, obRes] = await Promise.all([
+    db.from('menus').select('*').eq('client_id', client.id),
+    db.from('onboarding').select('*').eq('client_id', client.id).maybeSingle(),
+  ]);
+  if (menusRes.error) console.warn('portal: menus indisponíveis', menusRes.error);
+  if (obRes.error) console.warn('portal: onboarding indisponível', obRes.error);
+
+  client.menus = menusRes.data || [];
+  client.onboarding = obRes.error ? null : obRes.data;
+  client._session = session;
+
+  // 3) Personalização: marca do cliente aplicada ao portal
+  applyClientBrand(client);
+
+  return client;
+}
+
+// Aplica a identidade do cliente (cor da marca do config do menu)
+async function applyClientBrand(client) {
+  try {
+    const slug = client?.menus?.[0]?.slug;
+    if (!slug) return;
+    const res = await fetch(`/menu/${slug}/config.js`, { cache: 'force-cache' });
+    if (!res.ok) return;
+    const text = await res.text();
+    const CONFIG = new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
+    if (CONFIG && CONFIG.brandColor) {
+      document.documentElement.style.setProperty('--brand', CONFIG.brandColor);
+      document.body.classList.add('has-brand');
+    }
+  } catch (_) { /* personalização é opcional */ }
+}
+
+function renderFatalError(message, error) {
+  const main = document.querySelector('.portal-main');
+  const detail = error
+    ? `<p class="empty-sub mono" style="margin-top:10px;word-break:break-word">${escapeHtml(
+        (error.code ? error.code + ' — ' : '') + (error.message || '') +
+        (error.details ? ' · ' + error.details : '') +
+        (error.hint ? ' · ' + error.hint : ''))}</p>`
+    : '';
+  if (!main) { showToast(message, 'error'); return; }
+  main.innerHTML = `
+    <div class="empty-state card" style="margin-top:40px">
+      ${getIcon('alert-triangle')}
+      <p class="empty-title">${message}</p>
+      <p class="empty-sub">Se o problema persistir, saia e volte a entrar.</p>
+      ${detail}
+      <div class="flex gap-2" style="margin-top:14px">
+        <button class="btn btn-secondary btn-sm" onclick="window.location.reload()">Tentar novamente</button>
+        <button class="btn btn-secondary btn-sm" onclick="signOut()">Sair</button>
+      </div>
+    </div>`;
+}
+
+async function signOut() {
+  if (db) await db.auth.signOut();
+  window.location.href = '/portal/';
+}
+
+// ─── TOAST ────────────────────────────────
+function showToast(message, type = 'info', duration = 3000) {
+  const container = document.getElementById('toast-container') || createToastContainer();
+
+  // max 3 stacked
+  while (container.children.length >= 3) container.firstChild.remove();
+
+  const toast = document.createElement('div');
+  toast.className = `nexo-toast nexo-toast--${type}`;
+  const icons = { success: '✓', error: '✕', info: 'ℹ', warning: '⚠' };
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] ?? 'ℹ'}</span>
+    <span class="toast-message">${message}</span>`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('visible'));
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+function createToastContainer() {
+  const el = document.createElement('div');
+  el.id = 'toast-container';
+  el.className = 'nexo-toast-container';
+  document.body.appendChild(el);
+  return el;
+}
+
+// ─── SKELETON ────────────────────────────
+function skeleton(width = '100%', height = '16px') {
+  return `<div class="nexo-skeleton" style="width:${width};height:${height}"></div>`;
+}
+
+// ─── COPY ────────────────────────────────
+async function copyToClipboard(text, button) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_) {
+    showToast('Não foi possível copiar.', 'error');
+    return;
+  }
+  if (button) {
+    const original = button.innerHTML;
+    button.innerHTML = '✓ Copiado';
+    button.disabled = true;
+    setTimeout(() => {
+      button.innerHTML = original;
+      button.disabled = false;
+    }, 2000);
+  } else {
+    showToast('Copiado para a área de transferência.', 'success');
+  }
+}
+
+// ─── RELATIVE TIME ───────────────────────
+function timeAgo(dateStr) {
+  const seconds = Math.floor((new Date() - new Date(dateStr)) / 1000);
+  if (seconds < 60) return 'agora mesmo';
+  if (seconds < 3600) return `há ${Math.floor(seconds / 60)} min`;
+  if (seconds < 86400) return `há ${Math.floor(seconds / 3600)}h`;
+  return new Date(dateStr).toLocaleDateString('pt-PT');
+}
+
+// ─── FORMAT ──────────────────────────────
+function formatEUR(value) {
+  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
+    .format(Number(value) || 0);
+}
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ─── BUTTON LOADING ──────────────────────
+function setLoading(btn, loading, label) {
+  if (!btn) return;
+  if (loading) {
+    btn.dataset.origLabel = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span>${label || 'A carregar...'}`;
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn.dataset.origLabel || label || '';
+  }
+}
+
+// ─── CONFIRM MODAL ───────────────────────
+function confirmModal({ title, body, confirmLabel = 'Confirmar', danger = false }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true" aria-label="${escapeHtml(title)}">
+        <div class="modal-title">${escapeHtml(title)}</div>
+        <div class="modal-body">${escapeHtml(body)}</div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" data-cancel>Cancelar</button>
+          <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-confirm>${escapeHtml(confirmLabel)}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+
+    const close = (result) => {
+      overlay.classList.remove('visible');
+      setTimeout(() => overlay.remove(), 200);
+      resolve(result);
+    };
+    overlay.querySelector('[data-cancel]').addEventListener('click', () => close(false));
+    overlay.querySelector('[data-confirm]').addEventListener('click', () => close(true));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+    document.addEventListener('keydown', function esc(e) {
+      if (e.key === 'Escape') { close(false); document.removeEventListener('keydown', esc); }
+    });
+  });
+}
+
+// ─── MENU URL ────────────────────────────
+function getMenuUrl(clientData) {
+  const menu = clientData?.menus?.[0];
+  if (!menu) return '#';
+  return menu.url || `/menu/${menu.slug}/`;
+}
+
+function getMenuSlug(clientData) {
+  return clientData?.menus?.[0]?.slug || null;
+}
+
+// ─── LAYOUT ──────────────────────────────
+function renderLayout(activeNav, clientData) {
+  const nav = document.getElementById('portal-nav');
+  const sidebar = document.getElementById('portal-sidebar');
+  if (!nav || !sidebar || !clientData) return;
+
+  const menuUrl = getMenuUrl(clientData);
+  const ownerName = (clientData.owner_name || '').split(' ')[0] || 'Cliente';
+  const initials = ownerName.slice(0, 2).toUpperCase();
+
+  nav.innerHTML = `
+    <a href="/portal/dashboard/" class="portal-logo">NEXO.</a>
+    <span class="portal-client-name">${escapeHtml(clientData.name)}</span>
+    <div class="portal-nav-right">
+      <a href="${menuUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+        Ver Menu →
+      </a>
+      <div class="portal-avatar" id="avatar-toggle" role="button" tabindex="0" aria-haspopup="true">${initials}
+        <div class="portal-dropdown" id="avatar-dropdown">
+          <div class="dropdown-email">${escapeHtml(clientData.owner_name || clientData.name)}</div>
+          <button onclick="signOut()" class="dropdown-item dropdown-item--danger">Sair</button>
+        </div>
+      </div>
+    </div>`;
+
+  const navItems = [
+    { href: '/portal/dashboard/', icon: 'grid', label: 'Dashboard' },
+    { href: '/portal/staff/', icon: 'monitor', label: 'Modo Staff' },
+    { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
+    { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu' },
+    { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
+    { href: '/portal/alteracoes/', icon: 'clock', label: 'Alterações' },
+    { href: '/portal/referencias/', icon: 'gift', label: 'Referências' },
+  ];
+
+  sidebar.innerHTML = navItems.map(item => `
+    <a href="${item.href}"
+       class="sidebar-item ${activeNav === item.href ? 'active' : ''}"
+       ${activeNav === item.href ? 'aria-current="page"' : ''}>
+      ${getIcon(item.icon)}
+      <span>${item.label}</span>
+    </a>`).join('');
+
+  // Avatar dropdown toggle
+  const toggle = document.getElementById('avatar-toggle');
+  const dropdown = document.getElementById('avatar-dropdown');
+  if (toggle && dropdown) {
+    const open = (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle('visible');
+    };
+    toggle.addEventListener('click', open);
+    toggle.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); }
+    });
+    document.addEventListener('click', () => dropdown.classList.remove('visible'));
+  }
+}
+
+// ─── MENU CONFIG PARSER ──────────────────
+// Fetches /menu/{slug}/config.js (same origin) and extracts the
+// items list. Item id = "{sectionId}:{index}" — same refId the
+// menu uses internally.
+async function loadMenuItems(slug) {
+  if (!slug) return null;
+  try {
+    const res = await fetch(`/menu/${slug}/config.js`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    // config.js defines `const CONFIG = {...}` (+ helper `P`).
+    // Evaluate in an isolated function scope and return CONFIG.
+    const CONFIG = new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
+    if (!CONFIG || !Array.isArray(CONFIG.menu)) return null;
+
+    return CONFIG.menu.map(section => ({
+      id: section.id,
+      name: (section.section && (section.section.pt || section.section.en)) || section.id,
+      items: (section.items || []).map((item, idx) => ({
+        id: `${section.id}:${idx}`,
+        name: (item.name && (item.name.pt || item.name.en)) || `Item ${idx + 1}`,
+        price: item.price || '',
+      })),
+    }));
+  } catch (err) {
+    console.error('loadMenuItems', err);
+    return null;
+  }
+}
+
+// ─── REALTIME HELPERS ────────────────────
+// Tracks channels for cleanup + shows reconnecting state on the
+// element with id "live-indicator" (if present).
+const _nexoChannels = [];
+
+function trackChannel(channel) {
+  _nexoChannels.push(channel);
+  return channel;
+}
+
+function setLiveState(state) {
+  const el = document.getElementById('live-indicator');
+  if (!el) return;
+  if (state === 'connected') {
+    el.classList.remove('reconnecting');
+    el.querySelector('.live-text').textContent = 'Em directo';
+  } else {
+    el.classList.add('reconnecting');
+    el.querySelector('.live-text').textContent = 'A religar...';
+  }
+}
+
+window.addEventListener('beforeunload', () => {
+  _nexoChannels.forEach(ch => { try { db.removeChannel(ch); } catch (_) {} });
+});

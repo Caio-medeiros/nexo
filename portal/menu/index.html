@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Editar Menu — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+  <style>
+    .menu-section-card { margin-bottom: 18px; }
+    .section-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+    .section-name { font-size: 14px; font-weight: 700; }
+    .section-count { font-size: 12px; color: var(--text-muted); }
+
+    .item-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .item-row:last-child { border-bottom: none; }
+    .item-row.is-hidden { opacity: 0.45; }
+    .item-row.is-hidden .item-name { text-decoration: line-through; }
+    .item-thumb {
+      width: 48px; height: 48px; flex-shrink: 0; border-radius: 10px;
+      background: var(--bg-elevated); border: 1px solid var(--border-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: var(--text-muted);
+      object-fit: cover; overflow: hidden;
+    }
+    img.item-thumb { object-fit: cover; }
+    .item-info { flex: 1; min-width: 0; }
+    .item-name { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .item-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px;
+                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 480px; }
+    .item-price { font-size: 13px; color: var(--text-secondary); flex-shrink: 0; min-width: 64px; text-align: right; }
+    .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .add-item-btn { margin-top: 10px; }
+
+    /* editor modal */
+    .editor-modal { max-width: 460px; }
+    .photo-row { display: flex; align-items: center; gap: 12px; }
+    .photo-preview {
+      width: 64px; height: 64px; border-radius: 10px; flex-shrink: 0;
+      background: var(--bg-surface); border: 1px solid var(--border-md);
+      object-fit: cover;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); font-size: 11px; text-align: center;
+    }
+    @media (max-width: 768px) {
+      .item-row { flex-wrap: wrap; }
+      .item-actions { width: 100%; justify-content: flex-end; }
+      .item-desc { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="portal-nav" id="portal-nav"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar"></aside>
+
+  <main class="portal-main" id="main">
+    <div id="page-skeleton">
+      <div class="page-header"><div class="nexo-skeleton" style="width:200px;height:28px"></div></div>
+      <div class="card nexo-skeleton" style="height:200px;margin-bottom:14px"></div>
+      <div class="card nexo-skeleton" style="height:200px"></div>
+    </div>
+
+    <div id="page-content" style="display:none">
+      <div class="page-header flex-between">
+        <div>
+          <h1 class="page-title">Editar Menu</h1>
+          <p class="page-sub">Altere preços, descrições e fotos, esconda pratos ou adicione novos — fica no menu em segundos.</p>
+        </div>
+        <a class="btn btn-secondary btn-sm" id="view-menu-link" target="_blank" rel="noopener">Ver menu →</a>
+      </div>
+
+      <div id="sections"></div>
+
+      <div class="sla-notice mt-4">
+        💡 Para mudanças maiores (novas categorias, traduções profissionais, sessão de fotos),
+        use <a href="/portal/alteracoes/" style="text-decoration:underline">Pedir alteração</a> — a NEXO trata por si.
+      </div>
+    </div>
+  </main>
+
+  <!-- editor modal -->
+  <div class="modal-overlay" id="editor-overlay">
+    <div class="modal editor-modal" role="dialog" aria-modal="true">
+      <div class="modal-title" id="editor-title">Editar prato</div>
+
+      <div class="field">
+        <label class="field-label" for="ed-name">Nome do prato</label>
+        <input class="input" id="ed-name" maxlength="80" placeholder="ex: Polvo à Lagareiro">
+        <div class="field-error" id="ed-name-err" style="display:none">Indique o nome do prato.</div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="ed-desc">Descrição</label>
+        <textarea class="textarea" id="ed-desc" maxlength="200" style="min-height:70px"
+          placeholder="ex: Polvo assado no forno com batata a murro e azeite de alho"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="ed-price">Preço</label>
+        <input class="input" id="ed-price" maxlength="12" placeholder="ex: 12,50€" style="max-width:140px">
+      </div>
+
+      <div class="field">
+        <label class="field-label">Foto</label>
+        <div class="photo-row">
+          <div class="photo-preview" id="ed-photo-preview">sem foto</div>
+          <div>
+            <button class="btn btn-secondary btn-sm" id="ed-photo-btn">Carregar foto</button>
+            <button class="btn btn-secondary btn-sm" id="ed-photo-remove" style="display:none">Remover</button>
+            <div class="field-hint">JPG/PNG · máx. 3MB</div>
+          </div>
+          <input type="file" id="ed-photo-input" accept="image/*" style="display:none">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="ed-cancel">Cancelar</button>
+        <button class="btn btn-primary" id="ed-save">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/menu/', client);
+
+    const slug = getMenuSlug(client);
+    const sectionsEl = document.getElementById('sections');
+
+    document.getElementById('page-skeleton').style.display = 'none';
+    document.getElementById('page-content').style.display = 'block';
+    document.getElementById('view-menu-link').href = getMenuUrl(client);
+
+    if (!slug) {
+      sectionsEl.innerHTML = '<div class="card"><p class="text-muted text-sm">Sem menu configurado. Contacte a NEXO.</p></div>';
+      return;
+    }
+
+    // ── carregar config base do menu ─────────────────
+    let baseMenu = null; // [{id, name, items:[{name,desc,price,photo}]}]
+    try {
+      const res = await fetch(`/menu/${slug}/config.js`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const CONFIG = new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
+      if (CONFIG && Array.isArray(CONFIG.menu)) {
+        baseMenu = CONFIG.menu.map(sec => ({
+          id: sec.id,
+          name: (sec.section && (sec.section.pt || sec.section.en)) || sec.id,
+          items: (sec.items || []).map((it, idx) => ({
+            itemId: `${sec.id}:${idx}`,
+            name: (it.name && (it.name.pt || it.name.en)) || '',
+            desc: (it.desc && (it.desc.pt || it.desc.en)) || '',
+            price: it.price || '',
+            photo: it.photo || null,
+          })),
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
+    if (!baseMenu) {
+      sectionsEl.innerHTML = '<div class="card"><p class="text-danger text-sm">Não foi possível carregar a carta. Recarregue a página.</p></div>';
+      return;
+    }
+
+    // ── overrides ────────────────────────────────────
+    let overrides = new Map(); // item_id → row
+    async function loadOverrides() {
+      const { data, error } = await db.from('menu_overrides')
+        .select('*')
+        .eq('espaco_slug', slug)
+        .order('created_at', { ascending: true });
+      if (error) {
+        showToast('Erro ao carregar edições.', 'error');
+        return;
+      }
+      overrides = new Map((data || []).map(r => [r.item_id, r]));
+    }
+    await loadOverrides();
+
+    // item "efetivo" = config + override por cima
+    function effective(base) {
+      const o = overrides.get(base.itemId);
+      return {
+        itemId: base.itemId,
+        kind: 'override',
+        name: (o && o.name) || base.name,
+        desc: (o && o.description) || base.desc,
+        price: (o && o.price) || base.price,
+        photo: (o && o.photo_url) || base.photo,
+        hidden: !!(o && o.removed),
+        edited: !!(o && (o.name || o.description || o.price || o.photo_url)),
+      };
+    }
+
+    function customsFor(sectionId) {
+      return [...overrides.values()]
+        .filter(o => o.kind === 'custom' && o.section_id === sectionId && !o.removed)
+        .map(o => ({
+          itemId: o.item_id, kind: 'custom',
+          name: o.name || 'Novo prato', desc: o.description || '',
+          price: o.price || '', photo: o.photo_url || null,
+          hidden: false, edited: false,
+        }));
+    }
+
+    // ── render ───────────────────────────────────────
+    function itemRow(it) {
+      const thumb = it.photo
+        ? `<img class="item-thumb" src="${escapeHtml(it.photo)}" alt="" loading="lazy">`
+        : `<div class="item-thumb">${escapeHtml((it.name || '?')[0] || '?').toUpperCase()}</div>`;
+      const badges =
+        (it.kind === 'custom' ? '<span class="badge badge--info">novo</span>' : '') +
+        (it.edited ? '<span class="badge badge--warning">editado</span>' : '') +
+        (it.hidden ? '<span class="badge badge--muted">escondido</span>' : '');
+      const actions = it.kind === 'custom'
+        ? `<button class="btn btn-secondary btn-sm" data-edit="${it.itemId}">Editar</button>
+           <button class="btn btn-danger btn-sm" data-delete="${it.itemId}">Eliminar</button>`
+        : `<button class="btn btn-secondary btn-sm" data-edit="${it.itemId}">Editar</button>
+           <button class="btn btn-secondary btn-sm" data-toggle-hide="${it.itemId}">${it.hidden ? 'Mostrar' : 'Esconder'}</button>
+           ${it.edited ? `<button class="btn btn-secondary btn-sm" data-reset="${it.itemId}" title="Voltar à versão original">Repor</button>` : ''}`;
+      return `
+        <div class="item-row ${it.hidden ? 'is-hidden' : ''}">
+          ${thumb}
+          <div class="item-info">
+            <div class="item-name">${escapeHtml(it.name)} ${badges}</div>
+            ${it.desc ? `<div class="item-desc">${escapeHtml(it.desc)}</div>` : ''}
+          </div>
+          <div class="item-price">${escapeHtml(it.price)}</div>
+          <div class="item-actions">${actions}</div>
+        </div>`;
+    }
+
+    function render() {
+      sectionsEl.innerHTML = baseMenu.map(sec => {
+        const items = sec.items.map(effective).concat(customsFor(sec.id));
+        const visible = items.filter(i => !i.hidden).length;
+        return `
+        <div class="card menu-section-card">
+          <div class="section-head-row">
+            <span class="section-name">${escapeHtml(sec.name)}</span>
+            <span class="section-count">${visible} ${visible === 1 ? 'prato visível' : 'pratos visíveis'}</span>
+          </div>
+          ${items.map(itemRow).join('')}
+          <button class="btn btn-secondary btn-sm add-item-btn" data-add="${sec.id}">+ Adicionar prato</button>
+        </div>`;
+      }).join('');
+
+      sectionsEl.querySelectorAll('[data-edit]').forEach(b =>
+        b.addEventListener('click', () => openEditor(b.dataset.edit)));
+      sectionsEl.querySelectorAll('[data-add]').forEach(b =>
+        b.addEventListener('click', () => openEditor(null, b.dataset.add)));
+      sectionsEl.querySelectorAll('[data-toggle-hide]').forEach(b =>
+        b.addEventListener('click', () => toggleHide(b.dataset.toggleHide, b)));
+      sectionsEl.querySelectorAll('[data-reset]').forEach(b =>
+        b.addEventListener('click', () => resetOverride(b.dataset.reset, b)));
+      sectionsEl.querySelectorAll('[data-delete]').forEach(b =>
+        b.addEventListener('click', () => deleteCustom(b.dataset.delete)));
+    }
+
+    // ── mutations ────────────────────────────────────
+    async function toggleHide(itemId, btn) {
+      const existing = overrides.get(itemId);
+      const removed = !(existing && existing.removed);
+      setLoading(btn, true, '...');
+      const { data, error } = await db.from('menu_overrides').upsert({
+        espaco_slug: slug,
+        item_id: itemId,
+        kind: 'override',
+        removed,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'espaco_slug,item_id' }).select().single();
+      setLoading(btn, false);
+      if (error) { showToast('Erro. Tente novamente.', 'error'); return; }
+      overrides.set(itemId, data);
+      render();
+      showToast(removed ? 'Prato escondido do menu.' : 'Prato visível no menu.', 'success');
+    }
+
+    async function resetOverride(itemId, btn) {
+      const ok = await confirmModal({
+        title: 'Repor versão original',
+        body: 'As suas edições a este prato serão eliminadas e o prato volta à versão original do menu. Confirmar?',
+        confirmLabel: 'Repor',
+      });
+      if (!ok) return;
+      const { error } = await db.from('menu_overrides')
+        .delete().eq('espaco_slug', slug).eq('item_id', itemId);
+      if (error) { showToast('Erro. Tente novamente.', 'error'); return; }
+      overrides.delete(itemId);
+      render();
+      showToast('Prato reposto à versão original.', 'success');
+    }
+
+    async function deleteCustom(itemId) {
+      const ok = await confirmModal({
+        title: 'Eliminar prato',
+        body: 'Este prato será removido do menu permanentemente. Confirmar?',
+        confirmLabel: 'Eliminar',
+        danger: true,
+      });
+      if (!ok) return;
+      const { error } = await db.from('menu_overrides')
+        .delete().eq('espaco_slug', slug).eq('item_id', itemId);
+      if (error) { showToast('Erro. Tente novamente.', 'error'); return; }
+      overrides.delete(itemId);
+      render();
+      showToast('Prato eliminado.', 'success');
+    }
+
+    // ── editor modal ─────────────────────────────────
+    const overlay = document.getElementById('editor-overlay');
+    const edName = document.getElementById('ed-name');
+    const edDesc = document.getElementById('ed-desc');
+    const edPrice = document.getElementById('ed-price');
+    const edPhotoInput = document.getElementById('ed-photo-input');
+    const edPhotoPreview = document.getElementById('ed-photo-preview');
+    const edPhotoRemove = document.getElementById('ed-photo-remove');
+    const edSave = document.getElementById('ed-save');
+
+    let editing = null; // { itemId, sectionId, isCustom, photoUrl, photoFile, photoCleared }
+
+    function setPhotoPreview(url) {
+      if (url) {
+        edPhotoPreview.outerHTML = `<img class="photo-preview" id="ed-photo-preview" src="${url}" alt="">`;
+        document.getElementById('ed-photo-remove').style.display = 'inline-flex';
+      } else {
+        document.getElementById('ed-photo-preview').outerHTML =
+          '<div class="photo-preview" id="ed-photo-preview">sem foto</div>';
+        document.getElementById('ed-photo-remove').style.display = 'none';
+      }
+    }
+
+    function openEditor(itemId, addToSection) {
+      document.getElementById('ed-name-err').style.display = 'none';
+      edName.classList.remove('input-error');
+
+      if (itemId) {
+        // editar existente (override ou custom)
+        const o = overrides.get(itemId);
+        const isCustom = !!(o && o.kind === 'custom');
+        let base = { name: '', desc: '', price: '', photo: null };
+        if (!isCustom) {
+          for (const sec of baseMenu) {
+            const f = sec.items.find(i => i.itemId === itemId);
+            if (f) { base = f; break; }
+          }
+        }
+        editing = {
+          itemId,
+          sectionId: o ? o.section_id : null,
+          isCustom,
+          photoUrl: (o && o.photo_url) || (!isCustom ? base.photo : null),
+          photoFile: null,
+          photoCleared: false,
+        };
+        document.getElementById('editor-title').textContent = 'Editar prato';
+        edName.value = (o && o.name) || base.name || '';
+        edDesc.value = (o && o.description) || base.desc || '';
+        edPrice.value = (o && o.price) || base.price || '';
+        setPhotoPreview(editing.photoUrl);
+      } else {
+        // adicionar novo prato a uma secção
+        editing = {
+          itemId: 'custom:' + crypto.randomUUID(),
+          sectionId: addToSection,
+          isCustom: true,
+          isNew: true,
+          photoUrl: null, photoFile: null, photoCleared: false,
+        };
+        document.getElementById('editor-title').textContent = 'Adicionar prato';
+        edName.value = '';
+        edDesc.value = '';
+        edPrice.value = '';
+        setPhotoPreview(null);
+      }
+      overlay.classList.add('visible');
+      setTimeout(() => edName.focus(), 100);
+    }
+
+    function closeEditor() {
+      overlay.classList.remove('visible');
+      editing = null;
+    }
+
+    document.getElementById('ed-cancel').addEventListener('click', closeEditor);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeEditor(); });
+
+    document.getElementById('ed-photo-btn').addEventListener('click', () => edPhotoInput.click());
+    edPhotoInput.addEventListener('change', () => {
+      const file = edPhotoInput.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { showToast('Apenas imagens.', 'error'); return; }
+      if (file.size > 3 * 1024 * 1024) { showToast('Imagem demasiado grande (máx. 3MB).', 'error'); return; }
+      editing.photoFile = file;
+      editing.photoCleared = false;
+      setPhotoPreview(URL.createObjectURL(file));
+    });
+    document.getElementById('ed-photo-remove').addEventListener('click', () => {
+      editing.photoFile = null;
+      editing.photoUrl = null;
+      editing.photoCleared = true;
+      edPhotoInput.value = '';
+      setPhotoPreview(null);
+    });
+
+    edSave.addEventListener('click', async () => {
+      if (!editing) return;
+      const name = edName.value.trim();
+      if (editing.isCustom && name.length < 2) {
+        edName.classList.add('input-error');
+        document.getElementById('ed-name-err').style.display = 'flex';
+        edName.focus();
+        return;
+      }
+
+      setLoading(edSave, true, 'A guardar...');
+      try {
+        // upload da foto, se nova
+        let photoUrl = editing.photoCleared ? null : editing.photoUrl;
+        if (editing.photoFile) {
+          const safeName = editing.photoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const path = `${slug}/${Date.now()}_${safeName}`;
+          const { error: upErr } = await db.storage.from('menu-images')
+            .upload(path, editing.photoFile, { upsert: false });
+          if (upErr) throw upErr;
+          const { data: pub } = db.storage.from('menu-images').getPublicUrl(path);
+          photoUrl = pub?.publicUrl || null;
+        }
+
+        const row = {
+          espaco_slug: slug,
+          item_id: editing.itemId,
+          section_id: editing.sectionId,
+          kind: editing.isCustom ? 'custom' : 'override',
+          removed: false,
+          name: name || null,
+          description: edDesc.value.trim() || null,
+          price: edPrice.value.trim() || null,
+          photo_url: photoUrl,
+          updated_at: new Date().toISOString(),
+        };
+        // manter o estado "escondido" se já existia
+        const existing = overrides.get(editing.itemId);
+        if (existing && existing.removed && !editing.isCustom) row.removed = true;
+
+        const { data, error } = await db.from('menu_overrides')
+          .upsert(row, { onConflict: 'espaco_slug,item_id' })
+          .select().single();
+        if (error) throw error;
+
+        overrides.set(editing.itemId, data);
+        closeEditor();
+        render();
+        showToast('Guardado! Já está no menu dos clientes.', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Erro ao guardar. Tente novamente.', 'error');
+      } finally {
+        setLoading(edSave, false);
+      }
+    });
+
+    render();
+  })();
+  </script>
+</body>
+</html>

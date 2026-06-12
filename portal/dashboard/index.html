@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Dashboard — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+</head>
+<body>
+
+  <nav class="portal-nav" id="portal-nav"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar"></aside>
+
+  <main class="portal-main" id="main">
+    <!-- skeleton while loading -->
+    <div id="page-skeleton">
+      <div class="page-header">
+        <div class="nexo-skeleton" style="width:220px;height:28px"></div>
+        <div class="nexo-skeleton" style="width:300px;height:14px;margin-top:10px"></div>
+      </div>
+      <div class="metric-grid">
+        <div class="card nexo-skeleton" style="height:130px"></div>
+        <div class="card nexo-skeleton" style="height:130px"></div>
+        <div class="card nexo-skeleton" style="height:130px"></div>
+        <div class="card nexo-skeleton" style="height:130px"></div>
+      </div>
+      <div class="card nexo-skeleton" style="height:180px"></div>
+    </div>
+    <div id="page-content" style="display:none"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/dashboard/', client);
+
+    const slug = getMenuSlug(client);
+    const menuUrl = getMenuUrl(client);
+    const menu = client.menus?.[0] || null;
+
+    // ── parallel fetches ──────────────────────────────
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+
+    let updates = [], pendingCount = 0, callsToday = 0;
+    try {
+      const [updatesRes, pendingRes, callsRes] = await Promise.all([
+        db.from('update_requests')
+          .select('id, type, description, status, created_at')
+          .eq('client_id', client.id)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        db.from('update_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('client_id', client.id)
+          .in('status', ['pending', 'in_progress']),
+        slug
+          ? db.from('staff_calls')
+              .select('id', { count: 'exact', head: true })
+              .eq('espaco_slug', slug)
+              .gte('created_at', startOfDay.toISOString())
+          : Promise.resolve({ count: 0 }),
+      ]);
+      updates = updatesRes.data || [];
+      pendingCount = pendingRes.count || 0;
+      callsToday = callsRes.count || 0;
+    } catch (err) {
+      console.error(err);
+      showToast('Erro ao carregar dados. Tente novamente.', 'error');
+    }
+
+    // ── helpers ───────────────────────────────────────
+    const firstName = (client.owner_name || client.name || '').split(' ')[0];
+
+    function menuStatusBadge() {
+      const s = menu?.status;
+      if (s === 'live' || s === 'active')
+        return '<span class="badge badge--success"><span class="badge-dot badge-dot--pulse"></span>Live</span>';
+      if (s === 'paused')
+        return '<span class="badge badge--muted">Pausado</span>';
+      return '<span class="badge badge--warning">Em Setup</span>';
+    }
+
+    function clientStatusBadge() {
+      const map = {
+        active: ['badge--success', 'Activo'],
+        lead: ['badge--info', 'Lead'],
+        demo_scheduled: ['badge--info', 'Demo'],
+        proposal_sent: ['badge--warning', 'Proposta'],
+        churned: ['badge--muted', 'Inactivo'],
+      };
+      const [cls, label] = map[client.status] || ['badge--muted', client.status || '—'];
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    const planLabel = client.plan
+      ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1)
+      : '—';
+    const planSub = client.plan === 'evento'
+      ? 'Pagamento único'
+      : `${formatEUR(client.monthly_value)}/mês` +
+        (client.plan_renewal_date
+          ? ` · renova ${new Date(client.plan_renewal_date).toLocaleDateString('pt-PT')}`
+          : '');
+
+    const requestStatusBadge = (s) => ({
+      pending: '<span class="badge badge--warning">Pendente</span>',
+      in_progress: '<span class="badge badge--info">Em progresso</span>',
+      done: '<span class="badge badge--success">Concluído</span>',
+      rejected: '<span class="badge badge--muted">Rejeitado</span>',
+    }[s] || `<span class="badge badge--muted">${escapeHtml(s)}</span>`);
+
+    const typeLabels = {
+      price: 'Preço', new_item: 'Prato novo', remove_item: 'Remover prato',
+      photo: 'Foto', description: 'Descrição', translation: 'Tradução', other: 'Outro',
+    };
+
+    // ── onboarding progress ───────────────────────────
+    const ob = Array.isArray(client.onboarding) ? client.onboarding[0] : client.onboarding;
+    const obSteps = [
+      ['received_menu_content', 'Conteúdo do menu recebido'],
+      ['received_logo', 'Logótipo recebido'],
+      ['received_colors', 'Cores da marca recebidas'],
+      ['menu_configured', 'Menu configurado'],
+      ['deployed_to_netlify', 'Menu publicado'],
+      ['nfc_programmed', 'NFC programado'],
+      ['client_approved', 'Aprovação do cliente'],
+      ['hardware_delivered', 'Hardware entregue'],
+      ['team_briefed', 'Equipa formada'],
+    ];
+    let onboardingHtml = '';
+    if (ob) {
+      const total = obSteps.length;
+      const done = obSteps.filter(([k]) => ob[k]).length;
+      const pct = Math.round((done / total) * 100);
+      if (pct < 100) {
+        const pendingSteps = obSteps.filter(([k]) => !ob[k]);
+        onboardingHtml = `
+          <div class="card mb-4">
+            <div class="card-title">A sua configuração está ${pct}% completa</div>
+            <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+            ${pendingSteps.map(([, label]) => `
+              <div class="onboarding-step">
+                <span class="step-circle"></span>${label}
+              </div>`).join('')}
+            <a class="btn btn-secondary btn-sm mt-4" style="display:inline-flex"
+               href="mailto:hello@nexosolutions.pt?subject=Concluir configuração — ${encodeURIComponent(client.name)}">
+              Contactar NEXO para concluir →
+            </a>
+          </div>`;
+      }
+    }
+
+    // ── recent updates ────────────────────────────────
+    const updatesHtml = updates.length === 0
+      ? `<div class="empty-state">
+           ${getIcon('edit', 32)}
+           <p class="empty-title">Ainda sem pedidos de alteração</p>
+           <a href="/portal/alteracoes/" class="btn btn-secondary btn-sm">Pedir primeira alteração →</a>
+         </div>`
+      : `<div class="table-wrap"><table class="table">
+           <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Estado</th></tr></thead>
+           <tbody>
+             ${updates.map(u => {
+               const desc = (u.description || '');
+               const short = desc.length > 50 ? desc.slice(0, 50) + '…' : desc;
+               return `<tr>
+                 <td class="text-muted">${timeAgo(u.created_at)}</td>
+                 <td>${typeLabels[u.type] || u.type || '—'}</td>
+                 <td>${escapeHtml(short)}</td>
+                 <td>${requestStatusBadge(u.status)}</td>
+               </tr>`;
+             }).join('')}
+           </tbody>
+         </table></div>`;
+
+    // ── render ────────────────────────────────────────
+    document.getElementById('page-content').innerHTML = `
+      <div class="page-header">
+        <h1 class="page-title">Olá, ${escapeHtml(firstName)} 👋</h1>
+        <p class="page-sub">${escapeHtml(client.name)} ·
+          <span class="badge badge--muted">NEXO ${planLabel}</span> ${clientStatusBadge()}
+        </p>
+      </div>
+
+      <div class="metric-grid">
+        <div class="card metric-card">
+          <div class="metric-head"><span class="metric-label">Menu Status</span>${getIcon('external-link')}</div>
+          <div class="metric-value">${menuStatusBadge()}</div>
+          <div class="metric-sub">
+            ${menu ? `<a href="${menuUrl}" target="_blank" rel="noopener">${escapeHtml(menuUrl.replace(/^https?:\/\//, ''))}</a>` : 'Sem menu configurado'}
+          </div>
+          <a class="metric-action" href="${menuUrl}" target="_blank" rel="noopener">Abrir menu →</a>
+        </div>
+
+        <div class="card metric-card">
+          <div class="metric-head"><span class="metric-label">Plano Activo</span>${getIcon('check')}</div>
+          <div class="metric-value">NEXO ${planLabel}</div>
+          <div class="metric-sub">${planSub}</div>
+          <a class="metric-action" href="https://nexosolutions.pt/#planos" target="_blank" rel="noopener">Ver detalhes →</a>
+        </div>
+
+        <div class="card metric-card">
+          <div class="metric-head"><span class="metric-label">Pedidos Pendentes</span>${getIcon('edit')}</div>
+          <div class="metric-value ${pendingCount > 0 ? 'text-warning' : ''}">${pendingCount}</div>
+          <div class="metric-sub">alterações em processamento</div>
+          <a class="metric-action" href="/portal/alteracoes/">Ver todos →</a>
+        </div>
+
+        <div class="card metric-card">
+          <div class="metric-head"><span class="metric-label">Chamadas Hoje</span>${getIcon('phone')}</div>
+          <div class="metric-value">${callsToday}</div>
+          <div class="metric-sub">chamadas de mesa registadas</div>
+          <a class="metric-action" href="/portal/staff/">Modo Staff →</a>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <a href="/portal/disponibilidade/" class="quick-action">${getIcon('toggle')} Marcar item esgotado</a>
+        <a href="/portal/alteracoes/" class="quick-action">${getIcon('edit')} Pedir alteração</a>
+        <a href="/portal/staff/" class="quick-action">${getIcon('monitor')} Modo Staff</a>
+      </div>
+
+      ${onboardingHtml}
+
+      <div class="card">
+        <div class="card-title">Últimas alterações</div>
+        ${updatesHtml}
+      </div>`;
+
+    document.getElementById('page-skeleton').style.display = 'none';
+    document.getElementById('page-content').style.display = 'block';
+  })();
+  </script>
+</body>
+</html>

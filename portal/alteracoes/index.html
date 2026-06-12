@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Alterações — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+</head>
+<body>
+
+  <nav class="portal-nav" id="portal-nav"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar"></aside>
+
+  <main class="portal-main" id="main">
+    <div id="page-skeleton">
+      <div class="page-header"><div class="nexo-skeleton" style="width:220px;height:28px"></div></div>
+      <div class="card nexo-skeleton" style="height:360px;margin-bottom:14px"></div>
+      <div class="card nexo-skeleton" style="height:200px"></div>
+    </div>
+
+    <div id="page-content" style="display:none">
+      <div class="page-header">
+        <h1 class="page-title">Alterações ao Menu</h1>
+        <p class="page-sub">Peça alterações — nós tratamos de tudo.</p>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-title">Pedir alteração ao menu</div>
+
+        <form id="request-form" novalidate>
+          <div class="field">
+            <label class="field-label" for="req-type">Tipo de alteração</label>
+            <select class="select" id="req-type" required>
+              <option value="">Seleccionar...</option>
+              <option value="price">Preço</option>
+              <option value="new_item">Prato novo</option>
+              <option value="remove_item">Remover prato</option>
+              <option value="photo">Foto</option>
+              <option value="description">Descrição</option>
+              <option value="translation">Tradução</option>
+              <option value="other">Outro</option>
+            </select>
+            <div class="field-error" id="type-error" style="display:none">Seleccione o tipo de alteração.</div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="req-desc">Descrição</label>
+            <textarea class="textarea" id="req-desc" maxlength="500"
+              placeholder="Descreva em detalhe a alteração pretendida. Quanto mais detalhe, mais rápido processamos."></textarea>
+            <div class="char-counter" id="char-counter">0/500</div>
+            <div class="field-error" id="desc-error" style="display:none">Descreva a alteração pretendida.</div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Ficheiro (opcional)</label>
+            <div class="dropzone" id="dropzone" tabindex="0" role="button"
+                 aria-label="Adicionar ficheiro">
+              Arraste ou clique para adicionar ficheiro
+              <div class="text-xs text-muted mt-2">Imagem ou PDF · máx. 5MB</div>
+            </div>
+            <input type="file" id="file-input" accept="image/*,.pdf" style="display:none">
+            <div id="file-preview" style="display:none"></div>
+          </div>
+
+          <div class="urgency-row mb-4">
+            <span>Urgente</span>
+            <button type="button" class="toggle" id="urgent-toggle" role="switch"
+                    aria-checked="false" aria-label="Urgente"
+                    style="background:var(--bg-elevated);border-color:var(--border-md)"></button>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="submit-btn">Enviar pedido</button>
+        </form>
+
+        <div class="sla-notice">
+          ⏱ Tempo de resposta: menos de 24h (dias úteis) para planos Growth · menos de 48h para Starter
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Histórico de pedidos</div>
+        <div class="filter-tabs" id="filter-tabs">
+          <button class="filter-tab active" data-filter="all">Todos</button>
+          <button class="filter-tab" data-filter="pending">Pendente</button>
+          <button class="filter-tab" data-filter="in_progress">Em progresso</button>
+          <button class="filter-tab" data-filter="done">Concluído</button>
+        </div>
+        <div id="history"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/alteracoes/', client);
+
+    const slug = getMenuSlug(client) || 'sem-menu';
+    const menuId = client.menus?.[0]?.id || null;
+
+    document.getElementById('page-skeleton').style.display = 'none';
+    document.getElementById('page-content').style.display = 'block';
+
+    // ── form refs ───────────────────────────────────
+    const form = document.getElementById('request-form');
+    const typeEl = document.getElementById('req-type');
+    const descEl = document.getElementById('req-desc');
+    const counter = document.getElementById('char-counter');
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const filePreview = document.getElementById('file-preview');
+    const urgentToggle = document.getElementById('urgent-toggle');
+    const submitBtn = document.getElementById('submit-btn');
+
+    let selectedFile = null;
+    let isUrgent = false;
+
+    // ── char counter ────────────────────────────────
+    descEl.addEventListener('input', () => {
+      const len = descEl.value.length;
+      counter.textContent = `${len}/500`;
+      counter.classList.toggle('over', len >= 500);
+    });
+
+    // ── urgent toggle ───────────────────────────────
+    urgentToggle.addEventListener('click', () => {
+      isUrgent = !isUrgent;
+      urgentToggle.setAttribute('aria-checked', String(isUrgent));
+      urgentToggle.style.background = isUrgent ? 'rgba(245,158,11,0.4)' : 'var(--bg-elevated)';
+      urgentToggle.style.borderColor = isUrgent ? 'rgba(245,158,11,0.5)' : 'var(--border-md)';
+    });
+
+    // ── file handling ───────────────────────────────
+    function setFile(file) {
+      if (!file) return;
+      const isImage = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      if (!isImage && !isPdf) {
+        showToast('Apenas imagens ou PDF.', 'error');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Ficheiro demasiado grande (máx. 5MB).', 'error');
+        return;
+      }
+      selectedFile = file;
+      dropzone.style.display = 'none';
+      filePreview.style.display = 'flex';
+      filePreview.className = 'dropzone-preview';
+      filePreview.innerHTML = `
+        ${isImage ? `<img src="${URL.createObjectURL(file)}" alt="">` : getIcon('paperclip', 20)}
+        <span>${escapeHtml(file.name)}</span>
+        <span class="text-muted text-xs">${(file.size / 1024 / 1024).toFixed(1)}MB</span>
+        <button type="button" class="remove-file" aria-label="Remover ficheiro">${getIcon('x', 14)}</button>`;
+      filePreview.querySelector('.remove-file').addEventListener('click', clearFile);
+    }
+
+    function clearFile() {
+      selectedFile = null;
+      fileInput.value = '';
+      filePreview.style.display = 'none';
+      filePreview.innerHTML = '';
+      dropzone.style.display = 'block';
+    }
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
+    fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+    ['dragenter', 'dragover'].forEach(evt =>
+      dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); }));
+    ['dragleave', 'drop'].forEach(evt =>
+      dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+    dropzone.addEventListener('drop', (e) => setFile(e.dataTransfer.files[0]));
+
+    // ── submit ──────────────────────────────────────
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const typeError = document.getElementById('type-error');
+      const descError = document.getElementById('desc-error');
+      typeError.style.display = 'none';
+      descError.style.display = 'none';
+      typeEl.classList.remove('input-error');
+      descEl.classList.remove('input-error');
+
+      let valid = true;
+      if (!typeEl.value) {
+        typeEl.classList.add('input-error');
+        typeError.style.display = 'flex';
+        valid = false;
+      }
+      if (descEl.value.trim().length < 5) {
+        descEl.classList.add('input-error');
+        descError.style.display = 'flex';
+        valid = false;
+      }
+      if (!valid) return;
+
+      setLoading(submitBtn, true, 'A enviar...');
+      try {
+        // optional upload
+        let photoUrl = null;
+        if (selectedFile) {
+          const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const path = `${slug}/${Date.now()}_${safeName}`;
+          const { error: upError } = await db.storage
+            .from('update-attachments')
+            .upload(path, selectedFile, { upsert: false });
+          if (upError) throw upError;
+          const { data: pub } = db.storage.from('update-attachments').getPublicUrl(path);
+          photoUrl = pub?.publicUrl || null;
+        }
+
+        const description = (isUrgent ? '[URGENTE] ' : '') + descEl.value.trim();
+        const { error } = await db.from('update_requests').insert({
+          client_id: client.id,
+          menu_id: menuId,
+          type: typeEl.value,
+          description,
+          photo_url: photoUrl,
+          urgent: isUrgent,
+          status: 'pending',
+        });
+        if (error) throw error;
+
+        // reset form
+        form.reset();
+        clearFile();
+        counter.textContent = '0/500';
+        if (isUrgent) urgentToggle.click();
+        showToast('Pedido enviado! Respondemos em menos de 24h.', 'success');
+        await loadHistory();
+      } catch (err) {
+        console.error(err);
+        showToast('Erro ao enviar. Tente novamente.', 'error');
+      } finally {
+        setLoading(submitBtn, false);
+      }
+    });
+
+    // ── history ─────────────────────────────────────
+    const historyEl = document.getElementById('history');
+    let requests = [];
+    let activeFilter = 'all';
+
+    const typeLabels = {
+      price: 'Preço', new_item: 'Prato novo', remove_item: 'Remover prato',
+      photo: 'Foto', description: 'Descrição', translation: 'Tradução', other: 'Outro',
+    };
+    const statusBadge = (s) => ({
+      pending: '<span class="badge badge--warning">Pendente</span>',
+      in_progress: '<span class="badge badge--info">Em progresso</span>',
+      done: '<span class="badge badge--success">Concluído</span>',
+      rejected: '<span class="badge badge--muted">Rejeitado</span>',
+    }[s] || `<span class="badge badge--muted">${escapeHtml(s || '—')}</span>`);
+
+    function renderHistory() {
+      const filtered = activeFilter === 'all'
+        ? requests
+        : requests.filter(r => r.status === activeFilter);
+
+      if (filtered.length === 0) {
+        historyEl.innerHTML = `
+          <div class="empty-state">
+            ${getIcon('clock', 32)}
+            <p class="empty-title">Ainda sem pedidos de alteração</p>
+            <p class="empty-sub">O seu primeiro pedido aparece aqui assim que for submetido.</p>
+          </div>`;
+        return;
+      }
+
+      historyEl.innerHTML = `
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>Estado</th><th>Tipo</th><th>Descrição</th><th>Data</th></tr></thead>
+          <tbody>
+            ${filtered.map(r => {
+              const desc = r.description || '';
+              const truncated = desc.length > 60;
+              const days = (r.status === 'done' && r.completed_at)
+                ? Math.max(1, Math.round((new Date(r.completed_at) - new Date(r.created_at)) / 86400000))
+                : null;
+              return `<tr>
+                <td>${statusBadge(r.status)}</td>
+                <td>${typeLabels[r.type] || r.type || '—'}
+                  ${r.photo_url ? `<a href="${r.photo_url}" target="_blank" rel="noopener" title="Ver anexo" style="vertical-align:middle;margin-left:4px;display:inline-flex">${getIcon('paperclip', 13)}</a>` : ''}</td>
+                <td>
+                  <span class="request-desc" data-expand title="${truncated ? 'Clique para expandir' : ''}">
+                    ${escapeHtml(truncated ? desc.slice(0, 60) + '…' : desc)}
+                  </span>
+                  <span style="display:none">${escapeHtml(desc)}</span>
+                  ${days ? `<div class="text-success text-xs">Concluído em ${days} ${days === 1 ? 'dia' : 'dias'}</div>` : ''}
+                </td>
+                <td class="text-muted" title="${new Date(r.created_at).toLocaleString('pt-PT')}">${timeAgo(r.created_at)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table></div>`;
+
+      historyEl.querySelectorAll('[data-expand]').forEach(el => {
+        el.addEventListener('click', () => {
+          const full = el.nextElementSibling;
+          const tmp = el.textContent;
+          el.textContent = full.textContent;
+          full.textContent = tmp;
+        });
+      });
+    }
+
+    async function loadHistory() {
+      const { data, error } = await db.from('update_requests')
+        .select('*')
+        .eq('client_id', client.id)
+        .order('created_at', { ascending: false });
+      if (error) {
+        historyEl.innerHTML = '<p class="text-danger text-sm">Erro ao carregar histórico.</p>';
+        return;
+      }
+      requests = data || [];
+      renderHistory();
+    }
+    await loadHistory();
+
+    // filter tabs
+    document.getElementById('filter-tabs').addEventListener('click', (e) => {
+      const tab = e.target.closest('.filter-tab');
+      if (!tab) return;
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeFilter = tab.dataset.filter;
+      renderHistory();
+    });
+  })();
+  </script>
+</body>
+</html>

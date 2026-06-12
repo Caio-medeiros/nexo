@@ -896,6 +896,7 @@ function renderMenu() {
     let sectionVisibleItems = 0;
 
     const itemsHtml = sec.items.map((item, idx) => {
+        if (item._hidden) return '';   // escondido via Portal NEXO
         const matchesFilter = currentFilter === 'all' || (item.diet || []).includes(currentFilter);
         const haystack = [
           item.name[currentLang],
@@ -914,7 +915,9 @@ function renderMenu() {
           sectionVisibleItems++;
         }
 
-        const soldOut = !!item.soldOut;
+        const refId = `${sec.id}:${idx}`;
+        // soldOut: flag estático do config OU disponibilidade realtime (Portal NEXO)
+        const soldOut = !!item.soldOut || _nexoAvailability[refId] === false;
 
         // Badge psicológico
         const badgeHtml = soldOut
@@ -924,7 +927,6 @@ function renderMenu() {
             : '');
 
         // Botão "+" só aparece se item tem preço parseable (€) e não está esgotado
-        const refId = `${sec.id}:${idx}`;
         const canOrder = !soldOut && parsePriceToNumber(item.price) !== null;
         const inCart = getCartQty(refId);
         const addBtnHtml = canOrder ? `
@@ -2905,6 +2907,7 @@ function sendToWhatsApp() {
     const number = (CONFIG.orderWhatsapp || '').replace(/\D/g, '');
     const url = `https://wa.me/${number}?text=${encoded}`;
     window.open(url, '_blank');
+    logOrderToSupabase(sharedCart ? 'shared' : 'whatsapp', tableValue);
   }, 350);
 }
 
@@ -2934,6 +2937,7 @@ function setupConfirmScreen() {
       const tableVal = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
       confirmTableValue = tableVal;
       closeConfirmScreen();
+      logOrderToSupabase(sharedCart ? 'shared' : 'staff', tableVal);
       setTimeout(() => openStaffView(tableVal), 270);
     });
   }
@@ -3918,6 +3922,151 @@ function setupPersonRename() {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   12a. NEXO PORTAL — Disponibilidade realtime + registo de chamadas/pedidos
+   (todas opcionais — só activas quando CONFIG.supabaseUrl está preenchido)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// refId ("seccao:idx") → true/false. false = esgotado (definido no Portal).
+let _nexoAvailability = {};
+
+async function initAvailabilityRealtime() {
+  const { supabaseUrl, supabaseAnonKey } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
+  if (!supabaseUrl || !supabaseAnonKey) return;
+  try {
+    const sb = await loadSupabase();
+    const { data } = await sb.from('item_availability')
+      .select('item_id, available')
+      .eq('espaco_slug', CONFIG.slug);
+    (data || []).forEach(r => { _nexoAvailability[r.item_id] = r.available !== false; });
+    if (data && data.some(r => r.available === false)) renderMenu();
+
+    sb.channel('nexo-availability-' + CONFIG.slug)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'item_availability',
+          filter: 'espaco_slug=eq.' + CONFIG.slug },
+        (payload) => {
+          const row = payload.new;
+          if (!row || !row.item_id) return;
+          _nexoAvailability[row.item_id] = row.available !== false;
+          renderMenu();
+        })
+      .subscribe();
+  } catch (_) { /* disponibilidade é opcional — menu funciona sem Supabase */ }
+}
+
+// Edições feitas pelo restaurante no Portal NEXO (nome/desc/preço/foto,
+// pratos escondidos e pratos novos) aplicadas por cima do config.js.
+async function initMenuOverrides() {
+  const { supabaseUrl, supabaseAnonKey } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
+  if (!supabaseUrl || !supabaseAnonKey) return;
+  try {
+    const sb = await loadSupabase();
+    const { data } = await sb.from('menu_overrides')
+      .select('*')
+      .eq('espaco_slug', CONFIG.slug)
+      .order('created_at', { ascending: true });
+    if (!data || data.length === 0) return;
+
+    const L = (v) => ({ pt: v, en: v, es: v, fr: v });
+    let changed = false;
+
+    data.forEach(o => {
+      if (o.kind === 'custom') {
+        // prato novo criado no portal — acrescenta no fim da secção
+        if (o.removed) return;
+        const sec = CONFIG.menu.find(s => s.id === o.section_id);
+        if (!sec) return;
+        sec.items.push({
+          name: L(o.name || 'Novo prato'),
+          desc: o.description ? L(o.description) : null,
+          price: o.price || '',
+          photo: o.photo_url || null,
+          diet: [], allergens: [],
+          _customId: o.item_id,
+        });
+        changed = true;
+      } else {
+        // override de item existente ('seccao:idx')
+        const parts = (o.item_id || '').split(':');
+        const sec = CONFIG.menu.find(s => s.id === parts[0]);
+        const item = sec && sec.items[parseInt(parts[1], 10)];
+        if (!item) return;
+        if (o.removed) item._hidden = true;     // esconde sem partir os índices
+        if (o.name) item.name = L(o.name);
+        if (o.description) item.desc = L(o.description);
+        if (o.price) item.price = o.price;
+        if (o.photo_url) item.photo = o.photo_url;
+        changed = true;
+      }
+    });
+
+    if (changed) renderMenu();
+  } catch (_) { /* edições são opcionais — menu funciona sem Supabase */ }
+}
+
+// Regista chamada de mesa (Modo Staff do Portal) — fire-and-forget
+function logStaffCallToSupabase(tableLabel) {
+  const { supabaseUrl, supabaseAnonKey } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
+  if (!supabaseUrl || !supabaseAnonKey) return;
+  loadSupabase()
+    .then(sb => sb.from('staff_calls').insert({
+      espaco_slug: CONFIG.slug,
+      table_label: tableLabel || null,
+    }))
+    .catch(() => {});
+}
+
+// Regista pedido no orders_log (Modo Staff do Portal) — fire-and-forget
+function logOrderToSupabase(channel, tableValue) {
+  const { supabaseUrl, supabaseAnonKey } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
+  if (!supabaseUrl || !supabaseAnonKey) return;
+  try {
+    let items = [];
+    let memberCount = 1;
+
+    if (sharedCart && sharedCartItems && sharedCartItems.length) {
+      items = sharedCartItems.map(row => {
+        const item = getItemByRef(row.item_id);
+        return {
+          qty: row.quantity || 1,
+          name: item ? (item.name.pt || item.name[currentLang]) : (row.item_name || row.item_id),
+          price: item ? item.price : (row.item_price ? `€${row.item_price}` : ''),
+          note: (row.note && row.note.trim()) || null,
+        };
+      });
+      memberCount = new Set(
+        sharedCartItems.map(r => r.member_key || r.member_name)
+      ).size || 1;
+    } else {
+      items = cart.map(entry => {
+        const item = getItemByRef(entry.refId);
+        if (!item) return null;
+        return {
+          qty: entry.qty,
+          name: item.name.pt || item.name[currentLang],
+          price: item.price,
+          note: (entry.note && entry.note.trim()) || null,
+        };
+      }).filter(Boolean);
+    }
+
+    if (!items.length) return;
+
+    loadSupabase()
+      .then(sb => sb.from('orders_log').insert({
+        espaco_slug: CONFIG.slug,
+        table_label: (tableValue && tableValue.trim()) ? `Mesa ${tableValue.trim()}` : null,
+        items,
+        total: getCartTotal(),
+        member_count: memberCount,
+        channel,
+      }))
+      .catch(() => {});
+  } catch (_) {}
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
    12b. SHARED CART — Mesa em Grupo (Realtime Broadcast — no SQL tables needed)
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -4385,6 +4534,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   setupLanguage();
   setupSharedCart();
+  initMenuOverrides();
+  initAvailabilityRealtime();
   setupQuickNav();
   setupSearch();
   setupDietFilter();
@@ -4713,6 +4864,9 @@ function setupCallStaff() {
 
       sendBtn.classList.add('loading');
       if (btnText) btnText.textContent = 'A enviar...';
+
+      // Regista no Portal NEXO (Modo Staff) em paralelo com o ntfy
+      logStaffCallToSupabase(mesa ? 'Mesa ' + mesa : null);
 
       try {
         await sendNtfyNotification(mesa);

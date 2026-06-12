@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
@@ -28,41 +27,40 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap"></noscript>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"></noscript>
 <script src="/nexo-analytics.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<div class="grain" aria-hidden="true"></div>
 <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
 <div class="cursor-ring" id="cursorRing" aria-hidden="true"><span class="cursor-label" id="cursorLabel"></span></div>
-<div class="scroll-bar"><div class="scroll-fill" id="scrollFill"></div></div>
-<div class="wipe" id="wipe" aria-hidden="true"></div>
+<div class="scroll-bar" aria-hidden="true"><div class="scroll-fill" id="scrollFill"></div></div>
 
 <!-- ═══════════════════════════════════════════
-     NAV — logo + desktop links + hamburger
-     Mobile overlay is a SEPARATE element below
+     NAV
      ═══════════════════════════════════════════ -->
 <nav id="nav">
   <div class="nav-inner">
     <a href="#" class="logo">NEXO<span class="dot">.</span></a>
 
-
-
-    <!-- Desktop links: display:none on mobile, display:flex on 1024px+ via CSS -->
     <ul class="nav-links">
-      <li><a href="#problema">Problema</a></li>
-      <li><a href="#como-funciona">Processo</a></li>
-     <li><a href="#produto">Produto</a></li>
-
-      <li><a href="#features">Funcionalidades</a></li>
-      <li><a href="#planos">Planos</a></li>
-      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#problema"><span class="nl-n">01</span>Problema</a></li>
+      <li><a href="#como-funciona"><span class="nl-n">02</span>Processo</a></li>
+      <li><a href="#produto"><span class="nl-n">03</span>Produto</a></li>
+      <li><a href="#features"><span class="nl-n">04</span>Funcionalidades</a></li>
+      <li><a href="#planos"><span class="nl-n">05</span>Planos</a></li>
+      <li><a href="#eventos"><span class="nl-n">06</span>Eventos</a></li>
+      <li><a href="#faq"><span class="nl-n">07</span>FAQ</a></li>
     </ul>
-    <a class="nav-cta" href="#contacto" onclick="nexoTrack('proposal_cta_clicked',{position:'nav'})">Pedir proposta</a>
 
-    <!-- Hamburger: display:flex on mobile, display:none on 1024px+ via CSS -->
+    <div class="nav-actions">
+      <a class="nav-client" href="/portal/">Área de Cliente</a>
+      <a class="nav-cta" href="#contacto" onclick="nexoTrack('proposal_cta_clicked',{position:'nav'})">Pedir proposta</a>
+    </div>
+
     <button id="hamburger" class="hamburger" aria-label="Abrir menu" aria-expanded="false">
       <span></span><span></span>
     </button>
@@ -70,120 +68,104 @@
 </nav>
 
 <!-- ═══════════════════════════════════════════
-     MOBILE MENU — fully separate overlay div
-     z-index:400  nav z-index:500
-     Toggled via JS with .is-open class
+     MOBILE MENU — full-screen overlay
      ═══════════════════════════════════════════ -->
 <div id="mob-menu" class="mob-menu" aria-hidden="true">
   <ul class="mob-links">
-    <li><a href="#problema">Problema</a></li>
-    <li><a href="#como-funciona">Processo</a></li>
-     <li><a href="#produto">Produto</a></li>
-
-      <li><a href="#features">Funcionalidades</a></li>
-    <li><a href="#planos">Planos</a></li>
-    <li><a href="#faq">FAQ</a></li>
+    <li style="--mi:0"><a href="#problema"><span>01</span>Problema</a></li>
+    <li style="--mi:1"><a href="#como-funciona"><span>02</span>Processo</a></li>
+    <li style="--mi:2"><a href="#produto"><span>03</span>Produto</a></li>
+    <li style="--mi:3"><a href="#features"><span>04</span>Funcionalidades</a></li>
+    <li style="--mi:4"><a href="#planos"><span>05</span>Planos</a></li>
+    <li style="--mi:5"><a href="#eventos"><span>06</span>Eventos</a></li>
+    <li style="--mi:6"><a href="#faq"><span>07</span>FAQ</a></li>
+    <li style="--mi:7"><a href="/portal/" class="mob-client"><span>↳</span>Área de Cliente</a></li>
   </ul>
-  <a href="#contacto" class="mob-cta" onclick="nexoTrack('proposal_cta_clicked',{position:'nav'})">Pedir proposta →</a>
+  <div class="mob-foot">
+    <a href="#contacto" class="mob-cta" onclick="nexoTrack('proposal_cta_clicked',{position:'nav'})">Pedir proposta →</a>
+    <span class="mob-meta">NEXO. — PT · LIS · EST. 2026</span>
+  </div>
 </div>
 
-<!-- ── HERO ── -->
-<section class="hero" id="hero">
-  <div class="hero-grid-reveal" id="heroGridReveal" aria-hidden="true"></div>
-  <div class="hero-ambient" aria-hidden="true">
-    <div class="hero-amb-blob hero-amb-1"></div>
-    <div class="hero-amb-blob hero-amb-2"></div>
-    <div class="hero-amb-blob hero-amb-3"></div>
+<!-- ═══════════════════════════════════════════
+     HERO
+     ═══════════════════════════════════════════ -->
+<header class="hero" id="hero">
+  <canvas class="hero-canvas" id="rippleCanvas" aria-hidden="true"></canvas>
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="hero-marks" aria-hidden="true">
+    <span class="mark mark-tl">+</span><span class="mark mark-tr">+</span>
+    <span class="mark mark-bl">+</span><span class="mark mark-br">+</span>
   </div>
-  <div class="hero-inner">
 
-    <div class="hero-left">
-      <div class="hero-tags">
-        <span class="tag"><span class="tag-dot"></span>MENU DIGITAL INOVADOR NFC + QR</span>
-      </div>
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <p class="hero-tag" data-hero="tag"><span class="tag-dot"></span>MENU DIGITAL INOVADOR NFC&nbsp;+&nbsp;QR</p>
 
       <h1 class="hero-h1">
-        <span class="lw"><span class="lt">O menu</span></span>
-        <span class="lw"><span class="lt">que <em>vende</em></span></span>
-        <span class="lw"><span class="lt">por si.</span></span>
+        <span class="hl"><span class="hl-t" data-hero-line>O menu</span></span>
+        <span class="hl"><span class="hl-t" data-hero-line>que <em>vende</em></span></span>
+        <span class="hl"><span class="hl-t" data-hero-line>por si.</span></span>
       </h1>
 
-      <p class="hero-sub">
+      <p class="hero-sub" data-hero="sub">
         Um toque no display. O cliente abre o menu, percebe melhor a carta e pede mais — sem fricção, sem app, sem depender da equipa.
       </p>
 
-      <div class="hero-ctas">
-        <a class="btn btn-primary" href="./menu/demo/index.html" target="_blank" onclick="nexoTrack('demo_cta_clicked',{position:'hero'})">
+      <div class="hero-ctas" data-hero="ctas">
+        <a class="btn btn-primary" href="./menu/demo/index.html" target="_blank" data-cursor="VER" onclick="nexoTrack('demo_cta_clicked',{position:'hero'})">
           Ver demo ao vivo
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </a>
         <a class="btn btn-ghost" href="#contacto" onclick="nexoTrack('proposal_cta_clicked',{position:'hero'})">Pedir proposta</a>
       </div>
 
-      <div class="hero-stats">
+      <div class="hero-stats" data-hero="stats">
         <div class="hs-cell">
-          <span class="hs-val hs-zero">NFC + QR</span>
+          <span class="hs-val">NFC + QR</span>
           <span class="hs-lbl">abertura imediata</span>
         </div>
-        <div class="hs-sep"></div>
         <div class="hs-cell">
-          <span class="hs-val"><span data-count="19">0</span>+</span>
-          <span class="hs-lbl">Funcionalidades inovadoras</span>
+          <span class="hs-val"><span data-count="19">19</span>+</span>
+          <span class="hs-lbl">funcionalidades inovadoras</span>
         </div>
-        <div class="hs-sep"></div>
         <div class="hs-cell">
-          <span class="hs-val hs-zero">Sem</span>
+          <span class="hs-val">Sem</span>
           <span class="hs-lbl">instalação</span>
         </div>
       </div>
     </div>
 
-    <div class="hero-right">
+    <div class="hero-visual" data-hero="visual">
       <div class="phone-stage" id="phoneStage">
-        <div class="float-chip fc1">
-          <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="2"/><circle cx="5" cy="5" r="4.5" opacity=".4"/></svg>
+        <div class="float-chip fc1" data-hero="chip">
+          <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="5" cy="5" r="2"/><circle cx="5" cy="5" r="4.5" opacity=".4"/></svg>
           tap to open
         </div>
-        <div class="float-chip fc2">+€4 · adicionado</div>
-        <div class="float-chip fc3">★★★★★</div>
+        <div class="float-chip fc2" data-hero="chip">+€4 · adicionado</div>
+        <div class="float-chip fc3" data-hero="chip"><span class="fc-stars">★★★★★</span></div>
 
-        <!-- Phone frame + screenshot -->
         <div class="phone" id="phone">
           <div class="phone-notch"></div>
           <div class="phone-screen">
-            <!--
-              Coloque o screenshot do template2 em: ./imgs/menu-demo.png
-              (ficheiro: _Users_caiomedeiros_nexo_apps_template2_index_html_iPhone_14_Pro_Max_.png)
-            -->
-            <img
-              src="./img/demo-preview.png"
-              alt="NEXO — Demo do menu digital"
-              class="phone-img"
-              draggable="false"
-            >
+            <img src="./img/demo-preview.png" alt="NEXO — Demo do menu digital" class="phone-img" width="1290" height="2796" fetchpriority="high" draggable="false">
           </div>
         </div>
-      </div>
 
-      <!-- NFC Display Stand -->
-      <div class="stand-scene">
-        <div class="stand-wrap" id="standWrap">
-          <!--
-            Coloque o print A6 do display em: ./imgs/display-stand.png
-            (ficheiro: A6_-_2.png)
-          -->
-          <img
-            src="./card/A6 - 2.png"
-            alt="NEXO Display Stand NFC"
-            class="stand-img"
-            draggable="false"
-          >
+        <div class="stand-wrap" id="standWrap" data-hero="stand">
+          <img src="./card/A6 - 2.png" alt="NEXO Display Stand NFC" class="stand-img" width="662" height="937" loading="lazy" draggable="false">
+          <span class="stand-cap">DISPLAY NFC · NTAG216</span>
         </div>
       </div>
     </div>
-
   </div>
-</section>
+
+  <div class="hero-foot" data-hero="foot">
+    <span class="hf-coord">38.7223°N · 9.1393°W — LISBOA</span>
+    <span class="hf-scroll"><span class="hf-line"></span>SCROLL</span>
+    <span class="hf-est">EST. 2026 — REV.07</span>
+  </div>
+</header>
 
 <!-- ── MARQUEE ── -->
 <div class="marquee-wrap" aria-hidden="true">
@@ -202,19 +184,20 @@
 <!-- ── STATS ── -->
 <section class="stats" id="stats">
   <div class="container">
+    <p class="stats-eyebrow" data-reveal>DADOS DO SECTOR — FONTES CITADAS</p>
     <div class="stats-row">
-      <div class="stat reveal">
-        <span class="stat-val"><span data-count="59">59</span>%</span>
+      <div class="stat" data-reveal>
+        <span class="stat-val"><span data-count="59">59</span><em>%</em></span>
         <p>dos clientes de restaurantes com serviço de mesa dizem que usariam QR para abrir o menu no smartphone</p>
         <span class="stat-tag">→ National Restaurant Association 2024</span>
       </div>
-      <div class="stat reveal" style="--d:.1s">
-        <span class="stat-val"><span data-count="70">70</span>%</span>
+      <div class="stat" data-reveal>
+        <span class="stat-val"><span data-count="70">70</span><em>%</em></span>
         <p>dizem que as reviews são extremamente ou muito importantes quando escolhem onde comer</p>
         <span class="stat-tag">→ Tripadvisor</span>
       </div>
-      <div class="stat reveal" style="--d:.2s">
-        <span class="stat-val"><span data-count="76">76</span>%</span>
+      <div class="stat" data-reveal>
+        <span class="stat-val"><span data-count="76">76</span><em>%</em></span>
         <p>dos operadores dizem que usar tecnologia lhes dá vantagem competitiva</p>
         <span class="stat-tag">→ National Restaurant Association 2024</span>
       </div>
@@ -222,15 +205,16 @@
   </div>
 </section>
 
-<!-- ── PROBLEM ── -->
-<section class="problem" id="problema">
+<!-- ── 01 PROBLEMA ── -->
+<section class="problem sec-bone" id="problema">
+  <span class="ghost-n" aria-hidden="true">01</span>
   <div class="container">
-    <div class="section-head reveal">
+    <div class="section-head" data-reveal>
       <span class="eyebrow">01 — O problema</span>
       <h2>O menu da maioria<br>foi feito para imprimir.<br><em>Não para vender.</em></h2>
     </div>
     <ol class="prob-list">
-      <li class="prob-item reveal">
+      <li class="prob-item" data-reveal>
         <span class="prob-n">01</span>
         <div class="prob-body">
           <h3>O menu deixa margem por vender.</h3>
@@ -238,7 +222,7 @@
         </div>
         <span class="prob-impact">margem<br>perdida</span>
       </li>
-      <li class="prob-item reveal" style="--d:.08s">
+      <li class="prob-item" data-reveal>
         <span class="prob-n">02</span>
         <div class="prob-body">
           <h3>A equipa perde tempo a explicar o óbvio.</h3>
@@ -247,35 +231,40 @@
         <span class="prob-impact">tempo de sala<br>perdido</span>
       </li>
     </ol>
-    <blockquote class="prob-quote reveal">"A sua comida já vende. O problema é o que fica por pedir."</blockquote>
+    <blockquote class="prob-quote" data-reveal>"A sua comida já vende. <em>O problema é o que fica por pedir."</em></blockquote>
   </div>
 </section>
 
-<!-- ── HOW IT WORKS ── -->
+<!-- ── 02 COMO FUNCIONA ── -->
 <section class="how" id="como-funciona">
+  <span class="ghost-n ghost-light" aria-hidden="true">02</span>
   <div class="container">
-    <div class="section-head reveal">
-      <span class="eyebrow eyebrow-light">02 — Como funciona</span>
-      <h2 class="light">Um toque.<br><em>Todo o processo.</em></h2>
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">02 — Como funciona</span>
+      <h2>Um toque.<br><em>Todo o processo.</em></h2>
     </div>
-    <div class="how-steps">
-      <div class="how-step reveal">
-        <div class="hs-num">01</div>
-        <div class="hs-glyph">
+
+    <div class="how-steps" id="howSteps">
+      <div class="how-line" aria-hidden="true"><span class="how-line-fill" id="howLineFill"></span></div>
+
+      <div class="how-step" data-reveal>
+        <div class="hstep-num">01</div>
+        <div class="hstep-glyph">
           <div class="glyph-tap">
             <span class="tap-dot"></span>
             <span class="tap-ring"></span><span class="tap-ring"></span><span class="tap-ring"></span>
           </div>
         </div>
-        <div class="hs-text">
+        <div class="hstep-text">
           <h3>O cliente abre sem app.</h3>
           <p>Toca no display NFC ou lê o QR. O menu abre direto no browser. Nenhuma instalação. Funciona em qualquer telemóvel.</p>
-          <span class="hs-chip">abre direto no browser</span>
+          <span class="hstep-chip">abre direto no browser</span>
         </div>
       </div>
-      <div class="how-step reveal" style="--d:.1s">
-        <div class="hs-num">02</div>
-        <div class="hs-glyph">
+
+      <div class="how-step" data-reveal>
+        <div class="hstep-num">02</div>
+        <div class="hstep-glyph">
           <div class="glyph-upsell">
             <div class="gu-row">Frango Grelhado · 12,50€</div>
             <div class="gu-row gu-add">+ Vinho da casa · 4,00€</div>
@@ -283,32 +272,34 @@
             <div class="gu-total">= 20,00€</div>
           </div>
         </div>
-        <div class="hs-text">
+        <div class="hstep-text">
           <h3>O menu sugere. O cliente adiciona.</h3>
           <p>Destaques, combinações e sugestões aparecem no momento certo. O pedido cresce sem a equipa intervir.</p>
-          <span class="hs-chip">combinações no momento certo</span>
+          <span class="hstep-chip">combinações no momento certo</span>
         </div>
       </div>
-      <div class="how-step reveal" style="--d:.2s">
-        <div class="hs-num">03</div>
-        <div class="hs-glyph">
+
+      <div class="how-step" data-reveal>
+        <div class="hstep-num">03</div>
+        <div class="hstep-glyph">
           <div class="glyph-review">
             <div class="gr-stars">★★★★★</div>
             <div class="gr-quote">"Serviço perfeito."</div>
             <div class="gr-badge">Google · há 2 min</div>
           </div>
         </div>
-        <div class="hs-text">
+        <div class="hstep-text">
           <h3>A review chega sozinha.</h3>
           <p>Depois da refeição, o menu encaminha para Google ou TheFork. Mais avaliações sem depender de nenhum pedido verbal.</p>
-          <span class="hs-chip">pedido de review com timing certo</span>
+          <span class="hstep-chip">pedido de review com timing certo</span>
         </div>
       </div>
     </div>
-    <div class="how-obj reveal">
+
+    <div class="how-obj" data-reveal>
       <div class="ho-q">
-        <span class="eyebrow eyebrow-light">A pergunta mais comum</span>
-        <h3>"E se os clientes não usarem?"</h3>
+        <span class="eyebrow">A pergunta mais comum</span>
+        <h3>"E se os clientes <em>não usarem?"</em></h3>
       </div>
       <ul class="ho-ans">
         <li><span>+</span>Sem instalação — abre direto no browser</li>
@@ -320,95 +311,80 @@
 </section>
 
 <!-- ── SOCIAL PROOF STRIP ── -->
-<div class="sp-strip">
-  <p class="sp-headline">Já em produção em Portugal — <a href="./menu/demo/index.html" target="_blank" onclick="nexoTrack('demo_cta_clicked',{position:'section_02'})">Ver demo ao vivo →</a></p>
-  <div class="sp-chips">
-    <span class="sp-chip">&lt; 3 seg do toque ao menu</span>
-    <span class="sp-chip">0 apps necessárias</span>
-    <span class="sp-chip">4 idiomas incluídos</span>
+<aside class="sp-strip">
+  <div class="container sp-inner">
+    <p class="sp-headline">Já em produção em Portugal — <a href="./menu/demo/index.html" target="_blank" data-cursor="VER" onclick="nexoTrack('demo_cta_clicked',{position:'section_02'})">Ver demo ao vivo →</a></p>
+    <div class="sp-chips">
+      <span class="sp-chip">&lt; 3 seg do toque ao menu</span>
+      <span class="sp-chip">0 apps necessárias</span>
+      <span class="sp-chip">4 idiomas incluídos</span>
+    </div>
   </div>
-</div>
+</aside>
 
-<!-- ── PRODUTO EM CONTEXTO ── -->
-<!-- ── PRODUTO EM CONTEXTO ── -->
+<!-- ── 03 PRODUTO ── -->
 <section class="pc" id="produto">
-  <div class="pc-intro">
-    <span class="pc-eyebrow">03 - O produto real</span>
-    <h2 class="pc-headline">Visto de perto.<br><em>Na mesa certa.</em></h2>
-  </div>
+  <span class="ghost-n ghost-light" aria-hidden="true">03</span>
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">03 — O produto real</span>
+      <h2>Visto de perto.<br><em>Na mesa certa.</em></h2>
+    </div>
 
-  <div class="pc-stage">
-
-    <div class="pc-col pc-col-a" data-pc-parallax="-0.12">
-      <div class="pc-img-wrap">
-        <img src="./img/hero.png" alt="NEXO em contexto — beach club" class="pc-img" loading="lazy" draggable="false">
-        <div class="pc-img-overlay">
-          <div class="pc-img-label">
+    <div class="pc-stage">
+      <figure class="pc-col pc-col-a" data-pc-speed="-40">
+        <div class="pc-img-wrap">
+          <img src="./img/hero.webp" alt="NEXO em contexto — beach club" class="pc-img" width="1084" height="1451" loading="lazy" draggable="false">
+          <figcaption class="pc-img-label">
             <span class="pc-label-n">01</span>
             <div>
               <strong>No ambiente</strong>
               <p>O display fica na mesa. O cliente aproxima o telemóvel ou lê o QR. O menu abre em segundos.</p>
             </div>
-          </div>
+          </figcaption>
         </div>
-      </div>
-      <div class="pc-col-text">
-        <ul class="pc-specs">
+        <ul class="pc-specs" data-reveal>
           <li><span>NFC NTAG216</span><span>chip com password lock</span></li>
           <li><span>QR fallback</span><span>universal, sem instalação</span></li>
           <li><span>Zero app</span><span>abre direto no browser</span></li>
         </ul>
-      </div>
-    </div>
+      </figure>
 
-    <div class="pc-col pc-col-b" data-pc-parallax="0.08">
-      <div class="pc-col-text pc-col-text-top">
-        <p class="pc-pull">"Um toque. Toda a experiência."</p>
-      </div>
-      <div class="pc-img-wrap">
-        <img src="./card/prototype.png" alt="NEXO Display Stand NFC — detalhe" class="pc-img" loading="lazy" draggable="false">
-        <div class="pc-img-overlay">
-          <div class="pc-img-label">
+      <figure class="pc-col pc-col-b" data-pc-speed="34">
+        <p class="pc-pull" data-reveal>"Um toque.<br><em>Toda a experiência."</em></p>
+        <div class="pc-img-wrap">
+          <img src="./card/prototype.webp" alt="NEXO Display Stand NFC — detalhe" class="pc-img" width="662" height="937" loading="lazy" draggable="false">
+          <figcaption class="pc-img-label">
             <span class="pc-label-n">02</span>
             <div>
               <strong>O hardware</strong>
               <p>Acrílico premium. Resistente à água. Sem bateria. Funciona para sempre.</p>
             </div>
-          </div>
+          </figcaption>
         </div>
-      </div>
+      </figure>
     </div>
 
-  </div>
-
-  <div class="pc-footer">
-    <div class="pc-footer-stat">
-      <span>3 seg</span>
-      <small>do toque ao menu aberto</small>
+    <div class="pc-footer" data-reveal>
+      <div class="pc-footer-stat"><span>3 seg</span><small>do toque ao menu aberto</small></div>
+      <div class="pc-footer-stat"><span>0</span><small>apps instaladas</small></div>
+      <div class="pc-footer-stat"><span>100%</span><small>telemóveis compatíveis</small></div>
+      <a href="#contacto" class="pc-footer-cta">Quero o meu display →</a>
     </div>
-    <div class="pc-footer-divider"></div>
-    <div class="pc-footer-stat">
-      <span>0</span>
-      <small>apps instaladas</small>
-    </div>
-    <div class="pc-footer-divider"></div>
-    <div class="pc-footer-stat">
-      <span>100%</span>
-      <small>telemóveis compatíveis</small>
-    </div>
-    <a href="#contacto" class="pc-footer-cta">Quero o meu display →</a>
   </div>
 </section>
 
-<!-- ── FEATURES ── -->
-<section class="features" id="features">
+<!-- ── 04 FUNCIONALIDADES ── -->
+<section class="features sec-bone" id="features">
+  <span class="ghost-n" aria-hidden="true">04</span>
   <div class="container">
-    <div class="section-head reveal">
+    <div class="section-head" data-reveal>
       <span class="eyebrow">04 — As funcionalidades</span>
       <h2>Não é só um menu.<br><em>É uma ferramenta de venda.</em></h2>
     </div>
+
     <div class="bento">
-      <article class="bc bc-a reveal-b">
+      <article class="bc bc-a" data-reveal>
         <div class="bc-label">UPSELL AUTOMÁTICO</div>
         <div class="bc-vis">
           <div class="bv-upsell">
@@ -430,7 +406,8 @@
           <span class="bc-chip">upsell sem pressionar a equipa</span>
         </div>
       </article>
-      <article class="bc bc-b bc-dark reveal-b" style="--bd:120ms">
+
+      <article class="bc bc-b bc-dark" data-reveal>
         <div class="bc-label">ZERO ERROS DE PEDIDO</div>
         <div class="bc-vis">
           <div class="bv-order">
@@ -447,7 +424,8 @@
           <span class="bc-chip bc-chip-inv">A preferida na sala</span>
         </div>
       </article>
-      <article class="bc bc-c reveal-b" style="--bd:200ms">
+
+      <article class="bc bc-c" data-reveal>
         <div class="bc-label">REVIEWS AUTOMÁTICAS</div>
         <div class="bc-vis bc-vis-c">
           <div class="bv-review">
@@ -461,7 +439,8 @@
           <p>O pedido aparece com a experiência ainda fresca. Sem a equipa ter de pedir.</p>
         </div>
       </article>
-      <article class="bc bc-d reveal-b" style="--bd:280ms">
+
+      <article class="bc bc-d" data-reveal>
         <div class="bc-label">4 IDIOMAS</div>
         <div class="bc-vis bc-vis-c">
           <div class="bv-lang">
@@ -475,16 +454,44 @@
         </div>
       </article>
 
-      <!-- ── ANALYTICS CARD ── -->
-      <article class="bc bc-e bc-dark reveal-b" style="--bd:320ms">
+      <!-- CHAMAR EMPREGADO -->
+      <article class="bc svc-card" data-reveal>
+        <div class="bc-label">CHAMAR EMPREGADO</div>
+        <div class="bc-vis">
+          <div class="svc-notif-wrap">
+            <div class="svc-bell-wrap">
+              <div class="svc-ping-ring svc-ping-1"></div>
+              <div class="svc-ping-ring svc-ping-2"></div>
+              <svg class="svc-bell-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </div>
+            <div class="svc-notif-card">
+              <div class="svc-notif-row">
+                <div class="svc-notif-app">NEXO</div>
+                <div class="svc-notif-time">agora</div>
+              </div>
+              <div class="svc-notif-title">🔔 Mesa 4 precisa de atenção</div>
+              <div class="svc-notif-sub">Toque para responder</div>
+            </div>
+          </div>
+          <div class="svc-status-pill"><span class="svc-live-dot"></span>Empregado notificado</div>
+        </div>
+        <div class="bc-text">
+          <h3>Um toque. O empregado sabe.</h3>
+          <p>A notificação chega ao telemóvel da equipa de imediato — sem gritar, sem acenar, sem espera.</p>
+          <span class="bc-chip">sem hardware extra</span>
+        </div>
+      </article>
+
+      <!-- ANALYTICS -->
+      <article class="bc bc-e bc-dark" data-reveal>
         <div class="bc-label">
           ANALYTICS — DADOS REAIS DO SEU MENU
-          <span class="ana-live-dot" aria-hidden="true"></span>
-          <span class="ana-live-txt">LIVE</span>
+          <span class="ana-live"><span class="ana-live-dot" aria-hidden="true"></span>LIVE</span>
         </div>
         <div class="bc-vis bc-vis-analytics">
-
-          <!-- Panel 1: Pratos mais vistos (3 items) -->
           <div class="ana-panel">
             <div class="ana-phead">Pratos mais vistos</div>
             <div class="ana-bars">
@@ -504,7 +511,7 @@
                 <span class="ana-count">189</span>
               </div>
             </div>
-            <div class="ana-phead" style="margin-top:12px">Idiomas</div>
+            <div class="ana-phead ana-phead-gap">Idiomas</div>
             <div class="ana-langs">
               <div class="ana-lang-row"><span class="ana-lang-code">PT</span><div class="ana-lang-bar"><div class="ana-lang-fill" style="--lw:62%"></div></div><span class="ana-lang-pct">62%</span></div>
               <div class="ana-lang-row"><span class="ana-lang-code">EN</span><div class="ana-lang-bar"><div class="ana-lang-fill" style="--lw:24%"></div></div><span class="ana-lang-pct">24%</span></div>
@@ -512,26 +519,13 @@
             </div>
           </div>
 
-          <!-- Panel 2: O que pesquisaram (4 items) -->
           <div class="ana-panel ana-panel-search">
             <div class="ana-phead">O que pesquisaram</div>
             <ul class="ana-searches">
-              <li>
-                <span class="ana-q">"sobremesa chocolate"</span>
-                <span class="ana-badge ana-badge-miss">0 resultados</span>
-              </li>
-              <li>
-                <span class="ana-q">"vegan"</span>
-                <span class="ana-badge ana-badge-hit">4</span>
-              </li>
-              <li>
-                <span class="ana-q">"prato do dia"</span>
-                <span class="ana-badge ana-badge-miss">0 resultados</span>
-              </li>
-              <li>
-                <span class="ana-q">"sem glúten"</span>
-                <span class="ana-badge ana-badge-hit">11</span>
-              </li>
+              <li><span class="ana-q">"sobremesa chocolate"</span><span class="ana-badge ana-badge-miss">0 resultados</span></li>
+              <li><span class="ana-q">"vegan"</span><span class="ana-badge ana-badge-hit">4</span></li>
+              <li><span class="ana-q">"prato do dia"</span><span class="ana-badge ana-badge-miss">0 resultados</span></li>
+              <li><span class="ana-q">"sem glúten"</span><span class="ana-badge ana-badge-hit">11</span></li>
             </ul>
             <div class="ana-insight">
               <span class="ana-insight-icon">↗</span>
@@ -539,7 +533,6 @@
             </div>
           </div>
 
-          <!-- Panel 3: Funil de reviews -->
           <div class="ana-panel">
             <div class="ana-phead">Funil de reviews</div>
             <div class="ana-funnel">
@@ -560,52 +553,18 @@
               </div>
             </div>
           </div>
-
         </div>
         <div class="bc-text">
-          <h3>O menu tem memória. Use-a.</h3>
+          <h3>O menu tem memória. <em>Use-a.</em></h3>
           <p>Pratos mais vistos, pesquisas sem resultado e funil de reviews — em tempo real via Google Analytics 4.</p>
           <span class="bc-chip bc-chip-inv">Google Analytics 4 integrado</span>
         </div>
       </article>
 
-      <!-- ── CARD: CHAMAR EMPREGADO ── -->
-      <article class="bc svc-card reveal-b" style="--bd:360ms">
-        <div class="svc-tag">CHAMAR EMPREGADO</div>
-        <div class="svc-vis">
-          <div class="svc-notif-wrap">
-            <div class="svc-bell-wrap">
-              <div class="svc-ping-ring svc-ping-1"></div>
-              <div class="svc-ping-ring svc-ping-2"></div>
-              <svg class="svc-bell-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-            </div>
-            <div class="svc-notif-card">
-              <div class="svc-notif-row">
-                <div class="svc-notif-app">NEXO</div>
-                <div class="svc-notif-time">agora</div>
-              </div>
-              <div class="svc-notif-title">🔔 Mesa 4 precisa de atenção</div>
-              <div class="svc-notif-sub">Toque para responder</div>
-            </div>
-          </div>
-          <div class="svc-status-pill">
-            <span class="svc-live-dot"></span>Empregado notificado
-          </div>
-        </div>
-        <div class="svc-body">
-          <h3>Um toque. O empregado sabe.</h3>
-          <p>A notificação chega ao telemóvel da equipa de imediato — sem gritar, sem acenar, sem espera.</p>
-          <span class="svc-chip">sem hardware extra</span>
-        </div>
-      </article>
-
-      <!-- ── CARD: PEDIDO VIA WHATSAPP (dark) ── -->
-      <article class="bc svc-card svc-card-hero reveal-b" style="--bd:440ms">
-        <div class="svc-tag svc-tag-inv">PEDIDO VIA WHATSAPP</div>
-        <div class="svc-vis">
+      <!-- PEDIDO VIA WHATSAPP -->
+      <article class="bc svc-card bc-dark" data-reveal>
+        <div class="bc-label">PEDIDO VIA WHATSAPP</div>
+        <div class="bc-vis">
           <div class="svc-wa">
             <div class="svc-wa-header">
               <div class="svc-wa-avatar">NR</div>
@@ -629,80 +588,81 @@
             </div>
           </div>
         </div>
-        <div class="svc-body">
+        <div class="bc-text">
           <h3>Seleciona. Confirma. Envia.</h3>
           <p>O pedido vai direto ao WhatsApp do restaurante com itens, quantidades e total. Zero papel. Zero margem de erro.</p>
-          <span class="svc-chip svc-chip-inv">zero erros de pedido</span>
+          <span class="bc-chip bc-chip-inv">zero erros de pedido</span>
         </div>
       </article>
 
-      <!-- ── CARD: MOSTRAR À EQUIPA ── -->
-      <article class="bc svc-card reveal-b" style="--bd:520ms">
-        <div class="svc-tag">MOSTRAR À EQUIPA</div>
-        <div class="svc-vis">
-          <div class="svc-screen">
-            <div class="svc-screen-bar">
-              <span>Rever Pedido</span>
-              <span class="svc-screen-badge">Mesa 4</span>
+      <!-- MOSTRAR À EQUIPA -->
+      <article class="bc svc-card bc-wide" data-reveal>
+        <div class="bc-wide-vis">
+          <div class="bc-label">MOSTRAR À EQUIPA</div>
+          <div class="bc-vis">
+            <div class="svc-screen">
+              <div class="svc-screen-bar">
+                <span>Rever Pedido</span>
+                <span class="svc-screen-badge">Mesa 4</span>
+              </div>
+              <div class="svc-screen-items">
+                <div class="svc-screen-row" style="--si:0">
+                  <span class="svc-checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span>Frango Grelhado</span>
+                </div>
+                <div class="svc-screen-row" style="--si:1">
+                  <span class="svc-checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span>Batatas Fritas</span>
+                </div>
+                <div class="svc-screen-row" style="--si:2">
+                  <span class="svc-checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span>Água sem gás</span>
+                </div>
+              </div>
+              <div class="svc-screen-cta">Mostrar ao Staff →</div>
             </div>
-            <div class="svc-screen-items">
-              <div class="svc-screen-row" style="--si:0">
-                <span class="svc-checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                <span>Frango Grelhado</span>
-              </div>
-              <div class="svc-screen-row" style="--si:1">
-                <span class="svc-checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                <span>Batatas Fritas</span>
-              </div>
-              <div class="svc-screen-row" style="--si:2">
-                <span class="svc-checkmark"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                <span>Água sem gás</span>
-              </div>
-            </div>
-            <div class="svc-screen-cta">Mostrar ao Staff →</div>
           </div>
         </div>
-        <div class="svc-body">
-          <h3>O ecrã é a comanda.</h3>
+        <div class="bc-text bc-wide-text">
+          <h3>O ecrã <em>é a comanda.</em></h3>
           <p>O cliente mostra o telemóvel e o empregado regista. Sem impressora, sem papel, sem mal-entendidos.</p>
-          <span class="svc-chip">sem impressora necessária</span>
+          <span class="bc-chip">sem impressora necessária</span>
         </div>
       </article>
-
     </div>
-    <ul class="feat-list reveal">
-      <li><span class="fl-n">05</span><div><strong>Wi-Fi integrado</strong><p>Zero perguntas sobre a password.</p></div></li>
-      <li><span class="fl-n">06</span><div><strong>Destaques inteligentes</strong><p>Posicione os pratos mais rentáveis à frente.</p></div></li>
-      <li><span class="fl-n">07</span><div><strong>Filtros de dieta</strong><p>Vegetariano, vegan, sem glúten e mais.</p></div></li>
-      <li><span class="fl-n">08</span><div><strong>Alergénios UE</strong><p>Conformidade com Reg. UE 1169/2011 incluída.</p></div></li>
-      <li><span class="fl-n">09</span><div><strong>Carta de vinhos</strong><p>Filtros por país, tipo e casta com Vivino integrado.</p></div></li>
-      <li><span class="fl-n">10</span><div><strong>Favoritos e partilha</strong><p>Guardar pratos e partilhar links ou imagens do menu.</p></div></li>
-      <li><span class="fl-n">11</span><div><strong>Identidade visual do restaurante</strong><p>Cores, logo, imagem hero e linguagem alinhadas com a marca.</p></div></li>
-      <li><span class="fl-n">12</span><div><strong>WhatsApp direto</strong><p>Reservas, dúvidas e feedback sem sair do telemóvel.</p></div></li>
-      <li><span class="fl-n">13</span><div><strong>Dividir conta</strong><p>Partilha por pessoa ou por item, direto no ecrã.</p></div></li>
-      <li><span class="fl-n">14</span><div><strong>Analytics em tempo real</strong><p>Pratos mais vistos, pesquisas, funil de reviews e idiomas — via Google Analytics 4.</p></div></li>
-      <li><span class="fl-n">15</span><div><strong>Atualizações ilimitadas</strong><p>Altere preços, pratos e campanhas sem esperar.</p></div></li>
-      <li><span class="fl-n">16</span><div><strong>Hosting incluído</strong><p>Sempre online, gerido por nós.</p></div></li>
-      <li><span class="fl-n">17</span><div><strong>Chamar empregado</strong><p>Notificação em tempo real ao telemóvel da equipa. Sem botões físicos.</p></div></li>
-      <li><span class="fl-n">18</span><div><strong>Pedido via WhatsApp</strong><p>O cliente envia o pedido completo com total incluído, direto ao restaurante.</p></div></li>
-      <li><span class="fl-n">19</span><div><strong>Mostrar à equipa</strong><p>O ecrã do cliente é a comanda. Sem impressora, sem papel, sem erro.</p></div></li>
+
+    <ul class="feat-list">
+      <li data-reveal><span class="fl-n">05</span><div><strong>Wi-Fi integrado</strong><p>Zero perguntas sobre a password.</p></div></li>
+      <li data-reveal><span class="fl-n">06</span><div><strong>Destaques inteligentes</strong><p>Posicione os pratos mais rentáveis à frente.</p></div></li>
+      <li data-reveal><span class="fl-n">07</span><div><strong>Filtros de dieta</strong><p>Vegetariano, vegan, sem glúten e mais.</p></div></li>
+      <li data-reveal><span class="fl-n">08</span><div><strong>Alergénios UE</strong><p>Conformidade com Reg. UE 1169/2011 incluída.</p></div></li>
+      <li data-reveal><span class="fl-n">09</span><div><strong>Carta de vinhos</strong><p>Filtros por país, tipo e casta com Vivino integrado.</p></div></li>
+      <li data-reveal><span class="fl-n">10</span><div><strong>Favoritos e partilha</strong><p>Guardar pratos e partilhar links ou imagens do menu.</p></div></li>
+      <li data-reveal><span class="fl-n">11</span><div><strong>Identidade visual do restaurante</strong><p>Cores, logo, imagem hero e linguagem alinhadas com a marca.</p></div></li>
+      <li data-reveal><span class="fl-n">12</span><div><strong>WhatsApp direto</strong><p>Reservas, dúvidas e feedback sem sair do telemóvel.</p></div></li>
+      <li data-reveal><span class="fl-n">13</span><div><strong>Dividir conta</strong><p>Partilha por pessoa ou por item, direto no ecrã.</p></div></li>
+      <li data-reveal><span class="fl-n">14</span><div><strong>Analytics em tempo real</strong><p>Pratos mais vistos, pesquisas, funil de reviews e idiomas — via Google Analytics 4.</p></div></li>
+      <li data-reveal><span class="fl-n">15</span><div><strong>Atualizações ilimitadas</strong><p>Altere preços, pratos e campanhas sem esperar.</p></div></li>
+      <li data-reveal><span class="fl-n">16</span><div><strong>Hosting incluído</strong><p>Sempre online, gerido por nós.</p></div></li>
+      <li data-reveal><span class="fl-n">17</span><div><strong>Chamar empregado</strong><p>Notificação em tempo real ao telemóvel da equipa. Sem botões físicos.</p></div></li>
+      <li data-reveal><span class="fl-n">18</span><div><strong>Pedido via WhatsApp</strong><p>O cliente envia o pedido completo com total incluído, direto ao restaurante.</p></div></li>
+      <li data-reveal><span class="fl-n">19</span><div><strong>Mostrar à equipa</strong><p>O ecrã do cliente é a comanda. Sem impressora, sem papel, sem erro.</p></div></li>
     </ul>
   </div>
 </section>
 
-<!-- ── PRICING ── -->
-<!-- ── PRICING ── -->
+<!-- ── 05 PLANOS ── -->
 <section class="pricing" id="planos">
+  <span class="ghost-n ghost-light" aria-hidden="true">05</span>
   <div class="container">
-    <div class="section-head reveal">
+    <div class="section-head" data-reveal>
       <span class="eyebrow">05 — Planos</span>
       <h2>Escolha o nível<br><em>de impacto que quer gerar.</em></h2>
       <p class="section-sub">Comece por digitalizar o menu ou avance para organizar melhor o serviço, destacar pratos rentáveis e captar mais reviews.</p>
     </div>
 
     <div class="plans">
-
-      <article class="plan reveal">
+      <article class="plan" data-reveal>
         <div class="plan-top">
           <span class="plan-tier">Base</span>
           <h3>Starter<span>.</span></h3>
@@ -720,7 +680,7 @@
         <a href="#contacto" class="plan-cta plan-out" onclick="nexoTrack('plan_cta_clicked',{plan_name:'starter'})">Começar →</a>
       </article>
 
-      <article class="plan plan-featured reveal" style="--d:.08s">
+      <article class="plan plan-featured" data-reveal>
         <span class="plan-badge">★ MAIS ESCOLHIDO</span>
         <div class="plan-top">
           <span class="plan-tier">Crescimento</span>
@@ -746,13 +706,13 @@
         <a href="#contacto" class="plan-cta plan-fill" onclick="nexoTrack('plan_cta_clicked',{plan_name:'growth'})">Quero este plano →</a>
       </article>
 
-      <article class="plan plan-enterprise reveal" style="--d:.16s">
+      <article class="plan plan-enterprise" data-reveal>
         <div class="plan-top">
           <span class="plan-tier">Personalizado</span>
           <h3>Enterprise<span>.</span></h3>
         </div>
         <div class="plan-price-custom">Preço<br>sob consulta</div>
-        <ul class="plan-feats" style="margin-top:20px">
+        <ul class="plan-feats">
           <li class="plan-incl"><em>Tudo do Growth, e mais:</em></li>
           <li><span>+</span>Relatórios de performance</li>
           <li><span>+</span>Campanhas por horário</li>
@@ -761,208 +721,220 @@
           <li><span>+</span>SLA e suporte dedicado</li>
           <li><span>+</span>Multi-espaço / franchising</li>
         </ul>
-        <a href="#contacto" class="plan-cta plan-out plan-enterprise-cta" onclick="nexoTrack('plan_cta_clicked',{plan_name:'enterprise'})">Falar connosco →</a>
+        <a href="#contacto" class="plan-cta plan-out" onclick="nexoTrack('plan_cta_clicked',{plan_name:'enterprise'})">Falar connosco →</a>
       </article>
-
     </div>
 
-    <div class="pricing-note reveal">
+    <div class="pricing-note" data-reveal>
       <span class="pn-i">i</span>
       <p><strong>Display Stand NFC:</strong> €5 por unidade, pagamento único. A mensalidade cobre software, suporte e evolução contínua do produto. Quem entrar agora mantém o preço de lançamento para sempre.</p>
     </div>
 
-<p class="annual-note reveal">Plano anual disponível — 1 mês grátis. <a href="#contacto" onclick="nexoTrack('annual_pricing_clicked')">Fale connosco →</a></p>
+    <p class="annual-note" data-reveal>Plano anual disponível — 1 mês grátis. <a href="#contacto" onclick="nexoTrack('annual_pricing_clicked')">Fale connosco →</a></p>
 
-<div class="impact-block reveal">
-  <div class="impact-left">
-    <span class="impact-eyebrow">A conta simples</span>
-    <h3 class="impact-title">O Growth paga-se no<br><em>segundo dia do mês.</em></h3>
-    <p class="impact-sub">Se o menu recuperar +€3 por mesa em extras que já existiam na carta — bebidas, sobremesas, sugestões.</p>
-    <a href="#contacto" class="impact-cta" onclick="nexoTrack('plan_cta_clicked',{plan_name:'growth'})">Quero este plano →</a>
-  </div>
+    <div class="impact-block" id="impactBlock">
+      <div class="impact-left" data-reveal>
+        <span class="eyebrow">A conta simples</span>
+        <h3 class="impact-title">O Growth paga-se no<br><em>segundo dia do mês.</em></h3>
+        <p class="impact-sub">Se o menu recuperar +€3 por mesa em extras que já existiam na carta — bebidas, sobremesas, sugestões.</p>
+        <a href="#contacto" class="impact-cta" onclick="nexoTrack('plan_cta_clicked',{plan_name:'growth'})">Quero este plano →</a>
+      </div>
 
-  <div class="impact-right">
-    <div class="impact-math">
-      <div class="impact-cell">
-        <span>+€3</span>
-        <small>por mesa</small>
-      </div>
-      <div class="impact-op">×</div>
-      <div class="impact-cell">
-        <span>20</span>
-        <small>mesas / dia</small>
-      </div>
-      <div class="impact-op">×</div>
-      <div class="impact-cell">
-        <span>30</span>
-        <small>dias</small>
+      <div class="impact-right" id="impactReceipt">
+        <div class="impact-rhead" data-receipt-line>
+          <span>NEXO — SIMULAÇÃO</span>
+          <span>Nº 0001</span>
+        </div>
+        <div class="impact-math">
+          <div class="impact-cell" data-receipt-line><span>+€3</span><small>por mesa</small></div>
+          <div class="impact-op" data-receipt-line>×</div>
+          <div class="impact-cell" data-receipt-line><span>20</span><small>mesas / dia</small></div>
+          <div class="impact-op" data-receipt-line>×</div>
+          <div class="impact-cell" data-receipt-line><span>30</span><small>dias</small></div>
+        </div>
+        <div class="impact-result" data-receipt-line>
+          <div class="impact-result-value">+€<span id="impactCount" data-impact="1800">1.800</span></div>
+          <div class="impact-result-label">por mês em receita que já existia no menu</div>
+        </div>
+        <div class="impact-vs" data-receipt-line>
+          <span>Custo do Growth</span>
+          <span class="impact-vs-price">€69 / mês</span>
+        </div>
       </div>
     </div>
-    <div class="impact-result">
-      <div class="impact-result-value">+€1.800</div>
-      <div class="impact-result-label">por mês em receita que já existia no menu</div>
-    </div>
-    <div class="impact-vs">
-      <span>Custo do Growth</span>
-      <span class="impact-vs-price">€69 / mês</span>
-    </div>
-  </div>
-</div>
-
   </div>
 </section>
 
-<!-- ── FAQ ── -->
-<section class="faq" id="faq">
+<!-- ── 06 NEXO EVENTOS ── -->
+<section class="eventos sec-bone" id="eventos">
+  <span class="ghost-n" aria-hidden="true">06</span>
   <div class="container">
-    <div class="section-head reveal">
-      <span class="eyebrow eyebrow-light">06 — Perguntas frequentes</span>
-      <h2 class="light">Tem dúvidas?<br><em>As respostas são directas.</em></h2>
+    <div class="ev-grid">
+      <div class="ev-left">
+        <div class="section-head" data-reveal>
+          <span class="eyebrow">06 — Eventos</span>
+          <h2>NEXO <em>Eventos.</em></h2>
+          <p class="section-sub">Um menu digital completo para o seu casamento, evento corporativo ou festival. Sem mensalidade. Sem complicações.</p>
+        </div>
+        <div class="ev-chips" data-reveal>
+          <span class="ev-chip ev-chip-hot">€149 pagamento único</span>
+          <span class="ev-chip">Pronto em 48h</span>
+          <span class="ev-chip">Até 7 dias activo</span>
+        </div>
+      </div>
+      <div class="ev-right">
+        <ul class="ev-feats">
+          <li data-reveal><span>+</span>Menu personalizado com a identidade do evento</li>
+          <li data-reveal><span>+</span>QR Code impresso (sem hardware obrigatório)</li>
+          <li data-reveal><span>+</span>Até 2 idiomas incluídos</li>
+          <li data-reveal><span>+</span>Setup e configuração incluídos</li>
+          <li data-reveal><span>+</span>Suporte durante o evento</li>
+          <li data-reveal><span>+</span>Displays NFC</li>
+        </ul>
+        <div class="ev-cta-row" data-reveal>
+          <a href="#contacto" class="plan-cta plan-out ev-cta" onclick="nexoTrack('event_cta_clicked')">Pedir menu de evento →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 07 FAQ ── -->
+<section class="faq" id="faq">
+  <span class="ghost-n ghost-light" aria-hidden="true">07</span>
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">07 — Perguntas frequentes</span>
+      <h2>Tem dúvidas?<br><em>As respostas são directas.</em></h2>
     </div>
 
     <div class="faq-list">
-
-      <div class="faq-item reveal">
+      <div class="faq-item" data-reveal>
         <button class="faq-q" aria-expanded="false">
           <span class="faq-n">01</span>
           <span class="faq-label">Preciso de instalar alguma app?</span>
           <span class="faq-toggle" aria-hidden="true"></span>
         </button>
-        <div class="faq-body">
-          <div class="faq-body-inner">
-            <p>Não. O menu NEXO abre directamente no browser do telemóvel — por NFC ou QR Code. O cliente não precisa de descarregar nada, criar conta ou fazer login. Funciona em qualquer smartphone.</p>
-          </div>
-        </div>
+        <div class="faq-body"><div class="faq-body-inner">
+          <p>Não. O menu NEXO abre directamente no browser do telemóvel — por NFC ou QR Code. O cliente não precisa de descarregar nada, criar conta ou fazer login. Funciona em qualquer smartphone.</p>
+        </div></div>
       </div>
 
-      <div class="faq-item reveal" style="--d:.06s">
+      <div class="faq-item" data-reveal>
         <button class="faq-q" aria-expanded="false">
           <span class="faq-n">02</span>
           <span class="faq-label">O que é NFC e como funciona na prática?</span>
           <span class="faq-toggle" aria-hidden="true"></span>
         </button>
-        <div class="faq-body">
-          <div class="faq-body-inner">
-            <p>NFC é uma tecnologia de comunicação sem contacto. O cliente aproxima o telemóvel do display NEXO a menos de 4 cm e o menu abre automaticamente no browser — em menos de 3 segundos. Sem PIN, password ou configuração.</p>
-          </div>
-        </div>
+        <div class="faq-body"><div class="faq-body-inner">
+          <p>NFC é uma tecnologia de comunicação sem contacto. O cliente aproxima o telemóvel do display NEXO a menos de 4 cm e o menu abre automaticamente no browser — em menos de 3 segundos. Sem PIN, password ou configuração.</p>
+        </div></div>
       </div>
 
-      <div class="faq-item reveal" style="--d:.12s">
+      <div class="faq-item" data-reveal>
         <button class="faq-q" aria-expanded="false">
           <span class="faq-n">03</span>
           <span class="faq-label">E se o telemóvel do cliente não tiver NFC?</span>
           <span class="faq-toggle" aria-hidden="true"></span>
         </button>
-        <div class="faq-body">
-          <div class="faq-body-inner">
-            <p>Cada display NEXO inclui também um QR Code impresso. O cliente fotografa com a câmara e o menu abre igualmente. Os dois métodos funcionam em simultâneo — NFC para rapidez, QR como alternativa universal.</p>
-          </div>
-        </div>
+        <div class="faq-body"><div class="faq-body-inner">
+          <p>Cada display NEXO inclui também um QR Code impresso. O cliente fotografa com a câmara e o menu abre igualmente. Os dois métodos funcionam em simultâneo — NFC para rapidez, QR como alternativa universal.</p>
+        </div></div>
       </div>
 
-      <div class="faq-item reveal" style="--d:.18s">
+      <div class="faq-item" data-reveal>
         <button class="faq-q" aria-expanded="false">
           <span class="faq-n">04</span>
           <span class="faq-label">Quanto tempo demora a implementação?</span>
           <span class="faq-toggle" aria-hidden="true"></span>
         </button>
-        <div class="faq-body">
-          <div class="faq-body-inner">
-            <p>Entre 3 a 7 dias úteis após confirmação e entrega do conteúdo da carta. O processo inclui criação do menu digital, personalização visual e programação dos displays NFC. No dia de entrega, o menu já está activo.</p>
-          </div>
-        </div>
+        <div class="faq-body"><div class="faq-body-inner">
+          <p>Entre 3 a 7 dias úteis após confirmação e entrega do conteúdo da carta. O processo inclui criação do menu digital, personalização visual e programação dos displays NFC. No dia de entrega, o menu já está activo.</p>
+        </div></div>
       </div>
 
-      <div class="faq-item reveal" style="--d:.24s">
+      <div class="faq-item" data-reveal>
         <button class="faq-q" aria-expanded="false">
           <span class="faq-n">05</span>
           <span class="faq-label">Posso alterar o menu sozinho?</span>
           <span class="faq-toggle" aria-hidden="true"></span>
         </button>
-        <div class="faq-body">
-          <div class="faq-body-inner">
-            <p>No plano Growth, as actualizações são ilimitadas e fazemo-las nós. Envie-nos as alterações por email ou WhatsApp e publicamos no próprio dia — sem custo adicional. No plano Starter, está incluída 1 actualização por mês.</p>
-          </div>
-        </div>
+        <div class="faq-body"><div class="faq-body-inner">
+          <p>No plano Growth, as actualizações são ilimitadas e fazemo-las nós. Envie-nos as alterações por email ou WhatsApp e publicamos no próprio dia — sem custo adicional. No plano Starter, está incluída 1 actualização por mês.</p>
+        </div></div>
       </div>
 
-      <div class="faq-item reveal" style="--d:.30s">
+      <div class="faq-item" data-reveal>
         <button class="faq-q" aria-expanded="false">
           <span class="faq-n">06</span>
           <span class="faq-label">O preço de lançamento mantém-se para sempre?</span>
           <span class="faq-toggle" aria-hidden="true"></span>
         </button>
-        <div class="faq-body">
-          <div class="faq-body-inner">
-            <p>Sim. Quem assinar durante o período de lançamento fica com o preço actual garantido — mesmo que os planos subam no futuro. É a nossa forma de reconhecer quem aposta cedo.</p>
-          </div>
-        </div>
+        <div class="faq-body"><div class="faq-body-inner">
+          <p>Sim. Quem assinar durante o período de lançamento fica com o preço actual garantido — mesmo que os planos subam no futuro. É a nossa forma de reconhecer quem aposta cedo.</p>
+        </div></div>
       </div>
 
-      <div class="faq-item reveal" style="--d:.36s">
+      <div class="faq-item" data-reveal>
         <button class="faq-q" aria-expanded="false">
           <span class="faq-n">07</span>
           <span class="faq-label">E se houver algum problema técnico?</span>
           <span class="faq-toggle" aria-hidden="true"></span>
         </button>
-        <div class="faq-body">
-          <div class="faq-body-inner">
-            <p>O hosting e a manutenção estão incluídos em todos os planos. Em caso de problema, respondemos em menos de 24 horas por email. O plano Enterprise inclui SLA e suporte dedicado com resposta prioritária.</p>
-          </div>
-        </div>
+        <div class="faq-body"><div class="faq-body-inner">
+          <p>O hosting e a manutenção estão incluídos em todos os planos. Em caso de problema, respondemos em menos de 24 horas por email. O plano Enterprise inclui SLA e suporte dedicado com resposta prioritária.</p>
+        </div></div>
       </div>
 
-      <div class="faq-item reveal" style="--d:.42s">
+      <div class="faq-item" data-reveal>
         <button class="faq-q" aria-expanded="false">
           <span class="faq-n">08</span>
           <span class="faq-label">Funciona para qualquer tipo de restauração?</span>
           <span class="faq-toggle" aria-hidden="true"></span>
         </button>
-        <div class="faq-body">
-          <div class="faq-body-inner">
-            <p>Sim. O NEXO adapta-se a restaurantes, beach clubs, hotéis, cafés e espaços de eventos. A carta, o design e as funcionalidades activas são personalizados para cada espaço e tipo de serviço.</p>
-          </div>
-        </div>
+        <div class="faq-body"><div class="faq-body-inner">
+          <p>Sim. O NEXO adapta-se a restaurantes, beach clubs, hotéis, cafés e espaços de eventos. A carta, o design e as funcionalidades activas são personalizados para cada espaço e tipo de serviço.</p>
+        </div></div>
       </div>
-
     </div>
 
-    
-
-    <div class="faq-footer reveal">
+    <div class="faq-footer" data-reveal>
       <p>Ainda tem dúvidas?</p>
       <a href="#contacto" class="faq-cta">Fale connosco →</a>
     </div>
-
   </div>
 </section>
 
-<!-- ── CONTACT ── -->
+<!-- ── 08 CONTACTO ── -->
 <section class="contact" id="contacto">
+  <span class="ghost-n ghost-light" aria-hidden="true">08</span>
   <div class="container">
     <div class="contact-grid">
       <div class="contact-l">
-        <span class="eyebrow reveal">07 — Comece agora</span>
-        <h2 class="reveal"><em>Sem compromisso.</em><br>Mostramos como pode faturar mais.</h2>
-        <p class="reveal">Mostramos-lhe o produto ao vivo e estimamos o impacto real com base no seu número de mesas e tipo de serviço.</p>
-        <ul class="trust-list reveal">
+        <span class="eyebrow" data-reveal>08 — Comece agora</span>
+        <h2 data-reveal><em>Sem compromisso.</em><br>Mostramos como pode faturar mais.</h2>
+        <p class="contact-lead" data-reveal>Mostramos-lhe o produto ao vivo e estimamos o impacto real com base no seu número de mesas e tipo de serviço.</p>
+        <ul class="trust-list" data-reveal>
           <li><span>✓</span>Demo gratuita, sem compromisso</li>
           <li><span>✓</span>Resposta em menos de 24 horas</li>
           <li><span>✓</span>Sem app para o cliente</li>
           <li><span>✓</span>Hosting incluído no plano</li>
         </ul>
-        <div class="contact-info reveal">
+        <div class="contact-info" data-reveal>
           <div class="ci-row"><span class="ci-l">Email</span><a href="mailto:hello@nexosolutions.pt" class="ci-v">hello@nexosolutions.pt</a></div>
-          <!-- <div class="ci-row"><span class="ci-l">WhatsApp</span><a href="https://wa.me/351000000000" class="ci-v">+351 ███ ███ ███ →</a></div> -->
           <div class="ci-row"><span class="ci-l">Localização</span><span class="ci-v">Lisboa, Portugal</span></div>
         </div>
       </div>
-      <form class="contact-form reveal" id="nexoForm" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+
+      <form class="contact-form" data-reveal id="nexoForm" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
         <input type="hidden" name="form-name" value="contact">
         <p hidden aria-hidden="true">
           <label>Não preencher: <input name="bot-field"></label>
         </p>
+        <div class="form-head">
+          <span>PEDIDO DE PROPOSTA</span>
+          <span class="form-head-n">FORM — 08</span>
+        </div>
         <div class="fg">
           <label for="nome">Nome <em>*</em></label>
           <input type="text" id="nome" name="nome" placeholder="O seu nome" required autocomplete="name">
@@ -971,18 +943,20 @@
           <label for="restaurante">Nome do restaurante <em>*</em></label>
           <input type="text" id="restaurante" name="restaurante" placeholder="Ex: Nexo Restaurante" required autocomplete="organization">
         </div>
-        <div class="fg">
-          <label for="email">Email <em>*</em></label>
-          <input type="email" id="email" name="email" placeholder="email@restaurante.pt" required autocomplete="email">
-        </div>
-        <div class="fg">
-          <label for="tipo">Tipo de negócio <em>*</em></label>
-          <select id="tipo" name="tipo" required>
-            <option value="" disabled selected>Selecionar</option>
-            <option>Restaurante</option><option>Beach Club</option>
-            <option>Hotel</option><option>Café</option>
-            <option>Evento</option><option>Outro</option>
-          </select>
+        <div class="fg-row">
+          <div class="fg">
+            <label for="email">Email <em>*</em></label>
+            <input type="email" id="email" name="email" placeholder="email@restaurante.pt" required autocomplete="email">
+          </div>
+          <div class="fg">
+            <label for="tipo">Tipo de negócio <em>*</em></label>
+            <select id="tipo" name="tipo" required>
+              <option value="" disabled selected>Selecionar</option>
+              <option>Restaurante</option><option>Beach Club</option>
+              <option>Hotel</option><option>Café</option>
+              <option>Evento (casamento, corporativo, festival)</option><option>Outro</option>
+            </select>
+          </div>
         </div>
         <div class="fg">
           <label for="mensagem">Mensagem</label>
@@ -990,7 +964,7 @@
         </div>
         <button type="submit" class="form-submit">
           <span>Enviar</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </button>
         <p class="form-helper">Respondemos em menos de 24 horas com uma demo personalizada.</p>
         <div class="form-msg" id="formMsg" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -1002,6 +976,7 @@
 <!-- ── FOOTER ── -->
 <footer>
   <div class="container">
+    <div class="foot-word" aria-hidden="true">NEXO<span>.</span></div>
     <div class="foot-top">
       <div class="foot-brand">
         <span class="foot-logo">NEXO.</span>
@@ -1013,9 +988,8 @@
           <ul>
             <li><a href="#problema">Problema</a></li>
             <li><a href="#como-funciona">Processo</a></li>
-     <li><a href="#produto">Produto</a></li>
-
-      <li><a href="#features">Funcionalidades</a></li>
+            <li><a href="#produto">Produto</a></li>
+            <li><a href="#features">Funcionalidades</a></li>
             <li><a href="#planos">Planos</a></li>
             <li><a href="#faq">FAQ</a></li>
           </ul>
@@ -1024,6 +998,7 @@
           <span class="foot-label">Contacto</span>
           <ul>
             <li><a href="mailto:hello@nexosolutions.pt">hello@nexosolutions.pt</a></li>
+            <li><a href="/portal/">Área de Cliente</a></li>
           </ul>
         </div>
         <div class="foot-col">
@@ -1037,11 +1012,13 @@
     </div>
     <div class="foot-bottom">
       <span>© 2026 NEXO. Lisboa, Portugal</span>
-      <span>PT · LIS · EST. 2026</span>
+      <span class="foot-mono">PT · LIS · EST. 2026</span>
     </div>
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
 <script src="script.js" defer></script>
 <script src="/nexo-cookies.js"></script>
 <script type="application/ld+json">

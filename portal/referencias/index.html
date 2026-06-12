@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Referências — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+</head>
+<body>
+
+  <nav class="portal-nav" id="portal-nav"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar"></aside>
+
+  <main class="portal-main" id="main">
+    <div id="page-skeleton">
+      <div class="page-header"><div class="nexo-skeleton" style="width:200px;height:28px"></div></div>
+      <div class="card nexo-skeleton" style="height:140px;margin-bottom:14px"></div>
+      <div class="card nexo-skeleton" style="height:180px"></div>
+    </div>
+
+    <div id="page-content" style="display:none">
+      <div class="page-header">
+        <h1 class="page-title">Referências</h1>
+        <p class="page-sub">Indique outro restaurante e ganhem ambos 1 mês grátis.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="card step-card">
+          <span id="icon-gift"></span>
+          <div class="step-title">Partilhe o código</div>
+          <div class="step-text">Envie o seu código a outro restaurante</div>
+        </div>
+        <div class="card step-card">
+          <span id="icon-arrow"></span>
+          <div class="step-title">Eles mencionam-no</div>
+          <div class="step-text">Ao contactar a NEXO, referem o seu código</div>
+        </div>
+        <div class="card step-card">
+          <span id="icon-check"></span>
+          <div class="step-title">Ganham 1 mês grátis</div>
+          <div class="step-text">Crédito automático na próxima faturação</div>
+        </div>
+      </div>
+
+      <div class="code-card">
+        <div class="code-label">O seu código</div>
+        <div class="code-display" id="code-display"></div>
+        <div class="code-actions">
+          <button class="btn btn-primary" id="copy-btn">Copiar código</button>
+          <a class="btn btn-whatsapp" id="whatsapp-btn" target="_blank" rel="noopener">Partilhar no WhatsApp ↗</a>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="flex-between">
+          <div>
+            <div class="card-title" style="margin-bottom:4px">Créditos acumulados</div>
+            <div class="text-muted text-xs">Aplicados automaticamente na faturação</div>
+          </div>
+          <div style="text-align:right">
+            <span class="credits-value" id="credits-value"></span>
+            <span class="text-secondary text-sm" id="credits-label"></span>
+          </div>
+        </div>
+        <div id="referred-by-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Restaurantes que indicou</div>
+        <div id="referrals-table"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/referencias/', client);
+
+    document.getElementById('icon-gift').innerHTML = getIcon('gift', 22);
+    document.getElementById('icon-arrow').innerHTML = getIcon('arrow-right', 22);
+    document.getElementById('icon-check').innerHTML = getIcon('check', 22);
+
+    document.getElementById('page-skeleton').style.display = 'none';
+    document.getElementById('page-content').style.display = 'block';
+
+    // ── code ────────────────────────────────────────
+    const code = client.referral_code;
+    const codeDisplay = document.getElementById('code-display');
+    const copyBtn = document.getElementById('copy-btn');
+    const waBtn = document.getElementById('whatsapp-btn');
+
+    if (code) {
+      codeDisplay.textContent = code;
+      copyBtn.addEventListener('click', () => copyToClipboard(code, copyBtn));
+      const waMessage =
+        `Olá! 👋 Uso a NEXO para o menu digital do meu restaurante e recomendo muito. ` +
+        `Se quiser experimentar, menciona o código *${code}* ao contactá-los — ` +
+        `ambos ganhamos 1 mês grátis. Mais info: nexosolutions.pt 🍽️`;
+      waBtn.href = 'https://wa.me/?text=' + encodeURIComponent(waMessage);
+    } else {
+      codeDisplay.innerHTML = '<span class="text-muted text-sm" style="letter-spacing:0">O código é gerado quando o seu espaço fica activo.</span>';
+      copyBtn.disabled = true;
+      waBtn.style.opacity = '0.45';
+      waBtn.style.pointerEvents = 'none';
+    }
+
+    // ── credits ─────────────────────────────────────
+    const credits = client.referral_credits || 0;
+    const creditsValue = document.getElementById('credits-value');
+    creditsValue.textContent = credits;
+    creditsValue.classList.add(credits > 0 ? 'text-success' : 'text-muted');
+    document.getElementById('credits-label').textContent =
+      ' ' + (credits === 1 ? 'mês grátis' : 'meses grátis');
+
+    // ── referred by ─────────────────────────────────
+    if (client.referred_by) {
+      try {
+        const { data: referrer } = await db.from('clients')
+          .select('name')
+          .eq('id', client.referred_by)
+          .maybeSingle();
+        if (referrer?.name) {
+          document.getElementById('referred-by-box').innerHTML = `
+            <div class="referred-by-box">
+              Foi indicado por <strong>${escapeHtml(referrer.name)}</strong>.
+              Obrigado por fazer parte da família NEXO! 🙏
+            </div>`;
+        }
+      } catch (_) { /* sem acesso ao nome — ignorar */ }
+    }
+
+    // ── referrals table ─────────────────────────────
+    const tableEl = document.getElementById('referrals-table');
+    try {
+      const { data: referred, error } = await db.from('clients')
+        .select('name, status, created_at')
+        .eq('referred_by', client.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      if (!referred || referred.length === 0) {
+        tableEl.innerHTML = `
+          <div class="empty-state">
+            ${getIcon('gift', 32)}
+            <p class="empty-title">Ainda não indicou nenhum restaurante</p>
+            <p class="empty-sub">Partilhe o código acima para começar</p>
+          </div>`;
+      } else {
+        const stateBadge = (s) => s === 'active'
+          ? '<span class="badge badge--success">Crédito aplicado 🎁</span>'
+          : s === 'churned'
+            ? '<span class="badge badge--muted">Inactivo</span>'
+            : '<span class="badge badge--info">Contactado</span>';
+        tableEl.innerHTML = `
+          <div class="table-wrap"><table class="table">
+            <thead><tr><th>Espaço</th><th>Data</th><th>Estado</th></tr></thead>
+            <tbody>
+              ${referred.map(r => `<tr>
+                <td>${escapeHtml(r.name)}</td>
+                <td class="text-muted">${new Date(r.created_at).toLocaleDateString('pt-PT')}</td>
+                <td>${stateBadge(r.status)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table></div>`;
+      }
+    } catch (err) {
+      console.error(err);
+      tableEl.innerHTML = '<p class="text-danger text-sm">Erro ao carregar referências.</p>';
+    }
+  })();
+  </script>
+</body>
+</html>

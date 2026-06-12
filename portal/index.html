@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Área de Cliente — NEXO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+</head>
+<body class="login-page">
+
+  <a href="https://nexosolutions.pt" class="login-corner-logo portal-logo">NEXO.</a>
+  <a href="https://nexosolutions.pt" class="login-corner-back">← nexosolutions.pt</a>
+
+  <div class="login-card">
+    <h1 class="login-title">Área de Cliente</h1>
+    <p class="login-sub">Aceda ao painel do seu espaço.</p>
+
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label class="field-label" for="email">Email</label>
+        <input class="input" type="email" id="email" name="email"
+               placeholder="email@restaurante.pt" autocomplete="email" required>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="password">Palavra-passe</label>
+        <div class="input-wrap">
+          <input class="input" type="password" id="password" name="password"
+                 placeholder="••••••••" autocomplete="current-password" required>
+          <button type="button" class="input-icon-btn" id="toggle-pw"
+                  aria-label="Mostrar palavra-passe"></button>
+        </div>
+      </div>
+
+      <button type="button" class="forgot-link" id="forgot-link">Esqueceu a palavra-passe?</button>
+
+      <button type="submit" class="btn btn-primary btn-full" id="login-btn">Entrar</button>
+
+      <div class="field-error" id="login-error" style="display:none" role="alert"></div>
+      <div class="field-hint text-success" id="login-info" style="display:none" role="status"></div>
+    </form>
+  </div>
+
+  <p class="login-footer">
+    Não tem acesso? <a href="mailto:hello@nexosolutions.pt">Contacte-nos</a>
+  </p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (function () {
+    const form = document.getElementById('login-form');
+    const emailEl = document.getElementById('email');
+    const pwEl = document.getElementById('password');
+    const btn = document.getElementById('login-btn');
+    const errEl = document.getElementById('login-error');
+    const infoEl = document.getElementById('login-info');
+    const togglePw = document.getElementById('toggle-pw');
+
+    // show/hide password
+    let pwVisible = false;
+    function renderPwIcon() {
+      togglePw.innerHTML = getIcon(pwVisible ? 'eye-off' : 'eye');
+      togglePw.setAttribute('aria-label',
+        pwVisible ? 'Esconder palavra-passe' : 'Mostrar palavra-passe');
+    }
+    renderPwIcon();
+    togglePw.addEventListener('click', () => {
+      pwVisible = !pwVisible;
+      pwEl.type = pwVisible ? 'text' : 'password';
+      renderPwIcon();
+      pwEl.focus();
+    });
+
+    function showError(msg) {
+      infoEl.style.display = 'none';
+      errEl.style.display = 'flex';
+      errEl.innerHTML = getIcon('alert-triangle', 14) + '<span>' + msg + '</span>';
+    }
+    function showInfo(msg) {
+      errEl.style.display = 'none';
+      infoEl.style.display = 'block';
+      infoEl.textContent = msg;
+    }
+    function clearMessages() {
+      errEl.style.display = 'none';
+      infoEl.style.display = 'none';
+      emailEl.classList.remove('input-error');
+      pwEl.classList.remove('input-error');
+    }
+
+    function mapAuthError(error) {
+      const msg = (error?.message || '').toLowerCase();
+      if (msg.includes('invalid login credentials') || error?.status === 400)
+        return 'Email ou palavra-passe incorretos.';
+      if (msg.includes('too many') || error?.status === 429)
+        return 'Demasiadas tentativas. Aguarde alguns minutos.';
+      if (msg.includes('fetch') || msg.includes('network'))
+        return 'Sem ligação. Verifique a internet.';
+      return 'Não foi possível entrar. Tente novamente.';
+    }
+
+    function redirectTarget() {
+      const params = new URLSearchParams(window.location.search);
+      const r = params.get('redirect');
+      // only allow internal portal paths
+      return (r && r.startsWith('/portal/')) ? r : '/portal/dashboard/';
+    }
+
+    // already authenticated? → dashboard
+    (async () => {
+      if (!db) return;
+      const { data: { session } } = await db.auth.getSession();
+      if (session) window.location.href = redirectTarget();
+    })();
+
+    // forgot password
+    document.getElementById('forgot-link').addEventListener('click', async () => {
+      clearMessages();
+      const email = emailEl.value.trim();
+      if (!email) {
+        emailEl.classList.add('input-error');
+        showError('Insira o seu email primeiro.');
+        emailEl.focus();
+        return;
+      }
+      try {
+        const { error } = await db.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/portal/',
+        });
+        if (error) throw error;
+        showInfo('Email de recuperação enviado.');
+      } catch (error) {
+        showError(mapAuthError(error));
+      }
+    });
+
+    // submit
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessages();
+
+      const email = emailEl.value.trim();
+      const password = pwEl.value;
+      let valid = true;
+      if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+        emailEl.classList.add('input-error'); valid = false;
+      }
+      if (!password) {
+        pwEl.classList.add('input-error'); valid = false;
+      }
+      if (!valid) { showError('Preencha email e palavra-passe.'); return; }
+      if (!db) { showError('Sem ligação. Verifique a internet.'); return; }
+
+      setLoading(btn, true, 'A autenticar...');
+      try {
+        const { error } = await db.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        window.location.href = redirectTarget();
+      } catch (error) {
+        setLoading(btn, false);
+        showError(mapAuthError(error));
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

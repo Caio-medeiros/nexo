@@ -1,0 +1,10 @@
+# NEXO — Netlify config
+# O Netlify serve /portal/dashboard/ → /portal/dashboard/index.html
+# nativamente (directory index), por isso não são precisos redirects.
+
+[[headers]]
+  for = "/portal/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

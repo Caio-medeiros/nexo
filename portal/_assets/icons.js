@@ -1,0 +1,35 @@
+// NEXO Portal — Inline SVG icon system
+// getIcon(name, size?) → SVG string, 16×16 viewBox, currentColor stroke
+// ─────────────────────────────────────────────────────────
+
+const NEXO_ICONS = {
+  'grid': '<rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1"/><rect x="9" y="9" width="5.5" height="5.5" rx="1"/>',
+  'monitor': '<rect x="1.5" y="2.5" width="13" height="9" rx="1.5"/><path d="M5.5 14h5M8 11.5V14"/>',
+  'toggle': '<rect x="1.5" y="4.5" width="13" height="7" rx="3.5"/><circle cx="11" cy="8" r="2"/>',
+  'edit': '<path d="M11.3 2.2a1.6 1.6 0 0 1 2.3 2.3L5.5 12.6l-3 .8.8-3 8-8.2z"/>',
+  'gift': '<rect x="2" y="7" width="12" height="7.5" rx="1"/><path d="M2 7h12M8 7v7.5M8 7s-3.5.2-4.5-1.2C2.7 4.6 4 3 5.3 3.6 6.8 4.3 8 7 8 7zm0 0s3.5.2 4.5-1.2C13.3 4.6 12 3 10.7 3.6 9.2 4.3 8 7 8 7z"/>',
+  'check': '<path d="M2.5 8.5l3.5 3.5 7.5-8"/>',
+  'x': '<path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/>',
+  'copy': '<rect x="5.5" y="5.5" width="9" height="9" rx="1.5"/><path d="M10.5 5.5V3a1.5 1.5 0 0 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h2.5"/>',
+  'eye': '<path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8s-2.4 4.5-6.5 4.5S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/>',
+  'eye-off': '<path d="M2 2l12 12M6.6 6.7a2 2 0 0 0 2.8 2.8M4.4 4.6C2.5 5.9 1.5 8 1.5 8s2.4 4.5 6.5 4.5c1.2 0 2.3-.4 3.2-.9M7 3.6c.3 0 .7-.1 1-.1 4.1 0 6.5 4.5 6.5 4.5s-.6 1.1-1.7 2.2"/>',
+  'refresh': '<path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 1.5v3h-3"/>',
+  'alert-triangle': '<path d="M8 2L1.5 13.5h13L8 2zM8 6.5V9.5M8 11.8v.2"/>',
+  'clock': '<circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l2.5 1.5"/>',
+  'arrow-right': '<path d="M2.5 8h11M9.5 4l4 4-4 4"/>',
+  'plus': '<path d="M8 2.5v11M2.5 8h11"/>',
+  'minus': '<path d="M2.5 8h11"/>',
+  'phone': '<path d="M3.2 1.8h2.6l1.2 3.1-1.6 1.2a9.5 9.5 0 0 0 4.5 4.5l1.2-1.6 3.1 1.2v2.6c0 .7-.6 1.4-1.4 1.3C7 13.6 2.4 9 1.9 3.2c-.1-.8.6-1.4 1.3-1.4z"/>',
+  'mail': '<rect x="1.5" y="3" width="13" height="10" rx="1.5"/><path d="M1.5 4.5L8 9l6.5-4.5"/>',
+  'external-link': '<path d="M6.5 3H3.5A1.5 1.5 0 0 0 2 4.5v8A1.5 1.5 0 0 0 3.5 14h8a1.5 1.5 0 0 0 1.5-1.5V9.5M9.5 2H14v4.5M14 2L7.5 8.5"/>',
+  'expand': '<path d="M9.5 2H14v4.5M6.5 14H2V9.5M14 2L9.5 6.5M2 14l4.5-4.5"/>',
+  'paperclip': '<path d="M13 7.5l-5 5a3.2 3.2 0 0 1-4.5-4.5l5.4-5.4a2.1 2.1 0 0 1 3 3l-5.4 5.4a1 1 0 0 1-1.5-1.5l5-5"/>',
+  'users': '<circle cx="6" cy="5.5" r="2.5"/><path d="M1.5 14c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M11 3.2a2.5 2.5 0 0 1 0 4.6M12.5 10.3c1.2.5 2 1.5 2 3.7"/>',
+  'qr': '<rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><path d="M9.5 9.5h2v2h-2zM12.5 12.5h2v2h-2zM12.5 9.5h2M9.5 13.5v1"/>',
+};
+
+function getIcon(name, size = 16) {
+  const path = NEXO_ICONS[name];
+  if (!path) return '';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+}
