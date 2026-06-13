@@ -189,11 +189,14 @@
       btn.disabled = true;
 
       if (act === 'confirm') {
+        // abrir o separador AGORA (no gesto do clique) para o browser não bloquear o popup;
+        // só depois é redirecionado para o link do WhatsApp.
+        const waWin = window.open('', '_blank');
         try {
           await db.from('reservations').update({ status: 'confirmed' }).eq('id', id);
           showToast('Reserva confirmada.', 'success');
-          triggerWhatsApp(id, 'confirmation');
-        } catch (_) { showToast('Erro ao confirmar.', 'error'); btn.disabled = false; }
+          triggerWhatsApp(id, 'confirmation', waWin);
+        } catch (_) { showToast('Erro ao confirmar.', 'error'); btn.disabled = false; if (waWin) waWin.close(); }
         loadReservations();
       } else if (act === 'seat') {
         try { await db.from('reservations').update({ status: 'seated', seated_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
@@ -207,7 +210,7 @@
       }
     }
 
-    async function triggerWhatsApp(id, type) {
+    async function triggerWhatsApp(id, type, win) {
       try {
         const res = await fetch(`${SUPABASE_URL}/functions/v1/send-reservation-notification`, {
           method: 'POST',
@@ -215,8 +218,14 @@
           body: JSON.stringify({ reservation_id: id, type }),
         });
         const d = await res.json();
-        if (d.guest_url) window.open(d.guest_url, '_blank');
-      } catch (_) {}
+        if (d.guest_url) {
+          if (win) win.location.href = d.guest_url;
+          else window.open(d.guest_url, '_blank');
+        } else if (win) {
+          win.close();
+          showToast('Sem número de telemóvel para notificar o cliente.', 'warning');
+        }
+      } catch (_) { if (win) win.close(); }
     }
 
     function cancelModal(id) {
@@ -248,12 +257,14 @@
       overlay.querySelector('[data-confirm]').onclick = async () => {
         const reason = overlay.querySelector('#cancel-reason').value;
         const notify = overlay.querySelector('#cancel-wa').checked;
+        const waWin = notify ? window.open('', '_blank') : null;
         close();
         try {
           await db.from('reservations').update({ status: 'cancelled', cancelled_reason: reason }).eq('id', id);
           showToast('Reserva cancelada.', 'success');
-          if (notify) triggerWhatsApp(id, 'cancellation');
-        } catch (_) { showToast('Erro ao cancelar.', 'error'); }
+          if (notify) triggerWhatsApp(id, 'cancellation', waWin);
+          else if (waWin) waWin.close();
+        } catch (_) { showToast('Erro ao cancelar.', 'error'); if (waWin) waWin.close(); }
         loadReservations();
       };
     }
