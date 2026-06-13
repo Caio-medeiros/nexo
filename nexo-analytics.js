@@ -4,12 +4,18 @@
 
 const NEXO_GA4_ID = 'G-PG76WZVLNB';
 
-// Config do menu pode estar em window.NEXO_CONFIG ou window.CONFIG (template).
+// Config do menu: pode estar em window.NEXO_CONFIG, window.CONFIG, ou
+// como `const CONFIG` (que NÃO fica em window — só é acessível lexicalmente).
 function nexoCfg() {
-  return window.NEXO_CONFIG || window.CONFIG || {};
+  if (window.NEXO_CONFIG) return window.NEXO_CONFIG;
+  if (window.CONFIG) return window.CONFIG;
+  try { return CONFIG || {}; } catch (_) { return {}; }
 }
 function nexoSlug() {
-  return window.ESPACO_SLUG || nexoCfg().slug || '';
+  // CONFIG.slug é a fonte autoritativa; ESPACO_SLUG pode ser placeholder do template.
+  if (nexoCfg().slug) return nexoCfg().slug;
+  if (window.ESPACO_SLUG) return window.ESPACO_SLUG;
+  try { return ESPACO_SLUG || ''; } catch (_) { return ''; }
 }
 
 function getSessionId() {
