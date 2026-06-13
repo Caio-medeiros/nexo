@@ -32,6 +32,10 @@ async function getClientData() {
   const session = await requireAuth();
   if (!session) return null;
 
+  // Garante que o Realtime tem o token de auth depois de um reload —
+  // sem isto, o RLS bloqueia a entrega de eventos (a Sala não atualiza ao vivo).
+  try { db.realtime.setAuth(session.access_token); } catch (_) {}
+
   // 1) Cliente — query simples, sem embeds (robusta a cache/duplicados)
   const { data: clients, error } = await db
     .from('clients')
