@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Estatísticas — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+</head>
+<body>
+
+  <nav class="portal-nav" id="portal-nav"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar"></aside>
+
+  <main class="portal-main" id="main">
+    <div id="page-skeleton">
+      <div class="page-header"><div class="nexo-skeleton" style="width:200px;height:28px"></div></div>
+      <div class="nexo-skeleton card" style="height:120px;margin-bottom:16px"></div>
+      <div class="metric-grid">
+        <div class="card nexo-skeleton" style="height:120px"></div>
+        <div class="card nexo-skeleton" style="height:120px"></div>
+        <div class="card nexo-skeleton" style="height:120px"></div>
+        <div class="card nexo-skeleton" style="height:120px"></div>
+      </div>
+    </div>
+    <div id="page-content" style="display:none"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/estatisticas/', client);
+
+    const slug = getMenuSlug(client);
+    if (!slug) { renderFatalError('Sem menu configurado para mostrar estatísticas.'); return; }
+    initNotifications(slug);
+
+    // Chart.js global defaults (once)
+    if (window.Chart) {
+      Chart.defaults.color = '#888888';
+      Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+      Chart.defaults.font.family = "'Geist', system-ui, sans-serif";
+      Chart.defaults.plugins.legend.labels.boxWidth = 12;
+    }
+
+    const LANG_PT = { pt: 'Português', en: 'Inglês', es: 'Espanhol', fr: 'Francês', de: 'Alemão', it: 'Italiano' };
+    let rangeDays = 7;
+    const charts = {};
+
+    document.getElementById('page-content').innerHTML = `
+      <div class="page-header flex-between">
+        <h1 class="page-title">Estatísticas</h1>
+        <div class="range-tabs filter-tabs" id="range-tabs">
+          <button class="filter-tab active" data-range="7">7 dias</button>
+          <button class="filter-tab" data-range="30">30 dias</button>
+          <button class="filter-tab" data-range="90">90 dias</button>
+          <button class="filter-tab" data-range="0">Tudo</button>
+        </div>
+      </div>
+      <div id="stats-body"></div>`;
+    document.getElementById('page-skeleton').style.display = 'none';
+    document.getElementById('page-content').style.display = 'block';
+
+    document.getElementById('range-tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-range]'); if (!b) return;
+      rangeDays = parseInt(b.dataset.range);
+      document.querySelectorAll('#range-tabs .filter-tab').forEach(x => x.classList.toggle('active', x === b));
+      loadStats();
+    });
+
+    function destroyCharts() { Object.values(charts).forEach(c => { try { c.destroy(); } catch (_) {} }); }
+
+    async function loadStats() {
+      const body = document.getElementById('stats-body');
+      body.innerHTML = `<div class="card nexo-skeleton" style="height:300px"></div>`;
+      destroyCharts();
+
+      const since = rangeDays > 0 ? new Date(Date.now() - rangeDays * 86400000) : new Date('2020-01-01');
+      const sinceISO = since.toISOString();
+      const sinceDate = sinceISO.slice(0, 10);
+
+      let events = [], orders = [], reservs = [], calls = [];
+      try {
+        const [e, o, r, c] = await Promise.all([
+          db.from('menu_events').select('*').eq('espaco_slug', slug).gte('created_at', sinceISO).limit(5000),
+          db.from('orders_log').select('*').eq('espaco_slug', slug).gte('created_at', sinceISO),
+          db.from('reservations').select('*').eq('espaco_slug', slug).gte('reservation_date', sinceDate),
+          db.from('staff_calls').select('*').eq('espaco_slug', slug).gte('created_at', sinceISO),
+        ]);
+        events = e.data || []; orders = o.data || []; reservs = r.data || []; calls = c.data || [];
+      } catch (err) { console.error(err); }
+
+      const get = (n) => events.filter(e => e.event_name === n);
+      const sessions = new Set(events.map(e => e.session_id).filter(Boolean)).size;
+      const views = get('menu_opened').length;
+      const itemsViewed = get('item_viewed').length;
+      const reviewsPrompted = get('review_prompted').length;
+      const reviewsPositive = get('review_positive').length;
+      const googleClicks = get('review_google_clicked').length;
+      const revenue = orders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+      const sharedCarts = get('shared_cart_started').length;
+      const waOrders = orders.filter(o => o.channel === 'whatsapp').length;
+
+      // top items
+      const itemMap = {};
+      events.filter(e => e.event_name === 'item_viewed' && e.item_name)
+        .forEach(e => { itemMap[e.item_name] = (itemMap[e.item_name] || 0) + 1; });
+      const topItems = Object.entries(itemMap).sort(([, a], [, b]) => b - a).slice(0, 5);
+
+      // hours
+      const hours = Array(24).fill(0);
+      events.forEach(e => hours[new Date(e.created_at).getHours()]++);
+      const peakHour = hours.indexOf(Math.max(...hours));
+
+      // languages
+      const langMap = {};
+      events.forEach(e => { if (e.language) langMap[e.language] = (langMap[e.language] || 0) + 1; });
+
+      // reservations summary
+      const resConfirmed = reservs.filter(r => ['confirmed', 'seated', 'completed'].includes(r.status)).length;
+      const resPending = reservs.filter(r => r.status === 'pending').length;
+      const resPeople = reservs.filter(r => !['cancelled', 'no_show'].includes(r.status)).reduce((s, r) => s + r.party_size, 0);
+
+      // ROI estimate
+      const roi = googleClicks * 12 + revenue + reservs.length * 25;
+
+      body.innerHTML = `
+        <div class="roi-banner">
+          <div class="roi-label">Valor gerado (estimativa)</div>
+          <div class="roi-value">${formatEUR(roi)}</div>
+          <p class="text-secondary text-sm" style="margin-top:8px">
+            ${sessions} sessões · ${googleClicks} cliques para o Google · ${reservs.length} reservas no período.
+            Inclui faturação registada e valor estimado de reviews e reservas.
+          </p>
+        </div>
+
+        <div class="metric-grid">
+          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Visitas ao menu</span>${getIcon('eye')}</div><div class="metric-value">${views}</div><div class="metric-sub">${sessions} sessões únicas</div></div>
+          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Cliques Google</span>${getIcon('star')}</div><div class="metric-value text-success">${googleClicks}</div><div class="metric-sub">de ${reviewsPrompted} reviews pedidas</div></div>
+          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Pedidos</span>${getIcon('grid')}</div><div class="metric-value">${orders.length}</div><div class="metric-sub">${formatEUR(revenue)} registado</div></div>
+          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Reservas</span>${getIcon('calendar')}</div><div class="metric-value">${reservs.length}</div><div class="metric-sub">${resConfirmed} confirmadas</div></div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Top 5 pratos vistos</div>
+            ${topItems.length ? topItems.map(([n, c], i) => `
+              <div class="funnel-step"><span class="text-sm">${i + 1}. ${escapeHtml(n)}</span>
+                <div class="funnel-bar"><div class="funnel-fill" style="width:${Math.round(c / topItems[0][1] * 100)}%"></div></div>
+                <span class="text-muted text-sm">${c}×</span></div>`).join('')
+              : '<div class="empty-state"><p class="empty-title">Sem dados de pratos ainda</p></div>'}
+          </div>
+          <div class="card">
+            <div class="card-title">Funil de reviews</div>
+            ${funnelStep('Reviews pedidas', reviewsPrompted, reviewsPrompted)}
+            ${funnelStep('Avaliações positivas', reviewsPositive, reviewsPrompted)}
+            ${funnelStep('Cliques para Google', googleClicks, reviewsPrompted)}
+            <p class="text-muted text-xs" style="margin-top:10px">Taxa de conversão para Google: ${reviewsPrompted ? Math.round(googleClicks / reviewsPrompted * 100) : 0}%</p>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-title">Visitas por hora do dia</div>
+          <div class="chart-box"><canvas id="chart-hours"></canvas></div>
+          <p class="text-muted text-xs" style="margin-top:10px">Hora de maior movimento: <strong>${peakHour}h</strong></p>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Idiomas dos clientes</div>
+            <div class="chart-box" style="height:240px"><canvas id="chart-langs"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Resumo de reservas</div>
+            <div class="funnel-step"><span class="text-sm">Total</span><span>${reservs.length}</span></div>
+            <div class="funnel-step"><span class="text-sm">Confirmadas</span><span class="text-success">${resConfirmed}</span></div>
+            <div class="funnel-step"><span class="text-sm">Pendentes</span><span class="text-warning">${resPending}</span></div>
+            <div class="funnel-step"><span class="text-sm">Total de pessoas</span><span>${resPeople}</span></div>
+          </div>
+        </div>
+
+        <div class="metric-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Chamadas de staff</span>${getIcon('phone')}</div><div class="metric-value">${calls.length}</div></div>
+          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Carrinhos de grupo</span>${getIcon('users')}</div><div class="metric-value">${sharedCarts}</div></div>
+          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Pedidos WhatsApp</span>${getIcon('message')}</div><div class="metric-value">${waOrders}</div></div>
+        </div>
+
+        <div class="card">
+          <div class="flex-between" style="margin-bottom:8px">
+            <div class="card-title" style="margin:0">Relatório semanal IA</div>
+            <button class="btn btn-secondary btn-sm" id="gen-report">Gerar relatório</button>
+          </div>
+          <div id="report-area"><p class="text-muted text-sm">Gere um resumo automático da semana, escrito para o dono do restaurante.</p></div>
+        </div>`;
+
+      renderHoursChart(hours);
+      renderLangChart(langMap);
+      document.getElementById('gen-report').onclick = generateReport;
+      loadCachedReport();
+    }
+
+    function funnelStep(label, value, max) {
+      const pct = max ? Math.round(value / max * 100) : 0;
+      return `<div class="funnel-step"><span class="text-sm">${label}</span>
+        <div class="funnel-bar"><div class="funnel-fill" style="width:${pct}%"></div></div>
+        <span class="text-muted text-sm">${value}</span></div>`;
+    }
+
+    function renderHoursChart(hours) {
+      const ctx = document.getElementById('chart-hours'); if (!ctx || !window.Chart) return;
+      charts.hours = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: hours.map((_, h) => `${h}h`),
+          datasets: [{ data: hours, backgroundColor: 'rgba(59,130,246,0.55)', borderRadius: 4 }],
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+      });
+    }
+
+    function renderLangChart(langMap) {
+      const ctx = document.getElementById('chart-langs'); if (!ctx || !window.Chart) return;
+      const labels = Object.keys(langMap);
+      if (!labels.length) { ctx.parentElement.innerHTML = '<div class="empty-state"><p class="empty-title">Sem dados de idiomas</p></div>'; return; }
+      charts.langs = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels.map(l => LANG_PT[l] || l),
+          datasets: [{ data: labels.map(l => langMap[l]),
+            backgroundColor: ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#A855F7', '#14B8A6'] }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+          plugins: { legend: { position: 'bottom' } } },
+      });
+    }
+
+    // ── weekly report ────────────────────────────────
+    function weekBounds() {
+      const now = new Date();
+      const day = (now.getDay() + 6) % 7; // Monday=0
+      const monday = new Date(now); monday.setDate(now.getDate() - day); monday.setHours(0, 0, 0, 0);
+      const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+      const fmt = (d) => d.toISOString().slice(0, 10);
+      return { start: fmt(monday), end: fmt(sunday) };
+    }
+
+    async function loadCachedReport() {
+      try {
+        const { data } = await db.from('weekly_reports').select('report_text').eq('espaco_slug', slug)
+          .order('week_start', { ascending: false }).limit(1).maybeSingle();
+        if (data?.report_text) document.getElementById('report-area').innerHTML = `<div class="ai-report">${escapeHtml(data.report_text)}</div>`;
+      } catch (_) {}
+    }
+
+    async function generateReport() {
+      const btn = document.getElementById('gen-report');
+      const area = document.getElementById('report-area');
+      setLoading(btn, true, 'A gerar...');
+      area.innerHTML = skeleton('100%', '120px');
+      const { start, end } = weekBounds();
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-weekly-report`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+          body: JSON.stringify({ espaco_slug: slug, week_start: start, week_end: end, espaco_name: client.name }),
+        });
+        const d = await res.json();
+        if (d.report) area.innerHTML = `<div class="ai-report">${escapeHtml(d.report)}</div>`;
+        else area.innerHTML = `<p class="text-danger text-sm">Não foi possível gerar o relatório agora.</p>`;
+      } catch (_) {
+        area.innerHTML = `<p class="text-danger text-sm">Erro de ligação ao gerar o relatório.</p>`;
+      }
+      setLoading(btn, false);
+    }
+
+    loadStats();
+  })();
+  </script>
+</body>
+</html>

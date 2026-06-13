@@ -334,7 +334,7 @@ section > .container{position:relative;z-index:1}
   position:relative;
   min-height:100svh;
   display:flex;flex-direction:column;justify-content:center;
-  padding:calc(var(--nav-h) + 3.5rem) 0 5.5rem;
+  padding:calc(var(--nav-h) + 2rem) 0 3rem;
   overflow:hidden;
 }
 .hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
@@ -370,7 +370,7 @@ section > .container{position:relative;z-index:1}
   letter-spacing:.22em;color:var(--txt-soft);
   border:1px solid var(--hair);
   padding:.55rem 1rem;
-  margin-bottom:clamp(1.75rem,3vw,2.5rem);
+  margin-bottom:clamp(1.2rem,2.6svh,2rem);
 }
 .tag-dot{
   flex:none;
@@ -383,26 +383,27 @@ section > .container{position:relative;z-index:1}
   55%{box-shadow:0 0 0 7px rgba(255,255,255,0)}
 }
 .hero-h1{
-  font-size:clamp(3.4rem,10.5vw,8.6rem);
-  font-weight:300;line-height:.96;letter-spacing:-.035em;
+  /* capped against viewport height so tag→CTAs always fit the first view */
+  font-size:clamp(3rem,min(9.6vw,15.5svh),7.8rem);
+  font-weight:300;line-height:.76;letter-spacing:-.035em;
 }
 .hl{display:block;overflow:hidden;padding-bottom:.06em;margin-bottom:-.06em}
 .hl-t{display:block;will-change:transform}
 .hero-h1 em{font-style:italic;color:rgba(255,255,255,.56);font-weight:350}
 .hero-sub{
   max-width:32rem;
-  margin-top:clamp(1.5rem,2.5vw,2.25rem);
+  margin-top:clamp(1.1rem,2.4svh,1.8rem);
   font-size:clamp(1.02rem,1.3vw,1.18rem);
   color:var(--txt-soft);
 }
 .hero-ctas{
   display:flex;flex-wrap:wrap;gap:1rem;
-  margin-top:clamp(1.75rem,3vw,2.5rem);
+  margin-top:clamp(1.4rem,3svh,2.2rem);
 }
 .hero-stats{
   display:grid;grid-template-columns:repeat(3,auto);
   justify-content:start;
-  margin-top:clamp(2.5rem,4.5vw,3.75rem);
+  margin-top:clamp(1.75rem,4.5svh,3.25rem);
   border-top:1px solid var(--hair);
 }
 .hs-cell{
@@ -430,11 +431,12 @@ section > .container{position:relative;z-index:1}
   position:relative;
   display:flex;justify-content:center;
   perspective:1200px;
-  padding:2rem 0 3.5rem;
+  padding:1.5rem 0 3rem;
 }
 .phone{
   position:relative;z-index:3;
-  width:clamp(215px,21vw,290px);
+  /* width also capped by svh: phone is ~2.3× taller than wide */
+  width:clamp(200px,min(21vw,28svh),280px);
   padding:11px;
   background:linear-gradient(160deg,#262626,#121212);
   border:1px solid rgba(255,255,255,.16);
@@ -1785,13 +1787,13 @@ footer{
   .nav-links,.nav-actions{display:none}
   .hamburger{display:flex}
 
-  .hero{min-height:0;padding-top:calc(var(--nav-h) + 3rem)}
+  .hero{min-height:0;padding-top:calc(var(--nav-h) + 2rem)}
   .hero-inner{grid-template-columns:1fr;gap:3.5rem}
   .hero-glow{top:auto;bottom:-10%;right:-25%;width:90vw;height:90vw}
   .hero-foot{position:static;margin-top:3.5rem;padding-bottom:0}
   .hero-marks{display:none}
   .hero-stats{grid-template-columns:repeat(3,1fr)}
-  .hs-cell{margin-right:0;padding-right:1rem}
+  .hs-cell{padding-right:1rem}
   .phone-stage{padding-bottom:2.5rem}
   .stand-wrap{left:4%}
 

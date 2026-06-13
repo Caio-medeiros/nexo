@@ -50,6 +50,7 @@
     renderLayout('/portal/disponibilidade/', client);
 
     const slug = getMenuSlug(client);
+    if (slug) initNotifications(slug);
     const container = document.getElementById('items-container');
     const statusPill = document.getElementById('status-pill');
     const resetBtn = document.getElementById('reset-all-btn');

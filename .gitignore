@@ -1,0 +1,5 @@
+# Supabase CLI local temp
+supabase/.temp/
+
+# Stray export
+--full-page

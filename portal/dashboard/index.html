@@ -16,7 +16,6 @@
   <aside class="portal-sidebar" id="portal-sidebar"></aside>
 
   <main class="portal-main" id="main">
-    <!-- skeleton while loading -->
     <div id="page-skeleton">
       <div class="page-header">
         <div class="nexo-skeleton" style="width:220px;height:28px"></div>
@@ -45,94 +44,85 @@
     const slug = getMenuSlug(client);
     const menuUrl = getMenuUrl(client);
     const menu = client.menus?.[0] || null;
+    if (slug) initNotifications(slug);
 
-    // ── parallel fetches ──────────────────────────────
     const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
 
-    let updates = [], pendingCount = 0, callsToday = 0;
-    try {
-      const [updatesRes, pendingRes, callsRes] = await Promise.all([
-        db.from('update_requests')
-          .select('id, type, description, status, created_at')
-          .eq('client_id', client.id)
-          .order('created_at', { ascending: false })
-          .limit(5),
-        db.from('update_requests')
-          .select('id', { count: 'exact', head: true })
-          .eq('client_id', client.id)
-          .in('status', ['pending', 'in_progress']),
-        slug
-          ? db.from('staff_calls')
-              .select('id', { count: 'exact', head: true })
-              .eq('espaco_slug', slug)
-              .gte('created_at', startOfDay.toISOString())
-          : Promise.resolve({ count: 0 }),
+    // ── metric queries (all best-effort) ──────────────
+    async function count(builder) {
+      try { const { count } = await builder; return count || 0; } catch (_) { return 0; }
+    }
+    let viewsToday = 0, reviewsMonth = 0, ordersToday = 0, revenueToday = 0,
+        pendingRes = 0, callsToday = 0, recentNotifs = [], lastReport = null;
+
+    if (slug) {
+      const [v, r, ordRes, pr, c, nf, wr] = await Promise.all([
+        count(db.from('menu_events').select('id', { count: 'exact', head: true })
+          .eq('espaco_slug', slug).eq('event_name', 'menu_opened')
+          .gte('created_at', startOfDay.toISOString())),
+        count(db.from('menu_events').select('id', { count: 'exact', head: true })
+          .eq('espaco_slug', slug).eq('event_name', 'review_google_clicked')
+          .gte('created_at', startOfMonth.toISOString())),
+        db.from('orders_log').select('total').eq('espaco_slug', slug)
+          .gte('created_at', startOfDay.toISOString()).then(r => r).catch(() => ({ data: [] })),
+        count(db.from('reservations').select('id', { count: 'exact', head: true })
+          .eq('espaco_slug', slug).eq('status', 'pending')),
+        count(db.from('staff_calls').select('id', { count: 'exact', head: true })
+          .eq('espaco_slug', slug).gte('created_at', startOfDay.toISOString())),
+        db.from('portal_notifications').select('*').eq('espaco_slug', slug)
+          .order('created_at', { ascending: false }).limit(5).then(r => r).catch(() => ({ data: [] })),
+        db.from('weekly_reports').select('report_text, created_at').eq('espaco_slug', slug)
+          .order('week_start', { ascending: false }).limit(1).maybeSingle().then(r => r).catch(() => ({ data: null })),
       ]);
-      updates = updatesRes.data || [];
-      pendingCount = pendingRes.count || 0;
-      callsToday = callsRes.count || 0;
-    } catch (err) {
-      console.error(err);
-      showToast('Erro ao carregar dados. Tente novamente.', 'error');
+      viewsToday = v; reviewsMonth = r; pendingRes = pr; callsToday = c;
+      const orders = ordRes.data || [];
+      ordersToday = orders.length;
+      revenueToday = orders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+      recentNotifs = nf.data || [];
+      lastReport = wr.data || null;
     }
 
-    // ── helpers ───────────────────────────────────────
     const firstName = (client.owner_name || client.name || '').split(' ')[0];
-
-    function menuStatusBadge() {
-      const s = menu?.status;
-      if (s === 'live' || s === 'active')
-        return '<span class="badge badge--success"><span class="badge-dot badge-dot--pulse"></span>Live</span>';
-      if (s === 'paused')
-        return '<span class="badge badge--muted">Pausado</span>';
-      return '<span class="badge badge--warning">Em Setup</span>';
-    }
+    const planLabel = client.plan ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1) : '—';
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     function clientStatusBadge() {
       const map = {
-        active: ['badge--success', 'Activo'],
-        lead: ['badge--info', 'Lead'],
-        demo_scheduled: ['badge--info', 'Demo'],
-        proposal_sent: ['badge--warning', 'Proposta'],
+        active: ['badge--success', 'Activo'], lead: ['badge--info', 'Lead'],
+        demo_scheduled: ['badge--info', 'Demo'], proposal_sent: ['badge--warning', 'Proposta'],
         churned: ['badge--muted', 'Inactivo'],
       };
       const [cls, label] = map[client.status] || ['badge--muted', client.status || '—'];
       return `<span class="badge ${cls}">${label}</span>`;
     }
 
-    const planLabel = client.plan
-      ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1)
-      : '—';
-    const planSub = client.plan === 'evento'
-      ? 'Pagamento único'
-      : `${formatEUR(client.monthly_value)}/mês` +
-        (client.plan_renewal_date
-          ? ` · renova ${new Date(client.plan_renewal_date).toLocaleDateString('pt-PT')}`
-          : '');
+    const NOTIF_ICONS = { order_new: '🍽️', staff_call: '🙋', waitlist_new: '⏳', reservation_new: '📅',
+      review_positive: '⭐', review_negative: '💬', update_done: '✅', menu_viewed: '👁️' };
 
-    const requestStatusBadge = (s) => ({
-      pending: '<span class="badge badge--warning">Pendente</span>',
-      in_progress: '<span class="badge badge--info">Em progresso</span>',
-      done: '<span class="badge badge--success">Concluído</span>',
-      rejected: '<span class="badge badge--muted">Rejeitado</span>',
-    }[s] || `<span class="badge badge--muted">${escapeHtml(s)}</span>`);
+    function activityRow(n) {
+      return `<div class="activity-row" data-id="${n.id}">
+        <span class="activity-icon">${NOTIF_ICONS[n.type] ?? '🔔'}</span>
+        <div class="activity-content">
+          <div class="activity-title">${escapeHtml(n.title)}</div>
+          ${n.body ? `<div class="activity-desc">${escapeHtml(n.body)}</div>` : ''}
+        </div>
+        <span class="activity-time">${timeAgo(n.created_at)}</span>
+      </div>`;
+    }
 
-    const typeLabels = {
-      price: 'Preço', new_item: 'Prato novo', remove_item: 'Remover prato',
-      photo: 'Foto', description: 'Descrição', translation: 'Tradução', other: 'Outro',
-    };
+    const activityHtml = recentNotifs.length
+      ? recentNotifs.map(activityRow).join('')
+      : `<div class="empty-state">${getIcon('activity', 32)}<p class="empty-title">Sem actividade ainda hoje</p></div>`;
 
-    // ── onboarding progress ───────────────────────────
+    // ── onboarding ────────────────────────────────────
     const ob = Array.isArray(client.onboarding) ? client.onboarding[0] : client.onboarding;
     const obSteps = [
-      ['received_menu_content', 'Conteúdo do menu recebido'],
-      ['received_logo', 'Logótipo recebido'],
-      ['received_colors', 'Cores da marca recebidas'],
-      ['menu_configured', 'Menu configurado'],
-      ['deployed_to_netlify', 'Menu publicado'],
-      ['nfc_programmed', 'NFC programado'],
-      ['client_approved', 'Aprovação do cliente'],
-      ['hardware_delivered', 'Hardware entregue'],
+      ['received_menu_content', 'Conteúdo do menu recebido'], ['received_logo', 'Logótipo recebido'],
+      ['received_colors', 'Cores da marca recebidas'], ['menu_configured', 'Menu configurado'],
+      ['deployed_to_netlify', 'Menu publicado'], ['nfc_programmed', 'NFC programado'],
+      ['client_approved', 'Aprovação do cliente'], ['hardware_delivered', 'Hardware entregue'],
       ['team_briefed', 'Equipa formada'],
     ];
     let onboardingHtml = '';
@@ -146,97 +136,94 @@
           <div class="card mb-4">
             <div class="card-title">A sua configuração está ${pct}% completa</div>
             <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-            ${pendingSteps.map(([, label]) => `
-              <div class="onboarding-step">
-                <span class="step-circle"></span>${label}
-              </div>`).join('')}
-            <a class="btn btn-secondary btn-sm mt-4" style="display:inline-flex"
-               href="mailto:hello@nexosolutions.pt?subject=Concluir configuração — ${encodeURIComponent(client.name)}">
-              Contactar NEXO para concluir →
-            </a>
+            ${pendingSteps.map(([, label]) => `<div class="onboarding-step"><span class="step-circle"></span>${label}</div>`).join('')}
           </div>`;
       }
     }
 
-    // ── recent updates ────────────────────────────────
-    const updatesHtml = updates.length === 0
-      ? `<div class="empty-state">
-           ${getIcon('edit', 32)}
-           <p class="empty-title">Ainda sem pedidos de alteração</p>
-           <a href="/portal/alteracoes/" class="btn btn-secondary btn-sm">Pedir primeira alteração →</a>
-         </div>`
-      : `<div class="table-wrap"><table class="table">
-           <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Estado</th></tr></thead>
-           <tbody>
-             ${updates.map(u => {
-               const desc = (u.description || '');
-               const short = desc.length > 50 ? desc.slice(0, 50) + '…' : desc;
-               return `<tr>
-                 <td class="text-muted">${timeAgo(u.created_at)}</td>
-                 <td>${typeLabels[u.type] || u.type || '—'}</td>
-                 <td>${escapeHtml(short)}</td>
-                 <td>${requestStatusBadge(u.status)}</td>
-               </tr>`;
-             }).join('')}
-           </tbody>
-         </table></div>`;
+    let reportHtml = '';
+    if (lastReport && lastReport.report_text) {
+      const sentences = lastReport.report_text.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ');
+      reportHtml = `
+        <div class="card mb-4">
+          <div class="card-title">Relatório semanal</div>
+          <p class="text-secondary text-sm" style="line-height:1.6">${escapeHtml(sentences)}…</p>
+          <a class="btn btn-secondary btn-sm mt-4" style="display:inline-flex" href="/portal/estatisticas/">Ver relatório completo →</a>
+        </div>`;
+    }
 
-    // ── render ────────────────────────────────────────
     document.getElementById('page-content').innerHTML = `
       <div class="page-header">
         <h1 class="page-title">Olá, ${escapeHtml(firstName)} 👋</h1>
         <p class="page-sub">${escapeHtml(client.name)} ·
           <span class="badge badge--muted">NEXO ${planLabel}</span> ${clientStatusBadge()}
         </p>
+        <p class="text-muted text-xs" style="margin-top:6px">Hoje, ${todayStr}</p>
       </div>
 
       <div class="metric-grid">
         <div class="card metric-card">
-          <div class="metric-head"><span class="metric-label">Menu Status</span>${getIcon('external-link')}</div>
-          <div class="metric-value">${menuStatusBadge()}</div>
-          <div class="metric-sub">
-            ${menu ? `<a href="${menuUrl}" target="_blank" rel="noopener">${escapeHtml(menuUrl.replace(/^https?:\/\//, ''))}</a>` : 'Sem menu configurado'}
-          </div>
-          <a class="metric-action" href="${menuUrl}" target="_blank" rel="noopener">Abrir menu →</a>
+          <div class="metric-head"><span class="metric-label">Visitas ao Menu Hoje</span>${getIcon('eye')}</div>
+          <div class="metric-value ${viewsToday > 50 ? 'text-info' : ''}">${viewsToday}</div>
+          <div class="metric-sub">aberturas de menu hoje</div>
+          <a class="metric-action" href="/portal/estatisticas/">Ver estatísticas →</a>
         </div>
-
         <div class="card metric-card">
-          <div class="metric-head"><span class="metric-label">Plano Activo</span>${getIcon('check')}</div>
-          <div class="metric-value">NEXO ${planLabel}</div>
-          <div class="metric-sub">${planSub}</div>
-          <a class="metric-action" href="https://nexosolutions.pt/#planos" target="_blank" rel="noopener">Ver detalhes →</a>
+          <div class="metric-head"><span class="metric-label">Reviews Google (mês)</span>${getIcon('star')}</div>
+          <div class="metric-value ${reviewsMonth > 0 ? 'text-success' : ''}">${reviewsMonth}</div>
+          <div class="metric-sub">cliques para o Google este mês</div>
+          <a class="metric-action" href="/portal/estatisticas/">Funil de reviews →</a>
         </div>
-
         <div class="card metric-card">
-          <div class="metric-head"><span class="metric-label">Pedidos Pendentes</span>${getIcon('edit')}</div>
-          <div class="metric-value ${pendingCount > 0 ? 'text-warning' : ''}">${pendingCount}</div>
-          <div class="metric-sub">alterações em processamento</div>
-          <a class="metric-action" href="/portal/alteracoes/">Ver todos →</a>
+          <div class="metric-head"><span class="metric-label">Pedidos Hoje</span>${getIcon('grid')}</div>
+          <div class="metric-value">${ordersToday}</div>
+          <div class="metric-sub">${revenueToday > 0 ? formatEUR(revenueToday) + ' registado' : 'sem pedidos ainda'}</div>
+          <a class="metric-action" href="/portal/sala/">Sala em directo →</a>
         </div>
-
+        <div class="card metric-card">
+          <div class="metric-head"><span class="metric-label">Reservas Pendentes</span>${getIcon('calendar')}</div>
+          <div class="metric-value ${pendingRes > 0 ? 'text-warning' : ''}">${pendingRes}</div>
+          <div class="metric-sub">à espera de confirmação</div>
+          <a class="metric-action" href="/portal/reservas/">Gerir reservas →</a>
+        </div>
         <div class="card metric-card">
           <div class="metric-head"><span class="metric-label">Chamadas Hoje</span>${getIcon('phone')}</div>
           <div class="metric-value">${callsToday}</div>
-          <div class="metric-sub">chamadas de mesa registadas</div>
-          <a class="metric-action" href="/portal/staff/">Modo Staff →</a>
+          <div class="metric-sub">pedidos de assistência</div>
+          <a class="metric-action" href="/portal/sala/">Sala em directo →</a>
         </div>
       </div>
 
+      <div class="card mb-4">
+        <div class="flex-between" style="margin-bottom:8px">
+          <div class="card-title" style="margin:0">Actividade recente</div>
+          <a href="/portal/sala/" class="text-sm text-secondary">Ver sala em directo →</a>
+        </div>
+        <div class="live-strip" id="live-strip">${activityHtml}</div>
+      </div>
+
       <div class="quick-actions">
-        <a href="/portal/disponibilidade/" class="quick-action">${getIcon('toggle')} Marcar item esgotado</a>
-        <a href="/portal/alteracoes/" class="quick-action">${getIcon('edit')} Pedir alteração</a>
-        <a href="/portal/staff/" class="quick-action">${getIcon('monitor')} Modo Staff</a>
+        <a href="/portal/estatisticas/" class="quick-action">${getIcon('bar-chart')} Estatísticas</a>
+        <a href="/portal/sala/" class="quick-action">${getIcon('activity')} Sala em Directo</a>
+        <a href="/portal/reservas/" class="quick-action">${getIcon('calendar')} Reservas de hoje</a>
       </div>
 
       ${onboardingHtml}
-
-      <div class="card">
-        <div class="card-title">Últimas alterações</div>
-        ${updatesHtml}
-      </div>`;
+      ${reportHtml}`;
 
     document.getElementById('page-skeleton').style.display = 'none';
     document.getElementById('page-content').style.display = 'block';
+
+    // live activity strip — prepend new notifications as they arrive
+    window.onNexoNotification = (n) => {
+      const strip = document.getElementById('live-strip');
+      if (!strip) return;
+      const empty = strip.querySelector('.empty-state');
+      if (empty) empty.remove();
+      strip.insertAdjacentHTML('afterbegin', activityRow(n));
+      const rows = strip.querySelectorAll('.activity-row');
+      if (rows.length > 5) rows[rows.length - 1].remove();
+    };
   })();
   </script>
 </body>

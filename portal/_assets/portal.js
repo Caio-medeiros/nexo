@@ -260,6 +260,20 @@ function renderLayout(activeNav, clientData) {
       <a href="${menuUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
         Ver Menu →
       </a>
+      <div class="portal-notifications-btn" id="notif-toggle" role="button" tabindex="0"
+           aria-haspopup="true" aria-label="Notificações">
+        ${getIcon('bell', 18)}
+        <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+        <div class="portal-notif-dropdown" id="notif-dropdown">
+          <div class="notif-dropdown-header">
+            <span>Notificações</span>
+            <button id="mark-all-read" class="notif-mark-all">Marcar tudo como lido</button>
+          </div>
+          <div id="notif-list">
+            <div class="notif-empty">Sem notificações</div>
+          </div>
+        </div>
+      </div>
       <div class="portal-avatar" id="avatar-toggle" role="button" tabindex="0" aria-haspopup="true">${initials}
         <div class="portal-dropdown" id="avatar-dropdown">
           <div class="dropdown-email">${escapeHtml(clientData.owner_name || clientData.name)}</div>
@@ -270,6 +284,9 @@ function renderLayout(activeNav, clientData) {
 
   const navItems = [
     { href: '/portal/dashboard/', icon: 'grid', label: 'Dashboard' },
+    { href: '/portal/sala/', icon: 'activity', label: 'Sala em Directo' },
+    { href: '/portal/estatisticas/', icon: 'bar-chart', label: 'Estatísticas' },
+    { href: '/portal/reservas/', icon: 'calendar', label: 'Reservas' },
     { href: '/portal/staff/', icon: 'monitor', label: 'Modo Staff' },
     { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
     { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu' },
@@ -299,6 +316,29 @@ function renderLayout(activeNav, clientData) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(e); }
     });
     document.addEventListener('click', () => dropdown.classList.remove('visible'));
+  }
+
+  // Notification bell dropdown
+  const notifToggle = document.getElementById('notif-toggle');
+  const notifDropdown = document.getElementById('notif-dropdown');
+  if (notifToggle && notifDropdown) {
+    const openNotif = (e) => {
+      e.stopPropagation();
+      notifDropdown.classList.toggle('visible');
+    };
+    notifToggle.addEventListener('click', openNotif);
+    notifToggle.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNotif(e); }
+    });
+    // keep dropdown open when clicking inside it
+    notifDropdown.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('click', () => notifDropdown.classList.remove('visible'));
+    const markAll = document.getElementById('mark-all-read');
+    if (markAll) markAll.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const slug = getMenuSlug(clientData);
+      if (slug) markAllRead(slug);
+    });
   }
 }
 
@@ -357,3 +397,139 @@ function setLiveState(state) {
 window.addEventListener('beforeunload', () => {
   _nexoChannels.forEach(ch => { try { db.removeChannel(ch); } catch (_) {} });
 });
+
+// ─── NOTIFICATIONS ───────────────────────
+const NOTIF_ICONS = {
+  order_new: '🍽️', staff_call: '🙋', waitlist_new: '⏳', reservation_new: '📅',
+  review_positive: '⭐', review_negative: '💬', update_done: '✅', menu_viewed: '👁️',
+};
+
+let notifSubscription = null;
+
+async function initNotifications(espacoSlug) {
+  if (!espacoSlug || !db) return;
+  await loadNotifications(espacoSlug);
+
+  if (notifSubscription) { try { db.removeChannel(notifSubscription); } catch (_) {} }
+  notifSubscription = db
+    .channel('portal_notifications_' + espacoSlug)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'portal_notifications',
+      filter: `espaco_slug=eq.${espacoSlug}`,
+    }, (payload) => {
+      addNotificationToUI(payload.new);
+      updateBadgeCount();
+      playNotificationSound();
+    })
+    .subscribe();
+  trackChannel(notifSubscription);
+}
+
+async function loadNotifications(espacoSlug) {
+  try {
+    const { data } = await db
+      .from('portal_notifications')
+      .select('*')
+      .eq('espaco_slug', espacoSlug)
+      .order('created_at', { ascending: false })
+      .limit(30);
+    renderNotifications(data ?? []);
+    updateBadgeCount(data?.filter(n => !n.read).length ?? 0);
+  } catch (err) {
+    console.warn('loadNotifications', err);
+  }
+}
+
+function renderNotifications(notifications) {
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+  if (!notifications.length) {
+    list.innerHTML = '<div class="notif-empty">Sem notificações recentes</div>';
+    return;
+  }
+  list.innerHTML = notifications.map(n => `
+    <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
+      <span class="notif-icon">${NOTIF_ICONS[n.type] ?? '🔔'}</span>
+      <div class="notif-content">
+        <div class="notif-title">${escapeHtml(n.title)}</div>
+        ${n.body ? `<div class="notif-body">${escapeHtml(n.body)}</div>` : ''}
+      </div>
+      <span class="notif-time">${timeAgo(n.created_at)}</span>
+    </div>`).join('');
+  list.querySelectorAll('.notif-item').forEach(el => {
+    el.addEventListener('click', () => markNotificationRead(el.dataset.id));
+  });
+}
+
+function updateBadgeCount(count) {
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  const unread = (count != null)
+    ? count
+    : document.querySelectorAll('.notif-item.unread').length;
+  badge.textContent = unread > 9 ? '9+' : String(unread);
+  badge.style.display = unread > 0 ? 'flex' : 'none';
+}
+
+async function markNotificationRead(id) {
+  const item = document.querySelector(`.notif-item[data-id="${id}"]`);
+  if (!item || !item.classList.contains('unread')) return;
+  item.classList.remove('unread');
+  updateBadgeCount();
+  try {
+    await db.from('portal_notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('id', id);
+  } catch (_) {}
+}
+
+async function markAllRead(espacoSlug) {
+  document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+  updateBadgeCount(0);
+  try {
+    await db.from('portal_notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('espaco_slug', espacoSlug)
+      .eq('read', false);
+  } catch (_) {}
+}
+
+function addNotificationToUI(notification) {
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+  const emptyEl = list.querySelector('.notif-empty');
+  if (emptyEl) emptyEl.remove();
+
+  const el = document.createElement('div');
+  el.className = 'notif-item unread';
+  el.dataset.id = notification.id;
+  el.innerHTML = `
+    <span class="notif-icon">${NOTIF_ICONS[notification.type] ?? '🔔'}</span>
+    <div class="notif-content">
+      <div class="notif-title">${escapeHtml(notification.title)}</div>
+      ${notification.body ? `<div class="notif-body">${escapeHtml(notification.body)}</div>` : ''}
+    </div>
+    <span class="notif-time">agora mesmo</span>`;
+  el.addEventListener('click', () => markNotificationRead(notification.id));
+  list.insertBefore(el, list.firstChild);
+
+  // also notify any page-level listener (e.g. live activity strip)
+  if (typeof window.onNexoNotification === 'function') {
+    try { window.onNexoNotification(notification); } catch (_) {}
+  }
+}
+
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 660; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(); osc.stop(ctx.currentTime + 0.4);
+  } catch (_) {}
+}

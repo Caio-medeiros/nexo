@@ -84,6 +84,7 @@
     const client = await getClientData();
     if (!client) return;
     renderLayout('/portal/referencias/', client);
+    { const _s = getMenuSlug(client); if (_s) initNotifications(_s); }
 
     document.getElementById('icon-gift').innerHTML = getIcon('gift', 22);
     document.getElementById('icon-arrow').innerHTML = getIcon('arrow-right', 22);

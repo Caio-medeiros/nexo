@@ -679,6 +679,8 @@ const CONFIG = {
     // Set false to hide "Chamar Empregado" button entirely
     sharedCart: true,
     // Set false to disable Shared Cart (Mesa em Grupo) feature
+    reservations: true,
+    // Set false to hide the "Reservar mesa" floating button
   }
 };
 

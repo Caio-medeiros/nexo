@@ -695,5 +695,6 @@ const CONFIG = {
   features: {
     callStaff: true,
     sharedCart: true,
+    reservations: true,
   }
 };

@@ -104,6 +104,7 @@
     renderLayout('/portal/alteracoes/', client);
 
     const slug = getMenuSlug(client) || 'sem-menu';
+    if (slug && slug !== 'sem-menu') initNotifications(slug);
     const menuId = client.menus?.[0]?.id || null;
 
     document.getElementById('page-skeleton').style.display = 'none';

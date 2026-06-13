@@ -214,7 +214,7 @@
   }
 
   function loadGA4() {
-    const GA4_ID = 'G-CWLYKCFP3K';
+    const GA4_ID = 'G-PG76WZVLNB';
     if (!GA4_ID || GA4_ID.includes('{{')) return;
 
     const script = document.createElement('script');

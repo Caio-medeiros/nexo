@@ -26,6 +26,12 @@ const NEXO_ICONS = {
   'paperclip': '<path d="M13 7.5l-5 5a3.2 3.2 0 0 1-4.5-4.5l5.4-5.4a2.1 2.1 0 0 1 3 3l-5.4 5.4a1 1 0 0 1-1.5-1.5l5-5"/>',
   'users': '<circle cx="6" cy="5.5" r="2.5"/><path d="M1.5 14c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M11 3.2a2.5 2.5 0 0 1 0 4.6M12.5 10.3c1.2.5 2 1.5 2 3.7"/>',
   'qr': '<rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><path d="M9.5 9.5h2v2h-2zM12.5 12.5h2v2h-2zM12.5 9.5h2M9.5 13.5v1"/>',
+  'activity': '<path d="M1.5 8h3l2-5 3 10 2-5h3"/>',
+  'bar-chart': '<path d="M2 14V7M6 14V3M10 14V9M14 14V5"/>',
+  'calendar': '<rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><path d="M1.5 6h13M5 1.5v2M11 1.5v2"/>',
+  'bell': '<path d="M8 1.5a4 4 0 0 0-4 4c0 4-1.5 5-1.5 5h11s-1.5-1-1.5-5a4 4 0 0 0-4-4zM6.5 13a1.5 1.5 0 0 0 3 0"/>',
+  'star': '<path d="M8 1.5l1.9 4 4.4.5-3.2 3 .9 4.3L8 11.2 4 13.3l.9-4.3-3.2-3 4.4-.5z"/>',
+  'message': '<path d="M14.5 7.5a5.5 5.5 0 0 1-7.7 5L2 14l1.5-4.3A5.5 5.5 0 1 1 14.5 7.5z"/>',
 };
 
 function getIcon(name, size = 16) {

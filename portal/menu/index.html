@@ -138,6 +138,7 @@
     renderLayout('/portal/menu/', client);
 
     const slug = getMenuSlug(client);
+    if (slug) initNotifications(slug);
     const sectionsEl = document.getElementById('sections');
 
     document.getElementById('page-skeleton').style.display = 'none';
