@@ -5070,33 +5070,6 @@ body.has-cart {
 
 #nexo-call-staff-btn.hidden { visibility: hidden; pointer-events: none; }
 
-/* Reservar — mesma aparência do botão Chamar */
-#nexo-reserve-btn {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 0 18px 0 14px;
-  height: 58px;
-  border-radius: 100px;
-  background: #071428;
-  border: 1px solid rgba(255,255,255,0.14);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
-  cursor: pointer;
-  transition: transform 130ms ease, box-shadow 130ms ease;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  color: rgba(255,255,255,0.9);
-  pointer-events: auto;
-}
-#nexo-reserve-btn:active { transform: scale(0.95); box-shadow: 0 2px 10px rgba(0,0,0,0.35); }
-#nexo-reserve-btn.hidden { display: none; }
-@media (max-width: 519px) {
-  #nexo-reserve-btn { width: 58px; padding: 0; border-radius: 50%; }
-  #nexo-reserve-btn .nexo-call-label { display: none; }
-}
-
 #nexo-call-staff-btn.success {
   background: #16a34a;
   border-color: #16a34a;

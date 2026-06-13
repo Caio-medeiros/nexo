@@ -4919,37 +4919,6 @@ body.has-cart {
   #nexo-call-staff-btn { left: calc(50% - 260px + 16px); }
 }
 
-/* ── Reservar mesa — floating button (bottom-right) ── */
-#nexo-reserve-btn {
-  position: fixed;
-  bottom: calc(20px + env(safe-area-inset-bottom));
-  right: 16px;
-  z-index: 160;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  line-height: 1;
-  background: rgba(13, 13, 13, 0.82);
-  border: 1px solid rgba(255,255,255,0.10);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-  transition: transform 120ms ease, background 200ms ease;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-#nexo-reserve-btn:active { transform: scale(0.88); }
-#nexo-reserve-btn.hidden { display: none; }
-
-@media (min-width: 560px) {
-  #nexo-reserve-btn { right: calc(50% - 260px + 16px); }
-}
-
 /* ── Sheet overlay ── */
 .nexo-sheet-overlay {
   position: fixed;

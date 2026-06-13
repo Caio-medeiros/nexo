@@ -4600,8 +4600,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── Call Staff ───
   setupCallStaff();
   setupNumericInputs();
-  // ─── Reservar mesa (página externa) ───
-  setupReserveButton();
 
   // ─── WOW EFFECTS ───
   setupHeroParallax();
@@ -4610,32 +4608,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── Restore shared cart session (survives refresh, 2h TTL) ───
   restoreSharedSession();
 });
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   RESERVAR MESA — botão → página pública de reservas
-   ═══════════════════════════════════════════════════════════════════════════ */
-function setupReserveButton() {
-  const btn = document.getElementById('nexo-reserve-btn');
-  if (!btn) return;
-  const cfg = (typeof CONFIG !== 'undefined') ? CONFIG : {};
-  const enabled = cfg.features && cfg.features.reservations !== false;
-  const hasSupabase = cfg.supabaseUrl && cfg.supabaseUrl.trim();
-  const slug = cfg.slug || (typeof ESPACO_SLUG !== 'undefined' ? ESPACO_SLUG : '');
-  if (!enabled || !hasSupabase || !slug) { btn.classList.add('hidden'); return; }
-  btn.classList.remove('hidden');
-
-  const go = () => {
-    const url = `https://nexosolutions.pt/reservar/${slug}/`;
-    window.open(url, '_blank');
-    if (typeof nexoTrack === 'function') {
-      nexoTrack('reservation_page_opened', { espaco_slug: slug, source: 'menu' });
-    }
-  };
-  btn.addEventListener('click', go);
-  btn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
-  });
-}
 
 /* ── Numbers-only inputs (table number fields) ── */
 function setupNumericInputs() {
