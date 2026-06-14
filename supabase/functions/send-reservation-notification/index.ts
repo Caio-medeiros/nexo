@@ -22,9 +22,11 @@ serve(async (req) => {
 
   try {
     const { reservation_id, type } = await req.json()
+    // Chave anon: reservations e reservation_settings são legíveis por anon
+    // (políticas públicas). A service-role legada já não autentica neste projeto.
     const db = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
     )
 
     const { data: res } = await db
