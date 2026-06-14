@@ -297,6 +297,7 @@ function renderLayout(activeNav, clientData) {
     { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
     { href: '/portal/alteracoes/', icon: 'clock', label: 'Alterações' },
     { href: '/portal/referencias/', icon: 'gift', label: 'Referências' },
+    { href: '/portal/guia/', icon: 'help', label: 'Guia' },
   ];
 
   sidebar.innerHTML = navItems.map(item => `

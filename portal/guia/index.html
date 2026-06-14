@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Guia — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+  <style>
+    .guia-feature { display:flex; gap:14px; padding:16px 0; border-bottom:1px solid var(--border); }
+    .guia-feature:last-child { border-bottom:none; }
+    .guia-ico { font-size:22px; flex-shrink:0; width:34px; text-align:center; }
+    .guia-feature h3 { font-size:14px; font-weight:600; margin-bottom:3px; }
+    .guia-feature p { font-size:13px; color:var(--text-secondary); line-height:1.55; }
+    .guia-feature .where { font-size:12px; color:var(--text-muted); margin-top:4px; }
+    .info-check { display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+    .info-check:last-child { border-bottom:none; }
+    .info-check .dot { width:7px; height:7px; border-radius:50%; background:var(--warning); flex-shrink:0; margin-top:6px; }
+    .info-check strong { color:var(--text-primary); }
+    .info-check span { color:var(--text-secondary); }
+  </style>
+</head>
+<body>
+  <nav class="portal-nav" id="portal-nav"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar"></aside>
+  <main class="portal-main" id="main">
+    <div id="page-skeleton">
+      <div class="page-header"><div class="nexo-skeleton" style="width:200px;height:28px"></div></div>
+      <div class="nexo-skeleton card" style="height:300px"></div>
+    </div>
+    <div id="page-content" style="display:none"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/guia/', client);
+    const slug = getMenuSlug(client);
+    if (slug) initNotifications(slug);
+
+    const firstName = (client.owner_name || client.name || '').split(' ')[0];
+
+    const features = [
+      ['📖', 'O seu menu digital', 'Os clientes abrem o menu no telemóvel com um toque no NFC ou a ler o QR. Em 4 idiomas, com fotos, filtros de dieta e carta de vinhos.', 'Ver Menu (canto superior) · Editar Menu'],
+      ['🍽️', 'Pedidos à mesa', 'O cliente monta o pedido no telemóvel e mostra à equipa ou envia por WhatsApp — sem papel e sem erros. Cada pedido aparece-lhe em tempo real.', 'Sala em Directo · Dashboard'],
+      ['🙋', 'Chamar empregado', 'Um toque no menu e a equipa é avisada na hora — sem o cliente ter de acenar.', 'Sala em Directo'],
+      ['⏳', 'Fila de espera', 'Em horas de ponta, os clientes entram na fila pelo telemóvel e são avisados quando a mesa está pronta.', 'Sala em Directo · Fila de Espera'],
+      ['📅', 'Reservas directas', 'Os clientes reservam pelo Instagram, Google ou QR na porta — sem comissões. Confirma ou cancela com um toque (abre o WhatsApp já preenchido para o cliente).', 'Reservas (link + QR em Configurações)'],
+      ['🏠', 'Sala em Directo', 'O ecrã para o balcão: pedidos, chamadas, fila e actividade — tudo a aparecer ao vivo, com som. Tem modo "ecrã completo" para um tablet.', 'Sala em Directo'],
+      ['🔕', 'Item esgotado', 'Acabou um prato? Desliga-o e ele desaparece do menu na hora. Volta a ligar quando houver.', 'Disponibilidade'],
+      ['📊', 'Estatísticas', 'Visitas, pratos mais vistos, idiomas dos clientes, horas de pico e um resumo semanal escrito para si.', 'Estatísticas'],
+      ['⭐', 'Mais avaliações Google', 'No momento certo, o menu convida o cliente a avaliar no Google — sem a equipa ter de pedir.', 'Estatísticas (funil de reviews)'],
+      ['✏️', 'Alterações ao menu', 'Quer mudar um preço, um prato ou uma foto? Pede aqui e nós tratamos.', 'Alterações'],
+      ['🎁', 'Indique e ganhe', 'Recomende a NEXO a outro espaço e recebe crédito quando ele aderir.', 'Referências'],
+      ['🔔', 'Notificações', 'O sino no topo avisa-o de tudo o que acontece — pedidos, reservas, chamadas — em tempo real.', 'Topo de qualquer página'],
+    ];
+
+    const infoNeeded = [
+      ['Conteúdo do menu', 'lista de pratos com descrições e preços (texto ou Excel serve).'],
+      ['Logótipo', 'em PNG ou SVG, de preferência com fundo transparente.'],
+      ['Cores da marca', 'os códigos das cores (ou exemplos do seu material).'],
+      ['Link do Google', 'a página do espaço no Google Maps (para as avaliações).'],
+      ['WhatsApp do espaço', 'o número que recebe pedidos e alertas de reserva.'],
+      ['Horário de funcionamento', 'para as reservas online (dias e horas).'],
+      ['Fotos dos pratos', '(opcional) boas fotos aumentam muito os pedidos.'],
+    ];
+
+    document.getElementById('page-content').innerHTML = `
+      <div class="page-header">
+        <h1 class="page-title">Guia — como tirar o máximo da NEXO</h1>
+        <p class="page-sub">Olá ${escapeHtml(firstName)} 👋 Aqui explicamos cada funcionalidade em 1 minuto.</p>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-title">O que cada funcionalidade faz</div>
+        ${features.map(([i,t,d,w]) => `
+          <div class="guia-feature">
+            <div class="guia-ico">${i}</div>
+            <div>
+              <h3>${t}</h3>
+              <p>${d}</p>
+              <div class="where">No portal: ${w}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-title">O que precisamos de si (para activar tudo)</div>
+        <p class="text-secondary text-sm" style="margin-bottom:12px">Quanto mais completo, mais rápido o seu espaço fica a 100%. Pode enviar aos poucos.</p>
+        ${infoNeeded.map(([t,d]) => `
+          <div class="info-check"><span class="dot"></span><span><strong>${t}</strong> — ${d}</span></div>`).join('')}
+        <a class="btn btn-whatsapp btn-sm" style="margin-top:16px;display:inline-flex"
+           href="https://wa.me/351918104266?text=${encodeURIComponent('Olá NEXO! Quero enviar informação do meu espaço (' + (client.name||'') + ').')}"
+           target="_blank" rel="noopener">Enviar por WhatsApp →</a>
+        <a class="btn btn-secondary btn-sm" style="margin-top:16px;margin-left:8px;display:inline-flex"
+           href="mailto:hello@nexosolutions.pt?subject=${encodeURIComponent('Informação do meu espaço — ' + (client.name||''))}">Enviar por email</a>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Precisa de ajuda?</div>
+        <p class="text-secondary text-sm">Estamos a um WhatsApp de distância. Qualquer dúvida sobre o portal ou o menu, fale connosco — respondemos rápido.</p>
+      </div>`;
+
+    document.getElementById('page-skeleton').style.display = 'none';
+    document.getElementById('page-content').style.display = 'block';
+  })();
+  </script>
+</body>
+</html>
