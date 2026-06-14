@@ -103,10 +103,41 @@
            href="mailto:hello@nexosolutions.pt?subject=${encodeURIComponent('Informação do meu espaço — ' + (client.name||''))}">Enviar por email</a>
       </div>
 
+      <div class="card mb-4">
+        <div class="card-title">Resolver sozinho — problemas comuns</div>
+        <p class="text-secondary text-sm" style="margin-bottom:8px">A maioria das situações resolve-se aqui no portal, sem esperar por ninguém. Toque numa pergunta.</p>
+        <div id="faq"></div>
+      </div>
+
       <div class="card">
-        <div class="card-title">Precisa de ajuda?</div>
-        <p class="text-secondary text-sm">Estamos a um WhatsApp de distância. Qualquer dúvida sobre o portal ou o menu, fale connosco — respondemos rápido.</p>
+        <div class="card-title">Ainda precisa de ajuda?</div>
+        <p class="text-secondary text-sm">Se nada acima resolveu, estamos a um WhatsApp de distância.</p>
+        <a class="btn btn-whatsapp btn-sm" style="margin-top:12px;display:inline-flex"
+           href="https://wa.me/351918104266?text=${encodeURIComponent('Olá NEXO! Preciso de ajuda com o portal (' + (client.name||'') + ').')}"
+           target="_blank" rel="noopener">Falar com a NEXO →</a>
       </div>`;
+
+    const faqs = [
+      ['Quero mudar um preço, prato, descrição ou foto', 'Faça você mesmo em <strong>Editar Menu</strong> — altere e guarde. Aparece no menu em segundos, não precisa de nos pedir nem de esperar.'],
+      ['Um prato acabou (ou voltou)', 'Vá a <strong>Disponibilidade</strong> e desligue o prato — desaparece do menu na hora. Ligue outra vez quando houver.'],
+      ['Alterei algo e o cliente ainda vê o antigo', 'As alterações são imediatas, mas o telemóvel do cliente pode ter o menu em cache. Peça-lhe para recarregar a página (ou fechar e reabrir). No seu lado, confirme em Editar Menu que ficou guardado.'],
+      ['Esqueci-me da palavra-passe', 'Na página de entrada do portal, toque em <strong>"Esqueceu a palavra-passe?"</strong>, insira o seu email e siga o link que recebe. Não precisamos de intervir.'],
+      ['Não recebo o alerta de novas reservas no WhatsApp', 'Vá a <strong>Reservas → Configurações</strong> e preencha o campo <strong>"WhatsApp para notificações"</strong> com o número do espaço. Guarde.'],
+      ['Uma reserva não aparece', 'Em <strong>Reservas</strong>, confirme a <strong>data</strong> no seletor (mostra um dia de cada vez) e o filtro de estado. Verifique também que as reservas estão activas em Configurações.'],
+      ['Quero pausar reservas (férias, evento privado)', 'Em <strong>Reservas → Configurações</strong> desligue "Reservas activas" para parar tudo, ou adicione <strong>datas bloqueadas</strong> para fechar só dias específicos.'],
+      ['Mudei o horário de funcionamento', 'Atualize em <strong>Reservas → Configurações → Horário</strong>. Os dias e horas disponíveis para reserva ajustam-se automaticamente.'],
+      ['Os pedidos/chamadas não aparecem na Sala em Directo', 'Mantenha a página <strong>Sala em Directo</strong> aberta e com internet. Se ficou muito tempo aberta, recarregue (a ligação ao vivo volta a ligar sozinha).'],
+      ['O NFC ou o QR não abre o menu', 'Teste com outro telemóvel e com dados móveis ligados. O QR pode estar sujo ou dobrado — limpe/endireite. Se uma tag NFC partiu fisicamente, aí sim fale connosco para substituir.'],
+      ['Quero adicionar um prato novo', 'Em <strong>Editar Menu</strong> pode adicionar pratos novos (nome, preço, descrição, foto) — ficam logo no menu.'],
+    ];
+    const faqEl = document.getElementById('faq');
+    faqEl.innerHTML = faqs.map(([q,a],i) => `
+      <details class="faq-item-g" style="border-bottom:1px solid var(--border)">
+        <summary style="cursor:pointer;padding:12px 0;font-size:13px;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px">
+          <span>${q}</span><span class="text-muted" style="flex-shrink:0">＋</span>
+        </summary>
+        <p class="text-secondary text-sm" style="padding:0 0 14px;line-height:1.6">${a}</p>
+      </details>`).join('');
 
     document.getElementById('page-skeleton').style.display = 'none';
     document.getElementById('page-content').style.display = 'block';
