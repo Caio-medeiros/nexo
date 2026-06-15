@@ -79,6 +79,9 @@ create policy "client_own_change_requests" on menu_change_requests
   );
 
 grant select, insert, update, delete on menu_change_requests to authenticated;
+-- service_role (secret key usada pelo NEXO OS para listar os pedidos) — o
+-- Supabase nem sempre concede por defeito a tabelas novas, por isso é explícito.
+grant select, insert, update, delete on menu_change_requests to service_role;
 -- anon (menu público) NÃO tem acesso aos pedidos
 
 -- ─────────────────────────────────────────

@@ -2874,8 +2874,8 @@ function sendToWhatsApp() {
     const encoded = encodeURIComponent(message);
     const number = (CONFIG.orderWhatsapp || '').replace(/\D/g, '');
     const url = `https://wa.me/${number}?text=${encoded}`;
-    window.open(url, '_blank');
     logOrderToSupabase(sharedCart ? 'shared' : 'whatsapp', tableValue);
+    window.open(url, '_blank');
   }, 350);
 }
 
@@ -3966,19 +3966,35 @@ async function initMenuOverrides() {
   } catch (_) { /* edições são opcionais — menu funciona sem Supabase */ }
 }
 
-// Regista chamada de mesa (Modo Staff do Portal) — fire-and-forget
-function logStaffCallToSupabase(tableLabel) {
+// Insert fiável via REST com keepalive — completa mesmo que a página navegue
+// (ex.: abrir o WhatsApp). Não depende do CDN supabase-js (mais rápido e robusto).
+function nexoInsert(table, row) {
   const { supabaseUrl, supabaseAnonKey } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
-  if (!supabaseUrl || !supabaseAnonKey) return;
-  loadSupabase()
-    .then(sb => sb.from('staff_calls').insert({
-      espaco_slug: CONFIG.slug,
-      table_label: tableLabel || null,
-    }))
-    .catch(() => {});
+  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.indexOf('{{') !== -1) return;
+  try {
+    fetch(supabaseUrl + '/rest/v1/' + table, {
+      method: 'POST',
+      keepalive: true,
+      headers: {
+        apikey: supabaseAnonKey,
+        Authorization: 'Bearer ' + supabaseAnonKey,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(row),
+    }).catch(() => {});
+  } catch (_) {}
 }
 
-// Regista pedido no orders_log (Modo Staff do Portal) — fire-and-forget
+// Regista chamada de mesa (Sala / Modo Staff do Portal)
+function logStaffCallToSupabase(tableLabel) {
+  nexoInsert('staff_calls', {
+    espaco_slug: CONFIG.slug,
+    table_label: tableLabel || null,
+  });
+}
+
+// Regista pedido no orders_log (Sala / Modo Staff do Portal)
 function logOrderToSupabase(channel, tableValue) {
   const { supabaseUrl, supabaseAnonKey } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
   if (!supabaseUrl || !supabaseAnonKey) return;
@@ -4014,16 +4030,14 @@ function logOrderToSupabase(channel, tableValue) {
 
     if (!items.length) return;
 
-    loadSupabase()
-      .then(sb => sb.from('orders_log').insert({
-        espaco_slug: CONFIG.slug,
-        table_label: (tableValue && tableValue.trim()) ? `Mesa ${tableValue.trim()}` : null,
-        items,
-        total: getCartTotal(),
-        member_count: memberCount,
-        channel,
-      }))
-      .catch(() => {});
+    nexoInsert('orders_log', {
+      espaco_slug: CONFIG.slug,
+      table_label: (tableValue && tableValue.trim()) ? `Mesa ${tableValue.trim()}` : null,
+      items,
+      total: getCartTotal(),
+      member_count: memberCount,
+      channel,
+    });
   } catch (_) {}
 }
 
