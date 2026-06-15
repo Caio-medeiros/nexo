@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # NEXO — Provisionar um novo cliente (ficheiros).
-# Cria /menu/<slug>/ e /reservar/<slug>/ a partir dos templates, com o slug
-# já preenchido. Depois é só personalizar o config.js e provisionar a BD.
+# Cria /menu/<slug>/ a partir do template, com o slug já preenchido.
+# Depois é só personalizar o config.js e provisionar a BD.
 #
 # Uso:  scripts/new-client.sh <slug> "<Nome do Espaço>" [tipo]
 # Ex.:  scripts/new-client.sh rest-solcarioca-lisboa "Sol Carioca" rest
@@ -22,10 +22,6 @@ if [ -d "$ROOT/menu/$SLUG" ]; then echo "❌ menu/$SLUG já existe."; exit 1; fi
 
 echo "→ A criar menu/$SLUG/ ..."
 cp -R "$ROOT/menu/_template" "$ROOT/menu/$SLUG"
-
-echo "→ A criar reservar/$SLUG/ ..."
-mkdir -p "$ROOT/reservar/$SLUG"
-cp "$ROOT/reservar/_template/index.html" "$ROOT/reservar/$SLUG/index.html"
 
 # Substituições determinísticas (python, cross-platform)
 SLUG="$SLUG" NAME="$NAME" TIPO="$TIPO" ROOT="$ROOT" python3 - <<'PY'
@@ -50,7 +46,6 @@ PY
 echo ""
 echo "✅ Ficheiros criados:"
 echo "   menu/$SLUG/        (menu — personalizar config.js)"
-echo "   reservar/$SLUG/    (reservas — não precisa de edição)"
 echo ""
 echo "Próximos passos (ver docs/NEW-CLIENT-RUNBOOK.md):"
 echo "  1. Personalizar menu/$SLUG/config.js:"
@@ -58,5 +53,5 @@ echo "       brandColor, whatsappNumber, orderWhatsapp, googleReview, idiomas, m
 echo "  2. Provisionar a BD: editar e correr supabase/provision-client.sql"
 echo "       (define slug='$SLUG', nome='$NAME')"
 echo "  3. Criar utilizador no Supabase Auth e ligar clients.auth_user_id"
-echo "  4. git add menu/$SLUG reservar/$SLUG && git commit && git push (deploy Netlify)"
+echo "  4. git add menu/$SLUG && git commit && git push (deploy Netlify)"
 echo "  5. Validar: scripts/smoke-client.sh $SLUG"

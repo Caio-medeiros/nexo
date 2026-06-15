@@ -72,9 +72,15 @@
       <div class="page-header flex-between">
         <div>
           <h1 class="page-title">Editar Menu</h1>
-          <p class="page-sub">Altere preços, descrições e fotos, esconda pratos ou adicione novos — fica no menu em segundos.</p>
+          <p class="page-sub">Proponha alterações a preços, descrições, fotos e pratos. A NEXO revê cada alteração antes de entrar no menu.</p>
         </div>
         <a class="btn btn-secondary btn-sm" id="view-menu-link" target="_blank" rel="noopener">Ver menu →</a>
+      </div>
+
+      <div class="sla-notice mb-4" id="approval-banner">
+        🔒 As alterações ao menu passam por <strong>aprovação da NEXO</strong> antes de ficarem visíveis aos clientes.
+        Cada pedido fica marcado como <span class="badge badge--warning">pendente NEXO</span> até ser aprovado —
+        o menu atual mantém-se ao vivo entretanto.
       </div>
 
       <div id="sections"></div>
@@ -179,45 +185,80 @@
       return;
     }
 
-    // ── overrides ────────────────────────────────────
-    let overrides = new Map(); // item_id → row
-    async function loadOverrides() {
-      const { data, error } = await db.from('menu_overrides')
-        .select('*')
-        .eq('espaco_slug', slug)
-        .order('created_at', { ascending: true });
-      if (error) {
+    // ── estado: overrides aprovados (ao vivo) + pedidos pendentes ──────
+    let overrides = new Map(); // item_id → menu_overrides (aprovado/ao vivo)
+    let pending = new Map();   // item_id → menu_change_requests (pendente NEXO)
+    async function loadState() {
+      const [ovRes, reqRes] = await Promise.all([
+        db.from('menu_overrides').select('*')
+          .eq('espaco_slug', slug).order('created_at', { ascending: true }),
+        db.from('menu_change_requests').select('*')
+          .eq('espaco_slug', slug).eq('status', 'pending').order('created_at', { ascending: true }),
+      ]);
+      if (ovRes.error || reqRes.error) {
         showToast('Erro ao carregar edições.', 'error');
         return;
       }
-      overrides = new Map((data || []).map(r => [r.item_id, r]));
+      overrides = new Map((ovRes.data || []).map(r => [r.item_id, r]));
+      pending = new Map((reqRes.data || []).map(r => [r.item_id, r]));
     }
-    await loadOverrides();
+    await loadState();
 
-    // item "efetivo" = config + override por cima
+    function findBase(itemId) {
+      for (const sec of baseMenu) {
+        const f = sec.items.find(i => i.itemId === itemId);
+        if (f) return f;
+      }
+      return null;
+    }
+
+    // item "efetivo" = config + override aprovado + pré-visualização do pedido pendente
     function effective(base) {
-      const o = overrides.get(base.itemId);
-      return {
-        itemId: base.itemId,
-        kind: 'override',
+      const o = overrides.get(base.itemId);  // aprovado/ao vivo
+      const p = pending.get(base.itemId);     // pedido pendente
+      let shown = {
         name: (o && o.name) || base.name,
         desc: (o && o.description) || base.desc,
         price: (o && o.price) || base.price,
         photo: (o && o.photo_url) || base.photo,
         hidden: !!(o && o.removed),
+      };
+      if (p) {
+        shown = (p.action === 'clear')
+          ? { name: base.name, desc: base.desc, price: base.price, photo: base.photo, hidden: false }
+          : { name: p.name || base.name, desc: p.description || base.desc,
+              price: p.price || base.price, photo: p.photo_url || base.photo, hidden: !!p.removed };
+      }
+      return {
+        itemId: base.itemId, kind: 'override', ...shown,
         edited: !!(o && (o.name || o.description || o.price || o.photo_url)),
+        pending: !!p,
       };
     }
 
     function customsFor(sectionId) {
-      return [...overrides.values()]
-        .filter(o => o.kind === 'custom' && o.section_id === sectionId && !o.removed)
-        .map(o => ({
-          itemId: o.item_id, kind: 'custom',
-          name: o.name || 'Novo prato', desc: o.description || '',
-          price: o.price || '', photo: o.photo_url || null,
-          hidden: false, edited: false,
-        }));
+      const out = [];
+      // customs já aprovados (ao vivo)
+      for (const o of overrides.values()) {
+        if (o.kind !== 'custom' || o.section_id !== sectionId || o.removed) continue;
+        const p = pending.get(o.item_id);
+        let shown = { name: o.name || 'Novo prato', desc: o.description || '',
+                      price: o.price || '', photo: o.photo_url || null, hidden: false };
+        if (p && p.action === 'set') {
+          shown = { name: p.name || shown.name, desc: p.description || '',
+                    price: p.price || '', photo: p.photo_url || null, hidden: !!p.removed };
+        }
+        out.push({ itemId: o.item_id, kind: 'custom', ...shown, edited: false, pending: !!p });
+      }
+      // customs novos ainda só em pedido pendente (ainda não estão ao vivo)
+      for (const p of pending.values()) {
+        if (p.kind !== 'custom' || p.section_id !== sectionId || p.action !== 'set') continue;
+        if (overrides.has(p.item_id)) continue;
+        out.push({ itemId: p.item_id, kind: 'custom', name: p.name || 'Novo prato',
+          desc: p.description || '', price: p.price || '', photo: p.photo_url || null,
+          hidden: !!p.removed, edited: false, pending: true, isNewPending: true });
+      }
+      return out;
     }
 
     // ── render ───────────────────────────────────────
@@ -227,14 +268,25 @@
         : `<div class="item-thumb">${escapeHtml((it.name || '?')[0] || '?').toUpperCase()}</div>`;
       const badges =
         (it.kind === 'custom' ? '<span class="badge badge--info">novo</span>' : '') +
-        (it.edited ? '<span class="badge badge--warning">editado</span>' : '') +
+        (it.pending
+          ? '<span class="badge badge--warning">pendente NEXO</span>'
+          : (it.edited ? '<span class="badge badge--muted">no menu</span>' : '')) +
         (it.hidden ? '<span class="badge badge--muted">escondido</span>' : '');
-      const actions = it.kind === 'custom'
-        ? `<button class="btn btn-secondary btn-sm" data-edit="${it.itemId}">Editar</button>
-           <button class="btn btn-danger btn-sm" data-delete="${it.itemId}">Eliminar</button>`
-        : `<button class="btn btn-secondary btn-sm" data-edit="${it.itemId}">Editar</button>
+      let actions;
+      if (it.pending) {
+        actions =
+          `<button class="btn btn-secondary btn-sm" data-edit="${it.itemId}">Editar</button>
+           <button class="btn btn-secondary btn-sm" data-cancel-req="${it.itemId}" title="Cancelar o pedido pendente">Cancelar pedido</button>`;
+      } else if (it.kind === 'custom') {
+        actions =
+          `<button class="btn btn-secondary btn-sm" data-edit="${it.itemId}">Editar</button>
+           <button class="btn btn-danger btn-sm" data-delete="${it.itemId}">Eliminar</button>`;
+      } else {
+        actions =
+          `<button class="btn btn-secondary btn-sm" data-edit="${it.itemId}">Editar</button>
            <button class="btn btn-secondary btn-sm" data-toggle-hide="${it.itemId}">${it.hidden ? 'Mostrar' : 'Esconder'}</button>
            ${it.edited ? `<button class="btn btn-secondary btn-sm" data-reset="${it.itemId}" title="Voltar à versão original">Repor</button>` : ''}`;
+      }
       return `
         <div class="item-row ${it.hidden ? 'is-hidden' : ''}">
           ${thumb}
@@ -248,7 +300,10 @@
     }
 
     function render() {
-      sectionsEl.innerHTML = baseMenu.map(sec => {
+      const pendCount = pending.size;
+      sectionsEl.innerHTML = (pendCount
+        ? `<div class="sla-notice mb-4">⏳ Tem <strong>${pendCount}</strong> ${pendCount === 1 ? 'alteração pendente' : 'alterações pendentes'} de aprovação da NEXO.</div>`
+        : '') + baseMenu.map(sec => {
         const items = sec.items.map(effective).concat(customsFor(sec.id));
         const visible = items.filter(i => !i.hidden).length;
         return `
@@ -267,61 +322,97 @@
       sectionsEl.querySelectorAll('[data-add]').forEach(b =>
         b.addEventListener('click', () => openEditor(null, b.dataset.add)));
       sectionsEl.querySelectorAll('[data-toggle-hide]').forEach(b =>
-        b.addEventListener('click', () => toggleHide(b.dataset.toggleHide, b)));
+        b.addEventListener('click', () => toggleHide(b.dataset.toggleHide, !effectiveHidden(b.dataset.toggleHide), b)));
       sectionsEl.querySelectorAll('[data-reset]').forEach(b =>
-        b.addEventListener('click', () => resetOverride(b.dataset.reset, b)));
+        b.addEventListener('click', () => resetOverride(b.dataset.reset)));
       sectionsEl.querySelectorAll('[data-delete]').forEach(b =>
         b.addEventListener('click', () => deleteCustom(b.dataset.delete)));
+      sectionsEl.querySelectorAll('[data-cancel-req]').forEach(b =>
+        b.addEventListener('click', () => cancelRequest(b.dataset.cancelReq)));
     }
 
-    // ── mutations ────────────────────────────────────
-    async function toggleHide(itemId, btn) {
-      const existing = overrides.get(itemId);
-      const removed = !(existing && existing.removed);
-      setLoading(btn, true, '...');
-      const { data, error } = await db.from('menu_overrides').upsert({
-        espaco_slug: slug,
-        item_id: itemId,
-        kind: 'override',
-        removed,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'espaco_slug,item_id' }).select().single();
-      setLoading(btn, false);
+    function effectiveHidden(itemId) {
+      const base = findBase(itemId);
+      return base ? effective(base).hidden : false;
+    }
+
+    // ── pedidos de alteração (substituem a escrita direta) ─────────────
+    async function fileRequest(itemId, row) {
+      // só um pendente por prato — apaga o anterior e cria o novo
+      await db.from('menu_change_requests')
+        .delete().eq('espaco_slug', slug).eq('item_id', itemId).eq('status', 'pending');
+      const { data, error } = await db.from('menu_change_requests')
+        .insert({ espaco_slug: slug, item_id: itemId, status: 'pending', ...row })
+        .select().single();
+      if (error) throw error;
+      pending.set(itemId, data);
+    }
+
+    async function cancelRequest(itemId) {
+      const { error } = await db.from('menu_change_requests')
+        .delete().eq('espaco_slug', slug).eq('item_id', itemId).eq('status', 'pending');
       if (error) { showToast('Erro. Tente novamente.', 'error'); return; }
-      overrides.set(itemId, data);
+      pending.delete(itemId);
       render();
-      showToast(removed ? 'Prato escondido do menu.' : 'Prato visível no menu.', 'success');
+      showToast('Pedido cancelado.', 'success');
     }
 
-    async function resetOverride(itemId, btn) {
+    // ── mutations → criam pedidos ──────────────────────
+    async function toggleHide(itemId, removed, btn) {
+      const o = overrides.get(itemId);          // estado aprovado
+      const base = findBase(itemId);
+      setLoading(btn, true, '...');
+      try {
+        await fileRequest(itemId, {
+          action: 'set', kind: 'override', section_id: o ? o.section_id : null,
+          removed,
+          name: o ? o.name : null, description: o ? o.description : null,
+          price: o ? o.price : null, photo_url: o ? o.photo_url : null,
+          base_label: (base && base.name) || (o && o.name) || 'Prato',
+        });
+        render();
+        showToast(removed ? 'Pedido para esconder enviado à NEXO.' : 'Pedido para mostrar enviado à NEXO.', 'success');
+      } catch (_) {
+        showToast('Erro. Tente novamente.', 'error');
+      } finally { setLoading(btn, false); }
+    }
+
+    async function resetOverride(itemId) {
       const ok = await confirmModal({
         title: 'Repor versão original',
-        body: 'As suas edições a este prato serão eliminadas e o prato volta à versão original do menu. Confirmar?',
-        confirmLabel: 'Repor',
+        body: 'Vamos pedir à NEXO para repor a versão original deste prato. As suas edições aprovadas saem do menu após aprovação. Confirmar?',
+        confirmLabel: 'Pedir reposição',
       });
       if (!ok) return;
-      const { error } = await db.from('menu_overrides')
-        .delete().eq('espaco_slug', slug).eq('item_id', itemId);
-      if (error) { showToast('Erro. Tente novamente.', 'error'); return; }
-      overrides.delete(itemId);
-      render();
-      showToast('Prato reposto à versão original.', 'success');
+      const o = overrides.get(itemId);
+      const base = findBase(itemId);
+      try {
+        await fileRequest(itemId, {
+          action: 'clear', kind: 'override', section_id: o ? o.section_id : null,
+          base_label: (base && base.name) || (o && o.name) || 'Prato',
+        });
+        render();
+        showToast('Pedido de reposição enviado à NEXO.', 'success');
+      } catch (_) { showToast('Erro. Tente novamente.', 'error'); }
     }
 
     async function deleteCustom(itemId) {
+      const o = overrides.get(itemId);
       const ok = await confirmModal({
         title: 'Eliminar prato',
-        body: 'Este prato será removido do menu permanentemente. Confirmar?',
-        confirmLabel: 'Eliminar',
+        body: 'Vamos pedir à NEXO para eliminar este prato do menu. Confirmar?',
+        confirmLabel: 'Pedir eliminação',
         danger: true,
       });
       if (!ok) return;
-      const { error } = await db.from('menu_overrides')
-        .delete().eq('espaco_slug', slug).eq('item_id', itemId);
-      if (error) { showToast('Erro. Tente novamente.', 'error'); return; }
-      overrides.delete(itemId);
-      render();
-      showToast('Prato eliminado.', 'success');
+      try {
+        await fileRequest(itemId, {
+          action: 'clear', kind: 'custom', section_id: o ? o.section_id : null,
+          base_label: (o && o.name) || 'Prato',
+        });
+        render();
+        showToast('Pedido de eliminação enviado à NEXO.', 'success');
+      } catch (_) { showToast('Erro. Tente novamente.', 'error'); }
     }
 
     // ── editor modal ─────────────────────────────────
@@ -352,28 +443,29 @@
       edName.classList.remove('input-error');
 
       if (itemId) {
-        // editar existente (override ou custom)
+        // editar existente — prefill: pedido pendente > override aprovado > config base
         const o = overrides.get(itemId);
-        const isCustom = !!(o && o.kind === 'custom');
+        const p = pending.get(itemId);
+        const isCustom = !!((p && p.kind === 'custom') || (o && o.kind === 'custom'));
         let base = { name: '', desc: '', price: '', photo: null };
-        if (!isCustom) {
-          for (const sec of baseMenu) {
-            const f = sec.items.find(i => i.itemId === itemId);
-            if (f) { base = f; break; }
-          }
-        }
+        if (!isCustom) base = findBase(itemId) || base;
+        const src = (p && p.action === 'set')
+          ? { name: p.name, desc: p.description, price: p.price, photo: p.photo_url }
+          : o
+            ? { name: o.name, desc: o.description, price: o.price, photo: o.photo_url }
+            : {};
         editing = {
           itemId,
-          sectionId: o ? o.section_id : null,
+          sectionId: (p && p.section_id) || (o && o.section_id) || null,
           isCustom,
-          photoUrl: (o && o.photo_url) || (!isCustom ? base.photo : null),
+          photoUrl: src.photo || (!isCustom ? base.photo : null),
           photoFile: null,
           photoCleared: false,
         };
         document.getElementById('editor-title').textContent = 'Editar prato';
-        edName.value = (o && o.name) || base.name || '';
-        edDesc.value = (o && o.description) || base.desc || '';
-        edPrice.value = (o && o.price) || base.price || '';
+        edName.value = src.name || base.name || '';
+        edDesc.value = src.desc || base.desc || '';
+        edPrice.value = src.price || base.price || '';
         setPhotoPreview(editing.photoUrl);
       } else {
         // adicionar novo prato a uma secção
@@ -430,7 +522,7 @@
         return;
       }
 
-      setLoading(edSave, true, 'A guardar...');
+      setLoading(edSave, true, 'A enviar...');
       try {
         // upload da foto, se nova
         let photoUrl = editing.photoCleared ? null : editing.photoUrl;
@@ -444,34 +536,28 @@
           photoUrl = pub?.publicUrl || null;
         }
 
-        const row = {
-          espaco_slug: slug,
-          item_id: editing.itemId,
-          section_id: editing.sectionId,
+        // manter o estado "escondido" do override aprovado (se existir)
+        const existing = overrides.get(editing.itemId);
+        const keepHidden = !!(existing && existing.removed && !editing.isCustom);
+
+        await fileRequest(editing.itemId, {
+          action: 'set',
           kind: editing.isCustom ? 'custom' : 'override',
-          removed: false,
+          section_id: editing.sectionId,
+          removed: keepHidden,
           name: name || null,
           description: edDesc.value.trim() || null,
           price: edPrice.value.trim() || null,
           photo_url: photoUrl,
-          updated_at: new Date().toISOString(),
-        };
-        // manter o estado "escondido" se já existia
-        const existing = overrides.get(editing.itemId);
-        if (existing && existing.removed && !editing.isCustom) row.removed = true;
+          base_label: name || (findBase(editing.itemId) || {}).name || 'Prato',
+        });
 
-        const { data, error } = await db.from('menu_overrides')
-          .upsert(row, { onConflict: 'espaco_slug,item_id' })
-          .select().single();
-        if (error) throw error;
-
-        overrides.set(editing.itemId, data);
         closeEditor();
         render();
-        showToast('Guardado! Já está no menu dos clientes.', 'success');
+        showToast('Enviado para aprovação da NEXO.', 'success');
       } catch (err) {
         console.error(err);
-        showToast('Erro ao guardar. Tente novamente.', 'error');
+        showToast('Erro ao enviar. Tente novamente.', 'error');
       } finally {
         setLoading(edSave, false);
       }

@@ -85,17 +85,15 @@
 
       const since = rangeDays > 0 ? new Date(Date.now() - rangeDays * 86400000) : new Date('2020-01-01');
       const sinceISO = since.toISOString();
-      const sinceDate = sinceISO.slice(0, 10);
 
-      let events = [], orders = [], reservs = [], calls = [];
+      let events = [], orders = [], calls = [];
       try {
-        const [e, o, r, c] = await Promise.all([
+        const [e, o, c] = await Promise.all([
           db.from('menu_events').select('*').eq('espaco_slug', slug).gte('created_at', sinceISO).limit(5000),
           db.from('orders_log').select('*').eq('espaco_slug', slug).gte('created_at', sinceISO),
-          db.from('reservations').select('*').eq('espaco_slug', slug).gte('reservation_date', sinceDate),
           db.from('staff_calls').select('*').eq('espaco_slug', slug).gte('created_at', sinceISO),
         ]);
-        events = e.data || []; orders = o.data || []; reservs = r.data || []; calls = c.data || [];
+        events = e.data || []; orders = o.data || []; calls = c.data || [];
       } catch (err) { console.error(err); }
 
       const get = (n) => events.filter(e => e.event_name === n);
@@ -124,21 +122,16 @@
       const langMap = {};
       events.forEach(e => { if (e.language) langMap[e.language] = (langMap[e.language] || 0) + 1; });
 
-      // reservations summary
-      const resConfirmed = reservs.filter(r => ['confirmed', 'seated', 'completed'].includes(r.status)).length;
-      const resPending = reservs.filter(r => r.status === 'pending').length;
-      const resPeople = reservs.filter(r => !['cancelled', 'no_show'].includes(r.status)).reduce((s, r) => s + r.party_size, 0);
-
       // ROI estimate
-      const roi = googleClicks * 12 + revenue + reservs.length * 25;
+      const roi = googleClicks * 12 + revenue;
 
       body.innerHTML = `
         <div class="roi-banner">
           <div class="roi-label">Valor gerado (estimativa)</div>
           <div class="roi-value">${formatEUR(roi)}</div>
           <p class="text-secondary text-sm" style="margin-top:8px">
-            ${sessions} sessões · ${googleClicks} cliques para o Google · ${reservs.length} reservas no período.
-            Inclui faturação registada e valor estimado de reviews e reservas.
+            ${sessions} sessões · ${googleClicks} cliques para o Google no período.
+            Inclui faturação registada e valor estimado de reviews.
           </p>
         </div>
 
@@ -146,7 +139,6 @@
           <div class="card metric-card"><div class="metric-head"><span class="metric-label">Visitas ao menu</span>${getIcon('eye')}</div><div class="metric-value">${views}</div><div class="metric-sub">${sessions} sessões únicas</div></div>
           <div class="card metric-card"><div class="metric-head"><span class="metric-label">Cliques Google</span>${getIcon('star')}</div><div class="metric-value text-success">${googleClicks}</div><div class="metric-sub">de ${reviewsPrompted} reviews pedidas</div></div>
           <div class="card metric-card"><div class="metric-head"><span class="metric-label">Pedidos</span>${getIcon('grid')}</div><div class="metric-value">${orders.length}</div><div class="metric-sub">${formatEUR(revenue)} registado</div></div>
-          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Reservas</span>${getIcon('calendar')}</div><div class="metric-value">${reservs.length}</div><div class="metric-sub">${resConfirmed} confirmadas</div></div>
         </div>
 
         <div class="two-col">
@@ -173,18 +165,9 @@
           <p class="text-muted text-xs" style="margin-top:10px">Hora de maior movimento: <strong>${peakHour}h</strong></p>
         </div>
 
-        <div class="two-col">
-          <div class="card">
-            <div class="card-title">Idiomas dos clientes</div>
-            <div class="chart-box" style="height:240px"><canvas id="chart-langs"></canvas></div>
-          </div>
-          <div class="card">
-            <div class="card-title">Resumo de reservas</div>
-            <div class="funnel-step"><span class="text-sm">Total</span><span>${reservs.length}</span></div>
-            <div class="funnel-step"><span class="text-sm">Confirmadas</span><span class="text-success">${resConfirmed}</span></div>
-            <div class="funnel-step"><span class="text-sm">Pendentes</span><span class="text-warning">${resPending}</span></div>
-            <div class="funnel-step"><span class="text-sm">Total de pessoas</span><span>${resPeople}</span></div>
-          </div>
+        <div class="card mb-4">
+          <div class="card-title">Idiomas dos clientes</div>
+          <div class="chart-box" style="height:240px"><canvas id="chart-langs"></canvas></div>
         </div>
 
         <div class="metric-grid" style="grid-template-columns:repeat(3,1fr)">

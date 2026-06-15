@@ -3,7 +3,7 @@
 -- Correr no Supabase SQL Editor do projeto kgbrtbpeekhkroibsgqq.
 --
 -- 1) Edita as 6 variáveis abaixo.
--- 2) Run. Cria: clients (espelho) + menus + onboarding + reservation_settings.
+-- 2) Run. Cria: clients (espelho) + menus + onboarding.
 -- 3) Depois cria o utilizador no Supabase Auth (Authentication → Add user) e
 --    corre o UPDATE do fim para ligar clients.auth_user_id.
 --
@@ -18,7 +18,6 @@ declare
   v_owner   text := 'Nome do Dono';            -- nome do contacto
   v_plan    text := 'starter';                 -- starter | growth | multi | enterprise | evento
   v_monthly numeric := 69;                     -- valor mensal (€)
-  v_wa_notify text := '';                      -- WhatsApp do restaurante p/ alertas (ex: '+351912345678')
   -- ─────────────────────────────────────────────────────────
   v_client_id uuid;
 begin
@@ -40,23 +39,16 @@ begin
   insert into onboarding (client_id) values (v_client_id)
     on conflict (client_id) do nothing;
 
-  -- definições de reservas (começa desativado até o espaço confirmar horário)
-  insert into reservation_settings (espaco_slug, restaurant_name, enabled, whatsapp_notify)
-    values (v_slug, v_name, false, nullif(v_wa_notify, ''))
-    on conflict (espaco_slug) do nothing;
-
   raise notice 'Cliente % provisionado (client_id=%)', v_name, v_client_id;
 end $$;
 
 -- Verificação
 select c.name, c.plan, c.status, m.slug, m.url,
        (o.id is not null) as has_onboarding,
-       (rs.id is not null) as has_reservation_settings,
        (c.auth_user_id is not null) as tem_login
 from clients c
 join menus m on m.client_id = c.id
 left join onboarding o on o.client_id = c.id
-left join reservation_settings rs on rs.espaco_slug = m.slug
 where m.slug = 'rest-EXEMPLO-cidade';   -- ← mesmo slug
 
 -- ── DEPOIS de criar o utilizador em Authentication → Add user, liga-o: ──

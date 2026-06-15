@@ -807,42 +807,8 @@ body.kiosk-mode .kiosk-exit { display: inline-flex; }
 .ai-report { white-space: pre-wrap; line-height: 1.7; font-size: 14px; color: var(--text-secondary); }
 
 /* ═══════════════════════════════════════════════════════════
-   RESERVAS (portal)
+   SETTINGS ROWS (portal — usado na Fila de Espera)
    ═══════════════════════════════════════════════════════════ */
-.tabs-bar { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-.tab-btn {
-  background: none; border: none; padding: 10px 16px; font-size: 14px; font-weight: 500;
-  color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent;
-  margin-bottom: -1px; transition: color 150ms ease, border-color 150ms ease;
-}
-.tab-btn:hover { color: var(--text-primary); }
-.tab-btn.active { color: var(--text-primary); border-bottom-color: var(--accent); }
-.date-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.date-nav-btn {
-  width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-md);
-  display: flex; align-items: center; justify-content: center; color: var(--text-secondary);
-  cursor: pointer; transition: all 150ms;
-}
-.date-nav-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
-.date-nav-label { font-size: 14px; font-weight: 600; min-width: 180px; text-align: center; }
-.res-card {
-  background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 12px; padding: 16px; margin-bottom: 12px;
-}
-.res-card.is-new { animation: slide-in-top 350ms ease; }
-.res-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-.res-name { font-size: 15px; font-weight: 600; }
-.res-ref { font-family: ui-monospace, monospace; font-size: 12px; color: var(--text-muted); }
-.res-meta { font-size: 13px; color: var(--text-secondary); display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
-.res-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.link-display {
-  display: flex; align-items: center; gap: 10px;
-  background: var(--bg-elevated); border: 1px solid var(--border-md);
-  border-radius: 10px; padding: 12px 14px; margin: 12px 0;
-}
-.link-display .link-text { font-family: ui-monospace, monospace; font-size: 13px; color: var(--text-primary); flex: 1; overflow-x: auto; white-space: nowrap; }
-.qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 8px 0; }
-.qr-wrap canvas, .qr-wrap img { border-radius: 12px; background: #fff; padding: 10px; }
 .settings-row {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   padding: 14px 0; border-bottom: 1px solid var(--border);
@@ -850,12 +816,7 @@ body.kiosk-mode .kiosk-exit { display: inline-flex; }
 .settings-row:last-child { border-bottom: none; }
 .settings-row .label { font-size: 14px; }
 .settings-row .hint { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.hours-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.hours-day { width: 64px; font-size: 13px; font-weight: 500; }
-.hours-times { display: flex; align-items: center; gap: 8px; }
-.input-sm { height: 36px; width: 92px; background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-family: inherit; font-size: 13px; }
-.input-sm:disabled { opacity: 0.4; }
-select.input, select.input-sm { appearance: none; cursor: pointer; }
+select.input { appearance: none; cursor: pointer; }
 
 /* ═══════════════════════════════════════════════════════════
    Live activity strip (dashboard)

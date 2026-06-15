@@ -25,7 +25,7 @@ declare
   r text;
   sessions int; views int; items_viewed int; orders_placed int;
   total_revenue numeric; reviews_prompted int; reviews_positive int;
-  google_clicks int; calls int; reservs int; reservs_conf int; peak int;
+  google_clicks int; calls int; peak int;
   langs jsonb; top_items jsonb; top1 text; lang_text text;
   parts text[] := '{}';
   pos text[] := '{}';
@@ -57,10 +57,6 @@ begin
   select count(*) into calls from staff_calls
    where espaco_slug=p_slug and created_at::date between p_ws and p_we;
 
-  select count(*), count(*) filter (where status in ('confirmed','seated','completed'))
-    into reservs, reservs_conf
-    from reservations where espaco_slug=p_slug and reservation_date between p_ws and p_we;
-
   select coalesce(jsonb_object_agg(language, c),'{}'::jsonb) into langs from (
     select language, count(*) c from menu_events
      where espaco_slug=p_slug and created_at::date between p_ws and p_we and language is not null
@@ -83,7 +79,6 @@ begin
     'orders_placed',orders_placed,'total_revenue',total_revenue,
     'reviews_prompted',reviews_prompted,'reviews_positive',reviews_positive,
     'google_clicks',google_clicks,'staff_calls',calls,
-    'reservations',reservs,'reservations_confirmed',reservs_conf,
     'languages',langs,'top_items',top_items,'peak_hour',peak);
 
   eur := '€' || replace(to_char(round(total_revenue,2),'FM999990.00'),'.',',');
@@ -103,10 +98,6 @@ begin
     pos := array_append(pos, google_clicks || case when google_clicks=1 then ' cliente seguiu' else ' clientes seguiram' end ||
       ' para avaliar no Google');
   end if;
-  if reservs>0 then
-    pos := array_append(pos, 'recebeu ' || reservs || case when reservs=1 then ' reserva' else ' reservas' end ||
-      ' online (' || reservs_conf || ' confirmadas), sem comissões');
-  end if;
   if top1 is not null then
     pos := array_append(pos, 'o prato mais visto foi "' || top1 || '"');
   end if;
@@ -125,8 +116,6 @@ begin
     parts := array_append(parts, 'Atenção: pediu ' || reviews_prompted || ' avaliações mas nenhuma chegou ao Google. Reveja o momento em que o pedido aparece.');
   elsif calls>5 then
     parts := array_append(parts, 'Atenção: ' || calls || ' chamadas de mesa esta semana — se for recorrente, pode faltar apoio em sala no pico.');
-  elsif reservs>0 and reservs_conf<reservs then
-    parts := array_append(parts, 'Atenção: ' || (reservs-reservs_conf) || ' reserva(s) por confirmar. Confirmar cedo reduz faltas.');
   end if;
 
   if google_clicks>0 then
@@ -134,7 +123,7 @@ begin
   elsif top1 is not null then
     parts := array_append(parts, 'Sugestão: destaque "' || top1 || '" no topo do menu ou sugira um acompanhamento para subir o valor médio por mesa.');
   else
-    parts := array_append(parts, 'Sugestão: partilhe o link do menu e das reservas no Instagram e no Google para atrair mais visitas.');
+    parts := array_append(parts, 'Sugestão: partilhe o link do menu no Instagram e no Google para atrair mais visitas.');
   end if;
 
   r := array_to_string(parts, E'\n\n');

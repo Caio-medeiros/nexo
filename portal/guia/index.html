@@ -52,14 +52,14 @@
       ['🍽️', 'Pedidos à mesa', 'O cliente monta o pedido no telemóvel e mostra à equipa ou envia por WhatsApp — sem papel e sem erros. Cada pedido aparece-lhe em tempo real.', 'Sala em Directo · Dashboard'],
       ['🙋', 'Chamar empregado', 'Um toque no menu e a equipa é avisada na hora — sem o cliente ter de acenar.', 'Sala em Directo'],
       ['⏳', 'Fila de espera', 'Em horas de ponta, os clientes entram na fila pelo telemóvel e são avisados quando a mesa está pronta.', 'Sala em Directo · Fila de Espera'],
-      ['📅', 'Reservas directas', 'Os clientes reservam pelo Instagram, Google ou QR na porta — sem comissões. Confirma ou cancela com um toque (abre o WhatsApp já preenchido para o cliente).', 'Reservas (link + QR em Configurações)'],
       ['🏠', 'Sala em Directo', 'O ecrã para o balcão: pedidos, chamadas, fila e actividade — tudo a aparecer ao vivo, com som. Tem modo "ecrã completo" para um tablet.', 'Sala em Directo'],
       ['🔕', 'Item esgotado', 'Acabou um prato? Desliga-o e ele desaparece do menu na hora. Volta a ligar quando houver.', 'Disponibilidade'],
       ['📊', 'Estatísticas', 'Visitas, pratos mais vistos, idiomas dos clientes, horas de pico e um resumo semanal escrito para si.', 'Estatísticas'],
       ['⭐', 'Mais avaliações Google', 'No momento certo, o menu convida o cliente a avaliar no Google — sem a equipa ter de pedir.', 'Estatísticas (funil de reviews)'],
-      ['✏️', 'Alterações ao menu', 'Quer mudar um preço, um prato ou uma foto? Pede aqui e nós tratamos.', 'Alterações'],
+      ['✏️', 'Alterações ao menu', 'Proponha mudanças a preços, pratos, descrições e fotos em Editar Menu. Cada alteração é revista e aprovada pela NEXO antes de entrar no menu — recebe um aviso quando ficar aprovada.', 'Editar Menu'],
       ['🎁', 'Indique e ganhe', 'Recomende a NEXO a outro espaço e recebe crédito quando ele aderir.', 'Referências'],
-      ['🔔', 'Notificações', 'O sino no topo avisa-o de tudo o que acontece — pedidos, reservas, chamadas — em tempo real.', 'Topo de qualquer página'],
+      ['⭐', 'Renovação & Valor', 'Veja o valor que a NEXO já gerou para o seu espaço (visitas, reviews, faturação), o estado do contrato e a data de renovação — e renove com um toque.', 'Renovação'],
+      ['🔔', 'Notificações', 'O sino no topo avisa-o de tudo o que acontece — pedidos, chamadas, fila — em tempo real.', 'Topo de qualquer página'],
     ];
 
     const infoNeeded = [
@@ -67,8 +67,7 @@
       ['Logótipo', 'em PNG ou SVG, de preferência com fundo transparente.'],
       ['Cores da marca', 'os códigos das cores (ou exemplos do seu material).'],
       ['Link do Google', 'a página do espaço no Google Maps (para as avaliações).'],
-      ['WhatsApp do espaço', 'o número que recebe pedidos e alertas de reserva.'],
-      ['Horário de funcionamento', 'para as reservas online (dias e horas).'],
+      ['WhatsApp do espaço', 'o número que recebe os pedidos dos clientes.'],
       ['Fotos dos pratos', '(opcional) boas fotos aumentam muito os pedidos.'],
     ];
 
@@ -118,17 +117,13 @@
       </div>`;
 
     const faqs = [
-      ['Quero mudar um preço, prato, descrição ou foto', 'Faça você mesmo em <strong>Editar Menu</strong> — altere e guarde. Aparece no menu em segundos, não precisa de nos pedir nem de esperar.'],
+      ['Quero mudar um preço, prato, descrição ou foto', 'Vá a <strong>Editar Menu</strong>, faça a alteração e envie. O pedido fica <strong>pendente de aprovação da NEXO</strong> e entra no menu assim que for aprovado — recebe uma notificação. O menu atual mantém-se ao vivo entretanto.'],
       ['Um prato acabou (ou voltou)', 'Vá a <strong>Disponibilidade</strong> e desligue o prato — desaparece do menu na hora. Ligue outra vez quando houver.'],
-      ['Alterei algo e o cliente ainda vê o antigo', 'As alterações são imediatas, mas o telemóvel do cliente pode ter o menu em cache. Peça-lhe para recarregar a página (ou fechar e reabrir). No seu lado, confirme em Editar Menu que ficou guardado.'],
+      ['Alterei algo e o cliente ainda vê o antigo', 'As alterações ao menu só ficam visíveis depois de a NEXO as aprovar. Confirme em <strong>Editar Menu</strong> se o prato ainda está <strong>pendente NEXO</strong>. Já aprovado? O telemóvel do cliente pode ter o menu em cache — peça-lhe para recarregar a página.'],
       ['Esqueci-me da palavra-passe', 'Na página de entrada do portal, toque em <strong>"Esqueceu a palavra-passe?"</strong>, insira o seu email e siga o link que recebe. Não precisamos de intervir.'],
-      ['Não recebo o alerta de novas reservas no WhatsApp', 'Vá a <strong>Reservas → Configurações</strong> e preencha o campo <strong>"WhatsApp para notificações"</strong> com o número do espaço. Guarde.'],
-      ['Uma reserva não aparece', 'Em <strong>Reservas</strong>, confirme a <strong>data</strong> no seletor (mostra um dia de cada vez) e o filtro de estado. Verifique também que as reservas estão activas em Configurações.'],
-      ['Quero pausar reservas (férias, evento privado)', 'Em <strong>Reservas → Configurações</strong> desligue "Reservas activas" para parar tudo, ou adicione <strong>datas bloqueadas</strong> para fechar só dias específicos.'],
-      ['Mudei o horário de funcionamento', 'Atualize em <strong>Reservas → Configurações → Horário</strong>. Os dias e horas disponíveis para reserva ajustam-se automaticamente.'],
       ['Os pedidos/chamadas não aparecem na Sala em Directo', 'Mantenha a página <strong>Sala em Directo</strong> aberta e com internet. Se ficou muito tempo aberta, recarregue (a ligação ao vivo volta a ligar sozinha).'],
       ['O NFC ou o QR não abre o menu', 'Teste com outro telemóvel e com dados móveis ligados. O QR pode estar sujo ou dobrado — limpe/endireite. Se uma tag NFC partiu fisicamente, aí sim fale connosco para substituir.'],
-      ['Quero adicionar um prato novo', 'Em <strong>Editar Menu</strong> pode adicionar pratos novos (nome, preço, descrição, foto) — ficam logo no menu.'],
+      ['Quero adicionar um prato novo', 'Em <strong>Editar Menu</strong> adicione o prato (nome, preço, descrição, foto) e envie — entra no menu depois de a NEXO aprovar.'],
     ];
     const faqEl = document.getElementById('faq');
     faqEl.innerHTML = faqs.map(([q,a],i) => `

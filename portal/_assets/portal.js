@@ -70,7 +70,77 @@ async function getClientData() {
   // 3) Personalização: marca do cliente aplicada ao portal
   applyClientBrand(client);
 
+  // 4) Kill-switch: contrato expirado/suspenso → bloqueia o portal
+  if (!contractActive(client)) {
+    renderContractLock(client);
+    return null;
+  }
+
   return client;
+}
+
+// ─── CONTRATO / RENOVAÇÃO ────────────────────
+// Ativo se não estiver churned/suspenso e a renovação não estiver vencida.
+function contractActive(client) {
+  if (!client) return true;
+  if (client.status === 'churned' || client.status === 'suspended') return false;
+  if (client.plan_renewal_date) {
+    const d = new Date(client.plan_renewal_date + 'T23:59:59');
+    if (!isNaN(d) && d < new Date()) return false;
+  }
+  return true;
+}
+
+// Dias até à renovação (negativo = em atraso; null = sem data)
+function daysToRenewal(client) {
+  if (!client || !client.plan_renewal_date) return null;
+  const d = new Date(client.plan_renewal_date + 'T00:00:00');
+  if (isNaN(d)) return null;
+  return Math.ceil((d - new Date()) / 86400000);
+}
+
+// Banner de lembrete (≤ 30 dias) — para o dashboard e outras páginas
+function renewalBannerHtml(client) {
+  const days = daysToRenewal(client);
+  if (days == null || days > 30) return '';
+  const WA = '351918104266';
+  const msg = encodeURIComponent(`Olá NEXO! Quero renovar o meu plano (${client.name || ''}).`);
+  const urgent = days <= 7;
+  const label = days < 0
+    ? 'A sua renovação está em atraso.'
+    : days === 0 ? 'A sua renovação é hoje.'
+    : `Faltam ${days} ${days === 1 ? 'dia' : 'dias'} para a renovação do seu plano.`;
+  return `
+    <div class="sla-notice mb-4" style="${urgent ? 'border-color:var(--warning);background:color-mix(in srgb, var(--warning) 10%, transparent)' : ''}">
+      <div class="flex-between" style="gap:12px;flex-wrap:wrap">
+        <span>🔁 <strong>${label}</strong> Renove para manter o menu e o portal sempre activos.</span>
+        <span style="display:flex;gap:8px">
+          <a class="btn btn-whatsapp btn-sm" href="https://wa.me/${WA}?text=${msg}" target="_blank" rel="noopener">Renovar →</a>
+          <a class="btn btn-secondary btn-sm" href="/portal/renovacao/">Ver valor & plano</a>
+        </span>
+      </div>
+    </div>`;
+}
+
+// Ecrã de bloqueio quando o contrato expira
+function renderContractLock(client) {
+  const main = document.querySelector('.portal-main');
+  const WA = '351918104266';
+  const msg = encodeURIComponent(`Olá NEXO! Quero reactivar/renovar o contrato de ${client?.name || ''}.`);
+  if (!main) { showToast('Contrato expirado. Contacte a NEXO para renovar.', 'warning'); return; }
+  main.innerHTML = `
+    <div class="empty-state card" style="margin-top:48px;max-width:520px;margin-left:auto;margin-right:auto;text-align:center">
+      ${getIcon('clock', 34)}
+      <p class="empty-title" style="font-size:18px;margin-top:8px">Contrato NEXO expirado</p>
+      <p class="empty-sub" style="line-height:1.6">
+        O acesso ao portal e o menu digital de <strong>${escapeHtml(client?.name || 'o seu espaço')}</strong>
+        estão pausados até renovar. Os seus dados, reviews e configuração ficam guardados — renove e fica tudo activo na hora.
+      </p>
+      <div class="flex gap-2" style="margin-top:18px;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-whatsapp" href="https://wa.me/${WA}?text=${msg}" target="_blank" rel="noopener">Renovar agora →</a>
+        <button class="btn btn-secondary" onclick="signOut()">Sair</button>
+      </div>
+    </div>`;
 }
 
 // Aplica a identidade do cliente (cor da marca do config do menu)
@@ -290,13 +360,13 @@ function renderLayout(activeNav, clientData) {
     { href: '/portal/dashboard/', icon: 'grid', label: 'Dashboard' },
     { href: '/portal/sala/', icon: 'activity', label: 'Sala em Directo' },
     { href: '/portal/estatisticas/', icon: 'bar-chart', label: 'Estatísticas' },
-    { href: '/portal/reservas/', icon: 'calendar', label: 'Reservas' },
     { href: '/portal/staff/', icon: 'monitor', label: 'Modo Staff' },
     { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
     { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu' },
     { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
     { href: '/portal/alteracoes/', icon: 'clock', label: 'Alterações' },
     { href: '/portal/referencias/', icon: 'gift', label: 'Referências' },
+    { href: '/portal/renovacao/', icon: 'star', label: 'Renovação' },
     { href: '/portal/guia/', icon: 'help', label: 'Guia' },
   ];
 
@@ -405,8 +475,9 @@ window.addEventListener('beforeunload', () => {
 
 // ─── NOTIFICATIONS ───────────────────────
 const NOTIF_ICONS = {
-  order_new: '🍽️', staff_call: '🙋', waitlist_new: '⏳', reservation_new: '📅',
+  order_new: '🍽️', staff_call: '🙋', waitlist_new: '⏳',
   review_positive: '⭐', review_negative: '💬', update_done: '✅', menu_viewed: '👁️',
+  menu_change: '✏️',
 };
 
 let notifSubscription = null;

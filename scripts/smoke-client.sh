@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # NEXO — Smoke-test de um cliente contra a produção.
-# Valida que os fluxos (pedido, chamada, fila, reserva, analytics), os triggers
+# Valida que os fluxos (pedido, chamada, fila, analytics), os triggers
 # e as edge functions funcionam para um dado slug. Limpa tudo no fim.
 #
 # Uso:  scripts/smoke-client.sh <slug>
@@ -18,7 +18,6 @@ q(){ supabase db query --linked -o csv "$1" 2>/dev/null | tail -n +2; }
 UUID=$(python3 -c "import uuid;print(uuid.uuid4())")
 WS=$(python3 -c "import datetime as d;t=d.date.today();print(t-d.timedelta(days=t.weekday()))")
 WE=$(python3 -c "import datetime as d;t=d.date.today();print(t-d.timedelta(days=t.weekday())+d.timedelta(days=6))")
-RD=$(python3 -c "import datetime as d;print(d.date.today()+d.timedelta(days=5))")
 
 echo "═══ Smoke-test: $SLUG ═══"
 echo "→ existe configuração?"
@@ -29,24 +28,21 @@ echo "→ fluxos anónimos (return=minimal)"
 [ "$(ins orders_log "{\"espaco_slug\":\"$SLUG\",\"table_label\":\"SMK$RUN\",\"items\":[{\"qty\":1,\"name\":\"X\"}],\"total\":10,\"channel\":\"staff\"}")" = 201 ] && ok "pedido" || no "pedido"
 [ "$(ins staff_calls "{\"espaco_slug\":\"$SLUG\",\"table_label\":\"SMK$RUN\"}")" = 201 ] && ok "chamada" || no "chamada"
 [ "$(ins waitlist_entries "{\"espaco_slug\":\"$SLUG\",\"token\":\"$UUID\",\"name\":\"SMK$RUN\",\"party_size\":2}")" = 201 ] && ok "fila" || no "fila"
-[ "$(ins reservations "{\"espaco_slug\":\"$SLUG\",\"guest_name\":\"SMK$RUN\",\"guest_phone\":\"+351900000000\",\"party_size\":2,\"reservation_date\":\"$RD\",\"reservation_time\":\"20:00:00\"}")" = 201 ] && ok "reserva" || no "reserva"
 [ "$(ins menu_events "{\"espaco_slug\":\"$SLUG\",\"event_name\":\"menu_opened\",\"session_id\":\"SMK$RUN\"}")" = 201 ] && ok "analytics" || no "analytics"
 
 OID=$(q "select id from orders_log where table_label='SMK$RUN' and espaco_slug='$SLUG'")
 CID=$(q "select id from staff_calls where table_label='SMK$RUN' and espaco_slug='$SLUG'")
 WID=$(q "select id from waitlist_entries where name='SMK$RUN' and espaco_slug='$SLUG'")
-RID=$(q "select id from reservations where guest_name='SMK$RUN' and espaco_slug='$SLUG'")
 
 echo "→ triggers criam notificações"
-N=$(q "select count(*) from portal_notifications where reference_id in ('$OID','$CID','$WID','$RID')")
-[ "$N" = "4" ] && ok "4 notificações" || no "esperava 4 notificações, obtive '$N'"
+N=$(q "select count(*) from portal_notifications where reference_id in ('$OID','$CID','$WID')")
+[ "$N" = "3" ] && ok "3 notificações" || no "esperava 3 notificações, obtive '$N'"
 
 echo "→ edge functions"
-curl -s -X POST "$URL/functions/v1/send-reservation-notification" -H "Authorization:Bearer $K" -H "Content-Type:application/json" -d "{\"reservation_id\":\"$RID\",\"type\":\"new_booking\"}" | grep -q "guest_url" && ok "send-reservation-notification" || no "send-reservation-notification"
 curl -s -X POST "$URL/functions/v1/generate-weekly-report" -H "Authorization:Bearer $K" -H "Content-Type:application/json" -d "{\"espaco_slug\":\"$SLUG\",\"week_start\":\"$WS\",\"week_end\":\"$WE\",\"espaco_name\":\"$SLUG\"}" | python3 -c "import sys,json;sys.exit(0 if json.load(sys.stdin).get('report') else 1)" 2>/dev/null && ok "generate-weekly-report" || no "generate-weekly-report"
 
 echo "→ limpeza"
-supabase db query --linked "delete from portal_notifications where reference_id in ('$OID','$CID','$WID','$RID'); delete from orders_log where id='$OID'; delete from staff_calls where id='$CID'; delete from waitlist_entries where id='$WID'; delete from reservations where id='$RID'; delete from menu_events where session_id='SMK$RUN'; delete from weekly_reports where espaco_slug='$SLUG' and week_start='$WS';" >/dev/null 2>&1
+supabase db query --linked "delete from portal_notifications where reference_id in ('$OID','$CID','$WID'); delete from orders_log where id='$OID'; delete from staff_calls where id='$CID'; delete from waitlist_entries where id='$WID'; delete from menu_events where session_id='SMK$RUN'; delete from weekly_reports where espaco_slug='$SLUG' and week_start='$WS';" >/dev/null 2>&1
 ok "dados de teste removidos"
 
 echo ""; echo "RESULTADO ($SLUG): $P ok · $F falhas"

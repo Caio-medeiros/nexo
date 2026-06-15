@@ -58,7 +58,7 @@ const UI = {
     address: "Morada", phone: "Telefone", hours: "Horário", all: "Tudo",
     tableHint: "Mesa",
     loyalty: "Falar com o restaurante",
-    loyaltySub: "WhatsApp direto — reservas, dúvidas, sugestões",
+    loyaltySub: "WhatsApp direto — dúvidas, sugestões, contacto",
     loyaltyCta: "Abrir WhatsApp",
     noAllergens: "Sem alergénios declarados.",
     allergenListLabel: "Contém",
@@ -140,7 +140,7 @@ const UI = {
     address: "Address", phone: "Phone", hours: "Hours", all: "All",
     tableHint: "Table",
     loyalty: "Contact the restaurant",
-    loyaltySub: "Direct WhatsApp — bookings, questions, feedback",
+    loyaltySub: "Direct WhatsApp — questions, feedback, contact",
     loyaltyCta: "Open WhatsApp",
     noAllergens: "No allergens declared.",
     allergenListLabel: "Contains",
@@ -213,7 +213,7 @@ const UI = {
     address: "Dirección", phone: "Teléfono", hours: "Horario", all: "Todo",
     tableHint: "Mesa",
     loyalty: "Contactar el restaurante",
-    loyaltySub: "WhatsApp directo — reservas, dudas, sugerencias",
+    loyaltySub: "WhatsApp directo — dudas, sugerencias, contacto",
     loyaltyCta: "Abrir WhatsApp",
     noAllergens: "Sin alérgenos declarados.",
     allergenListLabel: "Contiene",
@@ -286,7 +286,7 @@ const UI = {
     address: "Adresse", phone: "Téléphone", hours: "Horaires", all: "Tout",
     tableHint: "Table",
     loyalty: "Contacter le restaurant",
-    loyaltySub: "WhatsApp direct — réservations, questions, retours",
+    loyaltySub: "WhatsApp direct — questions, retours, contact",
     loyaltyCta: "Ouvrir WhatsApp",
     noAllergens: "Aucun allergène déclaré.",
     allergenListLabel: "Contient",
@@ -3367,7 +3367,42 @@ function setupPersonRename() {
    13. BOOT
    ═══════════════════════════════════════════════════════════════════════════ */
 
+// ─── KILL-SWITCH POR CONTRATO ───────────────────────────────────────────
+// Se o contrato do espaço estiver inativo/vencido, o menu fica indisponível.
+// FAIL-OPEN: qualquer falha de rede/config → o menu abre normalmente (nunca
+// deixa um cliente pagante sem menu por causa de um hiccup).
+async function initContractGate() {
+  try {
+    const { supabaseUrl, supabaseAnonKey, slug } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
+    if (!supabaseUrl || !supabaseAnonKey || !slug) return;
+    const res = await fetch(supabaseUrl + '/rest/v1/rpc/espaco_active', {
+      method: 'POST',
+      headers: { apikey: supabaseAnonKey, Authorization: 'Bearer ' + supabaseAnonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_slug: slug }),
+    });
+    if (!res.ok) return;
+    if ((await res.json()) === false) showMenuUnavailable();
+  } catch (_) { /* fail-open */ }
+}
+function showMenuUnavailable() {
+  if (document.getElementById('nexo-gate')) return;
+  const name = (typeof CONFIG !== 'undefined' && CONFIG.name) ? CONFIG.name : 'Este espaço';
+  const el = document.createElement('div');
+  el.id = 'nexo-gate';
+  el.setAttribute('role', 'alert');
+  el.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#0b0b0c;color:#fff;font-family:Geist,system-ui,sans-serif;text-align:center';
+  el.innerHTML = '<div style="max-width:420px">'
+    + '<div style="font-size:40px;margin-bottom:14px">🔒</div>'
+    + '<h1 style="font-size:20px;font-weight:700;margin:0 0 10px">Menu temporariamente indisponível</h1>'
+    + '<p style="font-size:14px;line-height:1.6;color:#b5b5b8;margin:0">O menu digital de <strong style="color:#fff">' + name + '</strong> está pausado neste momento. Por favor peça a carta à equipa.</p>'
+    + '<p style="font-size:12px;color:#6b6b70;margin-top:18px">powered by NEXO</p>'
+    + '</div>';
+  document.body.appendChild(el);
+  document.body.style.overflow = 'hidden';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  initContractGate();
   applyBrandColors();
   detectLang();
   initAnalytics();
