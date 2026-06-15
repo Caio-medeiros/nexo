@@ -114,82 +114,6 @@
     }
   });
 
-  /* ══════════════════════════════════════════
-     HERO — NFC RIPPLE CANVAS (2D, lightweight)
-     ══════════════════════════════════════════ */
-  (function initRipples() {
-    const canvas = document.getElementById('rippleCanvas');
-    const hero   = document.getElementById('hero');
-    if (!canvas || !hero || reduceMotion || innerWidth < 768) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const DPR = Math.min(devicePixelRatio || 1, 1.5);
-    let W = 0, H = 0, ox = 0, oy = 0;
-    let ripples = [];
-    let visible = false;
-    let rafId = null;
-    let spawnTimer = null;
-
-    function resize() {
-      W = hero.offsetWidth; H = hero.offsetHeight;
-      canvas.width  = W * DPR;
-      canvas.height = H * DPR;
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-      ox = W * 0.72; oy = H * 0.46; // origin ≈ the phone / "tap" point
-    }
-    resize();
-    addEventListener('resize', resize, { passive: true });
-
-    const MAX_R = () => Math.max(W, H) * 0.55;
-    const LIFE  = 4200; // ms
-
-    function spawn() {
-      if (ripples.length < 6) ripples.push({ born: performance.now() });
-      if (!rafId) rafId = requestAnimationFrame(draw);
-    }
-
-    function draw(now) {
-      ctx.clearRect(0, 0, W, H);
-      ripples = ripples.filter(r => now - r.born < LIFE);
-      const maxR = MAX_R();
-      for (const r of ripples) {
-        const p = (now - r.born) / LIFE;          // 0 → 1
-        const radius = 14 + p * maxR;
-        const alpha  = 0.34 * (1 - p) * (1 - p);
-        ctx.beginPath();
-        ctx.arc(ox, oy, radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-      /* origin spark */
-      ctx.beginPath();
-      ctx.arc(ox, oy, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,.5)';
-      ctx.fill();
-
-      if (ripples.length && visible) {
-        rafId = requestAnimationFrame(draw);
-      } else {
-        ctx.clearRect(0, 0, W, H);
-        rafId = null;
-      }
-    }
-
-    const io = new IntersectionObserver(entries => {
-      visible = entries[0].isIntersecting;
-      if (visible) {
-        spawn();
-        if (!spawnTimer) spawnTimer = setInterval(spawn, 1600);
-      } else {
-        clearInterval(spawnTimer);
-        spawnTimer = null;
-      }
-    }, { threshold: 0.05 });
-    io.observe(hero);
-  })();
 
   /* ══════════════════════════════════════════
      GSAP — ENTRANCE CHOREOGRAPHY
@@ -202,7 +126,6 @@
     gsap.set(heroLines, { yPercent: 112 });
     gsap.set('[data-hero="tag"], [data-hero="sub"], [data-hero="ctas"], [data-hero="stats"], [data-hero="foot"]', { autoAlpha: 0, y: 26 });
     gsap.set('[data-hero="visual"]', { autoAlpha: 0, y: 44, scale: 0.965 });
-    gsap.set('.float-chip', { autoAlpha: 0, scale: 0.6 });
 
     gsap.timeline({ defaults: { ease: 'power3.out' } })
       .to('[data-hero="tag"]',    { autoAlpha: 1, y: 0, duration: 0.7 }, 0.15)
@@ -211,19 +134,7 @@
       .to('[data-hero="ctas"]',   { autoAlpha: 1, y: 0, duration: 0.8 }, 0.9)
       .to('[data-hero="stats"]',  { autoAlpha: 1, y: 0, duration: 0.8 }, 1.05)
       .to('[data-hero="visual"]', { autoAlpha: 1, y: 0, scale: 1, duration: 1.3 }, 0.55)
-      .to('.float-chip',          { autoAlpha: 1, scale: 1, duration: 0.6, stagger: 0.14, ease: 'back.out(1.8)' }, 1.2)
       .to('[data-hero="foot"]',   { autoAlpha: 1, y: 0, duration: 0.8 }, 1.35);
-
-    /* chips idle float */
-    gsap.utils.toArray('.float-chip').forEach((chip, i) => {
-      gsap.to(chip, {
-        y: i % 2 ? 9 : -9,
-        duration: 2.4 + i * 0.5,
-        delay: 2,
-        repeat: -1, yoyo: true,
-        ease: 'sine.inOut'
-      });
-    });
 
     /* — generic scroll reveals — */
     const revealEls = gsap.utils.toArray('[data-reveal]');
