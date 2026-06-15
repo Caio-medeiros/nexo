@@ -62,3 +62,12 @@ POST /rest/v1/rpc/reject_menu_change    { "p_request_id": "<uuid>", "p_note": "m
 subscrever INSERTs para receber novos pedidos na hora.
 
 Migração: `supabase/migrations/012_menu_change_approval.sql`.
+
+## ⚠️ Erro `42501 permission denied for table menu_change_requests`
+
+Se as **Aprovações de Menu** no NEXO OS mostrarem este erro, o projeto dos menus
+não concedeu acesso ao `service_role` (este projeto teve as default privileges
+alteradas e a 003 só corrigiu anon/authenticated). **Correr no SQL Editor do
+projeto dos menus** `supabase/migrations/014_fix_service_role_grants.sql` — concede
+o service_role em tudo o que existe e ativa default privileges para o futuro, por
+isso resolve este e qualquer feature nova que dê o mesmo erro. É idempotente.
