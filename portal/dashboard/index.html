@@ -153,6 +153,12 @@
         </div>`;
     }
 
+    const dRenew = (typeof daysToRenewal === 'function') ? daysToRenewal(client) : null;
+    const renewalText = dRenew == null ? '—'
+      : dRenew < 0 ? '<span class="text-danger">em atraso</span>'
+      : dRenew === 0 ? '<span class="text-warning">hoje</span>'
+      : `${dRenew} ${dRenew === 1 ? 'dia' : 'dias'}`;
+
     document.getElementById('page-content').innerHTML = `
       <div class="page-header">
         <p class="text-muted text-xs" style="text-transform:uppercase;letter-spacing:.18em;margin-bottom:6px">Hoje · ${todayStr}</p>
@@ -164,48 +170,63 @@
 
       ${renewalBannerHtml(client)}
 
-      <div class="metric-grid">
-        <div class="card metric-card">
-          <div class="metric-head"><span class="metric-label">Visitas ao Menu Hoje</span>${getIcon('eye')}</div>
-          <div class="metric-value ${viewsToday > 50 ? 'text-info' : ''}">${viewsToday}</div>
-          <div class="metric-sub">aberturas de menu hoje</div>
-          <a class="metric-action" href="/portal/estatisticas/">Ver estatísticas →</a>
+      <div class="kpi-row">
+        <div class="card kpi">
+          <div class="kpi-top"><span class="kpi-label">Visitas ao menu</span><span class="kpi-ico">${getIcon('eye')}</span></div>
+          <div class="kpi-num ${viewsToday > 50 ? 'text-info' : ''}">${viewsToday}<span class="u">hoje</span></div>
+          <div class="kpi-foot"><span class="s">aberturas de menu</span><a class="kpi-link" href="/portal/estatisticas/">Ver →</a></div>
         </div>
-        <div class="card metric-card">
-          <div class="metric-head"><span class="metric-label">Reviews Google (mês)</span>${getIcon('star')}</div>
-          <div class="metric-value ${reviewsMonth > 0 ? 'text-success' : ''}">${reviewsMonth}</div>
-          <div class="metric-sub">cliques para o Google este mês</div>
-          <a class="metric-action" href="/portal/estatisticas/">Funil de reviews →</a>
+        <div class="card kpi">
+          <div class="kpi-top"><span class="kpi-label">Reviews Google</span><span class="kpi-ico">${getIcon('star')}</span></div>
+          <div class="kpi-num ${reviewsMonth > 0 ? 'text-success' : ''}">${reviewsMonth}<span class="u">mês</span></div>
+          <div class="kpi-foot"><span class="s">cliques para o Google</span><a class="kpi-link" href="/portal/estatisticas/">Funil →</a></div>
         </div>
-        <div class="card metric-card">
-          <div class="metric-head"><span class="metric-label">Pedidos Hoje</span>${getIcon('grid')}</div>
-          <div class="metric-value">${ordersToday}</div>
-          <div class="metric-sub">${revenueToday > 0 ? formatEUR(revenueToday) + ' registado' : 'sem pedidos ainda'}</div>
-          <a class="metric-action" href="/portal/sala/">Sala em directo →</a>
+        <div class="card kpi">
+          <div class="kpi-top"><span class="kpi-label">Pedidos</span><span class="kpi-ico">${getIcon('grid')}</span></div>
+          <div class="kpi-num">${ordersToday}<span class="u">hoje</span></div>
+          <div class="kpi-foot"><span class="s">${revenueToday > 0 ? formatEUR(revenueToday) + ' registado' : 'sem pedidos ainda'}</span><a class="kpi-link" href="/portal/sala/">Sala →</a></div>
         </div>
-        <div class="card metric-card">
-          <div class="metric-head"><span class="metric-label">Chamadas Hoje</span>${getIcon('phone')}</div>
-          <div class="metric-value">${callsToday}</div>
-          <div class="metric-sub">pedidos de assistência</div>
-          <a class="metric-action" href="/portal/sala/">Sala em directo →</a>
+        <div class="card kpi">
+          <div class="kpi-top"><span class="kpi-label">Chamadas</span><span class="kpi-ico">${getIcon('phone')}</span></div>
+          <div class="kpi-num">${callsToday}<span class="u">hoje</span></div>
+          <div class="kpi-foot"><span class="s">pedidos de assistência</span><a class="kpi-link" href="/portal/sala/">Sala →</a></div>
         </div>
       </div>
 
-      <div class="card mb-4">
-        <div class="flex-between" style="margin-bottom:8px">
-          <div class="card-title" style="margin:0">Actividade recente</div>
-          <a href="/portal/sala/" class="text-sm text-secondary">Ver sala em directo →</a>
+      <div class="dash-grid">
+        <div>
+          <div class="card mb-4">
+            <div class="flex-between" style="margin-bottom:14px">
+              <div class="card-title" style="margin:0">Actividade recente</div>
+              <a href="/portal/sala/" class="text-sm text-secondary">Ver sala em directo →</a>
+            </div>
+            <div class="live-strip" id="live-strip">${activityHtml}</div>
+          </div>
+          ${reportHtml}
         </div>
-        <div class="live-strip" id="live-strip">${activityHtml}</div>
-      </div>
 
-      <div class="quick-actions">
-        <a href="/portal/estatisticas/" class="quick-action">${getIcon('bar-chart')} Estatísticas</a>
-        <a href="/portal/sala/" class="quick-action">${getIcon('activity')} Sala em Directo</a>
-      </div>
+        <aside class="dash-aside">
+          <div class="card">
+            <p class="dash-section-label">O seu plano</p>
+            <div class="status-row"><span class="status-k">Plano</span><span class="status-v">NEXO ${planLabel}</span></div>
+            <div class="status-row"><span class="status-k">Estado</span><span class="status-v">${clientStatusBadge()}</span></div>
+            <div class="status-row"><span class="status-k">Renovação</span><span class="status-v">${renewalText}</span></div>
+            <a class="btn btn-secondary btn-sm btn-full" style="margin-top:14px" href="/portal/renovacao/">Ver valor & plano →</a>
+          </div>
 
-      ${onboardingHtml}
-      ${reportHtml}`;
+          <div class="card">
+            <p class="dash-section-label">Acções rápidas</p>
+            <div class="qa-list">
+              <a class="qa" href="/portal/sala/">${getIcon('activity')} Sala em directo <span class="qa-arrow">→</span></a>
+              <a class="qa" href="/portal/menu/">${getIcon('edit')} Editar menu <span class="qa-arrow">→</span></a>
+              <a class="qa" href="/portal/disponibilidade/">${getIcon('toggle')} Disponibilidade <span class="qa-arrow">→</span></a>
+              <a class="qa" href="/portal/estatisticas/">${getIcon('bar-chart')} Estatísticas <span class="qa-arrow">→</span></a>
+            </div>
+          </div>
+
+          ${onboardingHtml}
+        </aside>
+      </div>`;
 
     document.getElementById('page-skeleton').style.display = 'none';
     document.getElementById('page-content').style.display = 'block';
