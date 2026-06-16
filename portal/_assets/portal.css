@@ -914,3 +914,49 @@ body::before {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   .card:hover { transform: none; }
 }
+
+/* ═══ REDESIGN v2 — componentes partilhados (KPIs, headers, estados) ═══ */
+
+/* Cabeçalho de página com "eyebrow" e título maior */
+.page-title { font-size: 26px; }
+.page-header { position: relative; }
+.page-header::before {
+  content: ''; position: absolute; left: -28px; top: 2px; bottom: 2px;
+  width: 3px; border-radius: 3px;
+  background: linear-gradient(var(--brand, var(--text-primary)), transparent);
+  opacity: .55;
+}
+@media (max-width: 900px) { .page-header::before { display: none; } }
+
+/* KPIs / metric tiles — mais premium */
+.metric-card { min-height: 132px; justify-content: space-between; transition: border-color 220ms var(--ease), box-shadow 220ms var(--ease), transform 220ms var(--ease); }
+.metric-card:hover { transform: translateY(-2px); border-color: var(--border-md); box-shadow: var(--shadow-md); }
+.metric-head svg {
+  width: 34px; height: 34px; padding: 8px; border-radius: 10px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  color: var(--text-secondary); transition: color 200ms var(--ease), background 200ms var(--ease);
+}
+.metric-card:hover .metric-head svg { color: var(--text-primary); background: rgba(255,255,255,.07); }
+.metric-value { font-size: clamp(24px, 3.4vw, 30px); font-weight: 800; letter-spacing: -.03em; }
+
+/* Empty states com ícone em círculo suave */
+.empty-state { padding: 40px 20px; }
+.empty-state svg {
+  width: 22px; height: 22px; margin-bottom: 12px; color: var(--text-secondary);
+  box-sizing: content-box; padding: 13px; border-radius: 50%;
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+}
+.empty-title { font-size: 14px; color: var(--text-primary); }
+
+/* Filtros tipo "segmented" */
+.filter-tabs { gap: 4px; padding: 4px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; width: fit-content; }
+.filter-tab { border-color: transparent !important; background: transparent; transition: background 160ms var(--ease), color 160ms var(--ease); }
+.filter-tab:hover { background: rgba(255,255,255,.04); }
+.filter-tab.active { background: var(--bg-surface); color: var(--text-primary); border-color: transparent !important; box-shadow: var(--shadow-sm); }
+
+/* Badges com leve profundidade */
+.badge { box-shadow: var(--shadow-sm); }
+.badge--muted { box-shadow: none; }
+
+/* card-title com mais presença */
+.card-title { font-size: 14px; font-weight: 700; }

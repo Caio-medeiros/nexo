@@ -155,11 +155,11 @@
 
     document.getElementById('page-content').innerHTML = `
       <div class="page-header">
+        <p class="text-muted text-xs" style="text-transform:uppercase;letter-spacing:.18em;margin-bottom:6px">Hoje · ${todayStr}</p>
         <h1 class="page-title">Olá, ${escapeHtml(firstName)} 👋</h1>
         <p class="page-sub">${escapeHtml(client.name)} ·
           <span class="badge badge--muted">NEXO ${planLabel}</span> ${clientStatusBadge()}
         </p>
-        <p class="text-muted text-xs" style="margin-top:6px">Hoje, ${todayStr}</p>
       </div>
 
       ${renewalBannerHtml(client)}
