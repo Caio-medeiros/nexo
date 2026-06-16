@@ -122,11 +122,28 @@
       const langMap = {};
       events.forEach(e => { if (e.language) langMap[e.language] = (langMap[e.language] || 0) + 1; });
 
+      // decomposição da faturação — para o cliente perceber de onde vem a soma
+      const orderCount = orders.length;
+      const avgTicket = orderCount ? revenue / orderCount : 0;
+      const CH_LABEL = { whatsapp: 'WhatsApp', staff: 'Staff', shared: 'Grupo' };
+      const byChannel = {};
+      orders.forEach(o => { byChannel[o.channel] = (byChannel[o.channel] || 0) + (Number(o.total) || 0); });
+      const channelChips = orderCount
+        ? `<div class="stat-hero-chips">${Object.entries(byChannel)
+            .filter(([, v]) => v > 0).sort(([, a], [, b]) => b - a)
+            .map(([k, v]) => `<span class="shc">${CH_LABEL[k] || k} · ${formatEUR(v)}</span>`).join('')}</div>`
+        : '';
+      const revenueBreak = orderCount
+        ? `= soma de <strong>${orderCount}</strong> ${orderCount === 1 ? 'pedido registado' : 'pedidos registados'} · ticket médio ${formatEUR(avgTicket)}`
+        : 'ainda sem pedidos registados no período';
+
       body.innerHTML = `
         <div class="card stat-hero">
           <div class="stat-hero-main">
             <div class="rs-l">Faturação registada no período</div>
             <div class="stat-hero-num">${formatEUR(revenue)}</div>
+            <div class="stat-hero-break">${revenueBreak}</div>
+            ${channelChips}
             <p class="text-secondary text-sm" style="margin-top:8px;max-width:480px;line-height:1.55">
               O que se mede em euros. A reputação, as visitas e as reviews compõem-se ao
               longo do tempo — veja o valor acumulado em <a href="/portal/renovacao/" style="color:var(--text-primary);text-decoration:underline">Renovação &amp; Valor</a>.

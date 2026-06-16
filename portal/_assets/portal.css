@@ -1197,3 +1197,13 @@ body.kiosk-mode .count-badge { min-width: 26px; height: 26px; font-size: 13px; }
 /* Ações da Sala sempre confortáveis ao toque (mesmo fora do kiosk) */
 .call-card .btn, .order-foot .btn, #waitlist-list .btn { min-height: 44px; }
 body.kiosk-mode .call-card .btn, body.kiosk-mode .order-foot .btn, body.kiosk-mode #waitlist-list .btn { min-height: 52px; min-width: 130px; }
+
+/* Decomposição da faturação (Estatísticas) */
+.stat-hero-break { font-size: 12.5px; color: var(--text-secondary); margin-top: 8px; }
+.stat-hero-break strong { color: var(--text-primary); font-weight: 700; }
+.stat-hero-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.stat-hero-chips .shc {
+  font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 10px; font-variant-numeric: tabular-nums;
+}
