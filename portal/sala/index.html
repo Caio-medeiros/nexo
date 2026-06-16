@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Sala em Directo — NEXO Portal</title>
+  <title>Modo Restaurante — NEXO Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -74,44 +74,42 @@
 
     // ── render shell ─────────────────────────────────
     document.getElementById('page-content').innerHTML = `
-      <div class="page-header flex-between">
-        <div>
-          <h1 class="page-title">Sala em Directo</h1>
-          <div class="live-indicator" id="live-indicator" style="margin-top:6px">
-            <span class="live-dot"></span><span class="live-text">Em directo</span>
+      <div class="resto-bar">
+        <div class="resto-id">
+          <p class="resto-eyebrow">Modo Restaurante</p>
+          <div class="resto-meta">
+            <span class="resto-clock" id="sala-clock">--:--</span>
+            <span class="resto-sep">·</span>
+            <span class="live-indicator" id="live-indicator"><span class="live-dot"></span><span class="live-text">Em directo</span></span>
           </div>
         </div>
-        <button class="btn btn-secondary btn-sm" id="kiosk-toggle">${getIcon('expand')} Ecrã Completo</button>
+        <button class="btn btn-secondary btn-sm" id="kiosk-toggle">${getIcon('expand')} Ecrã completo</button>
       </div>
+
+      <div class="resto-stats" id="stats-bar"></div>
 
       <div class="sala-tabs filter-tabs" id="sala-tabs">
         <button class="filter-tab active" data-tab="pedidos">Pedidos</button>
-        <button class="filter-tab" data-tab="chamadas">Chamadas</button>
+        <button class="filter-tab" data-tab="chamadas">Chamadas & Fila</button>
         <button class="filter-tab" data-tab="actividade">Actividade</button>
       </div>
 
       <div class="sala-grid">
-        <div class="sala-col" data-col="pedidos">
+        <section class="sala-col card" data-col="pedidos">
           <div class="sala-col-title">Pedidos <span class="count-badge" id="orders-count">${orders.length}</span></div>
           <div id="orders-list"></div>
-        </div>
-        <div class="sala-col" data-col="chamadas" hidden>
-          <div>
-            <div class="sala-col-title">Chamadas <span class="count-badge" id="calls-count">${calls.length}</span></div>
-            <div id="calls-list"></div>
-          </div>
-          <div style="margin-top:18px">
-            <div class="sala-col-title">Fila de Espera <span class="count-badge" id="wait-count">${waitlist.length}</span></div>
-            <div id="waitlist-list"></div>
-          </div>
-        </div>
-        <div class="sala-col" data-col="actividade" hidden>
+        </section>
+        <section class="sala-col card" data-col="chamadas" hidden>
+          <div class="sala-col-title">Chamadas <span class="count-badge" id="calls-count">${calls.length}</span></div>
+          <div id="calls-list"></div>
+          <div class="sala-col-title" style="margin-top:20px">Fila de espera <span class="count-badge" id="wait-count">${waitlist.length}</span></div>
+          <div id="waitlist-list"></div>
+        </section>
+        <section class="sala-col card" data-col="actividade" hidden>
           <div class="sala-col-title">Actividade</div>
-          <div class="card"><div class="activity-feed" id="activity-feed"></div></div>
-        </div>
-      </div>
-
-      <div class="sala-stats-bar" id="stats-bar"></div>`;
+          <div class="activity-feed" id="activity-feed"></div>
+        </section>
+      </div>`;
 
     document.getElementById('page-skeleton').style.display = 'none';
     document.getElementById('page-content').style.display = 'block';
@@ -176,18 +174,21 @@
             ? `<div class="text-muted text-sm" style="padding:8px 0">${orders.length - 10} pedidos mais antigos</div>` : '')
         : `<div class="empty-state">${getIcon('grid', 32)}<p class="empty-title">Nenhum pedido ainda hoje.</p></div>`;
       document.getElementById('orders-count').textContent = orders.length;
+      paintStats();
     }
     function paintCalls() {
       const el = document.getElementById('calls-list');
       el.innerHTML = calls.length ? calls.map(callCard).join('')
         : `<div class="empty-state"><p class="empty-title text-success">✓ Nenhuma chamada activa</p></div>`;
       document.getElementById('calls-count').textContent = calls.length;
+      paintStats();
     }
     function paintWaitlist() {
       const el = document.getElementById('waitlist-list');
       el.innerHTML = waitlist.length ? waitlist.map(waitCard).join('')
         : `<div class="empty-state"><p class="empty-title text-muted">Fila vazia</p></div>`;
       document.getElementById('wait-count').textContent = waitlist.length;
+      paintStats();
     }
     function paintActivity() {
       const el = document.getElementById('activity-feed');
@@ -195,15 +196,29 @@
         : `<div class="empty-state">${getIcon('activity', 32)}<p class="empty-title">Sem actividade</p></div>`;
     }
     function paintStats() {
-      document.getElementById('stats-bar').innerHTML =
-        `<span><strong>${stats.orders}</strong> pedidos</span>
-         <span><strong>${formatEUR(stats.revenue)}</strong> faturado</span>
-         <span><strong>${stats.reviews}</strong> reviews</span>
-         <span><strong>${stats.calls}</strong> chamadas</span>
-         <span><strong>${stats.views}</strong> visitas</span>`;
+      const tiles = [
+        ['Pedidos hoje', orders.length, 'grid'],
+        ['Faturado', formatEUR(stats.revenue), 'bar-chart'],
+        ['Chamadas activas', calls.length, 'phone'],
+        ['Em fila', waitlist.length, 'users'],
+        ['Reviews hoje', stats.reviews, 'star'],
+        ['Visitas hoje', stats.views, 'eye'],
+      ];
+      document.getElementById('stats-bar').innerHTML = tiles.map(([l, v, ic]) =>
+        `<div class="resto-stat">
+           <span class="rs-ico">${getIcon(ic)}</span>
+           <div><div class="rs-v">${v}</div><div class="rs-l">${l}</div></div>
+         </div>`).join('');
     }
 
     paintOrders(); paintCalls(); paintWaitlist(); paintActivity(); paintStats();
+
+    // relógio ao vivo (cabeçalho do Modo Restaurante)
+    const clockEl = document.getElementById('sala-clock');
+    function tickClock() {
+      if (clockEl) clockEl.textContent = new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+    }
+    tickClock(); setInterval(tickClock, 15000);
 
     // ── actions (event delegation) ───────────────────
     document.getElementById('page-content').addEventListener('click', async (e) => {

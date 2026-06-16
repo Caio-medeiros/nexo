@@ -364,10 +364,9 @@ function renderLayout(activeNav, clientData) {
       { href: '/portal/dashboard/', icon: 'grid', label: 'Dashboard' },
     ]},
     { label: 'Operação', items: [
-      { href: '/portal/sala/', icon: 'activity', label: 'Sala em Directo' },
+      { href: '/portal/sala/', icon: 'monitor', label: 'Modo Restaurante' },
       { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
       { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
-      { href: '/portal/staff/', icon: 'monitor', label: 'Modo Staff' },
     ]},
     { label: 'Menu', items: [
       { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu' },

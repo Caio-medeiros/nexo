@@ -1005,3 +1005,40 @@ body::before {
 .qa:hover { border-color: var(--border-md); background: var(--bg-hover); transform: translateX(3px); }
 .qa svg { width: 16px; height: 16px; opacity: .75; flex-shrink: 0; }
 .qa .qa-arrow { margin-left: auto; opacity: .5; }
+
+/* ═══════════════════════════════════════════════════════════
+   MODO RESTAURANTE (Sala) — ecrã always-on
+   ═══════════════════════════════════════════════════════════ */
+.resto-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.resto-eyebrow { font-size: 22px; font-weight: 800; letter-spacing: -.03em; }
+.resto-meta { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.resto-clock { font-size: 14px; font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.resto-sep { color: var(--text-muted); }
+
+/* Faixa de KPIs no topo — glanceable */
+.resto-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px; }
+@media (max-width: 1024px) { .resto-stats { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 520px) { .resto-stats { grid-template-columns: repeat(2, 1fr); } }
+.resto-stat {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 13px 14px; box-shadow: var(--shadow-sm);
+  transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease);
+}
+.resto-stat:hover { border-color: var(--border-md); box-shadow: var(--shadow-md); }
+.resto-stat .rs-ico { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border); color: var(--text-secondary); flex-shrink: 0; }
+.resto-stat .rs-ico svg { width: 16px; height: 16px; }
+.resto-stat .rs-v { font-size: 20px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.resto-stat .rs-l { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-top: 2px; }
+
+/* Colunas como painéis */
+.sala-grid .sala-col.card { padding: 18px; }
+.sala-col-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); }
+
+/* Kiosk: tudo maior e mais legível à distância */
+body.kiosk-mode .resto-eyebrow { font-size: 26px; }
+body.kiosk-mode .resto-stat .rs-v { font-size: 24px; }
+body.kiosk-mode .call-table { font-size: 22px; }
+body.kiosk-mode .order-table { font-size: 18px; }
+body.kiosk-mode .sala-grid { grid-template-columns: 36% 36% 28%; gap: 20px; }
