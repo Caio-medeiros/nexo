@@ -2,6 +2,30 @@
 // Requires: @supabase/supabase-js CDN + icons.js loaded before this file.
 // ─────────────────────────────────────────────────────────
 
+// ─── TEMA (light/dark) ───────────────────
+// Aplicado o mais cedo possível para evitar "flash" do tema errado.
+(function initThemeEarly() {
+  try {
+    var saved = localStorage.getItem('nexo-theme');
+    var sys = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', saved || sys);
+  } catch (_) {}
+})();
+function getTheme() {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('nexo-theme', t); } catch (_) {}
+  const btn = document.getElementById('theme-toggle');
+  if (btn && typeof getIcon === 'function') {
+    btn.innerHTML = getIcon(t === 'light' ? 'moon' : 'sun', 18);
+    btn.setAttribute('aria-label', t === 'light' ? 'Mudar para modo escuro' : 'Mudar para modo claro');
+    btn.setAttribute('title', t === 'light' ? 'Modo escuro' : 'Modo claro');
+  }
+}
+function toggleTheme() { applyTheme(getTheme() === 'light' ? 'dark' : 'light'); }
+
 // ─── SUPABASE ────────────────────────────
 const SUPABASE_URL = 'https://kgbrtbpeekhkroibsgqq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYnJ0YnBlZWtoa3JvaWJzZ3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDAwMTMsImV4cCI6MjA5NjYxNjAxM30.vFvSLysnS3456WWKa2a659YuIVuOceYHG4NMd79Jerc';
@@ -334,6 +358,7 @@ function renderLayout(activeNav, clientData) {
       <a href="${menuUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
         Ver Menu →
       </a>
+      <button class="portal-icon-btn" id="theme-toggle" type="button" aria-label="Mudar tema"></button>
       <div class="portal-notifications-btn" id="notif-toggle" role="button" tabindex="0"
            aria-haspopup="true" aria-label="Notificações">
         ${getIcon('bell', 18)}
@@ -390,6 +415,10 @@ function renderLayout(activeNav, clientData) {
         ${getIcon(item.icon)}
         <span>${item.label}</span>
       </a>`).join('')}`).join('');
+
+  // Theme toggle (light/dark)
+  applyTheme(getTheme());
+  document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
 
   // Avatar dropdown toggle
   const toggle = document.getElementById('avatar-toggle');

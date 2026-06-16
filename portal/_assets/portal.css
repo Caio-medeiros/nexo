@@ -1053,3 +1053,84 @@ body.kiosk-mode .sala-grid { grid-template-columns: 36% 36% 28%; gap: 20px; }
 .stat-hero-side .shs { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; min-width: 92px; text-align: center; }
 .stat-hero-side .shs-v { display: block; font-size: 22px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .stat-hero-side .shs-k { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════════════════════
+   THEME TOGGLE + LIGHT MODE (token-driven, AA contrast)
+   ═══════════════════════════════════════════════════════════ */
+.portal-icon-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--bg-elevated); border: 1px solid var(--border-md);
+  color: var(--text-secondary); cursor: pointer;
+  transition: color 180ms var(--ease), border-color 180ms var(--ease), transform 180ms var(--ease);
+}
+.portal-icon-btn:hover { color: var(--text-primary); border-color: var(--border-strong); transform: scale(1.06); }
+.portal-icon-btn:active { transform: scale(.94); }
+
+/* ── LIGHT THEME ─────────────────────────────────────────── */
+html[data-theme="light"] {
+  --bg-base: #F6F7F9;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #EFF1F4;
+  --bg-hover: #E8EBEF;
+  --border: rgba(15,18,25,0.10);
+  --border-md: rgba(15,18,25,0.16);
+  --border-strong: rgba(15,18,25,0.30);
+  --text-primary: #14161A;
+  --text-secondary: #545A66;
+  --text-muted: #868D99;
+  --accent: #14161A;
+  --success: #15803D;
+  --warning: #B45309;
+  --danger: #DC2626;
+  --info: #2563EB;
+  --shadow-sm: 0 1px 2px rgba(15,18,25,.06);
+  --shadow-md: 0 10px 30px -14px rgba(15,18,25,.18);
+  --shadow-lg: 0 24px 60px -24px rgba(15,18,25,.26);
+}
+/* Botão primário: accent escuro → texto branco */
+html[data-theme="light"] .btn-primary { color: #fff; box-shadow: 0 2px 14px -7px rgba(15,18,25,.4); }
+html[data-theme="light"] .btn-primary:hover:not(:disabled) { background: #2B2F36; }
+html[data-theme="light"] .btn-primary:active:not(:disabled) { background: #3A3F47; }
+/* Filtro segmented ativo */
+html[data-theme="light"] .filter-tab.active { color: var(--text-primary); }
+
+/* Glow ambiente em versão clara */
+html[data-theme="light"] body::before {
+  background:
+    radial-gradient(1100px 620px at 82% -12%, rgba(15,18,25,.035), transparent 60%),
+    radial-gradient(820px 480px at -8% 112%, color-mix(in srgb, var(--brand, #2563EB) 10%, transparent), transparent 60%);
+}
+
+/* Tints brancos → tints escuros (chips de ícone, hovers, foco) */
+html[data-theme="light"] .metric-head svg,
+html[data-theme="light"] .kpi-ico,
+html[data-theme="light"] .resto-stat .rs-ico,
+html[data-theme="light"] .empty-state svg { background: rgba(15,18,25,.045); }
+html[data-theme="light"] .metric-card:hover .metric-head svg,
+html[data-theme="light"] .kpi:hover .kpi-ico { background: rgba(15,18,25,.075); }
+html[data-theme="light"] .filter-tab:hover,
+html[data-theme="light"] .table tbody tr:hover,
+html[data-theme="light"] .qa:hover,
+html[data-theme="light"] .item-row:hover { background: rgba(15,18,25,.035); }
+html[data-theme="light"] .card:hover { background: var(--bg-surface); }
+html[data-theme="light"] .input:focus,
+html[data-theme="light"] .select:focus,
+html[data-theme="light"] .textarea:focus { box-shadow: 0 0 0 3px rgba(15,18,25,.07); }
+html[data-theme="light"] .nexo-toast { backdrop-filter: none; }
+
+/* Scrollbar clara */
+html[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(15,18,25,.18); }
+html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: rgba(15,18,25,.28); }
+html[data-theme="light"] * { scrollbar-color: rgba(15,18,25,.18) transparent; }
+
+/* Transição suave ao trocar de tema */
+.portal-nav, .portal-sidebar, .card, .btn, .input, .select, .textarea, .badge,
+.kpi, .resto-stat, .qa, .portal-icon-btn, .portal-avatar {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 240ms; transition-timing-function: var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .portal-nav, .portal-sidebar, .card, .btn, .input, .select, .textarea, .badge,
+  .kpi, .resto-stat, .qa, .portal-icon-btn, .portal-avatar { transition-duration: .001ms; }
+}
