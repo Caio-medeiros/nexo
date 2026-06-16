@@ -87,13 +87,12 @@
     const todayStr = now.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     // ════════════════════════════════════════════════
-    // FREE FEATURES — NEXO Score · Briefing · Previsão
+    // FREE FEATURES — Briefing · Previsão
     // ════════════════════════════════════════════════
-    let scoreHtml = '', briefingHtml = '', forecastHtml = '';
+    let briefingHtml = '', forecastHtml = '';
     if (slug) {
       const ninetyAgo = new Date(Date.now() - 90 * 86400000).toISOString();
       const sevenAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-      const thirtyAgo = new Date(Date.now() - 30 * 86400000).toISOString();
 
       let opens = [];
       try {
@@ -102,81 +101,11 @@
         opens = (o.data || []).map(e => new Date(e.created_at));
       } catch (_) { opens = []; }
 
-      const [totalEvents, totalGuests, returnGuests, esgotados, pendentes, revWeek, prompted30, clicks30] = await Promise.all([
-        count(db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug)),
-        count(db.from('guest_profiles').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug)),
-        count(db.from('guest_profiles').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug).gt('visit_count', 1)),
+      const [esgotados, pendentes, revWeek] = await Promise.all([
         count(db.from('item_availability').select('item_id', { count: 'exact', head: true }).eq('espaco_slug', slug).eq('available', false)),
         count(db.from('update_requests').select('id', { count: 'exact', head: true }).eq('client_id', client.id).eq('status', 'pending')),
         count(db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug).eq('event_name', 'review_google_clicked').gte('created_at', sevenAgo)),
-        count(db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug).eq('event_name', 'review_prompted').gte('created_at', thirtyAgo)),
-        count(db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug).eq('event_name', 'review_google_clicked').gte('created_at', thirtyAgo)),
       ]);
-
-      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-      const currentMonthOpens = opens.filter(d => d >= monthStart).length;
-      const avgMonthlyOpens = opens.length / 3; // 90 dias ≈ 3 meses
-
-      // ── NEXO Score ──
-      const miniReviews = prompted30 > 0 ? Math.min(clicks30 / prompted30 * 10, 10) : null;
-      const miniReturn = totalGuests > 0 ? Math.min(returnGuests / totalGuests * 10, 10) : null;
-      const activityScore = Math.min((currentMonthOpens / Math.max(avgMonthlyOpens, 1)) * 5 + 5, 10);
-      const dims = [];
-      if (miniReviews !== null) dims.push([miniReviews, 0.40]);
-      if (miniReturn !== null) dims.push([miniReturn, 0.35]);
-      dims.push([activityScore, 0.25]);
-      const wsum = dims.reduce((a, [, w]) => a + w, 0);
-      const score = Math.round(dims.reduce((a, [s, w]) => a + s * w, 0) / wsum * 10) / 10;
-
-      const mk = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      const prevD = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const pk = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`;
-      let prevScore = null;
-      try {
-        const v = localStorage.getItem(`nexo_score_${slug}_${pk}`);
-        if (v != null) prevScore = parseFloat(v);
-        localStorage.setItem(`nexo_score_${slug}_${mk}`, String(score));
-      } catch (_) {}
-      const trend = prevScore != null ? Math.round((score - prevScore) * 10) / 10 : null;
-      const scoreColor = score >= 8 ? 'success' : score >= 6 ? 'warning' : 'danger';
-
-      const miniScore = (cap, val) => {
-        if (val === null) return `<div><div class="nm-cap">${cap}</div><div class="nm-val text-muted">—</div><div class="nm-bar"></div></div>`;
-        const c = val >= 8 ? 'success' : val >= 6 ? 'warning' : 'danger';
-        return `<div><div class="nm-cap">${cap}</div><div class="nm-val text-${c}">${val.toFixed(1)}</div>
-          <div class="nm-bar"><div class="nm-fill" style="width:${val * 10}%;background:var(--${c})"></div></div></div>`;
-      };
-
-      if (totalEvents < 10) {
-        scoreHtml = `<div class="card mb-4"><div class="nscore"><div class="nscore-l">
-          <div class="nscore-cap">NEXO Score</div>
-          <p class="nscore-sub" style="margin-top:8px">🔒 Score disponível após as primeiras visitas ao menu.</p>
-        </div></div></div>`;
-      } else {
-        const trendBadge = trend === null ? ''
-          : trend > 0 ? `<span class="nscore-trend nscore-trend--up">↑ +${trend.toFixed(1)} este mês</span>`
-          : trend < 0 ? `<span class="nscore-trend nscore-trend--down">↓ ${trend.toFixed(1)} este mês</span>`
-          : `<span class="nscore-trend nscore-trend--flat">→ estável este mês</span>`;
-        const sub = score >= 8.5 ? 'Excelente — acima da média NEXO em Lisboa'
-          : score >= 7 ? 'Bom — a crescer na direcção certa'
-          : score >= 5 ? 'A melhorar — consulte as sugestões abaixo'
-          : 'Atenção — o seu score precisa de atenção';
-        scoreHtml = `<div class="card mb-4"><div class="nscore">
-          <div class="nscore-l">
-            <div class="nscore-cap">NEXO Score</div>
-            <div class="nscore-row">
-              <span class="nscore-num text-${scoreColor}">${score.toFixed(1)}<span class="den">/10</span></span>
-              ${trendBadge}
-            </div>
-            <div class="nscore-sub">${sub}</div>
-          </div>
-          <div class="nscore-mini">
-            ${miniScore('Conversão reviews', miniReviews)}
-            ${miniScore('Clientes recorrentes', miniReturn)}
-            ${miniScore('Actividade do menu', activityScore)}
-          </div>
-        </div></div>`;
-      }
 
       // ── Briefing diário (06:00–16:00, fechável por dia) ──
       const hour = now.getHours();
@@ -362,8 +291,6 @@
 
       ${renewalBannerHtml(client)}
 
-      ${scoreHtml}
-
       <div class="kpi-row">
         <div class="card kpi">
           <div class="kpi-top"><span class="kpi-label">Visitas ao menu</span><span class="kpi-ico">${getIcon('eye')}</span></div>
@@ -414,8 +341,7 @@
             <p class="dash-section-label">Acções rápidas</p>
             <div class="qa-list">
               <a class="qa" href="/portal/sala/">${getIcon('activity')} Modo Restaurante <span class="qa-arrow">→</span></a>
-              <a class="qa" href="/portal/clientes/">${getIcon('users')} Clientes <span class="qa-arrow">→</span></a>
-              <a class="qa" href="/portal/comunicacoes/">${getIcon('message')} Comunicações <span class="qa-arrow">→</span></a>
+              <a class="qa" href="/portal/disponibilidade/">${getIcon('toggle')} Disponibilidade <span class="qa-arrow">→</span></a>
               <a class="qa" href="/portal/menu/">${getIcon('edit')} Editar menu <span class="qa-arrow">→</span></a>
               <a class="qa" href="/portal/estatisticas/">${getIcon('bar-chart')} Estatísticas <span class="qa-arrow">→</span></a>
             </div>

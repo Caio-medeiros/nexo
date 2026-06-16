@@ -396,10 +396,6 @@ function renderLayout(activeNav, clientData) {
     { label: 'Menu', items: [
       { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu' },
     ]},
-    { label: 'Clientes', items: [
-      { href: '/portal/clientes/', icon: 'users', label: 'Clientes' },
-      { href: '/portal/comunicacoes/', icon: 'message', label: 'Comunicações' },
-    ]},
     { label: 'Negócio', items: [
       { href: '/portal/estatisticas/', icon: 'bar-chart', label: 'Estatísticas' },
       { href: '/portal/renovacao/', icon: 'star', label: 'Renovação' },
