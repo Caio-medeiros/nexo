@@ -1042,3 +1042,14 @@ body.kiosk-mode .resto-stat .rs-v { font-size: 24px; }
 body.kiosk-mode .call-table { font-size: 22px; }
 body.kiosk-mode .order-table { font-size: 18px; }
 body.kiosk-mode .sala-grid { grid-template-columns: 36% 36% 28%; gap: 20px; }
+
+/* ═══ ESTATÍSTICAS — hero honesto (faturação real + contexto) ═══ */
+.stat-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 18px; padding: 22px 24px; }
+.stat-hero-num { font-size: clamp(34px, 6vw, 48px); font-weight: 800; letter-spacing: -.04em; line-height: 1; margin-top: 6px;
+  background: linear-gradient(120deg, var(--text-primary), color-mix(in srgb, var(--success) 65%, var(--text-primary)));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.stat-hero .rs-l { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); }
+.stat-hero-side { display: flex; gap: 12px; flex-wrap: wrap; }
+.stat-hero-side .shs { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; min-width: 92px; text-align: center; }
+.stat-hero-side .shs-v { display: block; font-size: 22px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.stat-hero-side .shs-k { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }

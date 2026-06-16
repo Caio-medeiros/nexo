@@ -122,23 +122,39 @@
       const langMap = {};
       events.forEach(e => { if (e.language) langMap[e.language] = (langMap[e.language] || 0) + 1; });
 
-      // ROI estimate
-      const roi = googleClicks * 12 + revenue;
-
       body.innerHTML = `
-        <div class="roi-banner">
-          <div class="roi-label">Valor gerado (estimativa)</div>
-          <div class="roi-value">${formatEUR(roi)}</div>
-          <p class="text-secondary text-sm" style="margin-top:8px">
-            ${sessions} sessões · ${googleClicks} cliques para o Google no período.
-            Inclui faturação registada e valor estimado de reviews.
-          </p>
+        <div class="card stat-hero">
+          <div class="stat-hero-main">
+            <div class="rs-l">Faturação registada no período</div>
+            <div class="stat-hero-num">${formatEUR(revenue)}</div>
+            <p class="text-secondary text-sm" style="margin-top:8px;max-width:480px;line-height:1.55">
+              O que se mede em euros. A reputação, as visitas e as reviews compõem-se ao
+              longo do tempo — veja o valor acumulado em <a href="/portal/renovacao/" style="color:var(--text-primary);text-decoration:underline">Renovação &amp; Valor</a>.
+            </p>
+          </div>
+          <div class="stat-hero-side">
+            <div class="shs"><span class="shs-v">${sessions}</span><span class="shs-k">sessões</span></div>
+            <div class="shs"><span class="shs-v text-success">${googleClicks}</span><span class="shs-k">cliques Google</span></div>
+            <div class="shs"><span class="shs-v">${views}</span><span class="shs-k">visitas</span></div>
+          </div>
         </div>
 
-        <div class="metric-grid">
-          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Visitas ao menu</span>${getIcon('eye')}</div><div class="metric-value">${views}</div><div class="metric-sub">${sessions} sessões únicas</div></div>
-          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Cliques Google</span>${getIcon('star')}</div><div class="metric-value text-success">${googleClicks}</div><div class="metric-sub">de ${reviewsPrompted} reviews pedidas</div></div>
-          <div class="card metric-card"><div class="metric-head"><span class="metric-label">Pedidos</span>${getIcon('grid')}</div><div class="metric-value">${orders.length}</div><div class="metric-sub">${formatEUR(revenue)} registado</div></div>
+        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="card kpi">
+            <div class="kpi-top"><span class="kpi-label">Visitas ao menu</span><span class="kpi-ico">${getIcon('eye')}</span></div>
+            <div class="kpi-num">${views}</div>
+            <div class="kpi-foot"><span class="s">${sessions} sessões únicas</span></div>
+          </div>
+          <div class="card kpi">
+            <div class="kpi-top"><span class="kpi-label">Cliques Google</span><span class="kpi-ico">${getIcon('star')}</span></div>
+            <div class="kpi-num text-success">${googleClicks}</div>
+            <div class="kpi-foot"><span class="s">de ${reviewsPrompted} reviews pedidas</span></div>
+          </div>
+          <div class="card kpi">
+            <div class="kpi-top"><span class="kpi-label">Pedidos</span><span class="kpi-ico">${getIcon('grid')}</span></div>
+            <div class="kpi-num">${orders.length}</div>
+            <div class="kpi-foot"><span class="s">${formatEUR(revenue)} registado</span></div>
+          </div>
         </div>
 
         <div class="two-col">
