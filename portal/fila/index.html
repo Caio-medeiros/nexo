@@ -136,11 +136,13 @@
       <div class="card mb-4">
         <div class="card-title">Adicionar à fila (walk-in)</div>
         <div class="flex gap-2" style="flex-wrap:wrap">
-          <input class="input" id="manual-name" placeholder="Nome" style="flex:2;min-width:140px" maxlength="40">
+          <input class="input" id="manual-name" placeholder="Nome" style="flex:2;min-width:130px" maxlength="40">
+          <input class="input" id="manual-phone" type="tel" inputmode="tel" placeholder="Telemóvel (p/ WhatsApp)" style="flex:1.4;min-width:150px" maxlength="20" autocomplete="tel">
           <input class="input" id="manual-party" type="number" min="1" max="30" value="2"
-                 style="flex:0 0 90px" aria-label="Número de pessoas">
+                 style="flex:0 0 80px" aria-label="Número de pessoas">
           <button class="btn btn-secondary" id="manual-add">+ Adicionar</button>
         </div>
+        <p class="text-xs text-muted" style="margin-top:8px">O telemóvel é opcional — com ele, o botão <strong>Chamar</strong> abre logo o WhatsApp para avisar o cliente quando for a vez.</p>
       </div>
 
       <!-- queue -->
@@ -482,9 +484,18 @@
     // refresh tempos de espera
     setInterval(renderQueue, 60000);
 
+    // Normaliza telemóvel para formato wa.me (PT: 9 dígitos → +351)
+    function normalizePhone(raw) {
+      const d = (raw || '').replace(/\D/g, '');
+      if (!d) return null;
+      if (d.length === 9 && d[0] === '9') return '351' + d; // móvel PT sem indicativo
+      return d;
+    }
+
     // ── Walk-in manual ──────────────────────────────
     document.getElementById('manual-add').addEventListener('click', async function () {
       const nameEl = document.getElementById('manual-name');
+      const phoneEl = document.getElementById('manual-phone');
       const partyEl = document.getElementById('manual-party');
       const name = nameEl.value.trim();
       if (name.length < 2) {
@@ -494,12 +505,14 @@
       }
       nameEl.classList.remove('input-error');
       const party = Math.min(30, Math.max(1, parseInt(partyEl.value, 10) || 2));
+      const phone = normalizePhone(phoneEl.value);
 
       setLoading(this, true, '...');
       const { error } = await db.from('waitlist_entries').insert({
         espaco_slug: slug,
         token: crypto.randomUUID(),
         name,
+        phone,
         party_size: party,
         status: 'waiting',
         source: 'staff',
@@ -510,6 +523,7 @@
         return;
       }
       nameEl.value = '';
+      phoneEl.value = '';
       partyEl.value = '2';
       showToast(`${name} adicionado à fila.`, 'success');
       await loadQueue();
