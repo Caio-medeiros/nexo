@@ -1179,7 +1179,9 @@ html[data-theme="light"] .btn-primary { background-image: linear-gradient(180deg
 /* Alvos de toque generosos + tipografia legível à distância */
 body.kiosk-mode .btn { height: 54px; padding: 0 24px; font-size: 15px; border-radius: 14px; }
 body.kiosk-mode .btn-sm { height: 48px; padding: 0 20px; font-size: 14px; border-radius: 12px; }
-body.kiosk-mode .kiosk-exit { height: 48px; padding: 0 20px; font-size: 15px; top: 18px; right: 18px; }
+body.kiosk-mode .kiosk-exit { height: 48px; padding: 0 20px; font-size: 15px; top: 18px; right: 18px; z-index: 70; }
+/* Em ecrã completo já existe o botão "Sair" fixo — esconder o "Ecrã completo" do cabeçalho (evita sobreposição) */
+body.kiosk-mode #kiosk-toggle { display: none; }
 body.kiosk-mode .resto-stat { padding: 16px 18px; }
 body.kiosk-mode .resto-stat .rs-v { font-size: 26px; }
 body.kiosk-mode .resto-stat .rs-l { font-size: 12px; }
