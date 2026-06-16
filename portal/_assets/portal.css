@@ -1134,3 +1134,64 @@ html[data-theme="light"] * { scrollbar-color: rgba(15,18,25,.18) transparent; }
   .portal-nav, .portal-sidebar, .card, .btn, .input, .select, .textarea, .badge,
   .kpi, .resto-stat, .qa, .portal-icon-btn, .portal-avatar { transition-duration: .001ms; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PREMIUM v3 — mais presença (sem perder UX)
+   ═══════════════════════════════════════════════════════════ */
+/* Cartões "iluminados de cima": hairline highlight no topo */
+.card { box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.045); }
+.card:hover { box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.06); }
+html[data-theme="light"] .card { box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.7); }
+html[data-theme="light"] .card:hover { box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.9); }
+
+/* Tipografia com mais carácter */
+.page-title { font-size: 28px; font-weight: 800; letter-spacing: -.035em; }
+.resto-eyebrow { font-size: 24px; }
+
+/* Navegação: barra superior e logo mais nítidos */
+.portal-nav { backdrop-filter: blur(10px); background: color-mix(in srgb, var(--bg-base) 86%, transparent); }
+.portal-logo { font-size: 17px; letter-spacing: -.03em; }
+
+/* Sidebar: item ativo com acento da marca mais presente */
+.sidebar-item.active {
+  background: color-mix(in srgb, var(--brand, var(--text-primary)) 9%, var(--bg-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand, #ffffff) 16%, transparent);
+}
+body.has-brand .sidebar-item.active::before { width: 3px; box-shadow: 0 0 12px color-mix(in srgb, var(--brand) 60%, transparent); }
+
+/* Botão primário com leve profundidade de gradiente */
+.btn-primary { background-image: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0)); }
+html[data-theme="light"] .btn-primary { background-image: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0)); }
+
+/* KPIs: número com leve degradê (só os neutros — preserva cores semânticas) */
+.kpi-num:not(.text-success):not(.text-info):not(.text-danger):not(.text-warning),
+.resto-stat .rs-v:not(.text-success):not(.text-info):not(.text-danger):not(.text-warning) {
+  background: linear-gradient(180deg, var(--text-primary), color-mix(in srgb, var(--text-primary) 78%, var(--text-secondary)));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* Remoção de atraso de toque em todos os botões/ações */
+.btn, .sidebar-item, .qa, .filter-tab, .portal-icon-btn, [data-seen], [data-resolve], [data-notify], [data-seat] { touch-action: manipulation; }
+
+/* ═══════════════════════════════════════════════════════════
+   MODO RESTAURANTE — KIOSK / TOUCH (tablet de parede/balcão)
+   ═══════════════════════════════════════════════════════════ */
+/* Alvos de toque generosos + tipografia legível à distância */
+body.kiosk-mode .btn { height: 54px; padding: 0 24px; font-size: 15px; border-radius: 14px; }
+body.kiosk-mode .btn-sm { height: 48px; padding: 0 20px; font-size: 14px; border-radius: 12px; }
+body.kiosk-mode .kiosk-exit { height: 48px; padding: 0 20px; font-size: 15px; top: 18px; right: 18px; }
+body.kiosk-mode .resto-stat { padding: 16px 18px; }
+body.kiosk-mode .resto-stat .rs-v { font-size: 26px; }
+body.kiosk-mode .resto-stat .rs-l { font-size: 12px; }
+body.kiosk-mode .sala-col.card { padding: 22px; }
+body.kiosk-mode .sala-col-title { font-size: 15px; }
+body.kiosk-mode .call-card { padding: 18px 22px; }
+body.kiosk-mode .call-table { font-size: 22px; }
+body.kiosk-mode .order-card { padding: 18px 20px; }
+body.kiosk-mode .order-items { font-size: 15px; }
+body.kiosk-mode .activity-title { font-size: 15px; }
+body.kiosk-mode .count-badge { min-width: 26px; height: 26px; font-size: 13px; }
+
+/* Ações da Sala sempre confortáveis ao toque (mesmo fora do kiosk) */
+.call-card .btn, .order-foot .btn, #waitlist-list .btn { min-height: 44px; }
+body.kiosk-mode .call-card .btn, body.kiosk-mode .order-foot .btn, body.kiosk-mode #waitlist-list .btn { min-height: 52px; min-width: 130px; }
