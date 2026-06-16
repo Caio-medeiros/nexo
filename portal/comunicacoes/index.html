@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Comunicações — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+  <style>
+    .info-banner { background: color-mix(in srgb, var(--info) 6%, transparent);
+      border: 1px solid color-mix(in srgb, var(--info) 22%, transparent);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 22px; font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+    .send-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 760px) { .send-steps { grid-template-columns: 1fr; } }
+    .step-num { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px;
+      border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border-md); font-size: 10px; font-weight: 700; margin-right: 6px; }
+    .client-dropdown { position: relative; }
+    .cd-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20;
+      background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 10px; overflow: hidden;
+      max-height: 260px; overflow-y: auto; box-shadow: var(--shadow-lg); }
+    .cd-opt { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; }
+    .cd-opt:hover { background: var(--bg-hover); }
+    .cd-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border-md); display: grid; place-items: center; font-size: 11px; font-weight: 700; color: var(--text-secondary); }
+    .tpl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    @media (max-width: 760px) { .tpl-grid { grid-template-columns: 1fr; } }
+    .tpl-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .tpl-text { font-size: 13px; color: var(--text-secondary); font-style: italic; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .tpl-foot { border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; display: flex; align-items: center; justify-content: space-between; }
+    .icon-btn-sm { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 5px; border-radius: 6px; display: inline-flex; transition: color 150ms ease, background 150ms ease; }
+    .icon-btn-sm:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .icon-btn-sm.del:hover { color: var(--danger); }
+  </style>
+</head>
+<body>
+
+  <nav class="portal-nav" id="portal-nav"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar"></aside>
+
+  <main class="portal-main" id="main">
+    <div id="page-skeleton">
+      <div class="page-header"><div class="nexo-skeleton" style="width:200px;height:28px"></div></div>
+      <div class="card nexo-skeleton" style="height:90px;margin-bottom:16px"></div>
+      <div class="card nexo-skeleton" style="height:200px;margin-bottom:16px"></div>
+      <div class="card nexo-skeleton" style="height:220px"></div>
+    </div>
+    <div id="page-content" style="display:none"></div>
+  </main>
+
+  <!-- template modal -->
+  <div class="modal-overlay" id="tpl-overlay">
+    <div class="modal" role="dialog" aria-modal="true" id="tpl-modal" style="max-width:460px"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/comunicacoes/', client);
+    const slug = getMenuSlug(client);
+    if (slug) initNotifications(slug);
+    const menuUrl = getMenuUrl(client);
+
+    document.getElementById('page-skeleton').style.display = 'none';
+    document.getElementById('page-content').style.display = 'block';
+    const content = document.getElementById('page-content');
+
+    const TYPE_LABEL = { pre_visit: 'Pré-visita', post_visit: 'Pós-visita', reengagement: 'Reengajamento', birthday: 'Aniversário', promotion: 'Promoção', custom: 'Personalizada' };
+    const TYPE_BADGE = { pre_visit: 'badge--info', post_visit: 'badge--success', reengagement: 'badge--warning', birthday: 'badge--info', promotion: 'badge--warning', custom: 'badge--muted' };
+    const DEFAULTS = [
+      { type: 'pre_visit', name: 'Pré-visita', template_text: 'Olá {{nome}}! 👋 Amanhã ficamos à sua espera. Qualquer questão, estamos aqui. Até amanhã! 🍽️' },
+      { type: 'post_visit', name: 'Pós-visita (review)', template_text: 'Olá {{nome}}! Esperamos que tenha gostado da sua visita ao {{restaurante}}. Deixe-nos uma review no Google — significa muito para nós! 🌟' },
+      { type: 'reengagement', name: 'Reengajamento', template_text: 'Olá {{nome}}! Há algum tempo que não o vemos por cá. Temos novidades na carta que acho que vai gostar. Que tal aparecer? 😊' },
+      { type: 'birthday', name: 'Aniversário', template_text: 'Parabéns {{nome}}! 🎂 Em nome de toda a equipa do {{restaurante}}, um ótimo aniversário. Venha celebrar connosco — temos uma surpresa à sua espera esta semana! 🎉' },
+      { type: 'promotion', name: 'Promoção', template_text: 'Olá {{nome}}! Esta semana temos novidades especiais que não vai querer perder. Veja o nosso menu: ' + menuUrl },
+    ];
+
+    let guests = [];
+    let templates = [];
+    let selectedClient = null;
+    let selectedTemplate = null;
+
+    function initials(name) { return (name || '?').trim().slice(0, 2).toUpperCase() || '?'; }
+    function fill(text, g) {
+      const tomorrow = new Date(Date.now() + 86400000).toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' });
+      return (text || '')
+        .replace(/\{\{nome\}\}/g, (g && g.name) ? g.name.split(' ')[0] : 'Cliente')
+        .replace(/\{\{restaurante\}\}/g, client.name || '')
+        .replace(/\{\{data\}\}/g, tomorrow)
+        .replace(/\{\{visitas\}\}/g, g ? String(g.visit_count || 1) : '');
+    }
+
+    function render() {
+      if (guests.length === 0) {
+        content.innerHTML = `
+          <div class="page-header"><h1 class="page-title">Comunicações</h1>
+            <p class="page-sub">Mensagens WhatsApp pré-escritas para os seus clientes.</p></div>
+          <div class="empty-state card" style="padding:48px 20px">
+            <span style="color:var(--whatsapp)">${getIcon('message', 32)}</span>
+            <p class="empty-title">Adicione clientes primeiro</p>
+            <p class="empty-sub">Os perfis aparecem a partir da fila de espera ou podem ser adicionados manualmente.</p>
+            <a class="btn btn-primary btn-sm" href="/portal/clientes/">Ir para Clientes →</a>
+          </div>`;
+        return;
+      }
+
+      content.innerHTML = `
+        <div class="page-header"><h1 class="page-title">Comunicações</h1>
+          <p class="page-sub">Mensagens WhatsApp pré-escritas para enviar aos seus clientes.</p></div>
+
+        <div class="info-banner">
+          ℹ️ <strong>Como funciona:</strong> selecione um cliente, escolha um template e clique Enviar.
+          O WhatsApp abre com a mensagem já escrita — só precisa de carregar em enviar. Zero custos adicionais.
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-title">Enviar mensagem</div>
+          <div class="send-steps">
+            <div class="client-dropdown">
+              <label class="field-label"><span class="step-num">1</span>Cliente</label>
+              <input class="input" id="send-search" placeholder="Nome ou telemóvel..." autocomplete="off">
+              <div id="cd-list"></div>
+              <div id="sel-client" class="text-sm" style="margin-top:8px"></div>
+            </div>
+            <div>
+              <label class="field-label"><span class="step-num">2</span>Template</label>
+              <select class="select" id="send-template"></select>
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <label class="field-label"><span class="step-num">3</span>Pré-visualização</label>
+            <textarea class="textarea" id="send-preview" style="min-height:96px"></textarea>
+          </div>
+          <button class="btn btn-whatsapp btn-full" id="send-btn" style="margin-top:14px" disabled>Enviar por WhatsApp →</button>
+        </div>
+
+        <div class="flex-between" style="margin-bottom:14px">
+          <span class="card-title" style="margin:0">Os seus templates</span>
+          <button class="btn btn-secondary btn-sm" id="new-tpl">Novo template +</button>
+        </div>
+        <div class="tpl-grid" id="tpl-grid"></div>`;
+
+      setupSend();
+      renderTemplateOptions();
+      renderTemplates();
+    }
+
+    // ── STEP 1: client search ───────────────────────
+    function setupSend() {
+      const searchEl = document.getElementById('send-search');
+      const cdList = document.getElementById('cd-list');
+      searchEl.addEventListener('input', () => {
+        const q = searchEl.value.trim().toLowerCase();
+        if (!q) { cdList.innerHTML = ''; return; }
+        const matches = guests.filter(g => (g.name || '').toLowerCase().includes(q) || (g.phone || '').includes(q.replace(/\D/g, ''))).slice(0, 6);
+        cdList.innerHTML = matches.length ? `<div class="cd-list">${matches.map(g => `
+          <div class="cd-opt" data-id="${g.id}">
+            <span class="cd-avatar">${escapeHtml(initials(g.name))}</span>
+            <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">${g.name ? escapeHtml(g.name) : 'Sem nome'}</div>
+              <div class="text-muted text-xs">${escapeHtml(g.phone)} · ${g.visit_count || 1} visita(s)</div></div>
+          </div>`).join('')}</div>` : `<div class="cd-list"><div class="cd-opt text-muted">Sem resultados</div></div>`;
+        cdList.querySelectorAll('[data-id]').forEach(o => o.addEventListener('click', () => {
+          selectedClient = guests.find(g => g.id === o.dataset.id);
+          searchEl.value = ''; cdList.innerHTML = '';
+          document.getElementById('sel-client').innerHTML = `<span class="badge badge--success">${escapeHtml(selectedClient.name || selectedClient.phone)}</span>`;
+          refreshPreview();
+        }));
+      });
+      document.getElementById('send-template').addEventListener('change', refreshPreview);
+      document.getElementById('send-btn').addEventListener('click', doSend);
+      document.getElementById('new-tpl').addEventListener('click', () => openTemplateModal(null));
+    }
+
+    function renderTemplateOptions() {
+      const sel = document.getElementById('send-template');
+      const active = templates.filter(t => t.is_active);
+      sel.innerHTML = `<option value="">Seleccionar template...</option>` +
+        active.map(t => `<option value="${t.id}">${escapeHtml(t.name || TYPE_LABEL[t.type])}</option>`).join('') +
+        `<option value="__custom">Mensagem personalizada</option>`;
+    }
+
+    function refreshPreview() {
+      const sel = document.getElementById('send-template');
+      const preview = document.getElementById('send-preview');
+      const btn = document.getElementById('send-btn');
+      if (sel.value === '__custom') { selectedTemplate = null; preview.readOnly = false; }
+      else {
+        selectedTemplate = templates.find(t => t.id === sel.value) || null;
+        preview.readOnly = false;
+        preview.value = selectedTemplate ? fill(selectedTemplate.template_text, selectedClient) : '';
+      }
+      if (sel.value === '__custom' && !preview.value) preview.value = '';
+      btn.disabled = !(selectedClient && preview.value.trim());
+    }
+    // also enable button as user edits custom text
+    document.addEventListener('input', (e) => {
+      if (e.target && e.target.id === 'send-preview') {
+        const btn = document.getElementById('send-btn');
+        if (btn) btn.disabled = !(selectedClient && e.target.value.trim());
+      }
+    });
+
+    async function doSend() {
+      if (!selectedClient) { showToast('Selecione um cliente.', 'error'); return; }
+      const text = document.getElementById('send-preview').value.trim();
+      if (!text) { showToast('Mensagem vazia.', 'error'); return; }
+      const phone = (selectedClient.phone || '').replace(/\D/g, '');
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+      if (selectedTemplate) {
+        const next = (selectedTemplate.sent_count || 0) + 1;
+        selectedTemplate.sent_count = next;
+        db.from('whatsapp_templates').update({ sent_count: next }).eq('id', selectedTemplate.id).then(() => {}, () => {});
+        renderTemplates();
+      }
+      showToast('WhatsApp aberto com a mensagem pronta.', 'success');
+    }
+
+    // ── TEMPLATES list ──────────────────────────────
+    function renderTemplates() {
+      const grid = document.getElementById('tpl-grid');
+      if (!grid) return;
+      grid.innerHTML = templates.map(t => `
+        <div class="tpl-card">
+          <div class="flex-between">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="badge ${TYPE_BADGE[t.type] || 'badge--muted'}">${TYPE_LABEL[t.type] || t.type}</span>
+              <span style="font-weight:600;font-size:13px">${escapeHtml(t.name || '')}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:2px">
+              <button class="toggle ${t.is_active ? '' : 'off'}" data-toggle="${t.id}" role="switch" aria-checked="${t.is_active}" title="${t.is_active ? 'Activo' : 'Inactivo'}" style="${t.is_active ? '' : 'opacity:.5'}"></button>
+              <button class="icon-btn-sm" data-edit="${t.id}" aria-label="Editar">${getIcon('edit', 14)}</button>
+              <button class="icon-btn-sm del" data-del="${t.id}" aria-label="Eliminar">${getIcon('x', 14)}</button>
+            </div>
+          </div>
+          <div class="tpl-text">${escapeHtml(t.template_text)}</div>
+          <div class="tpl-foot">
+            <span class="text-muted text-xs">Enviada ${t.sent_count || 0} ${(t.sent_count || 0) === 1 ? 'vez' : 'vezes'}</span>
+            <button class="btn btn-secondary btn-sm" data-use="${t.id}">Usar →</button>
+          </div>
+        </div>`).join('');
+
+      grid.querySelectorAll('[data-use]').forEach(b => b.addEventListener('click', () => {
+        const sel = document.getElementById('send-template'); sel.value = b.dataset.use; refreshPreview();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }));
+      grid.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openTemplateModal(b.dataset.edit)));
+      grid.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => deleteTemplate(b.dataset.del)));
+      grid.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => toggleTemplate(b.dataset.toggle)));
+    }
+
+    async function toggleTemplate(id) {
+      const t = templates.find(x => x.id === id); if (!t) return;
+      t.is_active = !t.is_active; renderTemplates(); renderTemplateOptions();
+      await db.from('whatsapp_templates').update({ is_active: t.is_active }).eq('id', id);
+    }
+    async function deleteTemplate(id) {
+      const t = templates.find(x => x.id === id);
+      const ok = await confirmModal({ title: 'Eliminar template', body: `Eliminar "${t?.name || ''}"?`, confirmLabel: 'Eliminar', danger: true });
+      if (!ok) return;
+      await db.from('whatsapp_templates').delete().eq('id', id);
+      templates = templates.filter(x => x.id !== id); renderTemplates(); renderTemplateOptions();
+      showToast('Template eliminado.', 'success');
+    }
+
+    // ── template modal ──────────────────────────────
+    const tplOverlay = document.getElementById('tpl-overlay');
+    const tplModal = document.getElementById('tpl-modal');
+    function closeTplModal() { tplOverlay.classList.remove('visible'); }
+    tplOverlay.addEventListener('click', (e) => { if (e.target === tplOverlay) closeTplModal(); });
+
+    function openTemplateModal(id) {
+      const t = id ? templates.find(x => x.id === id) : null;
+      tplModal.innerHTML = `
+        <div class="modal-title">${t ? 'Editar template' : 'Novo template'}</div>
+        <div class="field"><label class="field-label">Tipo</label>
+          <select class="select" id="tm-type">${Object.entries(TYPE_LABEL).map(([k, v]) => `<option value="${k}" ${t && t.type === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+        <div class="field"><label class="field-label">Nome</label><input class="input" id="tm-name" maxlength="40" value="${t ? escapeHtml(t.name || '') : ''}"></div>
+        <div class="field"><label class="field-label">Mensagem</label>
+          <textarea class="textarea" id="tm-text" style="min-height:110px">${t ? escapeHtml(t.template_text) : ''}</textarea>
+          <p class="field-hint">Variáveis: {{nome}}, {{restaurante}}, {{data}}, {{visitas}}</p></div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="tm-cancel">Cancelar</button>
+          <button class="btn btn-primary" id="tm-save">${t ? 'Guardar' : 'Criar template'}</button>
+        </div>`;
+      tplOverlay.classList.add('visible');
+      document.getElementById('tm-cancel').addEventListener('click', closeTplModal);
+      document.getElementById('tm-save').addEventListener('click', () => saveTemplate(id));
+    }
+
+    async function saveTemplate(id) {
+      const type = document.getElementById('tm-type').value;
+      const name = document.getElementById('tm-name').value.trim();
+      const txt = document.getElementById('tm-text').value.trim();
+      if (txt.length < 5) { showToast('Mensagem demasiado curta.', 'error'); return; }
+      const btn = document.getElementById('tm-save'); setLoading(btn, true, '...');
+      if (id) {
+        const { error } = await db.from('whatsapp_templates').update({ type, name: name || TYPE_LABEL[type], template_text: txt }).eq('id', id);
+        if (error) { setLoading(btn, false); showToast('Erro ao guardar.', 'error'); return; }
+        const t = templates.find(x => x.id === id); Object.assign(t, { type, name: name || TYPE_LABEL[type], template_text: txt });
+      } else {
+        const { data, error } = await db.from('whatsapp_templates').insert({ espaco_slug: slug, type, name: name || TYPE_LABEL[type], template_text: txt, is_active: true }).select().single();
+        if (error) { setLoading(btn, false); showToast('Erro ao criar.', 'error'); return; }
+        templates.push(data);
+      }
+      setLoading(btn, false); closeTplModal(); renderTemplates(); renderTemplateOptions();
+      showToast('Template guardado.', 'success');
+    }
+
+    // ── load ────────────────────────────────────────
+    async function ensureDefaults() {
+      const { data } = await db.from('whatsapp_templates').select('*').eq('espaco_slug', slug);
+      if (data && data.length) { templates = data; return; }
+      const rows = DEFAULTS.map(d => ({ espaco_slug: slug, ...d, is_active: true }));
+      const { data: inserted } = await db.from('whatsapp_templates').insert(rows).select();
+      templates = inserted || rows;
+    }
+
+    try {
+      const [g] = await Promise.all([
+        db.from('guest_profiles').select('*').eq('espaco_slug', slug).order('last_visit', { ascending: false }),
+        ensureDefaults(),
+      ]);
+      guests = g.data || [];
+    } catch (_) {}
+    render();
+  })();
+  </script>
+</body>
+</html>

@@ -1207,3 +1207,97 @@ body.kiosk-mode .call-card .btn, body.kiosk-mode .order-foot .btn, body.kiosk-mo
   background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: 999px; padding: 3px 10px; font-variant-numeric: tabular-nums;
 }
+
+/* ═══════════════════════════════════════════════════
+   FREE FEATURES — NEXO Score / Briefing / Previsão / Matriz / Heatmap
+   ═══════════════════════════════════════════════════ */
+
+/* ── NEXO Score ── */
+.nscore { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.nscore-l { min-width: 0; }
+.nscore-cap { font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--text-muted); }
+.nscore-row { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+.nscore-num { font-size: 40px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.nscore-num .den { font-size: 18px; font-weight: 600; color: var(--text-muted); }
+.nscore-trend { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 3px 9px; }
+.nscore-trend--up { background: rgba(34,197,94,0.1); color: var(--success); }
+.nscore-trend--down { background: rgba(239,68,68,0.1); color: var(--danger); }
+.nscore-trend--flat { background: var(--bg-elevated); color: var(--text-muted); }
+.nscore-sub { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+.nscore-mini { display: flex; gap: 24px; flex-wrap: wrap; }
+.nscore-mini .nm-cap { font-size: 10px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+.nscore-mini .nm-val { font-size: 16px; font-weight: 600; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.nscore-mini .nm-bar { width: 64px; height: 3px; border-radius: 999px; background: var(--border-md); margin-top: 6px; overflow: hidden; }
+.nscore-mini .nm-fill { height: 100%; border-radius: 999px; transition: width .4s ease; }
+
+/* ── Briefing diário ── */
+.brief-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
+.brief-hello { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.brief-date { font-size: 13px; color: var(--text-muted); }
+.brief-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 28px; padding: 16px 20px; border-top: 1px solid var(--border); }
+.brief-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; }
+.brief-row .br-ico { width: 18px; text-align: center; }
+.brief-row .br-lbl { color: var(--text-secondary); }
+.brief-row .br-val { margin-left: auto; color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums; }
+.brief-att { display: flex; flex-direction: column; gap: 8px; }
+.brief-att a { font-size: 13px; display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); text-decoration: none; }
+.brief-att a:hover { color: var(--text-primary); }
+.brief-allclear { display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--success); height: 100%; min-height: 60px; }
+.brief-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--border); }
+.brief-tip { font-size: 12px; color: var(--text-muted); }
+.brief-close { background: none; border: none; cursor: pointer; font-size: 11px; color: var(--text-muted); padding: 4px; }
+.brief-close:hover { color: var(--text-secondary); }
+
+/* ── Previsão de receita ── */
+.fc-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.fc-day { width: 92px; flex-shrink: 0; font-size: 12px; color: var(--text-secondary); }
+.fc-track { flex: 1; height: 6px; border-radius: 999px; background: var(--bg-elevated); overflow: hidden; }
+.fc-fill { height: 100%; border-radius: 999px; transition: width .5s ease; }
+.fc-val { width: 64px; flex-shrink: 0; text-align: right; font-size: 12px; font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.fc-lvl { flex-shrink: 0; font-size: 9px; font-weight: 600; border-radius: 999px; padding: 2px 7px; white-space: nowrap; }
+.fc-lvl--high { background: rgba(239,68,68,0.1); color: var(--danger); }
+.fc-lvl--medium { color: var(--text-muted); }
+.fc-lvl--low { background: rgba(59,130,246,0.1); color: var(--info); }
+
+/* ── Matriz do menu ── */
+.mtx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.mtx-cell { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.mtx-cell--star { border-color: rgba(34,197,94,0.2); }
+.mtx-cell--puzzle { border-color: rgba(59,130,246,0.2); }
+.mtx-cell--workhorse { border-color: rgba(245,158,11,0.2); }
+.mtx-cell--dog { border-color: var(--border); }
+.mtx-cell-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.mtx-lbl { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.mtx-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.mtx-count { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.mtx-items { margin-top: 12px; display: flex; flex-direction: column; gap: 2px; }
+.mtx-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; position: relative; }
+.mtx-item .mi-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.mtx-item .mi-name { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mtx-item .mi-views { margin-left: auto; font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+.mtx-item .mi-tip { display: none; position: absolute; left: 0; bottom: calc(100% + 4px); z-index: 5;
+  background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 8px; padding: 6px 10px;
+  font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+.mtx-item:hover .mi-tip { display: block; }
+.mtx-hint { font-size: 11px; color: var(--text-muted); margin-top: 10px; }
+.mtx-more { font-size: 11px; color: var(--text-secondary); background: none; border: none; cursor: pointer; padding: 4px 0; }
+.mtx-empty { position: relative; }
+.mtx-empty .mtx-grid { opacity: .3; pointer-events: none; }
+.mtx-empty-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  text-align: center; font-size: 13px; color: var(--text-secondary); padding: 20px; }
+
+/* ── Heatmap da carta ── */
+.heat-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.heat-pill { display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border-radius: 8px;
+  font-size: 13px; min-height: 38px; border: 1px solid transparent; cursor: default; transition: border-color .15s ease; }
+.heat-pill:hover { border-color: var(--border-md); }
+.heat-pill .hp-n { font-size: 11px; color: var(--text-muted); }
+.heat-warn { display: flex; gap: 8px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 12px; padding: 12px 14px; margin-top: 16px; font-size: 13px; color: var(--text-secondary); }
+
+@media (max-width: 768px) {
+  .brief-body { grid-template-columns: 1fr; }
+  .mtx-grid { grid-template-columns: 1fr; }
+  .heat-pill { min-height: 44px; }
+  .nscore-mini { width: 100%; }
+}

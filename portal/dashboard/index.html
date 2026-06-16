@@ -86,6 +86,198 @@
     const now = new Date();
     const todayStr = now.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+    // ════════════════════════════════════════════════
+    // FREE FEATURES — NEXO Score · Briefing · Previsão
+    // ════════════════════════════════════════════════
+    let scoreHtml = '', briefingHtml = '', forecastHtml = '';
+    if (slug) {
+      const ninetyAgo = new Date(Date.now() - 90 * 86400000).toISOString();
+      const sevenAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+      const thirtyAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+
+      let opens = [];
+      try {
+        const o = await db.from('menu_events').select('created_at').eq('espaco_slug', slug)
+          .eq('event_name', 'menu_opened').gte('created_at', ninetyAgo).limit(5000);
+        opens = (o.data || []).map(e => new Date(e.created_at));
+      } catch (_) { opens = []; }
+
+      const [totalEvents, totalGuests, returnGuests, esgotados, pendentes, revWeek, prompted30, clicks30] = await Promise.all([
+        count(db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug)),
+        count(db.from('guest_profiles').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug)),
+        count(db.from('guest_profiles').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug).gt('visit_count', 1)),
+        count(db.from('item_availability').select('item_id', { count: 'exact', head: true }).eq('espaco_slug', slug).eq('available', false)),
+        count(db.from('update_requests').select('id', { count: 'exact', head: true }).eq('client_id', client.id).eq('status', 'pending')),
+        count(db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug).eq('event_name', 'review_google_clicked').gte('created_at', sevenAgo)),
+        count(db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug).eq('event_name', 'review_prompted').gte('created_at', thirtyAgo)),
+        count(db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug).eq('event_name', 'review_google_clicked').gte('created_at', thirtyAgo)),
+      ]);
+
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+      const currentMonthOpens = opens.filter(d => d >= monthStart).length;
+      const avgMonthlyOpens = opens.length / 3; // 90 dias ≈ 3 meses
+
+      // ── NEXO Score ──
+      const miniReviews = prompted30 > 0 ? Math.min(clicks30 / prompted30 * 10, 10) : null;
+      const miniReturn = totalGuests > 0 ? Math.min(returnGuests / totalGuests * 10, 10) : null;
+      const activityScore = Math.min((currentMonthOpens / Math.max(avgMonthlyOpens, 1)) * 5 + 5, 10);
+      const dims = [];
+      if (miniReviews !== null) dims.push([miniReviews, 0.40]);
+      if (miniReturn !== null) dims.push([miniReturn, 0.35]);
+      dims.push([activityScore, 0.25]);
+      const wsum = dims.reduce((a, [, w]) => a + w, 0);
+      const score = Math.round(dims.reduce((a, [s, w]) => a + s * w, 0) / wsum * 10) / 10;
+
+      const mk = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const prevD = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const pk = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`;
+      let prevScore = null;
+      try {
+        const v = localStorage.getItem(`nexo_score_${slug}_${pk}`);
+        if (v != null) prevScore = parseFloat(v);
+        localStorage.setItem(`nexo_score_${slug}_${mk}`, String(score));
+      } catch (_) {}
+      const trend = prevScore != null ? Math.round((score - prevScore) * 10) / 10 : null;
+      const scoreColor = score >= 8 ? 'success' : score >= 6 ? 'warning' : 'danger';
+
+      const miniScore = (cap, val) => {
+        if (val === null) return `<div><div class="nm-cap">${cap}</div><div class="nm-val text-muted">—</div><div class="nm-bar"></div></div>`;
+        const c = val >= 8 ? 'success' : val >= 6 ? 'warning' : 'danger';
+        return `<div><div class="nm-cap">${cap}</div><div class="nm-val text-${c}">${val.toFixed(1)}</div>
+          <div class="nm-bar"><div class="nm-fill" style="width:${val * 10}%;background:var(--${c})"></div></div></div>`;
+      };
+
+      if (totalEvents < 10) {
+        scoreHtml = `<div class="card mb-4"><div class="nscore"><div class="nscore-l">
+          <div class="nscore-cap">NEXO Score</div>
+          <p class="nscore-sub" style="margin-top:8px">🔒 Score disponível após as primeiras visitas ao menu.</p>
+        </div></div></div>`;
+      } else {
+        const trendBadge = trend === null ? ''
+          : trend > 0 ? `<span class="nscore-trend nscore-trend--up">↑ +${trend.toFixed(1)} este mês</span>`
+          : trend < 0 ? `<span class="nscore-trend nscore-trend--down">↓ ${trend.toFixed(1)} este mês</span>`
+          : `<span class="nscore-trend nscore-trend--flat">→ estável este mês</span>`;
+        const sub = score >= 8.5 ? 'Excelente — acima da média NEXO em Lisboa'
+          : score >= 7 ? 'Bom — a crescer na direcção certa'
+          : score >= 5 ? 'A melhorar — consulte as sugestões abaixo'
+          : 'Atenção — o seu score precisa de atenção';
+        scoreHtml = `<div class="card mb-4"><div class="nscore">
+          <div class="nscore-l">
+            <div class="nscore-cap">NEXO Score</div>
+            <div class="nscore-row">
+              <span class="nscore-num text-${scoreColor}">${score.toFixed(1)}<span class="den">/10</span></span>
+              ${trendBadge}
+            </div>
+            <div class="nscore-sub">${sub}</div>
+          </div>
+          <div class="nscore-mini">
+            ${miniScore('Conversão reviews', miniReviews)}
+            ${miniScore('Clientes recorrentes', miniReturn)}
+            ${miniScore('Actividade do menu', activityScore)}
+          </div>
+        </div></div>`;
+      }
+
+      // ── Briefing diário (06:00–16:00, fechável por dia) ──
+      const hour = now.getHours();
+      const briefKey = `nexo_brief_closed_${slug}_${now.toISOString().slice(0, 10)}`;
+      let briefClosed = false;
+      try { briefClosed = sessionStorage.getItem(briefKey) === '1'; } catch (_) {}
+      if (hour >= 6 && hour < 16 && !briefClosed) {
+        const wd = now.getDay();
+        const days30 = new Date(Date.now() - 30 * 86400000);
+        const recentSameWd = opens.filter(d => d >= days30 && d.getDay() === wd);
+        const hrs = Array(24).fill(0); recentSameWd.forEach(d => hrs[d.getHours()]++);
+        const peak = Math.max(...hrs) > 0 ? hrs.indexOf(Math.max(...hrs)) : null;
+        const days7 = new Date(Date.now() - 7 * 86400000);
+        const lastWeekOpens = opens.filter(d => d >= days7).length;
+        const greeting = hour < 12 ? '☀️ Bom dia' : '🌤️ Boa tarde';
+        const ds = now.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'short' });
+        const dateCap = ds.charAt(0).toUpperCase() + ds.slice(1);
+
+        const att = [];
+        if (esgotados > 0) att.push(`<a href="/portal/disponibilidade/">🔴 ${esgotados} ${esgotados === 1 ? 'item esgotado' : 'itens esgotados'} — ver disponibilidade →</a>`);
+        if (pendentes > 0) att.push(`<a href="/portal/alteracoes/">🟡 ${pendentes} ${pendentes === 1 ? 'pedido pendente' : 'pedidos pendentes'} — ver alterações →</a>`);
+        if (revWeek > 0) att.push(`<span style="font-size:13px;color:var(--success)">🟢 ${revWeek} ${revWeek === 1 ? 'review esta semana' : 'reviews esta semana'}</span>`);
+        const attHtml = att.length ? `<div class="brief-att">${att.join('')}</div>` : `<div class="brief-allclear">✓ Tudo em ordem para hoje.</div>`;
+
+        const tips = [
+          '💡 Domingo é bom dia para rever o que correu bem.',
+          '💡 Segunda é bom dia para rever a carta da semana.',
+          '💡 Actualize os destaques para o fim de semana.',
+          '💡 A meio da semana é ideal para pedir reviews.',
+          '💡 Amanhã é quinta — prepare os pratos mais pedidos.',
+          '💡 Fim de semana a chegar — verifique a disponibilidade.',
+          '💡 Dia de maior movimento. Modo Restaurante activado?',
+        ];
+
+        briefingHtml = `<div class="card mb-4" style="padding:0" id="brief-card">
+          <div class="brief-head">
+            <span class="brief-hello">${greeting}${firstName ? ', ' + escapeHtml(firstName) : ''}</span>
+            <span class="brief-date">${dateCap}</span>
+          </div>
+          <div class="brief-body">
+            <div>
+              <div class="brief-row"><span class="br-ico">👁️</span><span class="br-lbl">Visitas hoje</span><span class="br-val">${viewsToday || '—'}</span></div>
+              <div class="brief-row"><span class="br-ico">⏰</span><span class="br-lbl">Hora de pico prevista</span><span class="br-val">${peak != null ? peak + 'h' : '—'}</span></div>
+              <div class="brief-row"><span class="br-ico">📊</span><span class="br-lbl">Última semana</span><span class="br-val">${lastWeekOpens} <span class="text-muted">visitas</span></span></div>
+            </div>
+            <div>${attHtml}</div>
+          </div>
+          <div class="brief-foot">
+            <span class="brief-tip">${tips[wd]}</span>
+            <button class="brief-close" id="brief-close" data-key="${briefKey}">Fechar briefing</button>
+          </div>
+        </div>`;
+      }
+
+      // ── Previsão de receita (próximos 7 dias) ──
+      const byWd = Array(7).fill(0);
+      opens.forEach(d => byWd[d.getDay()]++);
+      const weeks = Math.ceil(90 / 7);
+      const avgByWd = byWd.map(t => Math.round(t / weeks));
+      const recent14 = opens.filter(d => d >= new Date(Date.now() - 14 * 86400000));
+      const recentByWd = Array(7).fill(0); recent14.forEach(d => recentByWd[d.getDay()]++);
+      const recentAvgByWd = recentByWd.map(c => Math.round(c / 2));
+
+      const fc = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() + i);
+        const wd = d.getDay();
+        const avg = avgByWd[wd];
+        const recentAvg = recentAvgByWd[wd];
+        const trendFactor = (recentAvg > 0 && avg > 0) ? recentAvg / avg : 1;
+        const predicted = Math.round(avg * trendFactor);
+        fc.push({ d, predicted, level: avg === 0 ? 'no-data' : predicted > 50 ? 'high' : predicted > 25 ? 'medium' : 'low' });
+      }
+      const maxPred = Math.max(1, ...fc.map(f => f.predicted));
+      const earliest = opens.length ? Math.min(...opens.map(d => d.getTime())) : Date.now();
+      const daysCovered = (Date.now() - earliest) / 86400000;
+      const fcColor = { high: 'var(--success)', medium: 'var(--warning)', low: 'var(--info)', 'no-data': 'var(--text-muted)' };
+      const fcBadge = { high: '<span class="fc-lvl fc-lvl--high">Pico 🔥</span>', medium: '<span class="fc-lvl fc-lvl--medium">Normal</span>', low: '<span class="fc-lvl fc-lvl--low">Calmo</span>', 'no-data': '' };
+      const WDN = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const fcLabel = (d, i) => i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : `${WDN[d.getDay()]} ${d.getDate()}`;
+
+      if (opens.length === 0 || daysCovered < 14) {
+        forecastHtml = `<div class="card mb-4">
+          <div class="flex-between" style="margin-bottom:8px"><div class="card-title" style="margin:0">Previsão da semana</div><span class="text-muted text-xs">Com base nos últimos 90 dias</span></div>
+          ${fc.map(() => `<div class="fc-row"><span class="fc-day nexo-skeleton" style="height:12px;border-radius:4px"></span><span class="fc-track nexo-skeleton"></span></div>`).join('')}
+          <p class="text-muted text-xs" style="margin-top:10px;font-style:italic">Previsão disponível após 2 semanas de dados.</p>
+        </div>`;
+      } else {
+        forecastHtml = `<div class="card mb-4">
+          <div class="flex-between" style="margin-bottom:12px"><div class="card-title" style="margin:0">Previsão da semana</div><span class="text-muted text-xs">Com base nos últimos 90 dias</span></div>
+          ${fc.map((f, i) => `<div class="fc-row">
+            <span class="fc-day">${fcLabel(f.d, i)}</span>
+            <span class="fc-track"><span class="fc-fill" style="width:${Math.round(f.predicted / maxPred * 100)}%;background:${fcColor[f.level]}"></span></span>
+            <span class="fc-val">${f.level === 'no-data' ? '—' : f.predicted + ' visitas'}</span>
+            ${fcBadge[f.level]}
+          </div>`).join('')}
+          <p class="text-muted text-xs" style="margin-top:12px;font-style:italic">Baseado em médias históricas dos últimos 90 dias. Actualize a carta antes dos dias de pico.</p>
+        </div>`;
+      }
+    }
+
     function clientStatusBadge() {
       const map = {
         active: ['badge--success', 'Activo'], lead: ['badge--info', 'Lead'],
@@ -170,6 +362,8 @@
 
       ${renewalBannerHtml(client)}
 
+      ${scoreHtml}
+
       <div class="kpi-row">
         <div class="card kpi">
           <div class="kpi-top"><span class="kpi-label">Visitas ao menu</span><span class="kpi-ico">${getIcon('eye')}</span></div>
@@ -192,6 +386,8 @@
           <div class="kpi-foot"><span class="s">pedidos de assistência</span><a class="kpi-link" href="/portal/sala/">Sala →</a></div>
         </div>
       </div>
+
+      ${briefingHtml}
 
       <div class="dash-grid">
         <div>
@@ -218,18 +414,28 @@
             <p class="dash-section-label">Acções rápidas</p>
             <div class="qa-list">
               <a class="qa" href="/portal/sala/">${getIcon('activity')} Modo Restaurante <span class="qa-arrow">→</span></a>
+              <a class="qa" href="/portal/clientes/">${getIcon('users')} Clientes <span class="qa-arrow">→</span></a>
+              <a class="qa" href="/portal/comunicacoes/">${getIcon('message')} Comunicações <span class="qa-arrow">→</span></a>
               <a class="qa" href="/portal/menu/">${getIcon('edit')} Editar menu <span class="qa-arrow">→</span></a>
-              <a class="qa" href="/portal/disponibilidade/">${getIcon('toggle')} Disponibilidade <span class="qa-arrow">→</span></a>
               <a class="qa" href="/portal/estatisticas/">${getIcon('bar-chart')} Estatísticas <span class="qa-arrow">→</span></a>
             </div>
           </div>
 
           ${onboardingHtml}
         </aside>
-      </div>`;
+      </div>
+
+      ${forecastHtml}`;
 
     document.getElementById('page-skeleton').style.display = 'none';
     document.getElementById('page-content').style.display = 'block';
+
+    // briefing — fechar por hoje (sessionStorage, reaparece amanhã)
+    const briefCloseBtn = document.getElementById('brief-close');
+    if (briefCloseBtn) briefCloseBtn.onclick = () => {
+      try { sessionStorage.setItem(briefCloseBtn.dataset.key, '1'); } catch (_) {}
+      document.getElementById('brief-card')?.remove();
+    };
 
     // live activity strip — prepend new notifications as they arrive
     window.onNexoNotification = (n) => {
