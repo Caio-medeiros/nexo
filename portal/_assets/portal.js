@@ -356,27 +356,41 @@ function renderLayout(activeNav, clientData) {
       </div>
     </div>`;
 
-  const navItems = [
-    { href: '/portal/dashboard/', icon: 'grid', label: 'Dashboard' },
-    { href: '/portal/sala/', icon: 'activity', label: 'Sala em Directo' },
-    { href: '/portal/estatisticas/', icon: 'bar-chart', label: 'Estatísticas' },
-    { href: '/portal/staff/', icon: 'monitor', label: 'Modo Staff' },
-    { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
-    { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu' },
-    { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
-    { href: '/portal/alteracoes/', icon: 'clock', label: 'Alterações' },
-    { href: '/portal/referencias/', icon: 'gift', label: 'Referências' },
-    { href: '/portal/renovacao/', icon: 'star', label: 'Renovação' },
-    { href: '/portal/guia/', icon: 'help', label: 'Guia' },
+  // Navegação agrupada por uso. Operação primeiro (o portal vive aberto no
+  // restaurante). "Alterações" foi integrada no Editar Menu — deixou de ser um
+  // item à parte (era redundante com Editar Menu + Disponibilidade).
+  const navGroups = [
+    { label: '', items: [
+      { href: '/portal/dashboard/', icon: 'grid', label: 'Dashboard' },
+    ]},
+    { label: 'Operação', items: [
+      { href: '/portal/sala/', icon: 'activity', label: 'Sala em Directo' },
+      { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
+      { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
+      { href: '/portal/staff/', icon: 'monitor', label: 'Modo Staff' },
+    ]},
+    { label: 'Menu', items: [
+      { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu' },
+    ]},
+    { label: 'Negócio', items: [
+      { href: '/portal/estatisticas/', icon: 'bar-chart', label: 'Estatísticas' },
+      { href: '/portal/renovacao/', icon: 'star', label: 'Renovação' },
+      { href: '/portal/referencias/', icon: 'gift', label: 'Referências' },
+    ]},
+    { label: '', items: [
+      { href: '/portal/guia/', icon: 'help', label: 'Guia' },
+    ]},
   ];
 
-  sidebar.innerHTML = navItems.map(item => `
-    <a href="${item.href}"
-       class="sidebar-item ${activeNav === item.href ? 'active' : ''}"
-       ${activeNav === item.href ? 'aria-current="page"' : ''}>
-      ${getIcon(item.icon)}
-      <span>${item.label}</span>
-    </a>`).join('');
+  sidebar.innerHTML = navGroups.map(group => `
+    ${group.label ? `<div class="sidebar-group-label">${group.label}</div>` : ''}
+    ${group.items.map(item => `
+      <a href="${item.href}"
+         class="sidebar-item ${activeNav === item.href ? 'active' : ''}"
+         ${activeNav === item.href ? 'aria-current="page"' : ''}>
+        ${getIcon(item.icon)}
+        <span>${item.label}</span>
+      </a>`).join('')}`).join('');
 
   // Avatar dropdown toggle
   const toggle = document.getElementById('avatar-toggle');
@@ -529,7 +543,7 @@ function renderNotifications(notifications) {
     <div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
       <span class="notif-icon">${NOTIF_ICONS[n.type] ?? '🔔'}</span>
       <div class="notif-content">
-        <div class="notif-title">${escapeHtml(n.title)}</div>
+        <div class="notif-title">${escapeHtml(n.title.replace(/^[^\p{L}\p{N}]+/u, ''))}</div>
         ${n.body ? `<div class="notif-body">${escapeHtml(n.body)}</div>` : ''}
       </div>
       <span class="notif-time">${timeAgo(n.created_at)}</span>
@@ -584,7 +598,7 @@ function addNotificationToUI(notification) {
   el.innerHTML = `
     <span class="notif-icon">${NOTIF_ICONS[notification.type] ?? '🔔'}</span>
     <div class="notif-content">
-      <div class="notif-title">${escapeHtml(notification.title)}</div>
+      <div class="notif-title">${escapeHtml(notification.title.replace(/^[^\p{L}\p{N}]+/u, ''))}</div>
       ${notification.body ? `<div class="notif-body">${escapeHtml(notification.body)}</div>` : ''}
     </div>
     <span class="notif-time">agora mesmo</span>`;
@@ -608,4 +622,50 @@ function playNotificationSound() {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
     osc.start(); osc.stop(ctx.currentTime + 0.4);
   } catch (_) {}
+}
+
+// ─── MICRO-INTERAÇÕES (GSAP, opcional e seguro) ──────────────────────────────
+// Anima entradas de cartões e da sidebar. Carrega o GSAP via CDN; se falhar,
+// nada acontece e tudo continua 100% funcional. Respeita prefers-reduced-motion.
+// Sem three.js de propósito: o portal vive sempre aberto num tablet do
+// restaurante — prioridade é fluidez, fiabilidade e bateria.
+function _nexoLoadGsap(cb) {
+  if (window.gsap) return cb();
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
+  s.async = true;
+  s.onload = () => cb();
+  s.onerror = () => {}; // sem animação — mas tudo visível e funcional
+  document.head.appendChild(s);
+}
+
+function initPortalMotion() {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    _nexoLoadGsap(() => {
+      const g = window.gsap;
+      if (!g) return;
+      const items = document.querySelectorAll('.sidebar-item');
+      if (items.length) {
+        g.from(items, { opacity: 0, x: -8, duration: 0.4, ease: 'power2.out', stagger: 0.035, clearProps: 'all' });
+      }
+      const animateCards = () => {
+        const cards = document.querySelectorAll('#main .card:not([data-anim])');
+        if (!cards.length) return;
+        cards.forEach((c) => c.setAttribute('data-anim', '1'));
+        g.from(cards, { opacity: 0, y: 14, duration: 0.5, ease: 'power2.out', stagger: 0.06, clearProps: 'opacity,transform' });
+      };
+      // conteúdo do portal carrega assíncrono — apanhar em alguns momentos,
+      // sem observer permanente (evita re-animar em interações do utilizador).
+      animateCards();
+      setTimeout(animateCards, 350);
+      setTimeout(animateCards, 800);
+    });
+  } catch (_) {}
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPortalMotion);
+} else {
+  initPortalMotion();
 }

@@ -2888,8 +2888,15 @@ function generateOrderMessage(cartItems, tableValue) {
   );
 }
 
+// Lock anti-duplicação de pedidos: impede reenvios por toque duplo / impaciência.
+let _orderLockUntil = 0;
+function orderLocked() { return Date.now() < _orderLockUntil; }
+function lockOrder(ms) { _orderLockUntil = Date.now() + (ms || 6000); }
+
 function sendToWhatsApp() {
   if (!validateTableInput()) return;
+  if (orderLocked()) return;
+  lockOrder();
   const tableInput = document.getElementById('confirm-table-input');
   const tableValue = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
   confirmTableValue = tableValue;
@@ -2933,6 +2940,8 @@ function setupConfirmScreen() {
   if (staffBtn) {
     staffBtn.addEventListener('click', () => {
       haptic();
+      if (orderLocked()) return;
+      lockOrder();
       const tableInput = document.getElementById('confirm-table-input');
       const tableVal = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
       confirmTableValue = tableVal;
@@ -4911,6 +4920,7 @@ function setupCallStaff() {
         return;
       }
 
+      cooldownActive = true; // bloqueia reentrância imediata (evita spam/duplicados)
       sendBtn.classList.add('loading');
       if (btnText) btnText.textContent = 'A enviar...';
 
@@ -4942,6 +4952,7 @@ function setupCallStaff() {
         } else {
           if (btnText) btnText.textContent = '✕ Sem ligação';
           if (sendBtn) sendBtn.style.background = 'rgba(239,68,68,0.18)';
+          cooldownActive = false; // falhou — permite tentar de novo
           setTimeout(resetSendBtnState, 3000);
         }
       }

@@ -426,7 +426,7 @@
           : s.people_ahead + (s.people_ahead === 1 ? ' grupo à sua frente' : ' grupos à sua frente');
         $('est-label').textContent = s.people_ahead === 0
           ? '⏱ a qualquer momento'
-          : '⏱ ≈ ' + s.est_minutes + ' min de espera';
+          : '⏱ ≈ ' + s.est_minutes + ' min · média de ' + (s.avg_wait_minutes || 0) + ' min/grupo';
         renderNotifyBtn();
         show('view-waiting');
       } else if (status === 'notified') {
@@ -486,9 +486,11 @@
         if (info.queue_open === false) { show('view-closed'); return; }
         var n = info.total_waiting || 0;
         $('join-sub').textContent = n === 0
-          ? 'Sem fila neste momento — entre e será chamado em breve.'
+          ? (info.avg_wait_minutes
+              ? 'Sem fila neste momento — espera média de ≈ ' + info.avg_wait_minutes + ' min. Entre e será chamado em breve.'
+              : 'Sem fila neste momento — entre e será chamado em breve.')
           : n + (n === 1 ? ' grupo à espera' : ' grupos à espera') +
-            (info.est_minutes ? ' · ≈ ' + info.est_minutes + ' min' : '') +
+            (info.est_minutes ? ' · ≈ ' + info.est_minutes + ' min (média da secção)' : '') +
             '. Deixe o seu nome e avisamos quando a mesa estiver pronta.';
         show('view-join');
       });

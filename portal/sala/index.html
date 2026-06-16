@@ -161,7 +161,7 @@
       return `<div class="activity-row">
         <span class="activity-icon">${NOTIF_ICONS[n.type] ?? '🔔'}</span>
         <div class="activity-content">
-          <div class="activity-title">${escapeHtml(n.title)}</div>
+          <div class="activity-title">${escapeHtml(n.title.replace(/^[^\p{L}\p{N}]+/u, ''))}</div>
           ${n.body ? `<div class="activity-desc">${escapeHtml(n.body)}</div>` : ''}
         </div>
         <span class="activity-time">${timeAgo(n.created_at)}</span>

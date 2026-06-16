@@ -103,7 +103,7 @@
       return `<div class="activity-row" data-id="${n.id}">
         <span class="activity-icon">${NOTIF_ICONS[n.type] ?? '🔔'}</span>
         <div class="activity-content">
-          <div class="activity-title">${escapeHtml(n.title)}</div>
+          <div class="activity-title">${escapeHtml(n.title.replace(/^[^\p{L}\p{N}]+/u, ''))}</div>
           ${n.body ? `<div class="activity-desc">${escapeHtml(n.body)}</div>` : ''}
         </div>
         <span class="activity-time">${timeAgo(n.created_at)}</span>
@@ -116,12 +116,14 @@
 
     // ── onboarding ────────────────────────────────────
     const ob = Array.isArray(client.onboarding) ? client.onboarding[0] : client.onboarding;
+    // Mesmos 11 passos do NEXO OS — para a % bater certo entre os dois.
     const obSteps = [
       ['received_menu_content', 'Conteúdo do menu recebido'], ['received_logo', 'Logótipo recebido'],
       ['received_colors', 'Cores da marca recebidas'], ['menu_configured', 'Menu configurado'],
       ['deployed_to_netlify', 'Menu publicado'], ['nfc_programmed', 'NFC programado'],
       ['client_approved', 'Aprovação do cliente'], ['hardware_delivered', 'Hardware entregue'],
-      ['team_briefed', 'Equipa formada'],
+      ['team_briefed', 'Equipa formada'], ['photo_taken', 'Foto do espaço'],
+      ['testimonial_received', 'Testemunho recebido'],
     ];
     let onboardingHtml = '';
     if (ob) {
@@ -132,8 +134,9 @@
         const pendingSteps = obSteps.filter(([k]) => !ob[k]);
         onboardingHtml = `
           <div class="card mb-4">
-            <div class="card-title">A sua configuração está ${pct}% completa</div>
+            <div class="card-title">Configuração do espaço — ${done}/${total} passos (${pct}%)</div>
             <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <p class="text-secondary text-sm" style="margin:8px 0 4px">A NEXO trata destes passos. Em falta:</p>
             ${pendingSteps.map(([, label]) => `<div class="onboarding-step"><span class="step-circle"></span>${label}</div>`).join('')}
           </div>`;
       }

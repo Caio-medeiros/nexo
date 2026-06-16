@@ -2856,8 +2856,15 @@ function generateOrderMessage(cartItems, tableValue) {
   );
 }
 
+// Lock anti-duplicação de pedidos: impede reenvios por toque duplo / impaciência.
+let _orderLockUntil = 0;
+function orderLocked() { return Date.now() < _orderLockUntil; }
+function lockOrder(ms) { _orderLockUntil = Date.now() + (ms || 6000); }
+
 function sendToWhatsApp() {
   if (!validateTableInput()) return;
+  if (orderLocked()) return;
+  lockOrder();
   const tableInput = document.getElementById('confirm-table-input');
   const tableValue = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
   confirmTableValue = tableValue;
@@ -2901,6 +2908,8 @@ function setupConfirmScreen() {
   if (staffBtn) {
     staffBtn.addEventListener('click', () => {
       haptic();
+      if (orderLocked()) return;
+      lockOrder();
       const tableInput = document.getElementById('confirm-table-input');
       const tableVal = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
       confirmTableValue = tableVal;
@@ -4677,6 +4686,7 @@ function setupCallStaff() {
   if (sendBtn) {
     sendBtn.addEventListener('click', async () => {
       if (cooldownActive) return;
+      cooldownActive = true; // bloqueia reentrância imediata (evita spam/duplicados)
 
       const mesa = tableInput ? tableInput.value.trim() : '';
       const msg  = mesa
@@ -4729,6 +4739,7 @@ function setupCallStaff() {
       } catch (err) {
         if (btnText) btnText.textContent = '✕ Erro — tente novamente';
         if (sendBtn) sendBtn.style.background = 'rgba(239,68,68,0.2)';
+        cooldownActive = false; // falhou — permite tentar de novo
         setTimeout(resetSendBtnState, 2500);
       }
     });
