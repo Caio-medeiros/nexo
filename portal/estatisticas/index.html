@@ -133,6 +133,9 @@
             .filter(([, v]) => v > 0).sort(([, a], [, b]) => b - a)
             .map(([k, v]) => `<span class="shc">${CH_LABEL[k] || k} · ${formatEUR(v)}</span>`).join('')}</div>`
         : '';
+      const rangeLabel = rangeDays === 7 ? 'últimos 7 dias'
+        : rangeDays === 30 ? 'últimos 30 dias'
+        : rangeDays === 90 ? 'últimos 90 dias' : 'desde sempre';
       const revenueBreak = orderCount
         ? `= soma de <strong>${orderCount}</strong> ${orderCount === 1 ? 'pedido registado' : 'pedidos registados'} · ticket médio ${formatEUR(avgTicket)}`
         : 'ainda sem pedidos registados no período';
@@ -140,7 +143,7 @@
       body.innerHTML = `
         <div class="card stat-hero">
           <div class="stat-hero-main">
-            <div class="rs-l">Faturação registada no período</div>
+            <div class="rs-l">Faturação registada · ${rangeLabel}</div>
             <div class="stat-hero-num">${formatEUR(revenue)}</div>
             <div class="stat-hero-break">${revenueBreak}</div>
             ${channelChips}
