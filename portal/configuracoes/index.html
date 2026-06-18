@@ -154,8 +154,8 @@
     document.getElementById('panel-salao').innerHTML = `
       <div class="venue-card">
         <div class="settings-card-header" style="margin-bottom:6px">
-          <h3 style="font-size:15px;font-weight:600;margin:0 0 4px">Espaço e Mesas</h3>
-          <p style="font-size:13px;color:var(--text-secondary);margin:0">Define a configuração do teu salão. O Salão (Staff Mode) adapta-se automaticamente.</p>
+          <h3 style="font-size:15px;font-weight:600;margin:0 0 4px">Espaço e Mesas — base diária</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0">Define a base do teu salão. Todos os dias o Modo Restaurante começa com esta configuração. Ajustes durante o serviço (dividir/juntar mesas) fazem-se no <strong>Modo Restaurante</strong> e valem só para esse dia.</p>
         </div>
         <div class="venue-grid">
           <div class="venue-field">
@@ -308,15 +308,9 @@
     });
 
     // ════════════════════════════ BANNERS (Phase 8) ════════════════════════════
-    const PRESETS = [
-      { bg: '#F59E0B', tx: '#0A0A0A' }, { bg: '#22C55E', tx: '#0A0A0A' },
-      { bg: '#EF4444', tx: '#FFFFFF' }, { bg: '#3B82F6', tx: '#FFFFFF' },
-      { bg: '#8B5CF6', tx: '#FFFFFF' }, { bg: '#FFFFFF', tx: '#0A0A0A' },
-    ];
+    // Sem criação/design aqui — o design é feito pela NEXO. Só edição de texto,
+    // ativar/desativar e remover (com confirmação).
     let banners = [];
-    let menuItems = [];
-    loadMenuItems(slug).then(s => { menuItems = (s || []).flatMap(x => x.items); });
-
     const panel = document.getElementById('panel-banners');
     async function loadBanners() {
       const { data } = await db.from('menu_banners').select('*')
@@ -326,15 +320,17 @@
     }
     function renderBanners() {
       panel.innerHTML = `
-        <div class="flex-between" style="margin-bottom:16px">
-          <p class="page-sub" style="margin:0">Banners aparecem no topo do menu, entre o cabeçalho e as categorias.</p>
-          <button class="btn btn-primary btn-sm" id="bn-new">+ Novo banner</button>
+        <div class="banner-info-note" style="display:flex;gap:12px;align-items:flex-start;background:var(--bg-elevated);border:1px solid var(--border-md);border-radius:12px;padding:14px 16px;margin-bottom:16px">
+          <span style="font-size:18px">🎨</span>
+          <div>
+            <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:var(--text-primary)">O design dos banners é feito pela NEXO</p>
+            <p style="margin:0;font-size:12px;color:var(--text-secondary);line-height:1.5">Aqui pode editar o <strong>texto</strong> dos banners existentes ou removê-los. Para adicionar um novo banner, peça em <a href="/portal/alteracoes/" style="color:var(--info);font-weight:600">Alterações</a> — desenhamos um à medida do seu restaurante.</p>
+          </div>
         </div>
         <div id="bn-list"></div>`;
-      document.getElementById('bn-new').addEventListener('click', () => openBannerForm(null));
       const list = document.getElementById('bn-list');
       if (!banners.length) {
-        list.innerHTML = `<div class="empty-state card" style="padding:36px">${getIcon('star', 28)}<p class="empty-title">Sem banners</p><p class="empty-sub">Crie promoções, novidades ou avisos para os clientes.</p></div>`;
+        list.innerHTML = `<div class="empty-state card" style="padding:36px">${getIcon('star', 28)}<p class="empty-title">Sem banners</p><p class="empty-sub">Peça um banner personalizado em <a href="/portal/alteracoes/" style="color:var(--info);font-weight:600">Alterações</a>.</p></div>`;
         return;
       }
       list.innerHTML = banners.map(b => `
@@ -369,11 +365,13 @@
     const soPanel = document.getElementById('so-panel');
     function closeSO() { soOverlay.classList.remove('visible'); soPanel.classList.remove('visible'); }
     soOverlay.addEventListener('click', closeSO);
+    // Edição APENAS do texto. O design (cores, layout) é feito pela NEXO; novos
+    // banners pedem-se em Alterações. Aqui só se altera título/subtítulo.
     function openBannerForm(b) {
-      const editing = !!b;
-      const cur = b || { title: '', subtitle: '', bg_color: '#F59E0B', text_color: '#0A0A0A', link_item_id: '', starts_at: null, ends_at: null, is_active: true };
+      if (!b) return; // não há criação aqui
+      const cur = b;
       soPanel.innerHTML = `
-        <div class="so-head"><div style="flex:1"><div style="font-size:18px;font-weight:700">${editing ? 'Editar' : 'Novo'} banner</div></div>
+        <div class="so-head"><div style="flex:1"><div style="font-size:18px;font-weight:700">Editar texto do banner</div></div>
           <button class="portal-icon-btn" id="bn-close">${getIcon('x', 16)}</button></div>
         <div class="so-body">
           <div><div class="so-section-label" style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Pré-visualização</div>
@@ -383,32 +381,14 @@
             </div></div>
           <div class="field"><label class="field-label">Título *</label><input class="input" id="bn-title" maxlength="60" value="${escapeHtml(cur.title)}"></div>
           <div class="field"><label class="field-label">Subtítulo</label><input class="input" id="bn-sub" maxlength="80" value="${escapeHtml(cur.subtitle || '')}"></div>
-          <div class="field"><label class="field-label">Cor de fundo</label><div class="color-presets" id="bn-colors"></div></div>
-          <div class="field"><label class="field-label">Ligar a item (opcional)</label>
-            <select class="input" id="bn-link"><option value="">— Sem ligação —</option>
-              ${menuItems.map(i => `<option value="${i.id}" ${cur.link_item_id === i.id ? 'selected' : ''}>${escapeHtml(i.name)}</option>`).join('')}
-            </select></div>
-          <div class="bn-form-row">
-            <div class="field"><label class="field-label">Início</label><input class="input" id="bn-start" type="date" value="${cur.starts_at ? cur.starts_at.slice(0,10) : ''}"></div>
-            <div class="field"><label class="field-label">Fim (opcional)</label><input class="input" id="bn-end" type="date" value="${cur.ends_at ? cur.ends_at.slice(0,10) : ''}"></div>
-          </div>
-          <button class="btn btn-primary btn-full" id="bn-save">${editing ? 'Guardar' : 'Criar banner'}</button>
+          <p style="font-size:12px;color:var(--text-muted);margin:0">As cores e o design deste banner foram definidos pela NEXO. Para os alterar, peça em <a href="/portal/alteracoes/" style="color:var(--info);font-weight:600">Alterações</a>.</p>
+          <button class="btn btn-primary btn-full" id="bn-save">Guardar texto</button>
         </div>`;
       soOverlay.classList.add('visible'); soPanel.classList.add('visible');
       document.getElementById('bn-close').addEventListener('click', closeSO);
 
-      const colors = document.getElementById('bn-colors');
-      let bg = cur.bg_color, tx = cur.text_color;
-      colors.innerHTML = PRESETS.map((p, i) => `<span class="color-dot ${p.bg === bg ? 'sel' : ''}" data-i="${i}" style="background:${p.bg};border-color:${p.bg === bg ? 'var(--text-primary)' : (p.bg === '#FFFFFF' ? 'var(--border-md)' : 'transparent')}"></span>`).join('');
-      colors.querySelectorAll('.color-dot').forEach(d => d.addEventListener('click', () => {
-        const p = PRESETS[parseInt(d.dataset.i)]; bg = p.bg; tx = p.tx;
-        colors.querySelectorAll('.color-dot').forEach(x => x.classList.remove('sel'));
-        d.classList.add('sel'); updatePreview();
-      }));
       const titleEl = document.getElementById('bn-title'), subEl = document.getElementById('bn-sub');
       function updatePreview() {
-        const pv = document.getElementById('bn-preview');
-        pv.style.background = bg; pv.style.color = tx;
         document.getElementById('bn-pv-title').textContent = titleEl.value || 'Título do banner';
         document.getElementById('bn-pv-sub').textContent = subEl.value || '';
       }
@@ -417,20 +397,13 @@
       document.getElementById('bn-save').addEventListener('click', async (e) => {
         const title = titleEl.value.trim();
         if (!title) { showToast('Indique um título.', 'error'); return; }
-        const payload = {
-          espaco_slug: slug, title, subtitle: subEl.value.trim() || null,
-          bg_color: bg, text_color: tx,
-          link_item_id: document.getElementById('bn-link').value || null,
-          starts_at: document.getElementById('bn-start').value || new Date().toISOString(),
-          ends_at: document.getElementById('bn-end').value || null,
-        };
         setLoading(e.target, true, 'A guardar...');
-        const res = editing
-          ? await db.from('menu_banners').update(payload).eq('id', b.id)
-          : await db.from('menu_banners').insert({ ...payload, is_active: true });
+        // Só o texto é actualizado — cores/ligação/datas mantêm-se intactas.
+        const res = await db.from('menu_banners')
+          .update({ title, subtitle: subEl.value.trim() || null }).eq('id', b.id);
         setLoading(e.target, false);
         if (res.error) { showToast('Erro ao guardar.', 'error'); return; }
-        showToast('Banner guardado.', 'success'); closeSO(); loadBanners();
+        showToast('Texto do banner guardado.', 'success'); closeSO(); loadBanners();
       });
     }
 

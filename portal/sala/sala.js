@@ -10,6 +10,7 @@ const MOTION = !REDUCE && !!window.gsap;
 
 const state = {
   tableCount: 10,
+  configCount: 10,
   tables: {},
   activeFilter: 'all',
   selectedTable: null,
@@ -33,7 +34,11 @@ async function initSala() {
 
   const { data: venue } = await db.from('venue_settings')
     .select('*').eq('espaco_slug', slug).maybeSingle();
-  if (venue) state.tableCount = venue.table_count;
+  // A configuração (Definições) é a base DIÁRIA. Ajustes feitos aqui no Salão
+  // (dividir/juntar mesas durante o serviço) valem só para hoje e repõem-se no
+  // dia seguinte — nunca alteram a configuração base.
+  if (venue) state.configCount = venue.table_count;
+  state.tableCount = readDailyTableCount(slug, state.configCount);
 
   for (let i = 1; i <= state.tableCount; i++) {
     state.tables[i] = { status: 'empty', comanda: null, calls: [] };
@@ -56,20 +61,24 @@ window.initSala = initSala;
 // FLOOR PLAN
 // ─────────────────────────────────────────
 function getGridConfig(count) {
-  if (count <= 4)  return { cols: 2, size: 'xl' };
-  if (count <= 6)  return { cols: 3, size: 'lg' };
-  if (count <= 9)  return { cols: 3, size: 'md' };
-  if (count <= 12) return { cols: 4, size: 'md' };
-  if (count <= 16) return { cols: 4, size: 'sm' };
-  if (count <= 20) return { cols: 5, size: 'sm' };
-  if (count <= 30) return { cols: 5, size: 'xs' };
-  return { cols: 6, size: 'xs' };
+  // Todas as mesas têm de caber no ecrã (100vh, sem scroll). Escolhemos um nº
+  // de colunas que aproxime o grid de um tablet em paisagem (mais largo que
+  // alto) e calculamos as linhas necessárias para que rows×cols ≥ count.
+  let cols = Math.ceil(Math.sqrt(count * 1.7));
+  cols = Math.max(2, Math.min(cols, 8));
+  let rows = Math.ceil(count / cols);
+  // reduz colunas se sobrar uma linha quase vazia (mantém o grid equilibrado)
+  while (cols > 2 && Math.ceil(count / (cols - 1)) === rows) cols--;
+  rows = Math.ceil(count / cols);
+  const size = count <= 6 ? 'lg' : count <= 12 ? 'md' : count <= 20 ? 'sm' : 'xs';
+  return { cols, rows, size };
 }
 
 function renderFloorPlan(count, animate = true) {
   const grid = document.getElementById('table-grid');
   const config = getGridConfig(count);
   grid.style.setProperty('--grid-cols', config.cols);
+  grid.style.setProperty('--grid-rows', config.rows);
   grid.dataset.size = config.size;
 
   const existing = new Set([...grid.querySelectorAll('.table-card')].map(el => parseInt(el.dataset.tableNum)));
@@ -289,11 +298,13 @@ function subscribeToVenueChanges() {
   const ch = db.channel('sala-venue-' + slug)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'venue_settings', filter: `espaco_slug=eq.${slug}` }, p => {
       const newCount = p.new.table_count;
+      state.configCount = newCount;
       if (newCount !== state.tableCount) {
         state.tableCount = newCount;
         for (let i = 1; i <= newCount; i++) if (!state.tables[i]) state.tables[i] = { status: 'empty', comanda: null, calls: [] };
         renderFloorPlan(newCount, true);
         updateTableCountLabel();
+        writeDailyTableCount(slug, newCount);
         salaToast(`Layout actualizado para ${newCount} mesas`);
       }
     })
@@ -328,7 +339,7 @@ async function openTableDetail(tableNum) {
   } else {
     selectedItems = [];
     body.innerHTML = `<div class="tdp-empty"><p>Mesa livre</p>
-      <button class="tdp-full-btn" onclick="createComandaForTable(${tableNum})">+ Abrir comanda</button></div>`;
+      <button class="tdp-full-btn" onclick="addItemToActiveTable()">+ Adicionar item</button></div>`;
   }
 
   document.getElementById('table-detail-overlay').classList.add('visible');
@@ -387,8 +398,13 @@ function renderTableDetailItems(items, comanda) {
 
 async function addItemToActiveTable() {
   const tableNum = state.selectedTable;
-  const tableData = state.tables[tableNum];
-  if (!tableData?.comanda?.id) return;
+  // Sem passo "Abrir comanda": a comanda é criada na 1ª adição de item.
+  let tableData = state.tables[tableNum];
+  if (!tableData?.comanda?.id) {
+    const created = await ensureComanda(tableNum);
+    if (!created) return;
+    tableData = state.tables[tableNum];
+  }
   const name = prompt('Nome do item:'); if (!name) return;
   const price = parseFloat((prompt('Preço (€):') || '').replace(',', '.')); if (isNaN(price)) return;
   const qty = parseInt(prompt('Quantidade:') || '1') || 1;
@@ -398,14 +414,16 @@ async function addItemToActiveTable() {
   await openTableDetail(tableNum);
 }
 
-async function createComandaForTable(tableNum) {
+// Garante uma comanda aberta na mesa (auto-criada, sem passo manual).
+async function ensureComanda(tableNum) {
+  if (state.tables[tableNum]?.comanda?.id) return state.tables[tableNum].comanda;
   const { data, error } = await db.from('comandas').insert({
     espaco_slug: window.ESPACO_SLUG, table_label: `Mesa ${tableNum}`,
     status: 'open', mode: 'dine_in', guest_count: 1 }).select('id, session_code').single();
-  if (error) { salaToast('Erro ao abrir comanda'); return; }
+  if (error) { salaToast('Erro ao abrir comanda'); return null; }
   state.tables[tableNum] = { status: 'active', comanda: { id: data.id, code: data.session_code, total: 0 } };
   updateTableStatus(tableNum, 'active', { comanda: state.tables[tableNum].comanda });
-  openTableDetail(tableNum);
+  return state.tables[tableNum].comanda;
 }
 
 async function sendToKitchenFromPanel() {
@@ -493,6 +511,18 @@ async function salaProcessPayment(method, c) {
 }
 
 // ── Dynamic table management (owner sets/updates the floor) ────
+// Ajuste DIÁRIO das mesas — só vale para hoje (localStorage), repõe-se amanhã a
+// partir da configuração (Definições). Não escreve em venue_settings.
+function dailyKey(slug) { return `nexo_sala_tables_${slug}_${new Date().toISOString().slice(0, 10)}`; }
+function readDailyTableCount(slug, fallback) {
+  try {
+    const v = parseInt(localStorage.getItem(dailyKey(slug)) || '');
+    if (!isNaN(v) && v >= 1) return v;
+  } catch (_) {}
+  return fallback || 10;
+}
+function writeDailyTableCount(slug, n) { try { localStorage.setItem(dailyKey(slug), String(n)); } catch (_) {} }
+
 async function setTableCount(n) {
   n = Math.max(1, Math.min(60, n));
   if (n === state.tableCount) return n;
@@ -500,7 +530,7 @@ async function setTableCount(n) {
   for (let i = 1; i <= n; i++) if (!state.tables[i]) state.tables[i] = { status: 'empty', comanda: null, calls: [] };
   renderFloorPlan(n, true);
   updateTableCountLabel();
-  try { await db.from('venue_settings').update({ table_count: n }).eq('espaco_slug', window.ESPACO_SLUG); } catch (_) {}
+  writeDailyTableCount(window.ESPACO_SLUG, n);
   return n;
 }
 function addTable() { setTableCount(state.tableCount + 1).then(() => salaToast('Mesa adicionada')); }

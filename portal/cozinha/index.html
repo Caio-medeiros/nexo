@@ -170,6 +170,24 @@
     // ── data ───────────────────────────────────────
     const state = {}; // comandaId -> { comanda, items }
 
+    // Depois de "Tudo pronto", o pedido sai da cozinha 30s depois — assim o
+    // ecrã mostra sempre só os pedidos por fazer. Continua activo (open p/ Caixa).
+    const dismissed = new Set();        // ids já retirados do ecrã da cozinha
+    const dismissTimers = {};
+    function scheduleDismiss(cid) {
+      if (dismissTimers[cid]) return;
+      dismissTimers[cid] = setTimeout(() => {
+        dismissed.add(cid);
+        delete state[cid];
+        stopTimer(cid);
+        delete dismissTimers[cid];
+        renderAll();
+      }, 30000);
+    }
+    function cancelDismiss(cid) {
+      if (dismissTimers[cid]) { clearTimeout(dismissTimers[cid]); delete dismissTimers[cid]; }
+    }
+
     async function loadAll() {
       const { data: comandas } = await db.from('comandas').select('*')
         .eq('espaco_slug', slug).in('status', ACTIVE)
@@ -182,13 +200,18 @@
         items = data || [];
       }
       Object.keys(state).forEach(k => delete state[k]);
-      (comandas || []).forEach(c => { state[c.id] = { comanda: c, items: items.filter(i => i.comanda_id === c.id) }; });
+      (comandas || []).forEach(c => {
+        if (dismissed.has(c.id)) return; // já retirado do ecrã da cozinha
+        state[c.id] = { comanda: c, items: items.filter(i => i.comanda_id === c.id) };
+        if (c.status === 'ready') scheduleDismiss(c.id); // re-arma o temporizador
+      });
       renderAll();
     }
 
     function renderAll() {
+      // Pedidos novos aparecem sempre à esquerda (mais recente primeiro).
       const list = Object.values(state).sort((a, b) =>
-        new Date(a.comanda.submitted_at || a.comanda.created_at) - new Date(b.comanda.submitted_at || b.comanda.created_at));
+        new Date(b.comanda.submitted_at || b.comanda.created_at) - new Date(a.comanda.submitted_at || a.comanda.created_at));
       if (!list.length) { grid.innerHTML = ''; emptyEl.style.display = 'flex';
         Object.keys(timers).forEach(stopTimer); return; }
       emptyEl.style.display = 'none';
@@ -289,7 +312,8 @@
         st.comanda.status = newStatus;
         const ticket = grid.querySelector(`.ticket[data-comanda-id="${cid}"]`);
         if (ticket) ticket.dataset.status = newStatus;
-        if (allReady) playCompletionSound();
+        if (allReady) { playCompletionSound(); scheduleDismiss(cid); }
+        else cancelDismiss(cid); // voltou a faltar algo → não retirar
         try { await db.from('comandas').update({ status: newStatus }).eq('id', cid); } catch (_) {}
       }
     }
@@ -300,6 +324,7 @@
       st.comanda.status = 'ready';
       renderAll();
       playCompletionSound();
+      scheduleDismiss(cid); // sai do ecrã da cozinha 30s depois
       try {
         await db.from('comanda_items').update({ status: 'ready' }).eq('comanda_id', cid).neq('status', 'cancelled');
         await db.from('comandas').update({ status: 'ready' }).eq('id', cid);

@@ -400,7 +400,6 @@ function renderLayout(activeNav, clientData) {
     ]},
     { label: 'Negócio', items: [
       { href: '/portal/estatisticas/', icon: 'bar-chart', label: 'Estatísticas' },
-      { href: '/portal/clientes/', icon: 'users', label: 'Clientes' },
       { href: '/portal/renovacao/', icon: 'star', label: 'Renovação' },
       { href: '/portal/referencias/', icon: 'gift', label: 'Referências' },
     ]},

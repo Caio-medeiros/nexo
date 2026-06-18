@@ -406,7 +406,9 @@
   // the menu's existing confirm handler keeps owning that channel.
   async function pushOrder(tableLabel, items) {
     if (!items || !items.length) return null;
-    const comanda = await createComanda(tableLabel, items.length);
+    // guest_count fica 1 por omissão — o nº de pessoas nunca é pedido ao
+    // cliente, por isso não o inferimos do nº de itens (causava "2 pessoas").
+    const comanda = await createComanda(tableLabel, 1);
     await addItemsToComanda(comanda.id, items);
     sessionStorage.removeItem(COMANDA_KEY); // single-shot order, not a running tab
     return submitComanda(comanda.id);
