@@ -2895,12 +2895,7 @@ function generateOrderMessage(cartItems, tableValue) {
 
   const total = getCartTotal().toFixed(2).replace('.', ',');
 
-  // NEXO Premium: prepend take-away header (pickup time) when active.
-  const taPrefix = (window.NEXOPremium && window.NEXOPremium.takeawayWhatsAppPrefix)
-    ? window.NEXOPremium.takeawayWhatsAppPrefix() : '';
-
   return (
-    taPrefix +
     `*${prefix} ${n}*\n` +
     `━━━━━━━━━━━━━━━\n` +
     `${itemLines}\n` +
@@ -4579,7 +4574,10 @@ function setupSharedCart() {
   async function doJoin() {
     const code = joinCode?.value.trim() || '';
     const btn  = document.getElementById('nexo-shared-join-confirm');
-    if (code.length !== 4) { joinCode?.focus(); return; }
+    if (code.length !== 6) {
+      if (joinError) { joinError.textContent = 'O código tem 6 caracteres.'; joinError.style.display = 'block'; }
+      joinCode?.focus(); return;
+    }
     if (btn) { btn.disabled = true; btn.textContent = 'A juntar...'; }
     if (joinError) joinError.style.display = 'none';
     try {
@@ -4595,10 +4593,12 @@ function setupSharedCart() {
 
   if (joinCode) {
     joinCode.addEventListener('input', () => {
-      joinCode.value = joinCode.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 4);
+      // 6 caracteres (igual ao código gerado). NÃO entra sozinho — só ao clicar
+      // "Juntar" (evitava juntar a um carrinho errado a meio da digitação).
+      joinCode.value = joinCode.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
       if (joinError) joinError.style.display = 'none';
-      if (joinCode.value.length === 4) doJoin();
     });
+    joinCode.addEventListener('keydown', (e) => { if (e.key === 'Enter') doJoin(); });
   }
 
   document.getElementById('nexo-shared-join-confirm')?.addEventListener('click', doJoin);

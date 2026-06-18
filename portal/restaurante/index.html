@@ -372,7 +372,7 @@
         // Log to orders_log for stats/Sala
         await db.from('orders_log').insert({
           espaco_slug: slug, table_label: c.table_label, total: c.total,
-          channel: 'staff', is_takeaway: c.mode === 'take_away', comanda_id: c.id,
+          channel: 'staff', is_takeaway: false, comanda_id: c.id,
           items: selectedItems.map(i => ({ name: i.item_name, qty: i.quantity, price: i.item_price })),
         });
         if (giftCodeUsed && giftDiscount > 0) {

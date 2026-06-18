@@ -246,7 +246,7 @@ function handleNewComanda(comanda) {
   updateTableStatus(tableNum, 'active', { comanda: {
     id: comanda.id, total: comanda.total, itemCount: 0,
     guestCount: comanda.guest_count, code: comanda.session_code, mode: comanda.mode } });
-  showTableNotification(tableNum, 'cart', `${comanda.mode === 'take_away' ? '🥡' : '🛒'} Comanda aberta`);
+  showTableNotification(tableNum, 'cart', '🛒 Comanda aberta');
   addToActivityFeed({ type: 'order_new', title: `🛒 Comanda — ${comanda.table_label}`, created_at: new Date().toISOString() });
 }
 
@@ -257,6 +257,7 @@ function handleComandaUpdate(comanda) {
   const uiStatus = statusMap[comanda.status] || 'active';
 
   if (comanda.status === 'closed' || comanda.status === 'cancelled') {
+    setCalling(tableNum, false);
     state.tables[tableNum] = { status: 'empty', comanda: null, calls: [] };
     const card = document.querySelector(`[data-table-num="${tableNum}"]`);
     if (card) { card.dataset.status = 'empty';
@@ -291,9 +292,9 @@ function handleComandaUpdate(comanda) {
 function handleStaffCall(call) {
   const tableNum = extractTableNumber(call.table_label);
   if (!tableNum || !state.tables[tableNum]) return;
-  const prev = state.tables[tableNum].comanda ? 'active' : 'empty';
-  state.tables[tableNum]._prevStatus = prev;
-  updateTableStatus(tableNum, 'calling', { comanda: state.tables[tableNum].comanda });
+  // "A chamar" é uma camada SEPARADA do estado da mesa — assim uma mesa pode
+  // mostrar o pedido (Novo pedido / Ocupada) E a chamada ao mesmo tempo.
+  setCalling(tableNum, true);
 
   if (MOTION) {
     const sel = `[data-table-num="${tableNum}"]`;
@@ -309,6 +310,18 @@ function handleStaffCall(call) {
   addToActivityFeed({ type: 'staff_call', title: `🙋 Chamada — ${call.table_label}`, created_at: new Date().toISOString() });
 }
 
+// Liga/desliga a camada "A chamar" sem tocar no estado base (pedido/ocupada).
+function setCalling(tableNum, on) {
+  if (!state.tables[tableNum]) return;
+  state.tables[tableNum].calling = on;
+  const card = document.querySelector(`[data-table-num="${tableNum}"]`);
+  if (card) { if (on) card.dataset.calling = 'true'; else card.removeAttribute('data-calling'); }
+  if (!on && state.tables[tableNum].callNotifId) {
+    dismissNotification(state.tables[tableNum].callNotifId);
+    state.tables[tableNum].callNotifId = null;
+  }
+}
+
 function handleNewOrder(order) {
   // Orders linked to a comanda are already represented by the comanda
   // (and only get logged at Caixa payment) — don't double-react.
@@ -321,7 +334,7 @@ function handleNewOrder(order) {
     updateTableStatus(tableNum, 'active', { comanda: {
       total: order.total, itemCount: (order.items || []).length, guestCount: order.member_count } });
   }
-  showTableNotification(tableNum, 'order', `${order.is_takeaway ? '🥡' : '🍽️'} ${fmtEUR(order.total)}`);
+  showTableNotification(tableNum, 'order', `🍽️ ${fmtEUR(order.total)}`);
 }
 
 // ─────────────────────────────────────────
@@ -357,45 +370,59 @@ function subscribeToVenueChanges() {
 // TABLE DETAIL PANEL
 // ─────────────────────────────────────────
 async function openTableDetail(tableNum) {
-  state.selectedTable = tableNum;
   const tableData = state.tables[tableNum];
+  // Mesa a chamar: tocar marca a chamada como atendida (volta ao estado normal).
+  if (tableData?.calling) {
+    acknowledgeCall(tableNum);
+    if (!tableData?.comanda?.id) return; // era só uma chamada — atendida, nada a abrir
+  }
+  // Só se entra numa mesa com código gerado (comanda criada pelo cliente via
+  // menu, ou ao dividir). Mesa livre não abre — o pedido começa no menu.
+  if (!tableData?.comanda?.id) {
+    salaToast('Mesa livre — abre quando o cliente faz o pedido pelo menu.');
+    return;
+  }
+  state.selectedTable = tableNum;
   document.getElementById('tdp-title').textContent = `Mesa ${tableNum}`;
   document.getElementById('tdp-code').textContent = tableData?.comanda?.code || '';
 
   const body = document.getElementById('tdp-body');
   body.innerHTML = '<div class="tdp-loading">A carregar...</div>';
 
-  if (tableData?.comanda?.id) {
-    const { data: items } = await db.from('comanda_items').select('*')
-      .eq('comanda_id', tableData.comanda.id).neq('status', 'cancelled').order('created_at');
-    selectedItems = items || [];
-    renderTableDetailItems(selectedItems, tableData.comanda);
-  } else {
-    selectedItems = [];
-    body.innerHTML = `<div class="tdp-empty"><p>Mesa livre</p>
-      <button class="tdp-full-btn" onclick="addItemToActiveTable()">+ Adicionar item</button></div>`;
-  }
+  const { data: items } = await db.from('comanda_items').select('*')
+    .eq('comanda_id', tableData.comanda.id).neq('status', 'cancelled').order('created_at');
+  selectedItems = items || [];
+  renderTableDetailItems(selectedItems, tableData.comanda);
 
   document.getElementById('table-detail-overlay').classList.add('visible');
   document.getElementById('table-detail-panel').classList.add('visible');
+}
 
-  // Acknowledge an active staff call when the table is opened
-  if (tableData?.status === 'calling') {
-    if (tableData.callNotifId) dismissNotification(tableData.callNotifId);
-    try {
-      await db.from('staff_calls').update({ delivered_count: 1 })
-        .eq('espaco_slug', window.ESPACO_SLUG).eq('table_label', `Mesa ${tableNum}`).eq('delivered_count', 0);
-    } catch (_) {}
-    updateTableStatus(tableNum, tableData._prevStatus || (tableData.comanda ? 'active' : 'empty'), { comanda: tableData.comanda });
-  }
+// Marca a chamada da mesa como atendida — limpa a camada "A chamar" e repõe o
+// estado normal. Funciona com ou sem comanda.
+async function acknowledgeCall(tableNum) {
+  setCalling(tableNum, false);
+  salaToast(`Mesa ${tableNum} — chamada atendida`);
+  try {
+    await db.from('staff_calls').update({ delivered_count: 1 })
+      .eq('espaco_slug', window.ESPACO_SLUG).eq('table_label', `Mesa ${tableNum}`).eq('delivered_count', 0);
+  } catch (_) {}
 }
 
 function closeTableDetail(event) {
+  // Clique no painel (não no fundo) não fecha; o ✕ e o fundo fecham sempre.
   if (event && event.target !== document.getElementById('table-detail-overlay')) return;
+  forceCloseTableDetail();
+}
+// Sair da mesa quando quiser — fecha sempre (✕, fundo ou tecla Esc).
+function forceCloseTableDetail() {
   document.getElementById('table-detail-overlay').classList.remove('visible');
   document.getElementById('table-detail-panel').classList.remove('visible');
   state.selectedTable = null;
 }
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && state.selectedTable != null) forceCloseTableDetail();
+});
 
 function renderTableDetailItems(items, comanda) {
   const body = document.getElementById('tdp-body');
@@ -526,7 +553,7 @@ async function salaProcessPayment(method, c) {
     await db.from('comandas').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', c.id);
     await db.from('orders_log').insert({
       espaco_slug: window.ESPACO_SLUG, table_label: c.table_label || `Mesa ${state.selectedTable}`,
-      total: c.total, channel: 'staff', is_takeaway: c.mode === 'take_away', comanda_id: c.id,
+      total: c.total, channel: 'staff', is_takeaway: false, comanda_id: c.id,
       items: selectedItems.map(i => ({ name: i.item_name, qty: i.quantity, price: i.item_price })),
     });
     if (giftCodeUsed && giftDiscount > 0) {
@@ -624,7 +651,7 @@ function updateStats() {
   document.getElementById('stat-open').textContent = activeTables;
   document.getElementById('stat-orders').textContent = state.todayStats.orders;
   document.getElementById('stat-calls').textContent = state.todayStats.calls;
-  document.getElementById('stat-revenue').textContent = fmtEUR(state.todayStats.revenue);
+  // "faturado hoje" foi removido do Modo Restaurante (é ecrã de staff, não CEO).
   applyCurrentFilter();
 }
 
@@ -633,7 +660,7 @@ function applyCurrentFilter() {
     const status = card.dataset.status;
     let visible = true;
     if (state.activeFilter === 'active') visible = status !== 'empty';
-    else if (state.activeFilter === 'calling') visible = status === 'calling';
+    else if (state.activeFilter === 'calling') visible = card.dataset.calling === 'true';
     else if (state.activeFilter === 'ready') visible = status === 'ready';
     if (MOTION) gsap.to(card, { opacity: visible ? 1 : 0.25, scale: visible ? 1 : 0.95, duration: 0.2, ease: 'power2.out' });
     else { card.style.opacity = visible ? '' : '0.25'; }

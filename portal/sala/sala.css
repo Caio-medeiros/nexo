@@ -76,10 +76,17 @@
 /* Aberta = comanda sem consumo (€0, 0 itens) — neutro, NÃO parece ocupada. */
 .table-card[data-status="open"] { border-style: dashed; border-color: var(--border-md); opacity: 1; }
 .table-card[data-status="active"] { border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.05); opacity: 1; }
-.table-card[data-status="calling"] { border-color: rgba(239,68,68,0.6); background: rgba(239,68,68,0.06); opacity: 1; }
 .table-card[data-status="ready"] { border-color: rgba(34,197,94,0.6); background: rgba(34,197,94,0.06); opacity: 1; animation: readyGlow 2s ease infinite; }
 @keyframes readyGlow { 0%,100% { border-color: rgba(34,197,94,0.4); box-shadow: none; } 50% { border-color: rgba(34,197,94,0.7); box-shadow: 0 0 20px rgba(34,197,94,0.1); } }
 .table-card[data-status="order_new"] { border-color: rgba(245,158,11,0.6); background: rgba(245,158,11,0.06); }
+
+/* "A chamar" é uma CAMADA por cima — anel vermelho à volta — que coexiste com
+   o estado do pedido (a borda de estado mantém-se; vê-se pedido E chamada). */
+.table-card[data-calling="true"] { opacity: 1 !important; animation: callRing 1.1s ease infinite; z-index: 5; }
+@keyframes callRing {
+  0%,100% { box-shadow: 0 0 0 2px rgba(239,68,68,0.7), 0 0 16px rgba(239,68,68,0.28); }
+  50%     { box-shadow: 0 0 0 3px var(--danger), 0 0 26px rgba(239,68,68,0.5); }
+}
 
 /* ─── Cadeiras (ilustração: 4 cadeiras por mesa) ─── */
 .chair { position: absolute; background: var(--border-md); border-radius: 4px; pointer-events: none; transition: background 200ms ease; z-index: 0; }
@@ -92,7 +99,6 @@
 .table-card[data-status="active"] .chair { background: rgba(59,130,246,0.5); }
 .table-card[data-status="order_new"] .chair { background: rgba(245,158,11,0.55); }
 .table-card[data-status="ready"] .chair { background: rgba(34,197,94,0.55); }
-.table-card[data-status="calling"] .chair { background: rgba(239,68,68,0.6); }
 .table-grid[data-size="xs"] .chair-top, .table-grid[data-size="xs"] .chair-bottom { height: 5px; }
 .table-grid[data-size="xs"] .chair-left, .table-grid[data-size="xs"] .chair-right { width: 5px; }
 
@@ -115,8 +121,9 @@
 .table-card[data-status="open"] .table-status-dot { background: var(--text-secondary); }
 .table-card[data-status="active"] .table-status-dot { background: var(--info); }
 .table-card[data-status="order_new"] .table-status-dot { background: var(--warning); animation: dotPulse 0.8s ease infinite; }
-.table-card[data-status="calling"] .table-status-dot { background: var(--danger); animation: dotPulse 0.8s ease infinite; }
 .table-card[data-status="ready"] .table-status-dot { background: var(--success); }
+/* Camada "A chamar": ponto vermelho a pulsar por cima do estado do pedido. */
+.table-card[data-calling="true"] .table-status-dot { background: var(--danger); animation: dotPulse 0.8s ease infinite; }
 @keyframes dotPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } }
 
 /* ─── Card summary + rótulo de estado (intuitivo) ─── */
@@ -126,12 +133,10 @@
 .table-card[data-status="active"] .card-state-label { color: var(--info); }
 .table-card[data-status="order_new"] .card-state-label { color: var(--warning); }
 .table-card[data-status="ready"] .card-state-label { color: var(--success); }
-.table-card[data-status="calling"] .card-state-label { color: var(--danger); }
 .card-order-summary { display: none; margin-top: 3px; }
 .table-card[data-status="active"] .card-order-summary,
 .table-card[data-status="order_new"] .card-order-summary,
-.table-card[data-status="ready"] .card-order-summary,
-.table-card[data-status="calling"] .card-order-summary { display: block; }
+.table-card[data-status="ready"] .card-order-summary { display: block; }
 .summary-total { font-family: 'Azeret Mono', monospace; font-size: 14px; font-weight: 700; color: var(--text-primary); }
 .table-grid[data-size="xs"] .summary-total { font-size: 11px; }
 .summary-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
@@ -186,8 +191,10 @@
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
   .table-card, .notif-badge, .table-detail-panel, .feed-content, .live-dot,
-  .table-card[data-status="ready"], .table-card[data-status="calling"] .table-status-dot,
+  .table-card[data-status="ready"], .table-card[data-calling="true"], .table-card[data-calling="true"] .table-status-dot,
   .notif-badge.call { animation: none !important; transition: none !important; }
+  /* sem animação, o anel "A chamar" continua visível (estático) */
+  .table-card[data-calling="true"] { box-shadow: 0 0 0 3px var(--danger) !important; }
 }
 
 /* ─── Table-count control (header) ─── */

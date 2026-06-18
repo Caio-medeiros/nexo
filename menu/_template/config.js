@@ -681,13 +681,11 @@ const CONFIG = {
     // Set false to disable Shared Cart (Mesa em Grupo) feature
 
     // ── NEXO Premium ──────────────────────────────────────────
-    // Take-away mode: floating "Na mesa / Take away" switcher + pickup
-    // time selector in the cart. Requires migration 016 + nexo-premium.js.
-    takeaway: {
+    // Comanda routing: orders open/submit a comanda that flows into
+    // Modo Cozinha, Caixa e Salão (Portal). Requires nexo-premium.js.
+    comanda: {
       enabled: false,
-      pickupMinutes: [15, 20, 30, 45, 60],
-      defaultPickupMinutes: 30,
-      whatsappNumber: '351918104266', // fallback to CONFIG.whatsappNumber
+      dedupeMinutes: 3,
     },
     // Promotional banners managed from the portal (menu_banners table).
     banners: {

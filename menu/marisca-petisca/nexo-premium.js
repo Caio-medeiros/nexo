@@ -12,9 +12,11 @@
   'use strict';
 
   const F = (typeof CONFIG !== 'undefined' && CONFIG.features) || {};
-  const HAS_TAKEAWAY = !!(F.takeaway && F.takeaway.enabled);
+  // "comanda" liga o encaminhamento de pedidos p/ Cozinha/Caixa/Salão.
+  // (aceita a chave legada "takeaway" do config — já SEM qualquer modo take-away.)
+  const HAS_COMANDA = !!((F.comanda && F.comanda.enabled) || (F.takeaway && F.takeaway.enabled));
   const HAS_BANNERS = !!(F.banners && F.banners.enabled);
-  if (!HAS_TAKEAWAY && !HAS_BANNERS) return; // nothing to do
+  if (!HAS_COMANDA && !HAS_BANNERS) return; // nothing to do
 
   const SLUG = (typeof ESPACO_SLUG !== 'undefined' && ESPACO_SLUG) ||
                (typeof CONFIG !== 'undefined' && CONFIG.slug) || null;
@@ -69,98 +71,16 @@
   }
 
   // ════════════════════════════════════════════════════════════
-  // PHASE 1 — TAKE AWAY MODE
+  // MODO — só "na mesa" (take-away removido; mantém-se simples)
   // ════════════════════════════════════════════════════════════
-  const modeSwitcher = {
-    current: 'dine_in',
-    mount() {
-      if (!HAS_TAKEAWAY) return;
-      const anchor = document.getElementById('quick-nav');
-      if (!anchor || document.getElementById('mode-switcher')) return;
-      const wrap = document.createElement('div');
-      wrap.className = 'mode-switcher-wrap';
-      wrap.innerHTML = `
-        <div class="mode-switcher" id="mode-switcher">
-          <button class="mode-btn active" data-mode="dine_in" type="button">
-            <span class="mode-icon">🍽️</span> Na mesa
-          </button>
-          <button class="mode-btn" data-mode="take_away" type="button">
-            <span class="mode-icon">🥡</span> Take away
-          </button>
-          <div class="mode-indicator" id="mode-indicator"></div>
-        </div>`;
-      anchor.insertAdjacentElement('afterend', wrap);
-      wrap.querySelectorAll('.mode-btn').forEach(btn =>
-        btn.addEventListener('click', () => this.setMode(btn.dataset.mode)));
-      requestAnimationFrame(() => this.updateIndicator());
-      window.addEventListener('resize', () => this.updateIndicator());
-    },
-    setMode(mode) {
-      this.current = mode;
-      document.querySelectorAll('.mode-btn').forEach(b =>
-        b.classList.toggle('active', b.dataset.mode === mode));
-      this.updateIndicator();
-      const pickup = document.getElementById('pickup-time-section');
-      if (pickup) pickup.style.display = mode === 'take_away' ? 'block' : 'none';
-      const label = document.getElementById('cart-confirm-label');
-      if (label) label.textContent = mode === 'take_away'
-        ? 'Pedir para levantar →' : (label.dataset.orig || label.textContent);
-    },
-    updateIndicator() {
-      const active = document.querySelector('.mode-btn.active');
-      const ind = document.getElementById('mode-indicator');
-      if (!active || !ind) return;
-      ind.style.width = active.offsetWidth + 'px';
-      ind.style.transform = `translateX(${active.offsetLeft - 4}px)`;
-    },
-  };
+  const modeSwitcher = { current: 'dine_in' };
 
-  function renderPickupOptions() {
-    if (!HAS_TAKEAWAY) return;
-    const panel = document.getElementById('panel-order');
-    const footer = panel && panel.querySelector('.cart-footer');
-    if (!panel || !footer || document.getElementById('pickup-time-section')) return;
-    const section = document.createElement('div');
-    section.id = 'pickup-time-section';
-    section.className = 'pickup-section';
-    section.style.display = modeSwitcher.current === 'take_away' ? 'block' : 'none';
-    section.innerHTML = `
-      <div class="pickup-label"><span>⏱️</span><span>Hora de levantar</span></div>
-      <div class="pickup-options" id="pickup-options"></div>`;
-    panel.insertBefore(section, footer);
-
-    const mins = (F.takeaway.pickupMinutes || [15, 20, 30, 45, 60]);
-    const def = F.takeaway.defaultPickupMinutes || 30;
-    const cont = section.querySelector('#pickup-options');
-    cont.innerHTML = mins.map(m => {
-      const time = new Date(Date.now() + m * 60000);
-      const label = time.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-      const sel = m === def ? ' selected' : '';
-      if (m === def) window.nexoSelectedPickup = time.toISOString();
-      return `<button class="pickup-btn${sel}" type="button"
-        data-mins="${m}" data-time="${time.toISOString()}">
-        ${m} min<span class="pickup-time">${label}</span></button>`;
-    }).join('');
-    cont.querySelectorAll('.pickup-btn').forEach(btn =>
-      btn.addEventListener('click', () => {
-        cont.querySelectorAll('.pickup-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        window.nexoSelectedPickup = btn.dataset.time;
-      }));
-  }
-
-  // Take-away / dine-in WhatsApp message builder (PT).
-  function buildWhatsAppMessage(items, mode, pickupTime, tableLabel) {
+  // WhatsApp message builder (PT) — sempre pedido na mesa.
+  function buildWhatsAppMessage(items, tableLabel) {
     const lines = items.map(i =>
       `• ${i.qty}× ${i.name}` + (i.note ? `\n  ↳ ${i.note}` : '') +
       ` — ${fmtEUR(i.price * i.qty)}`).join('\n');
     const total = items.reduce((s, i) => s + i.price * i.qty, 0);
-    if (mode === 'take_away') {
-      const pk = pickupTime ? new Date(pickupTime).toLocaleTimeString('pt-PT',
-        { hour: '2-digit', minute: '2-digit' }) : '—';
-      return `🥡 *TAKE AWAY*\n⏱️ Levantar às: *${pk}*\n\n${lines}\n\n` +
-        `*Total: ${fmtEUR(total)}*\n\n_via NEXO Menu_`;
-    }
     return `🍽️ *Pedido* — ${tableLabel || 'Mesa'}\n\n${lines}\n\n` +
       `*Total: ${fmtEUR(total)}*\n\n_via NEXO Menu_`;
   }
@@ -184,9 +104,7 @@
       espaco_slug: SLUG,
       table_label: tableLabel || 'Mesa',
       guest_count: guestCount || 1,
-      mode: modeSwitcher.current,
-      pickup_time: modeSwitcher.current === 'take_away'
-        ? (window.nexoSelectedPickup || null) : null,
+      mode: 'dine_in',
     }).select('id, session_code, table_label, status').single();
     if (error) throw error;
     storeComanda(data);
@@ -243,10 +161,9 @@
     sessionStorage.removeItem(COMANDA_KEY);
     renderComandaBar(null);
     // WhatsApp confirmation
-    const num = (CONFIG.features?.takeaway?.whatsappNumber) || CONFIG.whatsappNumber;
+    const num = CONFIG.whatsappNumber;
     if (num && num !== '{{WHATSAPP_NUMBER}}') {
-      const msg = buildWhatsAppMessage(items, modeSwitcher.current,
-        window.nexoSelectedPickup, tableLabel);
+      const msg = buildWhatsAppMessage(items, tableLabel);
       window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
     }
     toast('Comanda enviada para a cozinha ✓');
@@ -412,7 +329,7 @@
     const v = (input && input.value.trim()) ||
              (typeof confirmTableValue !== 'undefined' ? confirmTableValue : '') || '';
     if (v) return /mesa/i.test(v) ? v : `Mesa ${v}`;
-    return modeSwitcher.current === 'take_away' ? 'Take Away' : 'Mesa';
+    return 'Mesa';
   }
 
   // Create + fill + submit a comanda from the cart. No WhatsApp here —
@@ -443,7 +360,8 @@
   async function isDuplicateRecentOrder(tableLabel, items) {
     try {
       const client = await sb();
-      const mins = (F.takeaway && F.takeaway.dedupeMinutes) || 3;
+      const cfg = F.comanda || F.takeaway || {};
+      const mins = cfg.dedupeMinutes || 3;
       const since = new Date(Date.now() - mins * 60000).toISOString();
       const { data, error } = await client.from('comandas')
         .select('id, comanda_items(item_name, quantity)')
@@ -462,7 +380,7 @@
   // "Mostrar ao Staff"). Routes the order into the kitchen/caixa.
   let _confirmLock = 0;
   async function onOrderConfirmed() {
-    if (!HAS_TAKEAWAY || !SLUG) return null;        // gated by the premium toggle
+    if (!HAS_COMANDA || !SLUG) return null;          // gated by the comanda toggle
     if (Date.now() < _confirmLock) return null;     // anti double-submit (same session)
     _confirmLock = Date.now() + 6000;
     try {
@@ -475,19 +393,9 @@
         return null;
       }
       const res = await pushOrder(tableLabel, items);
-      toast(modeSwitcher.current === 'take_away'
-        ? 'Take away enviado para a cozinha ✓' : 'Pedido enviado para a cozinha ✓');
+      toast('Pedido enviado para a cozinha ✓');
       return res;
     } catch (e) { console.warn('[NEXO Premium] onOrderConfirmed', e); return null; }
-  }
-
-  // Take-away prefix for the menu's WhatsApp message (called from script.js).
-  function takeawayWhatsAppPrefix() {
-    if (modeSwitcher.current !== 'take_away') return '';
-    const pk = window.nexoSelectedPickup
-      ? new Date(window.nexoSelectedPickup).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
-      : '—';
-    return `🥡 *TAKE AWAY*\n⏱️ Levantar às: *${pk}*\n\n`;
   }
 
   // ── Public API ───────────────────────────────────────────────
@@ -495,12 +403,12 @@
     modeSwitcher, createComanda, joinComanda, addItemsToComanda,
     submitComanda, sendCartAsComanda, loadBanners, readLocalCart,
     readMenuCart, pushOrder, onOrderConfirmed, currentTableLabel,
-    takeawayWhatsAppPrefix, buildWhatsAppMessage, renderComandaBar,
+    buildWhatsAppMessage, renderComandaBar,
     getStoredComanda,
     // true when the menu routes orders into comandas (Cozinha/Caixa).
     // When on, the menu skips its own orders_log write — the comanda is
     // the source of truth and Caixa logs orders_log once at payment.
-    comandaRouting: HAS_TAKEAWAY,
+    comandaRouting: HAS_COMANDA,
   };
 
   // ── init ─────────────────────────────────────────────────────
@@ -508,8 +416,6 @@
     try {
       const label = document.getElementById('cart-confirm-label');
       if (label && !label.dataset.orig) label.dataset.orig = label.textContent;
-      modeSwitcher.mount();
-      renderPickupOptions();
       loadBanners();
       // Resume an open comanda if present in this session
       const c = getStoredComanda();

@@ -697,13 +697,11 @@ const CONFIG = {
     sharedCart: true,
 
     // ── NEXO Premium ──────────────────────────────────────────
-    // Take-away + comanda routing: orders open/submit a comanda that
-    // flows into Modo Cozinha e Caixa (Portal). Requires nexo-premium.js.
-    takeaway: {
+    // Comanda routing: orders open/submit a comanda that flows into
+    // Modo Cozinha, Caixa e Salão (Portal). Requires nexo-premium.js.
+    comanda: {
       enabled: true,
-      pickupMinutes: [15, 20, 30, 45, 60],
-      defaultPickupMinutes: 30,
-      whatsappNumber: '351918690783',
+      dedupeMinutes: 3,
     },
     banners: {
       enabled: false,

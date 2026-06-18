@@ -60,7 +60,6 @@
     .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
     .ticket-table { font-size: 20px; font-weight: 700; color: var(--text-primary); display: block; line-height: 1; }
     .ticket-mode { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block; }
-    .ticket[data-mode="take_away"] .ticket-table::after { content: '🥡'; margin-left: 8px; font-size: 16px; }
     .ticket-timer { font-family: 'Azeret Mono', monospace; font-size: 22px; font-weight: 700; color: var(--text-primary); display: block; text-align: right; line-height: 1; }
     .ticket-timer.age-medium { color: var(--warning); }
     .ticket-timer.age-high { color: var(--danger); }
@@ -170,22 +169,25 @@
     // ── data ───────────────────────────────────────
     const state = {}; // comandaId -> { comanda, items }
 
-    // Depois de "Tudo pronto", o pedido sai da cozinha 30s depois — assim o
-    // ecrã mostra sempre só os pedidos por fazer. Continua activo (open p/ Caixa).
-    const dismissed = new Set();        // ids já retirados do ecrã da cozinha
-    const dismissTimers = {};
-    function scheduleDismiss(cid) {
-      if (dismissTimers[cid]) return;
-      dismissTimers[cid] = setTimeout(() => {
-        dismissed.add(cid);
-        delete state[cid];
-        stopTimer(cid);
-        delete dismissTimers[cid];
-        renderAll();
-      }, 30000);
-    }
-    function cancelDismiss(cid) {
-      if (dismissTimers[cid]) { clearTimeout(dismissTimers[cid]); delete dismissTimers[cid]; }
+    // Depois de "Pronto", o pedido sai da cozinha 30s depois — o ecrã mostra
+    // sempre só o que falta fazer. Continua activo (p/ Caixa/Salão).
+    // Robusto: marca-se o instante em que ficou pronto (readyAt) e um varrimento
+    // periódico retira-o — nunca depende de um único setTimeout (que se perdia
+    // em re-renders/recargas e deixava o pedido "preso" no ecrã).
+    const GRACE_MS = 30000;
+    const dismissed = new Set();   // ids já retirados do ecrã da cozinha
+    const readyAt = {};            // comandaId -> timestamp em que ficou pronto
+    function markReady(cid) { if (!readyAt[cid]) readyAt[cid] = Date.now(); }
+    function unmarkReady(cid) { delete readyAt[cid]; }
+    function sweepReady() {
+      let changed = false;
+      Object.keys(readyAt).forEach(cid => {
+        if (Date.now() - readyAt[cid] >= GRACE_MS) {
+          dismissed.add(cid); delete state[cid]; stopTimer(cid); delete readyAt[cid];
+          changed = true;
+        }
+      });
+      if (changed) renderAll();
     }
 
     async function loadAll() {
@@ -202,9 +204,11 @@
       Object.keys(state).forEach(k => delete state[k]);
       (comandas || []).forEach(c => {
         if (dismissed.has(c.id)) return; // já retirado do ecrã da cozinha
+        if (c.status === 'ready') markReady(c.id); // 30s a contar de quando o vemos pronto
+        else unmarkReady(c.id);
         state[c.id] = { comanda: c, items: items.filter(i => i.comanda_id === c.id) };
-        if (c.status === 'ready') scheduleDismiss(c.id); // re-arma o temporizador
       });
+      sweepReady(); // remove imediatamente pedidos prontos já fora do prazo
       renderAll();
     }
 
@@ -224,7 +228,7 @@
 
     function renderTicket({ comanda, items }) {
       const visible = items.filter(i => i.status !== 'cancelled');
-      const modeLabel = comanda.mode === 'take_away' ? '🥡 Take Away' : '🍽️ Na mesa';
+      const modeLabel = '🍽️ Na mesa';
       return `
       <div class="ticket" data-comanda-id="${comanda.id}" data-status="${comanda.status}" data-mode="${comanda.mode}">
         <div class="ticket-header">
@@ -312,8 +316,8 @@
         st.comanda.status = newStatus;
         const ticket = grid.querySelector(`.ticket[data-comanda-id="${cid}"]`);
         if (ticket) ticket.dataset.status = newStatus;
-        if (allReady) { playCompletionSound(); scheduleDismiss(cid); }
-        else cancelDismiss(cid); // voltou a faltar algo → não retirar
+        if (allReady) { playCompletionSound(); markReady(cid); }
+        else unmarkReady(cid); // voltou a faltar algo → não retirar
         try { await db.from('comandas').update({ status: newStatus }).eq('id', cid); } catch (_) {}
       }
     }
@@ -322,9 +326,9 @@
       const st = state[cid]; if (!st) return;
       st.items.forEach(i => { if (i.status !== 'cancelled') i.status = 'ready'; });
       st.comanda.status = 'ready';
+      markReady(cid); // sai do ecrã da cozinha 30s depois
       renderAll();
       playCompletionSound();
-      scheduleDismiss(cid); // sai do ecrã da cozinha 30s depois
       try {
         await db.from('comanda_items').update({ status: 'ready' }).eq('comanda_id', cid).neq('status', 'cancelled');
         await db.from('comandas').update({ status: 'ready' }).eq('id', cid);
@@ -340,7 +344,7 @@
         if (payload.new && ACTIVE.includes(payload.new.status)) {
           const justArrived = !wasActive;
           loadAll().then(() => { if (justArrived && payload.new.status === 'submitted') playNewOrderSound(); });
-        } else if (wasActive) { delete state[row.id]; stopTimer(row.id); renderAll(); }
+        } else if (wasActive) { delete state[row.id]; stopTimer(row.id); unmarkReady(row.id); renderAll(); }
       });
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items' },
       (payload) => { const cid = (payload.new || payload.old).comanda_id; if (state[cid]) loadAll(); });
@@ -358,6 +362,7 @@
     }
 
     await loadAll();
+    setInterval(sweepReady, 5000); // retira pedidos prontos passados 30s (fiável)
   })();
   </script>
 </body>
