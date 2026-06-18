@@ -311,22 +311,74 @@
     // Sem criação/design aqui — o design é feito pela NEXO. Só edição de texto,
     // ativar/desativar e remover (com confirmação).
     let banners = [];
+    const bannerMenuId = client.menus?.[0]?.id || null;
     const panel = document.getElementById('panel-banners');
+
+    // Puxa o CSS real dos banners do menu deste cliente para que a pré-
+    // visualização fique IGUAL ao que o cliente vê — e acompanhe alterações
+    // que façamos no menu (basta recarregar).
+    let bannerCssDone = false;
+    async function injectMenuBannerCss() {
+      if (bannerCssDone) return;
+      bannerCssDone = true;
+      try {
+        const res = await fetch(`/menu/${slug}/nexo-premium.css`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const css = await res.text();
+        // só as regras de banner (selector contém "banner" ou keyframe npFadeIn)
+        const rules = css.split('}').map(s => s + '}')
+          .filter(b => /banner/i.test(b.split('{')[0] || '') || /npFadeIn/.test(b))
+          .join('\n');
+        if (rules.trim()) {
+          const style = document.createElement('style');
+          style.id = 'menu-banner-css';
+          style.textContent = rules;
+          document.head.appendChild(style);
+        }
+      } catch (_) { /* sem CSS do menu — preview usa fallback inline */ }
+    }
+
+    // Banner "activo agora" = ligado e dentro da janela de datas (almoço/jantar/
+    // happy hour). Mesma lógica do menu.
+    function bannerActiveNow(b) {
+      if (!b.is_active) return false;
+      const now = Date.now();
+      if (b.starts_at && new Date(b.starts_at).getTime() > now) return false;
+      if (b.ends_at && new Date(b.ends_at).getTime() < now) return false;
+      return true;
+    }
+
     async function loadBanners() {
+      await injectMenuBannerCss();
       const { data } = await db.from('menu_banners').select('*')
         .eq('espaco_slug', slug).order('display_order');
       banners = data || [];
       renderBanners();
     }
     function renderBanners() {
+      const activeBanners = banners.filter(bannerActiveNow);
+      const previewHtml = activeBanners.length
+        ? `<div id="menu-banners" class="menu-banner-preview-host">` + activeBanners.map((b, i) => `
+            <div class="menu-banner" style="background:${b.bg_color};color:${b.text_color};animation-delay:${i * 80}ms">
+              <span class="banner-title">${escapeHtml(b.title)}</span>
+              ${b.subtitle ? `<span class="banner-sub">${escapeHtml(b.subtitle)}</span>` : ''}
+              ${b.link_item_id ? `<span class="banner-arrow">→</span>` : ''}
+            </div>`).join('') + `</div>`
+        : `<p class="page-sub" style="margin:0;padding:8px 0">Nenhum banner activo neste momento.</p>`;
+
       panel.innerHTML = `
         <div class="banner-info-note" style="display:flex;gap:12px;align-items:flex-start;background:var(--bg-elevated);border:1px solid var(--border-md);border-radius:12px;padding:14px 16px;margin-bottom:16px">
           <span style="font-size:18px">🎨</span>
           <div>
             <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:var(--text-primary)">O design dos banners é feito pela NEXO</p>
-            <p style="margin:0;font-size:12px;color:var(--text-secondary);line-height:1.5">Aqui pode editar o <strong>texto</strong> dos banners existentes ou removê-los. Para adicionar um novo banner, peça em <a href="/portal/alteracoes/" style="color:var(--info);font-weight:600">Alterações</a> — desenhamos um à medida do seu restaurante.</p>
+            <p style="margin:0;font-size:12px;color:var(--text-secondary);line-height:1.5">Pode editar o <strong>texto</strong> dos banners e removê-los. Ao guardar texto, a NEXO recebe o pedido para rever e aplicar. Para um banner novo, peça em <a href="/portal/alteracoes/" style="color:var(--info);font-weight:600">Alterações</a>.</p>
           </div>
         </div>
+        <div class="bn-preview-block" style="margin-bottom:20px">
+          <p class="preview-label" style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Como aparece no menu (banners activos)</p>
+          ${previewHtml}
+        </div>
+        <p class="preview-label" style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Todos os banners</p>
         <div id="bn-list"></div>`;
       const list = document.getElementById('bn-list');
       if (!banners.length) {
@@ -341,7 +393,7 @@
           </div>
           <div class="banner-row-actions">
             <button class="bn-toggle ${b.is_active ? 'on' : ''}" data-toggle="${b.id}" title="Ativar/desativar"></button>
-            <button class="portal-icon-btn" data-edit="${b.id}" aria-label="Editar">${getIcon('edit', 15)}</button>
+            <button class="portal-icon-btn" data-edit="${b.id}" aria-label="Editar texto">${getIcon('edit', 15)}</button>
             <button class="portal-icon-btn" data-del="${b.id}" aria-label="Eliminar">${getIcon('x', 15)}</button>
           </div>
         </div>`).join('');
@@ -397,13 +449,22 @@
       document.getElementById('bn-save').addEventListener('click', async (e) => {
         const title = titleEl.value.trim();
         if (!title) { showToast('Indique um título.', 'error'); return; }
+        const subtitle = subEl.value.trim() || null;
         setLoading(e.target, true, 'A guardar...');
         // Só o texto é actualizado — cores/ligação/datas mantêm-se intactas.
-        const res = await db.from('menu_banners')
-          .update({ title, subtitle: subEl.value.trim() || null }).eq('id', b.id);
+        const res = await db.from('menu_banners').update({ title, subtitle }).eq('id', b.id);
+        if (res.error) { setLoading(e.target, false); showToast('Erro ao guardar.', 'error'); return; }
+        // Notifica a NEXO para rever/aprovar e aplicar a alteração.
+        try {
+          await db.from('update_requests').insert({
+            client_id: client.id, menu_id: bannerMenuId, type: 'other',
+            description: `[BANNER] Alteração de texto — título: "${title}"` + (subtitle ? ` · subtítulo: "${subtitle}"` : ''),
+            status: 'pending',
+          });
+        } catch (_) { /* notificação é best-effort */ }
         setLoading(e.target, false);
-        if (res.error) { showToast('Erro ao guardar.', 'error'); return; }
-        showToast('Texto do banner guardado.', 'success'); closeSO(); loadBanners();
+        showToast('Texto guardado. A NEXO foi notificada para rever.', 'success');
+        closeSO(); loadBanners();
       });
     }
 

@@ -50,6 +50,7 @@ async function initSala() {
   await loadTodayStats();
   subscribeToRealtime();
   subscribeToVenueChanges();
+  startStaleSweep();
 
   // Deep-link from the menu's "Mostrar ao staff" QR
   const pre = new URLSearchParams(location.search).get('comanda');
@@ -91,26 +92,29 @@ function renderFloorPlan(count, animate = true) {
     }
   }
 
+  // Remove mesas a mais — sem animação que possa deixar a célula "presa".
   grid.querySelectorAll('.table-card').forEach(card => {
-    const num = parseInt(card.dataset.tableNum);
-    if (num > count) {
-      if (MOTION && animate) gsap.to(card, { scale: 0, opacity: 0, duration: 0.25, ease: 'power2.in', onComplete: () => card.remove() });
-      else card.remove();
-    }
+    if (parseInt(card.dataset.tableNum) > count) card.remove();
   });
 
+  // Anima SÓ os cartões novos, com fromTo + clearProps + overwrite — assim
+  // cliques rápidos no "+" nunca deixam mesas invisíveis/meio-criadas.
   const newCards = grid.querySelectorAll('.table-card.new');
-  if (MOTION && animate) {
-    gsap.from(newCards, { scale: 0, opacity: 0, duration: 0.4, stagger: { amount: 0.3, from: 'start' }, ease: 'back.out(1.4)',
-      onComplete: () => newCards.forEach(c => c.classList.remove('new')) });
-  } else if (MOTION && !animate) {
-    gsap.from('.table-card', { scale: 0.85, opacity: 0, y: 16, duration: 0.5,
-      stagger: { amount: 0.6, from: 'start', grid: [Math.ceil(count / config.cols), config.cols] }, ease: 'back.out(1.2)' });
-    newCards.forEach(c => c.classList.remove('new'));
-  } else {
-    newCards.forEach(c => c.classList.remove('new'));
+  newCards.forEach(c => c.classList.remove('new'));
+  if (MOTION && newCards.length) {
+    gsap.killTweensOf(newCards);
+    gsap.fromTo(newCards,
+      { scale: 0.85, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.32, ease: 'back.out(1.4)', overwrite: 'auto', clearProps: 'transform,opacity',
+        stagger: { amount: Math.min(0.3, newCards.length * 0.03), from: 'start' } });
   }
 }
+
+// Estados visuais → rótulo legível (intuitivo para o empregado).
+const STATE_LABELS = {
+  empty: 'Livre', open: 'Aberta', active: 'Ocupada',
+  order_new: 'Novo pedido', ready: 'Pronto', calling: 'A chamar',
+};
 
 function createTableCard(num) {
   const card = document.createElement('div');
@@ -119,13 +123,15 @@ function createTableCard(num) {
   card.dataset.status = 'empty';
   card.onclick = () => openTableDetail(num);
   card.innerHTML = `
+    <span class="chair chair-top"></span><span class="chair chair-bottom"></span>
+    <span class="chair chair-left"></span><span class="chair chair-right"></span>
     <div class="table-notifications" id="notifs-${num}"></div>
     <div class="card-top">
       <div class="table-number">${num}</div>
       <div class="table-status-dot"></div>
     </div>
     <div class="card-summary">
-      <p class="card-empty-label">Livre</p>
+      <p class="card-state-label" id="state-${num}">Livre</p>
       <div class="card-order-summary" id="summary-${num}">
         <div class="summary-total" id="total-${num}">€0,00</div>
         <div class="summary-meta" id="meta-${num}"></div>
@@ -134,20 +140,38 @@ function createTableCard(num) {
   return card;
 }
 
+// Mesa "Aberta" (comanda sem consumo) vs "Ocupada" (já tem itens/total) — uma
+// mesa a €0 e 0 itens não deve parecer ocupada (evita o "azul" confuso).
+function visualStatus(raw, comanda) {
+  if (raw === 'calling' || raw === 'order_new' || raw === 'ready') return raw;
+  if (raw === 'active' || raw === 'open') {
+    const total = Number(comanda?.total) || 0;
+    const items = Number(comanda?.itemCount) || 0;
+    return (total > 0 || items > 0) ? 'active' : 'open';
+  }
+  return raw;
+}
+
 // ─────────────────────────────────────────
 // TABLE STATE
 // ─────────────────────────────────────────
 function updateTableStatus(tableNum, status, data = {}) {
   const card = document.querySelector(`[data-table-num="${tableNum}"]`);
   if (!card) return;
-  card.dataset.status = status;
-  state.tables[tableNum] = { ...state.tables[tableNum], status, ...data };
+  // Resolve "aberta" vs "ocupada" a partir do consumo real.
+  const vstatus = visualStatus(status, data.comanda);
+  card.dataset.status = vstatus;
+  state.tables[tableNum] = { ...state.tables[tableNum], status: vstatus, ...data };
 
-  if (MOTION) gsap.fromTo(card, { scale: 0.97 }, { scale: 1, duration: 0.3, ease: 'power2.out' });
+  const stateEl = document.getElementById(`state-${tableNum}`);
+  if (stateEl) stateEl.textContent = STATE_LABELS[vstatus] || STATE_LABELS.active;
+
+  if (MOTION) gsap.fromTo(card, { scale: 0.97 }, { scale: 1, duration: 0.3, ease: 'power2.out', overwrite: 'auto' });
 
   if (data.comanda) {
     const total = data.comanda.total || 0;
     const items = data.comanda.itemCount || 0;
+    // 👥 só quando a mesa é partilhada por várias pessoas via o menu (>1).
     const guests = data.comanda.guestCount || 0;
     const totalEl = document.getElementById(`total-${tableNum}`);
     const metaEl = document.getElementById(`meta-${tableNum}`);
@@ -237,15 +261,25 @@ function handleComandaUpdate(comanda) {
     const card = document.querySelector(`[data-table-num="${tableNum}"]`);
     if (card) { card.dataset.status = 'empty';
       const tEl = document.getElementById(`total-${tableNum}`); if (tEl) tEl.textContent = '€0,00';
-      const mEl = document.getElementById(`meta-${tableNum}`); if (mEl) mEl.textContent = ''; }
+      const mEl = document.getElementById(`meta-${tableNum}`); if (mEl) mEl.textContent = '';
+      const sEl = document.getElementById(`state-${tableNum}`); if (sEl) sEl.textContent = STATE_LABELS.empty; }
     clearTableBadges(tableNum);
     updateStats();
     return;
   }
 
+  // O nº de itens não vem na linha da comanda — contamos para não mostrar
+  // "0 itens" numa mesa com consumo (ex.: €242). Mantém o último valor enquanto
+  // carrega.
+  const prevItems = state.tables[tableNum]?.comanda?.itemCount || 0;
   updateTableStatus(tableNum, uiStatus, { comanda: {
-    id: comanda.id, total: comanda.total, guestCount: comanda.guest_count,
+    id: comanda.id, total: comanda.total, itemCount: prevItems, guestCount: comanda.guest_count,
     code: comanda.session_code, mode: comanda.mode } });
+  fetchItemCount(comanda.id).then(n => {
+    if (state.selectedTable !== tableNum && state.tables[tableNum]?.comanda?.id === comanda.id) {
+      updateTableStatus(tableNum, uiStatus, { comanda: { ...state.tables[tableNum].comanda, itemCount: n } });
+    }
+  });
 
   if (comanda.status === 'submitted') {
     showTableNotification(tableNum, 'order', `🍽️ Novo pedido · ${fmtEUR(comanda.total)}`);
@@ -575,6 +609,16 @@ function extractTableNumber(label) {
   return m ? parseInt(m[0]) : null;
 }
 
+// Conta os itens (não cancelados) de uma comanda — para o resumo da mesa.
+async function fetchItemCount(comandaId) {
+  try {
+    const { count } = await db.from('comanda_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('comanda_id', comandaId).neq('status', 'cancelled');
+    return count || 0;
+  } catch (_) { return 0; }
+}
+
 function updateStats() {
   const activeTables = Object.values(state.tables).filter(t => t.status !== 'empty').length;
   document.getElementById('stat-open').textContent = activeTables;
@@ -654,16 +698,47 @@ function playSoundForEvent(type) {
   } catch (_) {}
 }
 
+const STALE_MS = 3 * 60 * 60 * 1000; // 3h — mesa "esquecida" fecha sozinha
+
 async function loadActiveComandas() {
-  const { data } = await db.from('comandas').select('*')
+  const { data } = await db.from('comandas')
+    .select('*, comanda_items(id, status)')
     .eq('espaco_slug', window.ESPACO_SLUG).in('status', ['open', 'submitted', 'preparing', 'ready']);
   const statusMap = { open: 'active', submitted: 'order_new', preparing: 'active', ready: 'ready' };
+  const now = Date.now();
   (data || []).forEach(c => {
     const num = extractTableNumber(c.table_label);
     if (!num || !state.tables[num]) return;
+    // Rotação de mesas: uma comanda activa há mais de 3h fecha-se sozinha.
+    if (c.created_at && (now - new Date(c.created_at).getTime() > STALE_MS)) {
+      autoCloseComanda(c.id, c.table_label);
+      return;
+    }
+    const itemCount = (c.comanda_items || []).filter(i => i.status !== 'cancelled').length;
     updateTableStatus(num, statusMap[c.status] || 'active', { comanda: {
-      id: c.id, total: c.total, guestCount: c.guest_count, code: c.session_code, mode: c.mode } });
+      id: c.id, total: c.total, itemCount, guestCount: c.guest_count, code: c.session_code, mode: c.mode } });
   });
+}
+
+// Fecha automaticamente uma comanda demasiado antiga (mesa esquecida).
+async function autoCloseComanda(id, tableLabel) {
+  try {
+    await db.from('comandas').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', id);
+    const num = extractTableNumber(tableLabel);
+    if (num) handleComandaUpdate({ id, table_label: tableLabel, status: 'closed' });
+  } catch (_) {}
+}
+
+// Verifica periodicamente mesas esquecidas (>3h) e fecha-as.
+function startStaleSweep() {
+  setInterval(async () => {
+    const since = new Date(Date.now() - STALE_MS).toISOString();
+    const { data } = await db.from('comandas').select('id, table_label')
+      .eq('espaco_slug', window.ESPACO_SLUG)
+      .in('status', ['open', 'submitted', 'preparing', 'ready'])
+      .lt('created_at', since);
+    (data || []).forEach(c => autoCloseComanda(c.id, c.table_label));
+  }, 5 * 60 * 1000);
 }
 
 async function loadTodayStats() {

@@ -393,6 +393,19 @@
     return readLocalCart();
   }
 
+  // Nº de pessoas a partilhar a mesa via menu (carrinho partilhado). 1 se
+  // não houver partilha. _memberStates vive no script.js (mesmo escopo global).
+  function sharedGuestCount() {
+    try {
+      const isShared = (typeof sharedCart !== 'undefined' && sharedCart);
+      if (isShared && typeof _memberStates !== 'undefined' && _memberStates) {
+        const n = Object.keys(_memberStates).length;
+        if (n > 1) return n;
+      }
+    } catch (_) {}
+    return 1;
+  }
+
   // Table label from the confirm screen (e.g. "Mesa 4").
   function currentTableLabel() {
     const input = document.getElementById('confirm-table-input');
@@ -406,9 +419,9 @@
   // the menu's existing confirm handler keeps owning that channel.
   async function pushOrder(tableLabel, items) {
     if (!items || !items.length) return null;
-    // guest_count fica 1 por omissão — o nº de pessoas nunca é pedido ao
-    // cliente, por isso não o inferimos do nº de itens (causava "2 pessoas").
-    const comanda = await createComanda(tableLabel, 1);
+    // guest_count = nº de pessoas a partilhar a mesa pelo menu (carrinho
+    // partilhado). Sem partilha = 1. Nunca inferido do nº de itens.
+    const comanda = await createComanda(tableLabel, sharedGuestCount());
     await addItemsToComanda(comanda.id, items);
     sessionStorage.removeItem(COMANDA_KEY); // single-shot order, not a running tab
     return submitComanda(comanda.id);
