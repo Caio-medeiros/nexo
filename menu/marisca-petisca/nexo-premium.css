@@ -1,0 +1,246 @@
+/* ═══════════════════════════════════════════════════════════════
+   NEXO PREMIUM — Menu add-ons (Take-away · Comanda · Banners)
+   Additive layer. Loads only when CONFIG.features.takeaway/banners
+   are enabled. Does not touch the core menu styles.
+   Tokens mirror the NEXO operational design system.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --np-bg-base: #0A0A0A;
+  --np-bg-elevated: #1C1C1C;
+  --np-bg-hover: #212121;
+  --np-border: rgba(255,255,255,0.07);
+  --np-border-md: rgba(255,255,255,0.12);
+  --np-text: #F5F5F5;
+  --np-text-2: #888;
+  --np-text-muted: #555;
+  --np-success: #22C55E;
+  --np-warning: #F59E0B;
+  --np-danger: #EF4444;
+  --np-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Mode switcher (sliding pill) — the signature element ── */
+.mode-switcher {
+  display: inline-flex;
+  background: var(--np-bg-elevated);
+  border: 1px solid var(--np-border-md);
+  border-radius: 100px;
+  padding: 4px;
+  position: relative;
+  margin: 16px auto 8px;
+}
+.mode-switcher-wrap { text-align: center; }
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  min-height: 40px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--np-text-2);
+  position: relative;
+  z-index: 1;
+  transition: color 200ms ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+.mode-btn.active { color: var(--np-text); }
+.mode-icon { font-size: 14px; }
+.mode-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  height: calc(100% - 8px);
+  background: var(--np-bg-hover);
+  border-radius: 100px;
+  border: 1px solid var(--np-border-md);
+  transition: transform 240ms var(--np-ease),
+              width 240ms var(--np-ease);
+  z-index: 0;
+}
+
+/* ── Pickup time selector (in cart) ── */
+.pickup-section {
+  padding: 12px 0;
+  border-top: 1px solid var(--np-border);
+  margin-top: 12px;
+}
+.pickup-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--np-text-2);
+  margin-bottom: 10px;
+}
+.pickup-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pickup-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--np-bg-elevated);
+  border: 1px solid var(--np-border-md);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--np-text-2);
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.pickup-btn .pickup-time {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--np-text);
+  margin-top: 2px;
+}
+.pickup-btn.selected {
+  border-color: var(--np-warning);
+  background: rgba(245,158,11,0.08);
+  color: var(--np-warning);
+}
+.pickup-btn.selected .pickup-time { color: var(--np-warning); }
+
+/* ── Promotional banners ── */
+#menu-banners {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+.menu-banner {
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: default;
+  animation: npFadeIn 240ms ease both;
+}
+.menu-banner[data-link] { cursor: pointer; }
+.banner-title { font-size: 14px; font-weight: 700; }
+.banner-sub { font-size: 12px; opacity: 0.75; margin-left: 8px; }
+.banner-arrow { font-size: 16px; font-weight: 700; margin-left: auto; }
+@keyframes npFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+/* ── Comanda bar (fixed, above cart pill) ── */
+.comanda-bar {
+  position: fixed;
+  bottom: 84px;
+  left: 16px;
+  right: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--np-bg-elevated);
+  border: 1px solid var(--np-border-md);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  z-index: 99990;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  animation: npSlideUp 300ms var(--np-ease) both;
+  color: var(--np-text);
+}
+@keyframes npSlideUp {
+  from { transform: translateY(24px); opacity: 0; }
+}
+.comanda-bar-left { min-width: 0; }
+.comanda-code {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--np-text-muted);
+  letter-spacing: 0.1em;
+  display: block;
+}
+.comanda-table {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--np-text);
+  display: block;
+}
+.comanda-bar-center { text-align: center; }
+.comanda-total {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--np-text);
+  display: block;
+}
+.comanda-items {
+  font-size: 11px;
+  color: var(--np-text-muted);
+  display: block;
+}
+.comanda-submit-btn {
+  background: var(--np-text);
+  color: var(--np-bg-base);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  min-height: 48px;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 150ms ease;
+  white-space: nowrap;
+}
+.comanda-submit-btn:active { transform: scale(0.96); opacity: 0.85; }
+
+/* ── Join comanda + staff takeover ── */
+.comanda-join-row {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.comanda-join-input {
+  flex: 1;
+  min-height: 44px;
+  background: var(--np-bg-elevated);
+  border: 1px solid var(--np-border-md);
+  border-radius: 10px;
+  color: var(--np-text);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 12px;
+}
+.staff-takeover-section {
+  margin-top: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.staff-takeover-label {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin: 0;
+}
+#staff-qr-canvas {
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+}
+.staff-qr-hint { font-size: 11px; opacity: 0.6; margin: 0; }

@@ -389,7 +389,9 @@ function renderLayout(activeNav, clientData) {
       { href: '/portal/dashboard/', icon: 'grid', label: 'Dashboard' },
     ]},
     { label: 'Operação', items: [
-      { href: '/portal/sala/', icon: 'monitor', label: 'Modo Restaurante' },
+      { href: '/portal/sala/', icon: 'monitor', label: 'Sala em Directo' },
+      { href: '/portal/cozinha/', icon: 'chef', label: 'Modo Cozinha' },
+      { href: '/portal/restaurante/', icon: 'cashier', label: 'Modo Restaurante' },
       { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
       { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
     ]},
@@ -398,10 +400,12 @@ function renderLayout(activeNav, clientData) {
     ]},
     { label: 'Negócio', items: [
       { href: '/portal/estatisticas/', icon: 'bar-chart', label: 'Estatísticas' },
+      { href: '/portal/clientes/', icon: 'users', label: 'Clientes' },
       { href: '/portal/renovacao/', icon: 'star', label: 'Renovação' },
       { href: '/portal/referencias/', icon: 'gift', label: 'Referências' },
     ]},
     { label: '', items: [
+      { href: '/portal/configuracoes/', icon: 'settings', label: 'Configurações' },
       { href: '/portal/guia/', icon: 'help', label: 'Guia' },
     ]},
   ];

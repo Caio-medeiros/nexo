@@ -695,5 +695,18 @@ const CONFIG = {
   features: {
     callStaff: true,
     sharedCart: true,
+
+    // ── NEXO Premium ──────────────────────────────────────────
+    // Take-away + comanda routing: orders open/submit a comanda that
+    // flows into Modo Cozinha e Caixa (Portal). Requires nexo-premium.js.
+    takeaway: {
+      enabled: true,
+      pickupMinutes: [15, 20, 30, 45, 60],
+      defaultPickupMinutes: 30,
+      whatsappNumber: '351918690783',
+    },
+    banners: {
+      enabled: false,
+    },
   }
 };

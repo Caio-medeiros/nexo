@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Configurações — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+  <style>
+    .mono { font-family: 'Azeret Mono', ui-monospace, monospace; }
+    .cfg-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .cfg-tab { background: none; border: none; color: var(--text-secondary); font-size: 14px; font-weight: 600; padding: 10px 4px; cursor: pointer; border-bottom: 2px solid transparent; min-height: 44px; }
+    .cfg-tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+    .cfg-panel { display: none; } .cfg-panel.active { display: block; }
+
+    /* Venue / Salão settings */
+    .venue-card { background: var(--bg-surface); border: 1px solid var(--border-md); border-radius: 16px; padding: 20px; }
+    .venue-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 16px 0; }
+    .venue-label { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .venue-label-hint { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px; }
+    .table-count-control { display: inline-flex; align-items: center; background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 12px; overflow: hidden; }
+    .table-count-control.small .tc-number { font-size: 22px; }
+    .tc-btn { width: 44px; height: 52px; background: transparent; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; transition: background 120ms ease, color 120ms ease; flex-shrink: 0; }
+    .tc-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .tc-btn:active { opacity: 0.7; } .tc-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .tc-display { display: flex; flex-direction: column; align-items: center; padding: 0 16px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-width: 72px; }
+    .tc-number { font-family: 'Azeret Mono', monospace; font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+    .tc-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .venue-field-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+    .venue-select { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 10px; color: var(--text-primary); font-size: 13px; padding: 10px 12px; cursor: pointer; }
+    .table-preview-wrap { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; }
+    .preview-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .table-preview { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px; background: var(--bg-elevated); border-radius: 10px; min-height: 60px; max-height: 140px; overflow: hidden; }
+    .preview-table-dot { width: 32px; height: 24px; background: var(--bg-hover); border: 1px solid var(--border-md); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-family: 'Azeret Mono', monospace; color: var(--text-muted); }
+    .save-venue-btn { margin-top: 18px; }
+    @media (prefers-reduced-motion: reduce) { .preview-table-dot { transition: none !important; } }
+
+    /* GMB */
+    .gmb-card { background: var(--bg-surface); border: 1px solid var(--border-md); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+    .gmb-header { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
+    .gmb-icon-wrap { width: 40px; height: 40px; border-radius: 10px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800; font-size: 20px; color: #4285F4; }
+    .gmb-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 4px; }
+    .gmb-sub { font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+    .gmb-why { background: var(--bg-elevated); border-radius: 10px; padding: 12px 14px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 6px; }
+    .gmb-why p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+    .gmb-steps { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+    .gmb-step { display: flex; gap: 14px; align-items: flex-start; }
+    .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border-md); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--text-secondary); flex-shrink: 0; font-family: 'Azeret Mono', monospace; }
+    .step-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0 0 8px; }
+    .step-hint { font-size: 12px; color: var(--text-muted); margin: 0; }
+    .menu-link-display { display: flex; align-items: center; gap: 8px; background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 8px; padding: 8px 12px; }
+    .menu-link-url { font-family: 'Azeret Mono', monospace; font-size: 12px; color: var(--text-primary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .copy-btn { font-size: 12px; font-weight: 600; color: var(--info); background: transparent; border: none; cursor: pointer; padding: 0; flex-shrink: 0; }
+    .gmb-link-btn { display: inline-flex; align-items: center; padding: 10px 14px; min-height: 44px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); border-radius: 8px; color: var(--info); font-size: 12px; font-weight: 600; text-decoration: none; }
+    .gmb-result-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 0 0 8px; }
+    .gmb-mock { background: #fff; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+    .gmb-mock-name { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+    .gmb-mock-stars { color: #F59E0B; font-size: 12px; margin: 4px 0; }
+    .gmb-mock-links { display: flex; gap: 8px; margin-top: 8px; }
+    .gmb-mock-link { font-size: 11px; color: #5f6368; background: #f1f3f4; border-radius: 4px; padding: 4px 8px; }
+    .gmb-mock-link.active { color: #1a73e8; background: #e8f0fe; font-weight: 600; }
+    .gmb-mock-caption { font-size: 12px; color: var(--text-muted); font-style: italic; margin: 0; }
+    .gmb-done-check { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+    .gmb-done-badge { font-size: 12px; color: var(--success); font-weight: 600; }
+
+    /* Banners */
+    .banner-preview-card { border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .banner-row { display: flex; align-items: center; gap: 12px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+    .banner-row-actions { display: flex; gap: 6px; margin-left: auto; }
+    .bn-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width:560px){ .bn-form-row { grid-template-columns: 1fr; } }
+    .color-presets { display: flex; gap: 8px; flex-wrap: wrap; }
+    .color-dot { width: 32px; height: 32px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; }
+    .color-dot.sel { border-color: var(--text-primary); }
+    /* toggle */
+    .bn-toggle { position: relative; width: 40px; height: 22px; border-radius: 999px; background: var(--bg-hover); border: 1px solid var(--border-md); cursor: pointer; transition: background 200ms ease; }
+    .bn-toggle.on { background: var(--success); }
+    .bn-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 200ms cubic-bezier(0.16,1,0.3,1); }
+    .bn-toggle.on::after { transform: translateX(18px); }
+
+    .so-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.55); opacity: 0; visibility: hidden; transition: opacity 220ms ease, visibility 220ms; }
+    .so-overlay.visible { opacity: 1; visibility: visible; }
+    .so-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 101; width: 460px; max-width: 100vw; background: var(--bg-surface); border-left: 1px solid var(--border-md); transform: translateX(100%); transition: transform 300ms cubic-bezier(.22,1,.36,1); display: flex; flex-direction: column; overflow-y: auto; }
+    .so-panel.visible { transform: translateX(0); }
+    .so-head { display: flex; align-items: center; gap: 12px; padding: 20px; border-bottom: 1px solid var(--border); }
+    .so-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  </style>
+</head>
+<body>
+  <nav class="portal-nav" id="portal-nav"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar"></aside>
+
+  <main class="portal-main" id="main">
+    <div id="page-skeleton">
+      <div class="page-header"><div class="nexo-skeleton" style="width:200px;height:28px"></div></div>
+      <div class="card nexo-skeleton" style="height:300px"></div>
+    </div>
+    <div id="page-content" style="display:none"></div>
+  </main>
+
+  <div class="so-overlay" id="so-overlay"></div>
+  <aside class="so-panel" id="so-panel" aria-hidden="true"></aside>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/configuracoes/', client);
+    const slug = getMenuSlug(client);
+    if (slug) initNotifications(slug);
+
+    document.getElementById('page-skeleton').style.display = 'none';
+    const content = document.getElementById('page-content');
+    content.style.display = 'block';
+
+    const menuPath = `nexosolutions.pt/menu/${slug || ''}/`;
+    const menuFullUrl = `https://${menuPath}`;
+
+    content.innerHTML = `
+      <div class="page-header"><h1 class="page-title">Configurações</h1>
+        <p class="page-sub">Salão, Google, banners promocionais e visibilidade do seu menu.</p></div>
+      <div class="cfg-tabs">
+        <button class="cfg-tab active" data-tab="salao">Salão</button>
+        <button class="cfg-tab" data-tab="google">Google</button>
+        <button class="cfg-tab" data-tab="banners">Banners</button>
+      </div>
+      <div class="cfg-panel active" id="panel-salao"></div>
+      <div class="cfg-panel" id="panel-google"></div>
+      <div class="cfg-panel" id="panel-banners"></div>`;
+
+    content.querySelectorAll('.cfg-tab').forEach(t => t.addEventListener('click', () => {
+      content.querySelectorAll('.cfg-tab').forEach(x => x.classList.toggle('active', x === t));
+      content.querySelectorAll('.cfg-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + t.dataset.tab));
+    }));
+
+    // ════════════════════════════ SALÃO / MESAS (Phase 1) ════════════════════════════
+    const NO_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const gx = (...a) => { if (!NO_MOTION && window.gsap) window.gsap[a[0]] && window.gsap[a[0]](...a.slice(1)); };
+    const VENUE_TYPES = [
+      ['restaurant', '🍽️ Restaurante'], ['cafe', '☕ Café / Pastelaria'], ['bar', '🍺 Bar'],
+      ['beach_club', '🏖️ Beach Club'], ['hotel', '🏨 Hotel'], ['other', '📍 Outro'],
+    ];
+    const venueSettings = { tableCount: 10, capacity: 4, venueType: 'restaurant' };
+
+    document.getElementById('panel-salao').innerHTML = `
+      <div class="venue-card">
+        <div class="settings-card-header" style="margin-bottom:6px">
+          <h3 style="font-size:15px;font-weight:600;margin:0 0 4px">Espaço e Mesas</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0">Define a configuração do teu salão. O Salão (Staff Mode) adapta-se automaticamente.</p>
+        </div>
+        <div class="venue-grid">
+          <div class="venue-field">
+            <label class="venue-label">Número de mesas <span class="venue-label-hint">Máximo 60</span></label>
+            <div class="table-count-control">
+              <button class="tc-btn tc-minus" id="tc-minus" type="button">−</button>
+              <div class="tc-display"><span class="tc-number" id="tc-number">10</span><span class="tc-label">mesas</span></div>
+              <button class="tc-btn tc-plus" id="tc-plus" type="button">+</button>
+            </div>
+            <p class="venue-field-hint">Os clientes só podem seleccionar mesas de 1 a <strong id="tc-max-hint">10</strong>.</p>
+          </div>
+          <div class="venue-field">
+            <label class="venue-label">Lugares por mesa (média)</label>
+            <div class="table-count-control small">
+              <button class="tc-btn tc-minus" id="cap-minus" type="button">−</button>
+              <div class="tc-display"><span class="tc-number" id="cap-number">4</span><span class="tc-label">pessoas</span></div>
+              <button class="tc-btn tc-plus" id="cap-plus" type="button">+</button>
+            </div>
+          </div>
+          <div class="venue-field">
+            <label class="venue-label">Tipo de espaço</label>
+            <select class="venue-select" id="venue-type-select">
+              ${VENUE_TYPES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="table-preview-wrap">
+          <p class="preview-label">Pré-visualização do layout</p>
+          <div class="table-preview" id="settings-preview"></div>
+        </div>
+        <button class="btn btn-primary save-venue-btn" id="save-venue-btn" type="button">Guardar configuração</button>
+      </div>`;
+
+    function renderSettingsPreview(count) {
+      const c = document.getElementById('settings-preview');
+      c.innerHTML = Array.from({ length: count }, (_, i) => `<div class="preview-table-dot">${i + 1}</div>`).join('');
+      gx('from', '.preview-table-dot', { scale: 0, opacity: 0, duration: 0.3, stagger: { amount: 0.4, from: 'start' }, ease: 'back.out(1.5)' });
+    }
+    function bumpNumber(el, delta) { gx('from', el, { y: delta > 0 ? -8 : 8, opacity: 0, duration: 0.2, ease: 'power2.out' }); }
+    function changeTableCount(delta) {
+      const next = Math.max(1, Math.min(60, venueSettings.tableCount + delta));
+      if (next === venueSettings.tableCount) return;
+      venueSettings.tableCount = next;
+      const el = document.getElementById('tc-number');
+      bumpNumber(el, delta); el.textContent = next;
+      document.getElementById('tc-max-hint').textContent = next;
+      document.getElementById('tc-minus').disabled = next <= 1;
+      document.getElementById('tc-plus').disabled = next >= 60;
+      renderSettingsPreview(next);
+    }
+    function changeCapacity(delta) {
+      const next = Math.max(1, Math.min(20, venueSettings.capacity + delta));
+      if (next === venueSettings.capacity) return;
+      venueSettings.capacity = next;
+      const el = document.getElementById('cap-number');
+      bumpNumber(el, delta); el.textContent = next;
+    }
+    document.getElementById('tc-minus').addEventListener('click', () => changeTableCount(-1));
+    document.getElementById('tc-plus').addEventListener('click', () => changeTableCount(1));
+    document.getElementById('cap-minus').addEventListener('click', () => changeCapacity(-1));
+    document.getElementById('cap-plus').addEventListener('click', () => changeCapacity(1));
+    document.getElementById('venue-type-select').addEventListener('change', e => { venueSettings.venueType = e.target.value; });
+
+    document.getElementById('save-venue-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('save-venue-btn');
+      btn.textContent = 'A guardar...'; btn.disabled = true;
+      const { error } = await db.from('venue_settings').upsert({
+        espaco_slug: slug, table_count: venueSettings.tableCount,
+        table_capacity: venueSettings.capacity, venue_type: venueSettings.venueType,
+        venue_name: client.name || null,
+      }, { onConflict: 'espaco_slug' });
+      if (!error) {
+        btn.textContent = 'Guardado ✓';
+        gx('to', btn, { scale: 1.02, duration: 0.1, yoyo: true, repeat: 1 });
+        setTimeout(() => { btn.textContent = 'Guardar configuração'; btn.disabled = false; }, 2000);
+      } else { btn.textContent = 'Erro — tente novamente'; btn.disabled = false; showToast('Erro ao guardar.', 'error'); }
+    });
+
+    (async function loadVenue() {
+      const { data } = await db.from('venue_settings').select('*').eq('espaco_slug', slug).maybeSingle();
+      if (data) {
+        venueSettings.tableCount = data.table_count;
+        venueSettings.capacity = data.table_capacity || 4;
+        venueSettings.venueType = data.venue_type || 'restaurant';
+        document.getElementById('tc-number').textContent = data.table_count;
+        document.getElementById('cap-number').textContent = venueSettings.capacity;
+        document.getElementById('tc-max-hint').textContent = data.table_count;
+        document.getElementById('venue-type-select').value = venueSettings.venueType;
+        document.getElementById('tc-minus').disabled = data.table_count <= 1;
+        document.getElementById('tc-plus').disabled = data.table_count >= 60;
+      }
+      renderSettingsPreview(venueSettings.tableCount);
+    })();
+
+    // ════════════════════════════ GOOGLE (Phase 7) ════════════════════════════
+    const gmbDoneKey = `nexo_gmb_done_${slug}`;
+    const gmbDone = localStorage.getItem(gmbDoneKey) === '1';
+    document.getElementById('panel-google').innerHTML = `
+      <div class="gmb-card">
+        <div class="gmb-header">
+          <div class="gmb-icon-wrap">G</div>
+          <div>
+            <h3 class="gmb-title">Google — Menu visível nas pesquisas</h3>
+            <p class="gmb-sub">Quando alguém pesquisar o seu restaurante no Google, o menu NEXO aparece directamente.</p>
+          </div>
+        </div>
+        <div class="gmb-why">
+          <p>★ Aparece no painel do Google do restaurante</p>
+          <p>👆 Clientes acedem ao menu antes de entrar</p>
+          <p>📍 Visível em Maps, Search e Discovery</p>
+        </div>
+        <div class="gmb-steps">
+          <div class="gmb-step"><span class="step-num">1</span><div class="step-content" style="flex:1">
+            <p class="step-title">Copie o link do seu menu</p>
+            <div class="menu-link-display">
+              <span class="menu-link-url" id="gmb-menu-url">${escapeHtml(menuPath)}</span>
+              <button class="copy-btn" id="gmb-copy">Copiar</button>
+            </div></div></div>
+          <div class="gmb-step"><span class="step-num">2</span><div class="step-content">
+            <p class="step-title">Aceda ao Google Business Profile</p>
+            <a href="https://business.google.com" target="_blank" rel="noopener" class="gmb-link-btn">Abrir Google Business →</a>
+          </div></div>
+          <div class="gmb-step"><span class="step-num">3</span><div class="step-content">
+            <p class="step-title">Adicione em "Menu" ou "URL do menu"</p>
+            <p class="step-hint">Perfil → Editar → Localização → Menu → Cole o link → Guardar</p>
+          </div></div>
+        </div>
+        <div>
+          <p class="gmb-result-title">Resultado esperado:</p>
+          <div class="gmb-mock">
+            <div class="gmb-mock-name">${escapeHtml(client.name || 'O seu restaurante')}</div>
+            <div class="gmb-mock-stars">★★★★★</div>
+            <div class="gmb-mock-links">
+              <span class="gmb-mock-link active">📋 Ver menu</span>
+              <span class="gmb-mock-link">📞 Ligar</span>
+              <span class="gmb-mock-link">🗺️ Como chegar</span>
+            </div>
+          </div>
+          <p class="gmb-mock-caption">"Ver menu" aparece quando o Google detecta o link do menu no perfil. Pode demorar 24-48h a aparecer.</p>
+        </div>
+        <div class="gmb-done-check">
+          <label class="checkbox-label"><input type="checkbox" id="gmb-done" ${gmbDone ? 'checked' : ''}><span>Já adicionei o link ao Google</span></label>
+          <span class="gmb-done-badge" id="gmb-badge" style="${gmbDone ? '' : 'display:none'}">✓ Configurado</span>
+        </div>
+      </div>`;
+    document.getElementById('gmb-copy').addEventListener('click', (e) => copyToClipboard(menuFullUrl, e.target));
+    document.getElementById('gmb-done').addEventListener('change', (e) => {
+      localStorage.setItem(gmbDoneKey, e.target.checked ? '1' : '0');
+      document.getElementById('gmb-badge').style.display = e.target.checked ? '' : 'none';
+    });
+
+    // ════════════════════════════ BANNERS (Phase 8) ════════════════════════════
+    const PRESETS = [
+      { bg: '#F59E0B', tx: '#0A0A0A' }, { bg: '#22C55E', tx: '#0A0A0A' },
+      { bg: '#EF4444', tx: '#FFFFFF' }, { bg: '#3B82F6', tx: '#FFFFFF' },
+      { bg: '#8B5CF6', tx: '#FFFFFF' }, { bg: '#FFFFFF', tx: '#0A0A0A' },
+    ];
+    let banners = [];
+    let menuItems = [];
+    loadMenuItems(slug).then(s => { menuItems = (s || []).flatMap(x => x.items); });
+
+    const panel = document.getElementById('panel-banners');
+    async function loadBanners() {
+      const { data } = await db.from('menu_banners').select('*')
+        .eq('espaco_slug', slug).order('display_order');
+      banners = data || [];
+      renderBanners();
+    }
+    function renderBanners() {
+      panel.innerHTML = `
+        <div class="flex-between" style="margin-bottom:16px">
+          <p class="page-sub" style="margin:0">Banners aparecem no topo do menu, entre o cabeçalho e as categorias.</p>
+          <button class="btn btn-primary btn-sm" id="bn-new">+ Novo banner</button>
+        </div>
+        <div id="bn-list"></div>`;
+      document.getElementById('bn-new').addEventListener('click', () => openBannerForm(null));
+      const list = document.getElementById('bn-list');
+      if (!banners.length) {
+        list.innerHTML = `<div class="empty-state card" style="padding:36px">${getIcon('star', 28)}<p class="empty-title">Sem banners</p><p class="empty-sub">Crie promoções, novidades ou avisos para os clientes.</p></div>`;
+        return;
+      }
+      list.innerHTML = banners.map(b => `
+        <div class="banner-row">
+          <div class="banner-preview-card" style="flex:1;background:${b.bg_color};color:${b.text_color};margin:0">
+            <span style="font-weight:700;font-size:14px">${escapeHtml(b.title)}</span>
+            ${b.subtitle ? `<span style="font-size:12px;opacity:.75;margin-left:8px">${escapeHtml(b.subtitle)}</span>` : ''}
+          </div>
+          <div class="banner-row-actions">
+            <button class="bn-toggle ${b.is_active ? 'on' : ''}" data-toggle="${b.id}" title="Ativar/desativar"></button>
+            <button class="portal-icon-btn" data-edit="${b.id}" aria-label="Editar">${getIcon('edit', 15)}</button>
+            <button class="portal-icon-btn" data-del="${b.id}" aria-label="Eliminar">${getIcon('x', 15)}</button>
+          </div>
+        </div>`).join('');
+      list.querySelectorAll('[data-toggle]').forEach(el => el.addEventListener('click', () => toggleBanner(el.dataset.toggle)));
+      list.querySelectorAll('[data-edit]').forEach(el => el.addEventListener('click', () => openBannerForm(banners.find(b => b.id === el.dataset.edit))));
+      list.querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => delBanner(el.dataset.del)));
+    }
+    async function toggleBanner(id) {
+      const b = banners.find(x => x.id === id); if (!b) return;
+      b.is_active = !b.is_active; renderBanners();
+      await db.from('menu_banners').update({ is_active: b.is_active }).eq('id', id);
+    }
+    async function delBanner(id) {
+      const ok = await confirmModal({ title: 'Eliminar banner', body: 'Esta acção não pode ser anulada.', confirmLabel: 'Eliminar', danger: true });
+      if (!ok) return;
+      await db.from('menu_banners').delete().eq('id', id);
+      showToast('Banner eliminado.', 'success'); loadBanners();
+    }
+
+    const soOverlay = document.getElementById('so-overlay');
+    const soPanel = document.getElementById('so-panel');
+    function closeSO() { soOverlay.classList.remove('visible'); soPanel.classList.remove('visible'); }
+    soOverlay.addEventListener('click', closeSO);
+    function openBannerForm(b) {
+      const editing = !!b;
+      const cur = b || { title: '', subtitle: '', bg_color: '#F59E0B', text_color: '#0A0A0A', link_item_id: '', starts_at: null, ends_at: null, is_active: true };
+      soPanel.innerHTML = `
+        <div class="so-head"><div style="flex:1"><div style="font-size:18px;font-weight:700">${editing ? 'Editar' : 'Novo'} banner</div></div>
+          <button class="portal-icon-btn" id="bn-close">${getIcon('x', 16)}</button></div>
+        <div class="so-body">
+          <div><div class="so-section-label" style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Pré-visualização</div>
+            <div class="banner-preview-card" id="bn-preview" style="background:${cur.bg_color};color:${cur.text_color}">
+              <span id="bn-pv-title" style="font-weight:700">${escapeHtml(cur.title) || 'Título do banner'}</span>
+              <span id="bn-pv-sub" style="font-size:12px;opacity:.75;margin-left:8px">${escapeHtml(cur.subtitle || '')}</span>
+            </div></div>
+          <div class="field"><label class="field-label">Título *</label><input class="input" id="bn-title" maxlength="60" value="${escapeHtml(cur.title)}"></div>
+          <div class="field"><label class="field-label">Subtítulo</label><input class="input" id="bn-sub" maxlength="80" value="${escapeHtml(cur.subtitle || '')}"></div>
+          <div class="field"><label class="field-label">Cor de fundo</label><div class="color-presets" id="bn-colors"></div></div>
+          <div class="field"><label class="field-label">Ligar a item (opcional)</label>
+            <select class="input" id="bn-link"><option value="">— Sem ligação —</option>
+              ${menuItems.map(i => `<option value="${i.id}" ${cur.link_item_id === i.id ? 'selected' : ''}>${escapeHtml(i.name)}</option>`).join('')}
+            </select></div>
+          <div class="bn-form-row">
+            <div class="field"><label class="field-label">Início</label><input class="input" id="bn-start" type="date" value="${cur.starts_at ? cur.starts_at.slice(0,10) : ''}"></div>
+            <div class="field"><label class="field-label">Fim (opcional)</label><input class="input" id="bn-end" type="date" value="${cur.ends_at ? cur.ends_at.slice(0,10) : ''}"></div>
+          </div>
+          <button class="btn btn-primary btn-full" id="bn-save">${editing ? 'Guardar' : 'Criar banner'}</button>
+        </div>`;
+      soOverlay.classList.add('visible'); soPanel.classList.add('visible');
+      document.getElementById('bn-close').addEventListener('click', closeSO);
+
+      const colors = document.getElementById('bn-colors');
+      let bg = cur.bg_color, tx = cur.text_color;
+      colors.innerHTML = PRESETS.map((p, i) => `<span class="color-dot ${p.bg === bg ? 'sel' : ''}" data-i="${i}" style="background:${p.bg};border-color:${p.bg === bg ? 'var(--text-primary)' : (p.bg === '#FFFFFF' ? 'var(--border-md)' : 'transparent')}"></span>`).join('');
+      colors.querySelectorAll('.color-dot').forEach(d => d.addEventListener('click', () => {
+        const p = PRESETS[parseInt(d.dataset.i)]; bg = p.bg; tx = p.tx;
+        colors.querySelectorAll('.color-dot').forEach(x => x.classList.remove('sel'));
+        d.classList.add('sel'); updatePreview();
+      }));
+      const titleEl = document.getElementById('bn-title'), subEl = document.getElementById('bn-sub');
+      function updatePreview() {
+        const pv = document.getElementById('bn-preview');
+        pv.style.background = bg; pv.style.color = tx;
+        document.getElementById('bn-pv-title').textContent = titleEl.value || 'Título do banner';
+        document.getElementById('bn-pv-sub').textContent = subEl.value || '';
+      }
+      titleEl.addEventListener('input', updatePreview); subEl.addEventListener('input', updatePreview);
+
+      document.getElementById('bn-save').addEventListener('click', async (e) => {
+        const title = titleEl.value.trim();
+        if (!title) { showToast('Indique um título.', 'error'); return; }
+        const payload = {
+          espaco_slug: slug, title, subtitle: subEl.value.trim() || null,
+          bg_color: bg, text_color: tx,
+          link_item_id: document.getElementById('bn-link').value || null,
+          starts_at: document.getElementById('bn-start').value || new Date().toISOString(),
+          ends_at: document.getElementById('bn-end').value || null,
+        };
+        setLoading(e.target, true, 'A guardar...');
+        const res = editing
+          ? await db.from('menu_banners').update(payload).eq('id', b.id)
+          : await db.from('menu_banners').insert({ ...payload, is_active: true });
+        setLoading(e.target, false);
+        if (res.error) { showToast('Erro ao guardar.', 'error'); return; }
+        showToast('Banner guardado.', 'success'); closeSO(); loadBanners();
+      });
+    }
+
+    loadBanners();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Modo Restaurante — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+  <style>
+    .mono { font-family: 'Azeret Mono', ui-monospace, monospace; }
+
+    .caixa-header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 20px; background: var(--bg-base); border-bottom: 1px solid var(--border); }
+    .caixa-id { display: flex; align-items: center; gap: 10px; }
+    .caixa-id .c-logo { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+    .caixa-id .c-mode { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .caixa-id .c-sep { color: var(--text-muted); }
+    .caixa-id .c-space { font-size: 14px; color: var(--text-secondary); }
+    .caixa-header-right { display: flex; align-items: center; gap: 16px; }
+    .c-live { display: inline-flex; align-items: center; gap: 7px; font-family: 'Azeret Mono', monospace; font-size: 11px; color: var(--success); }
+    .c-live .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse-dot 1.6s ease infinite; }
+    .c-live.reconnecting { color: var(--warning); } .c-live.reconnecting .live-dot { background: var(--warning); }
+    .c-back { font-size: 12px; color: var(--text-muted); text-decoration: none; } .c-back:hover { color: var(--text-secondary); }
+
+    .caixa-split { display: grid; grid-template-columns: 35% 65%; height: calc(100vh - 56px); }
+    @media (max-width: 860px) { .caixa-split { grid-template-columns: 1fr; height: auto; } }
+
+    /* Left — table grid */
+    .floor { border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+    .floor-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .floor-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+    .floor-sub { font-size: 13px; color: var(--text-muted); }
+    .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .table-card { border: 1px solid var(--border); border-radius: 14px; padding: 12px; min-height: 88px; cursor: pointer; transition: all 180ms ease; display: flex; flex-direction: column; gap: 2px; }
+    .table-card[data-status="empty"] { background: var(--bg-elevated); border-color: var(--border); }
+    .table-card[data-status="active"] { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.3); }
+    .table-card[data-status="ready"] { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.4); animation: readyPulse 2s ease infinite; }
+    @keyframes readyPulse { 0%,100% { border-color: rgba(34,197,94,0.4); } 50% { border-color: rgba(34,197,94,0.8); } }
+    .table-card[data-status="paying"] { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.4); }
+    .table-card.selected { border-color: var(--text-primary); background: var(--bg-hover); }
+    .table-label { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .table-time { font-family: 'Azeret Mono', monospace; font-size: 11px; color: var(--text-muted); }
+    .table-total { font-family: 'Azeret Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text-primary); margin-top: 2px; }
+    .table-guests { font-size: 11px; color: var(--text-secondary); }
+    .new-table-btn { background: transparent; border: 1px solid var(--border-md); color: var(--text-secondary); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; min-height: 36px; }
+    .new-table-btn:hover { color: var(--text-primary); border-color: var(--border-strong); }
+
+    /* Right — detail */
+    .detail { padding: 24px; overflow-y: auto; }
+    .detail-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 14px; }
+    .detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .detail-table-name { font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+    .detail-code { font-family: 'Azeret Mono', monospace; font-size: 12px; color: var(--text-muted); letter-spacing: 0.08em; }
+    .detail-time { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .status-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px; }
+    .status-badge[data-s="open"] { background: var(--bg-elevated); color: var(--text-secondary); }
+    .status-badge[data-s="submitted"], .status-badge[data-s="preparing"] { background: rgba(59,130,246,0.12); color: var(--info); }
+    .status-badge[data-s="ready"] { background: rgba(34,197,94,0.12); color: var(--success); }
+
+    .detail-items { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+    .d-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; }
+    .d-item:hover { background: var(--bg-surface); }
+    .d-item-name { flex: 1; font-size: 14px; color: var(--text-primary); }
+    .d-item-by { font-size: 10px; color: var(--text-muted); border: 1px solid var(--border); border-radius: 100px; padding: 1px 6px; }
+    .d-item-qty { font-family: 'Azeret Mono', monospace; font-size: 13px; color: var(--text-secondary); }
+    .d-item-price { font-family: 'Azeret Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text-primary); min-width: 64px; text-align: right; }
+    .d-item-note { font-size: 11px; color: var(--warning); font-style: italic; width: 100%; padding-left: 12px; }
+
+    .add-item-btn { background: transparent; border: 1px dashed var(--border-md); color: var(--text-secondary); border-radius: 10px; padding: 12px; width: 100%; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 48px; margin: 8px 0 20px; }
+    .add-item-btn:hover { color: var(--text-primary); border-color: var(--border-strong); }
+
+    .total-display { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 16px; }
+    .total-label { font-size: 14px; color: var(--text-secondary); }
+    .total-amount { font-family: 'Azeret Mono', monospace; font-size: 48px; font-weight: 700; color: var(--text-primary); transition: all 300ms cubic-bezier(0.16,1,0.3,1); }
+    .total-amount.changed { color: var(--success); transform: scale(1.04); }
+
+    .payment-section { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+    .payment-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
+    .payment-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .pay-btn { background: var(--bg-elevated); border: 1px solid var(--border-md); color: var(--text-primary); border-radius: 12px; padding: 16px 8px; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 56px; transition: all 150ms ease; }
+    .pay-btn:hover { border-color: var(--border-strong); background: var(--bg-hover); }
+    .gift-card-input { display: flex; gap: 8px; margin-top: 12px; }
+    .gift-card-input input { flex: 1; background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 10px; color: var(--text-primary); font-family: 'Azeret Mono', monospace; font-size: 13px; padding: 0 12px; min-height: 44px; text-transform: uppercase; }
+    .gift-applied { font-size: 12px; color: var(--success); margin-top: 8px; }
+
+    /* Add-item overlay */
+    .ai-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; z-index: 200; }
+    .ai-overlay.show { display: flex; }
+    .ai-sheet { background: var(--bg-surface); border: 1px solid var(--border-md); border-radius: 18px 18px 0 0; width: 100%; max-width: 560px; padding: 20px; max-height: 80vh; overflow-y: auto; }
+    .ai-search { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 10px; color: var(--text-primary); font-size: 14px; padding: 0 12px; min-height: 48px; margin-bottom: 12px; }
+    .ai-results { display: flex; flex-direction: column; gap: 4px; max-height: 280px; overflow-y: auto; }
+    .ai-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-radius: 10px; cursor: pointer; }
+    .ai-row:hover { background: var(--bg-hover); }
+    .ai-row-price { font-family: 'Azeret Mono', monospace; color: var(--text-secondary); font-size: 13px; }
+    .ai-manual { display: grid; grid-template-columns: 1fr 90px 70px; gap: 8px; margin-top: 12px; }
+    .ai-manual input { background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 8px; color: var(--text-primary); padding: 0 10px; min-height: 44px; font-size: 13px; }
+
+    body.caixa-takeover .portal-nav, body.caixa-takeover .portal-sidebar { display: none; }
+    body.caixa-takeover .portal-main { margin-left: 0; padding: 0; max-width: none; }
+  </style>
+</head>
+<body class="caixa-takeover">
+
+  <nav class="portal-nav" id="portal-nav" style="display:none"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar" style="display:none"></aside>
+
+  <main class="portal-main" id="main">
+    <header class="caixa-header">
+      <div class="caixa-id">
+        <span class="c-logo">NEXO.</span><span class="c-mode">Restaurante</span>
+        <span class="c-sep">·</span><span class="c-space" id="c-space">—</span>
+      </div>
+      <div class="caixa-header-right">
+        <a class="c-back" href="/portal/dashboard/">← Voltar ao portal</a>
+        <span class="c-live" id="live-indicator"><span class="live-dot"></span><span class="live-text">Em directo</span></span>
+      </div>
+    </header>
+
+    <div class="caixa-split">
+      <section class="floor">
+        <div class="floor-header">
+          <div>
+            <div class="floor-title">Salão</div>
+            <div class="floor-sub"><span id="active-count">0</span> mesas activas</div>
+          </div>
+          <button class="new-table-btn" id="new-table-btn">Nova mesa +</button>
+        </div>
+        <div class="table-grid" id="table-grid"></div>
+      </section>
+
+      <section class="detail" id="detail">
+        <div class="detail-placeholder">← Seleccione uma mesa para gerir a comanda</div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Add item overlay -->
+  <div class="ai-overlay" id="ai-overlay">
+    <div class="ai-sheet">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Adicionar item</h3>
+      <input class="ai-search" id="ai-search" placeholder="Procurar item do menu...">
+      <div class="ai-results" id="ai-results"></div>
+      <p style="font-size:12px;color:var(--text-muted);margin:14px 0 6px">Ou adicionar manualmente:</p>
+      <div class="ai-manual">
+        <input id="ai-name" placeholder="Nome">
+        <input id="ai-price" inputmode="decimal" placeholder="€ Preço">
+        <input id="ai-qty" inputmode="numeric" placeholder="Qt" value="1">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-secondary" id="ai-cancel" style="flex:1">Cancelar</button>
+        <button class="btn btn-primary" id="ai-add" style="flex:1">Adicionar à comanda</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/restaurante/', client);
+    const slug = getMenuSlug(client);
+    if (!slug) { document.getElementById('table-grid').innerHTML = '<p class="empty-sub">Sem menu configurado.</p>'; return; }
+    document.getElementById('c-space').textContent = client.name || slug;
+    initNotifications(slug);
+
+    const ACTIVE = ['open', 'submitted', 'preparing', 'ready'];
+    let tables = [];          // comandas
+    let selectedId = null;
+    let selectedItems = [];
+    let menuItems = [];       // for add-item search
+    window.selectedComanda = null;
+
+    loadMenuItems(slug).then(sections => {
+      menuItems = (sections || []).flatMap(s => s.items.map(i => ({ ...i, category: s.name })));
+    });
+
+    async function loadTables() {
+      const { data } = await db.from('comandas').select('*')
+        .eq('espaco_slug', slug).in('status', ACTIVE)
+        .order('created_at', { ascending: true });
+      tables = data || [];
+      renderTableGrid();
+      document.getElementById('active-count').textContent = tables.length;
+      if (selectedId && !tables.find(t => t.id === selectedId)) clearSelection();
+      else if (selectedId) { const t = tables.find(t => t.id === selectedId); if (t) { window.selectedComanda = t; updateRunningTotal(t.total); } }
+    }
+
+    function tableStatusClass(c) {
+      if (c.status === 'ready') return 'ready';
+      if (c.status === 'closed') return 'empty';
+      return 'active';
+    }
+    function minsSince(iso) { return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000)); }
+
+    function renderTableGrid() {
+      const grid = document.getElementById('table-grid');
+      if (!tables.length) { grid.innerHTML = '<p class="empty-sub" style="grid-column:1/-1;color:var(--text-muted);font-size:13px;padding:8px">Sem mesas activas. Crie uma nova mesa ou aguarde pedidos do menu.</p>'; return; }
+      grid.innerHTML = tables.map(c => `
+        <div class="table-card ${c.id === selectedId ? 'selected' : ''}" data-status="${tableStatusClass(c)}" data-id="${c.id}">
+          <span class="table-label">${escapeHtml(c.table_label || 'Mesa')}</span>
+          <span class="table-time mono">${minsSince(c.created_at)}m</span>
+          <span class="table-total mono">${formatEUR(c.total)}</span>
+          <span class="table-guests">👥 ${c.guest_count || 1}</span>
+        </div>`).join('');
+      grid.querySelectorAll('.table-card').forEach(el =>
+        el.addEventListener('click', () => selectTable(el.dataset.id)));
+    }
+
+    async function selectTable(id) {
+      selectedId = id;
+      const c = tables.find(t => t.id === id);
+      if (!c) return;
+      window.selectedComanda = c;
+      renderTableGrid();
+      const { data: items } = await db.from('comanda_items').select('*')
+        .eq('comanda_id', id).neq('status', 'cancelled').order('created_at');
+      selectedItems = items || [];
+      renderDetail(c);
+    }
+
+    function clearSelection() { selectedId = null; window.selectedComanda = null; selectedItems = [];
+      document.getElementById('detail').innerHTML = '<div class="detail-placeholder">← Seleccione uma mesa para gerir a comanda</div>'; }
+    window.clearSelectedTable = clearSelection;
+
+    const ST = { open: 'Aberta', submitted: 'Na cozinha', preparing: 'Em preparação', ready: 'Pronta' };
+    function renderDetail(c) {
+      const detail = document.getElementById('detail');
+      detail.innerHTML = `
+        <div class="detail-head">
+          <div>
+            <div class="detail-table-name">${escapeHtml(c.table_label || 'Mesa')}</div>
+            <div class="detail-code mono">${escapeHtml(c.session_code || '')}</div>
+            <div class="detail-time">Aberta há ${minsSince(c.created_at)} min · 👥 ${c.guest_count || 1}</div>
+          </div>
+          <span class="status-badge" data-s="${c.status}">${ST[c.status] || c.status}</span>
+        </div>
+        <div class="detail-items" id="detail-items">${selectedItems.map(renderDItem).join('') || '<p class="empty-sub" style="color:var(--text-muted);font-size:13px;padding:8px">Sem itens ainda.</p>'}</div>
+        <button class="add-item-btn" id="add-item-btn">+ Adicionar item</button>
+        <div class="total-display">
+          <span class="total-label">Total</span>
+          <span class="total-amount mono" id="running-total">${formatEUR(c.total)}</span>
+        </div>
+        <div class="payment-section" id="payment-section" style="${c.status === 'ready' ? '' : 'display:none'}">
+          <p class="payment-title">Forma de pagamento</p>
+          <div class="payment-methods">
+            <button class="pay-btn" data-pay="cash">💵 Numerário</button>
+            <button class="pay-btn" data-pay="card">💳 Cartão</button>
+            <button class="pay-btn" data-pay="mbway">📱 MB Way</button>
+          </div>
+          <div class="gift-card-input">
+            <input type="text" id="gift-card-code" placeholder="Código de oferta...">
+            <button class="btn btn-secondary" id="apply-gift">Aplicar</button>
+          </div>
+          <div class="gift-applied" id="gift-applied" style="display:none"></div>
+        </div>`;
+      detail.querySelector('#add-item-btn').addEventListener('click', openAddItem);
+      detail.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => processPayment(b.dataset.pay)));
+      detail.querySelector('#apply-gift').addEventListener('click', applyGiftCard);
+    }
+    function renderDItem(i) {
+      return `<div class="d-item">
+        <span class="d-item-name">${escapeHtml(i.item_name)}</span>
+        ${i.added_by === 'staff' ? '<span class="d-item-by">staff</span>' : ''}
+        <span class="d-item-qty mono">×${i.quantity}</span>
+        <span class="d-item-price mono">${formatEUR((i.item_price || 0) * i.quantity)}</span>
+        ${i.notes ? `<span class="d-item-note">${escapeHtml(i.notes)}</span>` : ''}
+      </div>`;
+    }
+
+    function updateRunningTotal(v) {
+      const el = document.getElementById('running-total');
+      if (!el) return;
+      el.textContent = formatEUR(v);
+      el.classList.add('changed');
+      setTimeout(() => el.classList.remove('changed'), 400);
+    }
+
+    // ── add item ───────────────────────────────────
+    const aiOverlay = document.getElementById('ai-overlay');
+    function openAddItem() {
+      aiOverlay.classList.add('show');
+      document.getElementById('ai-search').value = '';
+      document.getElementById('ai-name').value = '';
+      document.getElementById('ai-price').value = '';
+      document.getElementById('ai-qty').value = '1';
+      renderAiResults('');
+      document.getElementById('ai-search').focus();
+    }
+    function closeAddItem() { aiOverlay.classList.remove('show'); }
+    function parsePrice(p) { const n = String(p).replace(/[^\d.,]/g, '').replace(',', '.'); const v = parseFloat(n); return isNaN(v) ? 0 : v; }
+    function renderAiResults(q) {
+      const res = document.getElementById('ai-results');
+      const ql = q.toLowerCase().trim();
+      const list = (ql ? menuItems.filter(i => i.name.toLowerCase().includes(ql)) : menuItems).slice(0, 30);
+      res.innerHTML = list.map((i, idx) => `
+        <div class="ai-row" data-idx="${idx}">
+          <span>${escapeHtml(i.name)}</span>
+          <span class="ai-row-price mono">${i.price ? (typeof i.price === 'string' ? i.price : formatEUR(i.price)) : ''}</span>
+        </div>`).join('') || '<p class="empty-sub" style="color:var(--text-muted);font-size:13px;padding:8px">Sem resultados — adicione manualmente abaixo.</p>';
+      res.querySelectorAll('.ai-row').forEach(el => el.addEventListener('click', () => {
+        const it = list[parseInt(el.dataset.idx)];
+        addItem(it.name, parsePrice(it.price), 1, it.category || null);
+      }));
+    }
+    document.getElementById('ai-search').addEventListener('input', e => renderAiResults(e.target.value));
+    document.getElementById('ai-cancel').addEventListener('click', closeAddItem);
+    aiOverlay.addEventListener('click', e => { if (e.target === aiOverlay) closeAddItem(); });
+    document.getElementById('ai-add').addEventListener('click', () => {
+      const name = document.getElementById('ai-name').value.trim();
+      const price = parsePrice(document.getElementById('ai-price').value);
+      const qty = parseInt(document.getElementById('ai-qty').value) || 1;
+      if (!name) { showToast('Indique o nome do item', 'warning'); return; }
+      addItem(name, price, qty, null);
+    });
+
+    async function addItem(name, price, qty, category) {
+      if (!selectedId) return;
+      closeAddItem();
+      try {
+        await db.from('comanda_items').insert({
+          comanda_id: selectedId, espaco_slug: slug, item_name: name,
+          item_price: price, quantity: qty, item_category: category,
+          added_by: 'staff', status: 'pending',
+        });
+        const { data: items } = await db.from('comanda_items').select('*')
+          .eq('comanda_id', selectedId).neq('status', 'cancelled').order('created_at');
+        selectedItems = items || [];
+        const di = document.getElementById('detail-items');
+        if (di) di.innerHTML = selectedItems.map(renderDItem).join('');
+        const newTotal = selectedItems.reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
+        updateRunningTotal(newTotal);
+        showToast('Item adicionado', 'success');
+      } catch (err) { console.error(err); showToast('Erro ao adicionar item', 'error'); }
+    }
+
+    // ── gift card ──────────────────────────────────
+    let giftDiscount = 0, giftCodeUsed = null;
+    async function applyGiftCard() {
+      const code = document.getElementById('gift-card-code').value.trim().toUpperCase();
+      if (!code) return;
+      const { data: gift } = await db.from('gift_cards').select('*')
+        .eq('code', code).eq('espaco_slug', slug).in('status', ['active', 'partially_used']).maybeSingle();
+      const c = window.selectedComanda;
+      if (!gift || !c) { showToast('Código inválido', 'error'); return; }
+      giftDiscount = Math.min(Number(gift.remaining_value), Number(c.total));
+      giftCodeUsed = code;
+      const el = document.getElementById('gift-applied');
+      el.style.display = 'block';
+      el.textContent = `✓ ${formatEUR(giftDiscount)} de desconto aplicado (resta ${formatEUR(gift.remaining_value - giftDiscount)})`;
+    }
+
+    // ── payment ────────────────────────────────────
+    async function processPayment(method) {
+      const c = window.selectedComanda;
+      if (!c) return;
+      const due = Math.max(0, Number(c.total) - giftDiscount);
+      const ML = { cash: 'Numerário', card: 'Cartão', mbway: 'MB Way' };
+      const ok = await confirmModal({
+        title: `Fechar ${c.table_label || 'mesa'}`,
+        body: `Total ${formatEUR(c.total)}${giftDiscount ? ` · Oferta −${formatEUR(giftDiscount)}` : ''} · A pagar ${formatEUR(due)} via ${ML[method]}.`,
+        confirmLabel: 'Confirmar pagamento',
+      });
+      if (!ok) return;
+      try {
+        await db.from('comandas').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', c.id);
+        // Log to orders_log for stats/Sala
+        await db.from('orders_log').insert({
+          espaco_slug: slug, table_label: c.table_label, total: c.total,
+          channel: 'staff', is_takeaway: c.mode === 'take_away', comanda_id: c.id,
+          items: selectedItems.map(i => ({ name: i.item_name, qty: i.quantity, price: i.item_price })),
+        });
+        if (giftCodeUsed && giftDiscount > 0) {
+          const { data: g } = await db.from('gift_cards').select('remaining_value').eq('code', giftCodeUsed).maybeSingle();
+          if (g) {
+            const rem = Math.max(0, Number(g.remaining_value) - giftDiscount);
+            await db.from('gift_cards').update({
+              remaining_value: rem, status: rem > 0 ? 'partially_used' : 'fully_used',
+              used_at: new Date().toISOString(),
+            }).eq('code', giftCodeUsed);
+          }
+        }
+        showToast(`${c.table_label || 'Mesa'} fechada — ${formatEUR(due)}`, 'success');
+        giftDiscount = 0; giftCodeUsed = null;
+        clearSelection();
+        loadTables();
+      } catch (err) { console.error(err); showToast('Erro ao processar pagamento', 'error'); }
+    }
+
+    // ── new table ──────────────────────────────────
+    document.getElementById('new-table-btn').addEventListener('click', async () => {
+      const label = prompt('Etiqueta da mesa (ex: Mesa 5):', 'Mesa');
+      if (!label) return;
+      const { data, error } = await db.from('comandas').insert({
+        espaco_slug: slug, table_label: label, guest_count: 1, mode: 'dine_in', status: 'open',
+      }).select('id').single();
+      if (error) { showToast('Erro ao criar mesa', 'error'); return; }
+      await loadTables();
+      selectTable(data.id);
+    });
+
+    // ── ?comanda= preload (from "Mostrar ao Staff" QR) ──
+    async function loadComandaByCode(code) {
+      const { data } = await db.from('comandas').select('id')
+        .eq('session_code', code.toUpperCase()).eq('espaco_slug', slug).maybeSingle();
+      if (data) { await loadTables(); selectTable(data.id); }
+    }
+
+    // ── realtime ───────────────────────────────────
+    const ch = db.channel('caixa_' + slug);
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `espaco_slug=eq.${slug}` }, () => loadTables());
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items' }, (p) => {
+      const cid = (p.new || p.old).comanda_id;
+      if (cid === selectedId) selectTable(selectedId);
+      loadTables();
+    });
+    ch.subscribe((s) => setLiveState(s === 'SUBSCRIBED' ? 'connected' : 'reconnecting'));
+    trackChannel(ch);
+
+    await loadTables();
+    const preload = new URLSearchParams(location.search).get('comanda');
+    if (preload) loadComandaByCode(preload);
+  })();
+  </script>
+</body>
+</html>

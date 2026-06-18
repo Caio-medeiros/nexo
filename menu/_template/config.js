@@ -679,6 +679,20 @@ const CONFIG = {
     // Set false to hide "Chamar Empregado" button entirely
     sharedCart: true,
     // Set false to disable Shared Cart (Mesa em Grupo) feature
+
+    // ── NEXO Premium ──────────────────────────────────────────
+    // Take-away mode: floating "Na mesa / Take away" switcher + pickup
+    // time selector in the cart. Requires migration 016 + nexo-premium.js.
+    takeaway: {
+      enabled: false,
+      pickupMinutes: [15, 20, 30, 45, 60],
+      defaultPickupMinutes: 30,
+      whatsappNumber: '351918104266', // fallback to CONFIG.whatsappNumber
+    },
+    // Promotional banners managed from the portal (menu_banners table).
+    banners: {
+      enabled: false,
+    },
   }
 };
 

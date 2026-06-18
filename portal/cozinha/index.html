@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Modo Cozinha — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+  <style>
+    .mono { font-family: 'Azeret Mono', ui-monospace, monospace; }
+
+    /* Header */
+    .kitchen-header {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px; padding: 0 20px;
+      background: var(--bg-base); border-bottom: 1px solid var(--border);
+    }
+    .kitchen-id { display: flex; align-items: center; gap: 10px; }
+    .kitchen-id .k-logo { font-size: 12px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; }
+    .kitchen-id .k-mode { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .kitchen-id .k-sep { color: var(--text-muted); }
+    .kitchen-id .k-space { font-size: 14px; color: var(--text-secondary); }
+    .kitchen-header-right { display: flex; align-items: center; gap: 16px; }
+    .k-live { display: inline-flex; align-items: center; gap: 7px; font-family: 'Azeret Mono', monospace; font-size: 11px; color: var(--success); }
+    .k-live .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse-dot 1.6s ease infinite; }
+    .k-live.reconnecting { color: var(--warning); }
+    .k-live.reconnecting .live-dot { background: var(--warning); }
+    .k-back { font-size: 12px; color: var(--text-muted); text-decoration: none; }
+    .k-back:hover { color: var(--text-secondary); }
+    .k-fullscreen { background: transparent; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
+    .k-fullscreen:hover { color: var(--text-secondary); }
+
+    /* Grid */
+    .ticket-grid {
+      padding: 16px;
+      display: grid; gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+
+    .ticket {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-md);
+      border-radius: 16px; overflow: hidden;
+      animation: ticketArrive 400ms cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes ticketArrive { from { transform: translateY(-20px) scale(0.97); opacity: 0; } }
+    .ticket[data-status="submitted"] {
+      border-color: rgba(245,158,11,0.5);
+      animation: ticketArrive 400ms cubic-bezier(0.16,1,0.3,1) both, borderPulse 2s ease 400ms 3;
+    }
+    @keyframes borderPulse { 0%,100% { border-color: rgba(245,158,11,0.5); } 50% { border-color: rgba(245,158,11,1); } }
+    .ticket[data-status="preparing"] { border-color: rgba(59,130,246,0.3); }
+    .ticket[data-status="ready"] { border-color: rgba(34,197,94,0.5); }
+
+    .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
+    .ticket-table { font-size: 20px; font-weight: 700; color: var(--text-primary); display: block; line-height: 1; }
+    .ticket-mode { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block; }
+    .ticket[data-mode="take_away"] .ticket-table::after { content: '🥡'; margin-left: 8px; font-size: 16px; }
+    .ticket-timer { font-family: 'Azeret Mono', monospace; font-size: 22px; font-weight: 700; color: var(--text-primary); display: block; text-align: right; line-height: 1; }
+    .ticket-timer.age-medium { color: var(--warning); }
+    .ticket-timer.age-high { color: var(--danger); }
+    .ticket-code { font-family: 'Azeret Mono', monospace; font-size: 10px; color: var(--text-muted); text-align: right; display: block; margin-top: 4px; letter-spacing: 0.1em; }
+
+    .ticket-items { padding: 8px 0; }
+    .ticket-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; transition: background 150ms ease; }
+    .ticket-item[data-status="ready"] { background: rgba(34,197,94,0.04); }
+    .ticket-item[data-status="preparing"] { background: rgba(59,130,246,0.04); }
+    .item-check { width: 32px; height: 32px; min-width: 48px; min-height: 48px; border-radius: 50%; border: 2px solid var(--border-md); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 200ms cubic-bezier(0.16,1,0.3,1); }
+    .item-check:hover { border-color: var(--success); background: rgba(34,197,94,0.1); }
+    .ticket-item[data-status="preparing"] .item-check { border-color: var(--info); }
+    .ticket-item[data-status="ready"] .item-check { border-color: var(--success); background: var(--success); }
+    .check-icon { font-size: 16px; color: var(--text-muted); }
+    .ticket-item[data-status="ready"] .check-icon { color: #fff; }
+    .item-info { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .item-name { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .ticket-item[data-status="ready"] .item-name { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--success); }
+    .item-qty { font-family: 'Azeret Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text-secondary); flex-shrink: 0; }
+    .item-status-label { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+    .item-note { font-size: 11px; color: var(--warning); font-style: italic; width: 100%; padding-left: 60px; margin-top: -2px; }
+
+    .ticket-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--border); }
+    .ticket-total { font-family: 'Azeret Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .btn-all-done { background: var(--success); color: #fff; border: none; border-radius: 8px; padding: 12px 16px; min-height: 48px; font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity 150ms ease, transform 150ms ease; }
+    .btn-all-done:active { transform: scale(0.96); opacity: 0.85; }
+
+    .kitchen-empty { position: fixed; inset: 56px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+    .kitchen-empty-icon { font-size: 48px; }
+    .kitchen-empty-title { font-size: 20px; font-weight: 600; color: var(--text-secondary); }
+    .kitchen-empty-sub { font-size: 14px; color: var(--text-muted); }
+
+    /* This page takes over fully — hide the standard portal chrome. */
+    body.kitchen-takeover .portal-nav,
+    body.kitchen-takeover .portal-sidebar { display: none; }
+    body.kitchen-takeover .portal-main { margin-left: 0; padding: 0; max-width: none; }
+  </style>
+</head>
+<body class="kitchen-takeover">
+
+  <nav class="portal-nav" id="portal-nav" style="display:none"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar" style="display:none"></aside>
+
+  <main class="portal-main" id="main">
+    <header class="kitchen-header">
+      <div class="kitchen-id">
+        <span class="k-logo">NEXO.</span>
+        <span class="k-mode">Cozinha</span>
+        <span class="k-sep">·</span>
+        <span class="k-space" id="k-space">—</span>
+      </div>
+      <div class="kitchen-header-right">
+        <a class="k-back" href="/portal/dashboard/">← Voltar ao portal</a>
+        <span class="k-live" id="live-indicator"><span class="live-dot"></span><span class="live-text">Em directo</span></span>
+        <button class="k-fullscreen" id="fullscreen-btn">⛶ Ecrã completo</button>
+      </div>
+    </header>
+
+    <div class="ticket-grid" id="ticket-grid"></div>
+    <div class="kitchen-empty" id="kitchen-empty" style="display:none">
+      <div class="kitchen-empty-icon">👨‍🍳</div>
+      <p class="kitchen-empty-title">Cozinha em ordem</p>
+      <p class="kitchen-empty-sub">Os pedidos aparecem aqui quando chegarem</p>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/cozinha/', client);
+
+    const slug = getMenuSlug(client);
+    if (!slug) { document.getElementById('ticket-grid').innerHTML =
+      '<p class="empty-sub" style="padding:24px">Sem menu configurado.</p>'; return; }
+    document.getElementById('k-space').textContent = client.name || slug;
+    initNotifications(slug);
+
+    const grid = document.getElementById('ticket-grid');
+    const emptyEl = document.getElementById('kitchen-empty');
+    const ACTIVE = ['submitted', 'preparing', 'ready'];
+    const timers = {};
+
+    // ── audio ──────────────────────────────────────
+    let _ac = null;
+    function ac() { if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)(); return _ac; }
+    function tone(freq, dur, gainV, type) {
+      try {
+        const c = ac(), osc = c.createOscillator(), g = c.createGain();
+        osc.connect(g); g.connect(c.destination); osc.type = type || 'sine';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(gainV, c.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+        osc.start(); osc.stop(c.currentTime + dur);
+      } catch (_) {}
+    }
+    function playStatusSound(status) {
+      if (status === 'preparing') tone(440, 0.15, 0.1);
+      else if (status === 'ready') { tone(520, 0.12, 0.1); setTimeout(() => tone(660, 0.18, 0.1), 100); }
+    }
+    function playNewOrderSound() { [880, 660, 440].forEach((f, i) => setTimeout(() => tone(f, 0.25, 0.15), i * 80)); }
+    function playCompletionSound() { [440, 550, 660, 880].forEach((f, i) => setTimeout(() => tone(f, 0.2, 0.1), i * 60)); }
+
+    // ── data ───────────────────────────────────────
+    const state = {}; // comandaId -> { comanda, items }
+
+    async function loadAll() {
+      const { data: comandas } = await db.from('comandas').select('*')
+        .eq('espaco_slug', slug).in('status', ACTIVE)
+        .order('submitted_at', { ascending: true });
+      const ids = (comandas || []).map(c => c.id);
+      let items = [];
+      if (ids.length) {
+        const { data } = await db.from('comanda_items').select('*')
+          .in('comanda_id', ids).order('created_at', { ascending: true });
+        items = data || [];
+      }
+      Object.keys(state).forEach(k => delete state[k]);
+      (comandas || []).forEach(c => { state[c.id] = { comanda: c, items: items.filter(i => i.comanda_id === c.id) }; });
+      renderAll();
+    }
+
+    function renderAll() {
+      const list = Object.values(state).sort((a, b) =>
+        new Date(a.comanda.submitted_at || a.comanda.created_at) - new Date(b.comanda.submitted_at || b.comanda.created_at));
+      if (!list.length) { grid.innerHTML = ''; emptyEl.style.display = 'flex';
+        Object.keys(timers).forEach(stopTimer); return; }
+      emptyEl.style.display = 'none';
+      grid.innerHTML = list.map(renderTicket).join('');
+      list.forEach(({ comanda }) => {
+        const arrived = comanda.submitted_at || comanda.created_at;
+        startTimer(comanda.id, arrived);
+      });
+    }
+
+    function renderTicket({ comanda, items }) {
+      const visible = items.filter(i => i.status !== 'cancelled');
+      const modeLabel = comanda.mode === 'take_away' ? '🥡 Take Away' : '🍽️ Na mesa';
+      return `
+      <div class="ticket" data-comanda-id="${comanda.id}" data-status="${comanda.status}" data-mode="${comanda.mode}">
+        <div class="ticket-header">
+          <div class="ticket-left">
+            <span class="ticket-table">${escapeHtml(comanda.table_label || 'Mesa')}</span>
+            <span class="ticket-mode">${modeLabel}</span>
+          </div>
+          <div class="ticket-right">
+            <span class="ticket-timer mono" id="timer-${comanda.id}">0:00</span>
+            <span class="ticket-code">${escapeHtml(comanda.session_code || '')}</span>
+          </div>
+        </div>
+        <div class="ticket-items">
+          ${visible.map(renderItem).join('') || '<div style="padding:10px 16px;color:var(--text-muted);font-size:13px">Sem itens</div>'}
+        </div>
+        <div class="ticket-footer">
+          <span class="ticket-total mono">${formatEUR(comanda.total)}</span>
+          <button class="btn-all-done" data-all-done="${comanda.id}">Tudo pronto ✓</button>
+        </div>
+      </div>`;
+    }
+    const STATUS_LABEL = { pending: 'Pendente', preparing: 'A preparar', ready: 'Pronto', delivered: 'Entregue' };
+    function renderItem(i) {
+      return `
+      <div class="ticket-item" data-item-id="${i.id}" data-status="${i.status}">
+        <button class="item-check" data-toggle="${i.id}" aria-label="Mudar estado">
+          <span class="check-icon">${i.status === 'ready' ? '✓' : '○'}</span>
+        </button>
+        <div class="item-info">
+          <span class="item-name">${escapeHtml(i.item_name)}</span>
+          <span class="item-qty">× ${i.quantity}</span>
+        </div>
+        <span class="item-status-label">${STATUS_LABEL[i.status] || ''}</span>
+        ${i.notes ? `<span class="item-note">${escapeHtml(i.notes)}</span>` : ''}
+      </div>`;
+    }
+
+    // ── timers ─────────────────────────────────────
+    function startTimer(comandaId, arrivedAt) {
+      stopTimer(comandaId);
+      const tick = () => {
+        const el = document.getElementById(`timer-${comandaId}`);
+        if (!el) { stopTimer(comandaId); return; }
+        const elapsed = Date.now() - new Date(arrivedAt).getTime();
+        const mins = Math.floor(elapsed / 60000), secs = Math.floor((elapsed % 60000) / 1000);
+        el.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+        el.className = 'ticket-timer mono' + (mins >= 20 ? ' age-high' : mins >= 10 ? ' age-medium' : '');
+      };
+      tick();
+      timers[comandaId] = setInterval(tick, 1000);
+    }
+    function stopTimer(comandaId) { clearInterval(timers[comandaId]); delete timers[comandaId]; }
+
+    // ── actions ────────────────────────────────────
+    grid.addEventListener('click', async (e) => {
+      const toggle = e.target.closest('[data-toggle]');
+      const allDone = e.target.closest('[data-all-done]');
+      if (toggle) return toggleItem(toggle.dataset.toggle, toggle);
+      if (allDone) return markAllDone(allDone.dataset.allDone);
+    });
+
+    async function toggleItem(itemId, btn) {
+      const itemEl = btn.closest('.ticket-item');
+      const cur = itemEl.dataset.status;
+      const next = cur === 'pending' ? 'preparing' : cur === 'preparing' ? 'ready' : 'pending';
+      itemEl.dataset.status = next;
+      itemEl.querySelector('.check-icon').textContent = next === 'ready' ? '✓' : '○';
+      itemEl.querySelector('.item-status-label').textContent = STATUS_LABEL[next] || '';
+      playStatusSound(next);
+      // local state
+      const ticket = btn.closest('.ticket');
+      const cid = ticket.dataset.comandaId;
+      const st = state[cid]; if (st) { const it = st.items.find(x => x.id === itemId); if (it) it.status = next; }
+      try { await db.from('comanda_items').update({ status: next }).eq('id', itemId); } catch (err) { console.error(err); }
+      maybeMarkComandaStatus(cid);
+    }
+
+    async function maybeMarkComandaStatus(cid) {
+      const st = state[cid]; if (!st) return;
+      const active = st.items.filter(i => i.status !== 'cancelled');
+      const allReady = active.length > 0 && active.every(i => i.status === 'ready');
+      const anyPrep = active.some(i => i.status === 'preparing' || i.status === 'ready');
+      const newStatus = allReady ? 'ready' : anyPrep ? 'preparing' : 'submitted';
+      if (newStatus !== st.comanda.status) {
+        st.comanda.status = newStatus;
+        const ticket = grid.querySelector(`.ticket[data-comanda-id="${cid}"]`);
+        if (ticket) ticket.dataset.status = newStatus;
+        if (allReady) playCompletionSound();
+        try { await db.from('comandas').update({ status: newStatus }).eq('id', cid); } catch (_) {}
+      }
+    }
+
+    async function markAllDone(cid) {
+      const st = state[cid]; if (!st) return;
+      st.items.forEach(i => { if (i.status !== 'cancelled') i.status = 'ready'; });
+      st.comanda.status = 'ready';
+      renderAll();
+      playCompletionSound();
+      try {
+        await db.from('comanda_items').update({ status: 'ready' }).eq('comanda_id', cid).neq('status', 'cancelled');
+        await db.from('comandas').update({ status: 'ready' }).eq('id', cid);
+      } catch (err) { console.error(err); }
+    }
+
+    // ── realtime ───────────────────────────────────
+    const ch = db.channel('cozinha_' + slug);
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `espaco_slug=eq.${slug}` },
+      (payload) => {
+        const row = payload.new || payload.old;
+        const wasActive = !!state[row.id];
+        if (payload.new && ACTIVE.includes(payload.new.status)) {
+          const justArrived = !wasActive;
+          loadAll().then(() => { if (justArrived && payload.new.status === 'submitted') playNewOrderSound(); });
+        } else if (wasActive) { delete state[row.id]; stopTimer(row.id); renderAll(); }
+      });
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items' },
+      (payload) => { const cid = (payload.new || payload.old).comanda_id; if (state[cid]) loadAll(); });
+    ch.subscribe((status) => setLiveState(status === 'SUBSCRIBED' ? 'connected' : 'reconnecting'));
+    trackChannel(ch);
+
+    // ── fullscreen ─────────────────────────────────
+    const fsBtn = document.getElementById('fullscreen-btn');
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+      else document.exitFullscreen?.();
+    });
+    if (new URLSearchParams(location.search).get('fullscreen') === '1') {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    }
+
+    await loadAll();
+  })();
+  </script>
+</body>
+</html>

@@ -2,327 +2,118 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Modo Restaurante — NEXO Portal</title>
+  <title>Salão — NEXO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/portal/_assets/portal.css">
+  <link rel="stylesheet" href="sala.css">
 </head>
-<body>
+<body class="sala-body">
 
-  <nav class="portal-nav" id="portal-nav"></nav>
-  <aside class="portal-sidebar" id="portal-sidebar"></aside>
-  <button class="btn btn-secondary btn-sm kiosk-exit" id="kiosk-exit">Sair do ecrã completo ✕</button>
-
-  <main class="portal-main" id="main">
-    <div id="page-skeleton">
-      <div class="page-header">
-        <div class="nexo-skeleton" style="width:240px;height:28px"></div>
-      </div>
-      <div class="nexo-skeleton card" style="height:400px"></div>
+  <!-- HEADER -->
+  <header class="sala-header">
+    <div class="sala-header-left">
+      <span class="nexo-mark">NEXO.</span>
+      <span class="sala-divider">·</span>
+      <span class="sala-title">Salão</span>
+      <span class="sala-divider">·</span>
+      <span class="sala-venue" id="sala-venue-name">—</span>
     </div>
-    <div id="page-content" style="display:none"></div>
+    <div class="sala-header-right">
+      <div class="live-indicator" id="live-indicator">
+        <span class="live-dot"></span>
+        <span class="live-text">Em directo</span>
+      </div>
+      <button class="sala-action-btn" onclick="toggleFullscreen()" title="Ecrã completo" aria-label="Ecrã completo">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2H14v4.5M6.5 14H2V9.5M14 2L9.5 6.5M2 14l4.5-4.5"/></svg>
+      </button>
+      <a href="/portal/dashboard/" class="sala-action-btn" title="Dashboard" aria-label="Dashboard">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l6-5 6 5M3.5 6v7.5h9V6"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- TOP STATS BAR -->
+  <div class="sala-stats-bar" id="sala-stats-bar">
+    <div class="stat-chip"><span class="stat-value" id="stat-open">0</span><span class="stat-label">mesas activas</span></div>
+    <div class="stat-chip"><span class="stat-value" id="stat-orders">0</span><span class="stat-label">pedidos hoje</span></div>
+    <div class="stat-chip"><span class="stat-value" id="stat-calls">0</span><span class="stat-label">chamadas</span></div>
+    <div class="stat-chip revenue-chip"><span class="stat-value azeret" id="stat-revenue">€0,00</span><span class="stat-label">faturado hoje</span></div>
+
+    <div class="sala-filters">
+      <button class="filter-pill active" data-filter="all" onclick="setFilter('all')">Todas</button>
+      <button class="filter-pill" data-filter="active" onclick="setFilter('active')">Activas</button>
+      <button class="filter-pill" data-filter="calling" onclick="setFilter('calling')">🙋 A chamar</button>
+      <button class="filter-pill" data-filter="ready" onclick="setFilter('ready')">✅ Prontas</button>
+    </div>
+
+    <div class="sala-mode-links">
+      <a href="/portal/cozinha/" class="mode-link cozinha">👨‍🍳 Cozinha</a>
+      <a href="/portal/restaurante/" class="mode-link caixa">💰 Caixa</a>
+    </div>
+  </div>
+
+  <!-- FLOOR PLAN -->
+  <main class="floor-plan" id="floor-plan">
+    <div class="table-grid" id="table-grid"></div>
+    <div class="entrance-marker">
+      <span>🚪</span>
+      <span class="entrance-text">Entrada</span>
+    </div>
   </main>
 
+  <!-- TABLE DETAIL -->
+  <div class="table-detail-overlay" id="table-detail-overlay" onclick="closeTableDetail(event)"></div>
+  <div class="table-detail-panel" id="table-detail-panel">
+    <div class="tdp-header">
+      <div>
+        <h2 class="tdp-table-name" id="tdp-title">Mesa —</h2>
+        <span class="tdp-code" id="tdp-code"></span>
+      </div>
+      <div class="tdp-header-actions">
+        <button class="tdp-action-btn kitchen" onclick="sendToKitchenFromPanel()">👨‍🍳 Cozinha</button>
+        <button class="tdp-action-btn pay" onclick="processPaymentFromPanel()">💰 Cobrar</button>
+        <button class="tdp-close" onclick="closeTableDetail()" aria-label="Fechar">✕</button>
+      </div>
+    </div>
+    <div class="tdp-body" id="tdp-body"></div>
+  </div>
+
+  <!-- ACTIVITY FEED -->
+  <div class="activity-feed-bar" id="activity-feed-bar">
+    <button class="feed-toggle" onclick="toggleActivityFeed()" id="feed-toggle">
+      <span id="feed-toggle-label">↑ Actividade recente</span>
+      <span class="feed-count-badge" id="feed-count-badge" style="display:none">0</span>
+    </button>
+    <div class="feed-content" id="feed-content">
+      <div class="feed-items" id="feed-items">
+        <div class="feed-empty">Sem actividade recente.</div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="/portal/_assets/icons.js"></script>
   <script src="/portal/_assets/portal.js"></script>
+  <script src="sala.js"></script>
   <script>
-  (async function () {
+  (async function bootstrap() {
     const client = await getClientData();
-    if (!client) return;
-    renderLayout('/portal/sala/', client);
-
+    if (!client) return; // getClientData redirects to login / shows lock
     const slug = getMenuSlug(client);
-    if (!slug) { renderFatalError('Sem menu configurado para mostrar a sala em directo.'); return; }
-    initNotifications(slug);
-
-    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
-    const todayISO = startOfDay.toISOString();
-
-    const CH_LABEL = { whatsapp: 'WhatsApp', staff: 'Staff', shared: 'Grupo' };
-    const NOTIF_ICONS = { order_new: '🍽️', staff_call: '🙋', waitlist_new: '⏳',
-      review_positive: '⭐', review_negative: '💬', update_done: '✅', menu_viewed: '👁️', menu_change: '✏️' };
-
-    let orders = [], calls = [], waitlist = [], activity = [];
-    let stats = { orders: 0, revenue: 0, reviews: 0, calls: 0, views: 0 };
-
-    try {
-      const [o, c, w, a, rv, vw] = await Promise.all([
-        db.from('orders_log').select('*').eq('espaco_slug', slug)
-          .gte('created_at', todayISO).order('created_at', { ascending: false }),
-        db.from('staff_calls').select('*').eq('espaco_slug', slug)
-          .is('resolved_at', null).order('created_at', { ascending: false }),
-        db.from('waitlist_entries').select('*').eq('espaco_slug', slug)
-          .in('status', ['waiting', 'notified']).order('created_at', { ascending: true }),
-        db.from('portal_notifications').select('*').eq('espaco_slug', slug)
-          .order('created_at', { ascending: false }).limit(20),
-        db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug)
-          .eq('event_name', 'review_google_clicked').gte('created_at', todayISO),
-        db.from('menu_events').select('id', { count: 'exact', head: true }).eq('espaco_slug', slug)
-          .eq('event_name', 'menu_opened').gte('created_at', todayISO),
-      ]);
-      orders = o.data || []; calls = c.data || []; waitlist = w.data || []; activity = a.data || [];
-      stats.orders = orders.length;
-      stats.revenue = orders.reduce((s, x) => s + (Number(x.total) || 0), 0);
-      stats.calls = calls.length;
-      stats.reviews = rv.count || 0;
-      stats.views = vw.count || 0;
-    } catch (err) { console.error(err); }
-
-    // ── render shell ─────────────────────────────────
-    document.getElementById('page-content').innerHTML = `
-      <div class="resto-bar">
-        <div class="resto-id">
-          <p class="resto-eyebrow">Modo Restaurante</p>
-          <div class="resto-meta">
-            <span class="resto-clock" id="sala-clock">--:--</span>
-            <span class="resto-sep">·</span>
-            <span class="live-indicator" id="live-indicator"><span class="live-dot"></span><span class="live-text">Em directo</span></span>
-          </div>
-        </div>
-        <button class="btn btn-secondary btn-sm" id="kiosk-toggle">${getIcon('expand')} Ecrã completo</button>
-      </div>
-
-      <div class="resto-stats" id="stats-bar"></div>
-
-      <div class="sala-tabs filter-tabs" id="sala-tabs">
-        <button class="filter-tab active" data-tab="pedidos">Pedidos</button>
-        <button class="filter-tab" data-tab="chamadas">Chamadas & Fila</button>
-        <button class="filter-tab" data-tab="actividade">Actividade</button>
-      </div>
-
-      <div class="sala-grid">
-        <section class="sala-col card" data-col="pedidos">
-          <div class="sala-col-title">Pedidos <span class="count-badge" id="orders-count">${orders.length}</span></div>
-          <div id="orders-list"></div>
-        </section>
-        <section class="sala-col card" data-col="chamadas" hidden>
-          <div class="sala-col-title">Chamadas <span class="count-badge" id="calls-count">${calls.length}</span></div>
-          <div id="calls-list"></div>
-          <div class="sala-col-title" style="margin-top:20px">Fila de espera <span class="count-badge" id="wait-count">${waitlist.length}</span></div>
-          <div id="waitlist-list"></div>
-        </section>
-        <section class="sala-col card" data-col="actividade" hidden>
-          <div class="sala-col-title">Actividade</div>
-          <div class="activity-feed" id="activity-feed"></div>
-        </section>
-      </div>`;
-
-    document.getElementById('page-skeleton').style.display = 'none';
-    document.getElementById('page-content').style.display = 'block';
-
-    // ── renderers ────────────────────────────────────
-    function orderCard(o) {
-      const items = Array.isArray(o.items) ? o.items : [];
-      const isNew = o.status === 'new';
-      return `<div class="order-card ${isNew ? 'is-new' : ''} ${o.status === 'seen' ? 'is-seen' : ''}" data-id="${o.id}">
-        <div class="order-head">
-          <span class="order-table">${escapeHtml(o.table_label || 'Mesa não especificada')}</span>
-          <span class="badge badge--muted">${CH_LABEL[o.channel] || o.channel}</span>
-          ${isNew ? '<span class="badge badge--new">NOVO</span>' : ''}
-          <span class="call-time" style="margin-left:auto">${timeAgo(o.created_at)}</span>
-        </div>
-        <ul class="order-items">
-          ${items.length ? items.map(it => `<li>• ${escapeHtml(String(it.qty || it.quantity || 1))}× ${escapeHtml(it.name || it.item_name || 'Item')}${it.note ? `<div class="order-note">↳ ${escapeHtml(it.note)}</div>` : ''}</li>`).join('') : '<li class="text-muted">Sem detalhe de itens</li>'}
-        </ul>
-        <div class="order-foot">
-          <span class="order-total">${formatEUR(o.total)}</span>
-          ${o.status === 'new'
-            ? `<button class="btn btn-secondary btn-sm" data-seen="${o.id}">Visto ✓</button>`
-            : '<span class="text-success text-xs">Visto ✓</span>'}
-        </div>
-      </div>`;
+    if (!slug) {
+      document.getElementById('table-grid').innerHTML =
+        '<p style="grid-column:1/-1;color:var(--text-muted);padding:24px">Sem menu configurado para o Salão.</p>';
+      return;
     }
-    function callCard(c) {
-      return `<div class="call-card" data-id="${c.id}">
-        <div><span class="call-table">🙋 ${escapeHtml(c.table_label || 'Mesa')}</span>
-          <span class="call-time">${timeAgo(c.created_at)}</span></div>
-        <button class="btn btn-success btn-sm" data-resolve="${c.id}">Atendido ✓</button>
-      </div>`;
-    }
-    function waitCard(w) {
-      const notified = w.status === 'notified';
-      return `<div class="call-card" data-id="${w.id}">
-        <div><span class="call-table" style="font-size:15px">${escapeHtml(w.name)}</span>
-          <span class="call-time">${w.party_size}p · ${timeAgo(w.created_at)}</span>
-          ${notified ? '<div class="text-warning text-xs" style="margin-top:4px">A sua mesa está pronta!</div>' : ''}</div>
-        <div class="flex gap-2">
-          ${notified ? '' : `<button class="btn btn-secondary btn-sm" data-notify="${w.id}">Avisar</button>`}
-          <button class="btn btn-success btn-sm" data-seat="${w.id}">Sentar</button>
-        </div>
-      </div>`;
-    }
-    function activityRow(n) {
-      return `<div class="activity-row">
-        <span class="activity-icon">${NOTIF_ICONS[n.type] ?? '🔔'}</span>
-        <div class="activity-content">
-          <div class="activity-title">${escapeHtml(n.title.replace(/^[^\p{L}\p{N}]+/u, ''))}</div>
-          ${n.body ? `<div class="activity-desc">${escapeHtml(n.body)}</div>` : ''}
-        </div>
-        <span class="activity-time">${timeAgo(n.created_at)}</span>
-      </div>`;
-    }
-
-    function paintOrders() {
-      const el = document.getElementById('orders-list');
-      const shown = orders.slice(0, 10);
-      el.innerHTML = shown.length
-        ? shown.map(orderCard).join('') + (orders.length > 10
-            ? `<div class="text-muted text-sm" style="padding:8px 0">${orders.length - 10} pedidos mais antigos</div>` : '')
-        : `<div class="empty-state">${getIcon('grid', 32)}<p class="empty-title">Nenhum pedido ainda hoje.</p></div>`;
-      document.getElementById('orders-count').textContent = orders.length;
-      paintStats();
-    }
-    function paintCalls() {
-      const el = document.getElementById('calls-list');
-      el.innerHTML = calls.length ? calls.map(callCard).join('')
-        : `<div class="empty-state"><p class="empty-title text-success">✓ Nenhuma chamada activa</p></div>`;
-      document.getElementById('calls-count').textContent = calls.length;
-      paintStats();
-    }
-    function paintWaitlist() {
-      const el = document.getElementById('waitlist-list');
-      el.innerHTML = waitlist.length ? waitlist.map(waitCard).join('')
-        : `<div class="empty-state"><p class="empty-title text-muted">Fila vazia</p></div>`;
-      document.getElementById('wait-count').textContent = waitlist.length;
-      paintStats();
-    }
-    function paintActivity() {
-      const el = document.getElementById('activity-feed');
-      el.innerHTML = activity.length ? activity.slice(0, 20).map(activityRow).join('')
-        : `<div class="empty-state">${getIcon('activity', 32)}<p class="empty-title">Sem actividade</p></div>`;
-    }
-    function paintStats() {
-      const tiles = [
-        ['Pedidos hoje', orders.length, 'grid'],
-        ['Faturado hoje', formatEUR(stats.revenue), 'bar-chart'],
-        ['Chamadas activas', calls.length, 'phone'],
-        ['Em fila', waitlist.length, 'users'],
-        ['Reviews hoje', stats.reviews, 'star'],
-        ['Visitas hoje', stats.views, 'eye'],
-      ];
-      document.getElementById('stats-bar').innerHTML = tiles.map(([l, v, ic]) =>
-        `<div class="resto-stat">
-           <span class="rs-ico">${getIcon(ic)}</span>
-           <div><div class="rs-v">${v}</div><div class="rs-l">${l}</div></div>
-         </div>`).join('');
-    }
-
-    paintOrders(); paintCalls(); paintWaitlist(); paintActivity(); paintStats();
-
-    // relógio ao vivo (cabeçalho do Modo Restaurante)
-    const clockEl = document.getElementById('sala-clock');
-    function tickClock() {
-      if (clockEl) clockEl.textContent = new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-    }
-    tickClock(); setInterval(tickClock, 15000);
-
-    // ── actions (event delegation) ───────────────────
-    document.getElementById('page-content').addEventListener('click', async (e) => {
-      const seen = e.target.closest('[data-seen]');
-      const resolve = e.target.closest('[data-resolve]');
-      const notify = e.target.closest('[data-notify]');
-      const seat = e.target.closest('[data-seat]');
-
-      if (seen) {
-        const id = seen.dataset.seen;
-        seen.disabled = true;
-        const o = orders.find(x => x.id === id); if (o) o.status = 'seen';
-        paintOrders();
-        try { await db.from('orders_log').update({ status: 'seen' }).eq('id', id); } catch (_) {}
-      }
-      if (resolve) {
-        const id = resolve.dataset.resolve;
-        const card = resolve.closest('.call-card');
-        card?.classList.add('resolving');
-        calls = calls.filter(x => x.id !== id);
-        setTimeout(paintCalls, 300);
-        try { await db.from('staff_calls').update({ resolved_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
-      }
-      if (notify) {
-        const id = notify.dataset.notify;
-        const w = waitlist.find(x => x.id === id); if (w) w.status = 'notified';
-        paintWaitlist();
-        try { await db.from('waitlist_entries').update({ status: 'notified', notified_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
-      }
-      if (seat) {
-        const id = seat.dataset.seat;
-        waitlist = waitlist.filter(x => x.id !== id);
-        paintWaitlist();
-        try { await db.from('waitlist_entries').update({ status: 'seated', seated_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
-      }
-    });
-
-    // ── mobile tabs ──────────────────────────────────
-    document.getElementById('sala-tabs').addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-tab]'); if (!btn) return;
-      document.querySelectorAll('#sala-tabs .filter-tab').forEach(b => b.classList.toggle('active', b === btn));
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('.sala-col').forEach(col => {
-        col.hidden = window.innerWidth <= 1024 && col.dataset.col !== tab;
-      });
-    });
-    // reset hidden state on resize to desktop
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 1024) document.querySelectorAll('.sala-col').forEach(c => c.hidden = false);
-    });
-
-    // ── kiosk mode ───────────────────────────────────
-    const kioskToggle = document.getElementById('kiosk-toggle');
-    const kioskExit = document.getElementById('kiosk-exit');
-    function enterKiosk() {
-      document.body.classList.add('kiosk-mode');
-      if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
-    }
-    function exitKiosk() {
-      document.body.classList.remove('kiosk-mode');
-      if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
-    }
-    kioskToggle.addEventListener('click', enterKiosk);
-    kioskExit.addEventListener('click', exitKiosk);
-    document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) document.body.classList.remove('kiosk-mode');
-    });
-
-    // ── sound ────────────────────────────────────────
-    function beep(freq, ms) {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator(); const g = ctx.createGain();
-        osc.connect(g); g.connect(ctx.destination);
-        osc.frequency.value = freq; osc.type = 'sine';
-        g.gain.setValueAtTime(0.15, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + ms / 1000);
-        osc.start(); osc.stop(ctx.currentTime + ms / 1000);
-      } catch (_) {}
-    }
-
-    // ── realtime ─────────────────────────────────────
-    const ch = db.channel('sala_' + slug);
-    ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders_log', filter: `espaco_slug=eq.${slug}` },
-      ({ new: o }) => { orders.unshift(o); stats.orders++; stats.revenue += Number(o.total) || 0; paintOrders(); paintStats(); });
-    ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'staff_calls', filter: `espaco_slug=eq.${slug}` },
-      ({ new: c }) => {
-        calls.unshift(c); stats.calls++; paintCalls(); paintStats();
-        beep(880, 300); if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        const card = document.querySelector(`.call-card[data-id="${c.id}"]`);
-        card?.classList.add('new-call');
-      });
-    ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'waitlist_entries', filter: `espaco_slug=eq.${slug}` },
-      ({ new: w }) => { if (['waiting', 'notified'].includes(w.status)) { waitlist.push(w); paintWaitlist(); } });
-    ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'waitlist_entries', filter: `espaco_slug=eq.${slug}` },
-      ({ new: w }) => {
-        waitlist = waitlist.filter(x => x.id !== w.id);
-        if (['waiting', 'notified'].includes(w.status)) waitlist.push(w);
-        paintWaitlist();
-      });
-    ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_notifications', filter: `espaco_slug=eq.${slug}` },
-      ({ new: n }) => { activity.unshift(n); if (activity.length > 20) activity.pop(); paintActivity(); });
-    ch.subscribe((status) => setLiveState(status === 'SUBSCRIBED' ? 'connected' : 'reconnecting'));
-    trackChannel(ch);
+    window.ESPACO_SLUG = slug;
+    window.ESPACO_NAME = client.name || slug;
+    initSala();
   })();
   </script>
 </body>

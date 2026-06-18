@@ -2642,11 +2642,28 @@ function initSplitAssign() {
   while (customPersonNames.length < splitPeople) customPersonNames.push('');
 }
 
+// Itens activos para a divisão da conta. Funciona tanto no carrinho normal
+// (`cart`) como no carrinho partilhado / Mesa em grupo (`sharedCartItems`).
+// Devolve sempre [{ refId, qty }] agregado por item.
+function getSplitEntries() {
+  if (typeof sharedCart !== 'undefined' && sharedCart && Array.isArray(sharedCartItems)) {
+    const byRef = {};
+    sharedCartItems.forEach(row => {
+      const ref = row.item_id;
+      if (!ref) return;
+      if (!byRef[ref]) byRef[ref] = { refId: ref, qty: 0 };
+      byRef[ref].qty += (row.quantity || 1);
+    });
+    return Object.values(byRef);
+  }
+  return cart.map(e => ({ refId: e.refId, qty: e.qty }));
+}
+
 // Total atribuído a uma pessoa (soma por item)
 function getPersonTotal(personIdx) {
   const assigned = splitAssign[personIdx];
   if (!assigned) return 0;
-  return cart.reduce((sum, entry) => {
+  return getSplitEntries().reduce((sum, entry) => {
     if (!assigned.has(entry.refId)) return sum;
     const item = getItemByRef(entry.refId);
     if (!item) return sum;
@@ -2762,13 +2779,14 @@ function renderSplitAssignList() {
   const el = document.getElementById('split-assign-list');
   if (!el) return;
   const assigned = splitAssign[splitActivePerson] || new Set();
+  const entries = getSplitEntries();
 
-  if (cart.length === 0) {
+  if (entries.length === 0) {
     el.innerHTML = `<div class="cart-empty" style="padding:var(--s4) 0">${t().cartEmpty}</div>`;
     return;
   }
 
-  el.innerHTML = cart.map(entry => {
+  el.innerHTML = entries.map(entry => {
     const item = getItemByRef(entry.refId);
     if (!item) return '';
     const unitPrice = parsePriceToNumber(item.price) || 0;
@@ -2890,7 +2908,7 @@ function onCartChangeSplitHook() {
   if (splitPanel && splitPanel.style.display !== 'none') {
     renderSplitPanel();
   }
-  if (cart.length === 0) {
+  if (getSplitEntries().length === 0) {
     initSplitAssign();
   }
 }
@@ -3257,7 +3275,8 @@ function renderSplitPodium() {
   if (splitMode !== 'custom') { podiumEl.style.display = 'none'; return; }
 
   // Só mostra depois de todos os items terem pelo menos 1 pessoa atribuída
-  const allAssigned = cart.length > 0 && cart.every(entry =>
+  const _splitEntries = getSplitEntries();
+  const allAssigned = _splitEntries.length > 0 && _splitEntries.every(entry =>
     splitAssign.some(s => s && s.has(entry.refId))
   );
 

@@ -2830,7 +2830,24 @@ function validateTableInput() {
   const field = document.getElementById('confirm-table-field');
   const errorEl = document.getElementById('confirm-table-error');
   if (!input) return true;
-  if (input.value.trim()) {
+  const raw = input.value.trim();
+  if (raw) {
+    // Validação do número máximo de mesas (venue_settings).
+    const num = parseInt(raw, 10);
+    if (nexoMaxTable && (!num || num < 1 || num > nexoMaxTable)) {
+      if (errorEl) {
+        errorEl.textContent = (num > nexoMaxTable)
+          ? `Este espaço tem ${nexoMaxTable} mesas. Escolha um número entre 1 e ${nexoMaxTable}.`
+          : 'Número de mesa inválido.';
+        errorEl.style.display = 'block';
+      }
+      if (field) {
+        field.classList.add('error', 'shake');
+        field.addEventListener('animationend', () => field.classList.remove('shake'), { once: true });
+      }
+      input.focus();
+      return false;
+    }
     if (field) field.classList.remove('error');
     if (errorEl) errorEl.style.display = 'none';
     return true;
@@ -2878,7 +2895,12 @@ function generateOrderMessage(cartItems, tableValue) {
 
   const total = getCartTotal().toFixed(2).replace('.', ',');
 
+  // NEXO Premium: prepend take-away header (pickup time) when active.
+  const taPrefix = (window.NEXOPremium && window.NEXOPremium.takeawayWhatsAppPrefix)
+    ? window.NEXOPremium.takeawayWhatsAppPrefix() : '';
+
   return (
+    taPrefix +
     `*${prefix} ${n}*\n` +
     `━━━━━━━━━━━━━━━\n` +
     `${itemLines}\n` +
@@ -2913,7 +2935,11 @@ function sendToWhatsApp() {
     const encoded = encodeURIComponent(message);
     const number = (CONFIG.orderWhatsapp || '').replace(/\D/g, '');
     const url = `https://wa.me/${number}?text=${encoded}`;
-    logOrderToSupabase(sharedCart ? 'shared' : 'whatsapp', tableValue);
+    // NEXO Premium: when comanda routing is on, the comanda is the source of
+    // truth (Caixa logs orders_log at payment) — avoid a duplicate order row.
+    if (!(window.NEXOPremium && window.NEXOPremium.comandaRouting))
+      logOrderToSupabase(sharedCart ? 'shared' : 'whatsapp', tableValue);
+    if (window.NEXOPremium && window.NEXOPremium.onOrderConfirmed) window.NEXOPremium.onOrderConfirmed();
     window.open(url, '_blank');
   }, 350);
 }
@@ -2946,7 +2972,9 @@ function setupConfirmScreen() {
       const tableVal = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
       confirmTableValue = tableVal;
       closeConfirmScreen();
-      logOrderToSupabase(sharedCart ? 'shared' : 'staff', tableVal);
+      if (!(window.NEXOPremium && window.NEXOPremium.comandaRouting))
+        logOrderToSupabase(sharedCart ? 'shared' : 'staff', tableVal);
+      if (window.NEXOPremium && window.NEXOPremium.onOrderConfirmed) window.NEXOPremium.onOrderConfirmed();
       setTimeout(() => openStaffView(tableVal), 270);
     });
   }
@@ -3197,11 +3225,28 @@ function initSplitAssign() {
   while (customPersonNames.length < splitPeople) customPersonNames.push('');
 }
 
+// Itens activos para a divisão da conta. Funciona tanto no carrinho normal
+// (`cart`) como no carrinho partilhado / Mesa em grupo (`sharedCartItems`).
+// Devolve sempre [{ refId, qty }] agregado por item.
+function getSplitEntries() {
+  if (typeof sharedCart !== 'undefined' && sharedCart && Array.isArray(sharedCartItems)) {
+    const byRef = {};
+    sharedCartItems.forEach(row => {
+      const ref = row.item_id;
+      if (!ref) return;
+      if (!byRef[ref]) byRef[ref] = { refId: ref, qty: 0 };
+      byRef[ref].qty += (row.quantity || 1);
+    });
+    return Object.values(byRef);
+  }
+  return cart.map(e => ({ refId: e.refId, qty: e.qty }));
+}
+
 // Total atribuído a uma pessoa (soma por item)
 function getPersonTotal(personIdx) {
   const assigned = splitAssign[personIdx];
   if (!assigned) return 0;
-  return cart.reduce((sum, entry) => {
+  return getSplitEntries().reduce((sum, entry) => {
     if (!assigned.has(entry.refId)) return sum;
     const item = getItemByRef(entry.refId);
     if (!item) return sum;
@@ -3317,13 +3362,14 @@ function renderSplitAssignList() {
   const el = document.getElementById('split-assign-list');
   if (!el) return;
   const assigned = splitAssign[splitActivePerson] || new Set();
+  const entries = getSplitEntries();
 
-  if (cart.length === 0) {
+  if (entries.length === 0) {
     el.innerHTML = `<div class="cart-empty" style="padding:var(--s4) 0">${t().cartEmpty}</div>`;
     return;
   }
 
-  el.innerHTML = cart.map(entry => {
+  el.innerHTML = entries.map(entry => {
     const item = getItemByRef(entry.refId);
     if (!item) return '';
     const unitPrice = parsePriceToNumber(item.price) || 0;
@@ -3445,7 +3491,7 @@ function onCartChangeSplitHook() {
   if (splitPanel && splitPanel.style.display !== 'none') {
     renderSplitPanel();
   }
-  if (cart.length === 0) {
+  if (getSplitEntries().length === 0) {
     initSplitAssign();
   }
 }
@@ -3824,7 +3870,8 @@ function renderSplitPodium() {
   if (splitMode !== 'custom') { podiumEl.style.display = 'none'; return; }
 
   // Só mostra depois de todos os items terem pelo menos 1 pessoa atribuída
-  const allAssigned = cart.length > 0 && cart.every(entry =>
+  const _splitEntries = getSplitEntries();
+  const allAssigned = _splitEntries.length > 0 && _splitEntries.every(entry =>
     splitAssign.some(s => s && s.has(entry.refId))
   );
 
@@ -3937,6 +3984,23 @@ function setupPersonRename() {
 
 // refId ("seccao:idx") → true/false. false = esgotado (definido no Portal).
 let _nexoAvailability = {};
+
+// Máximo de mesas do espaço (venue_settings). null = sem limite conhecido.
+let nexoMaxTable = null;
+async function loadVenueConfig() {
+  const { supabaseUrl, supabaseAnonKey } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
+  if (!supabaseUrl || !supabaseAnonKey) return;
+  try {
+    const sb = await loadSupabase();
+    const { data } = await sb.from('venue_settings')
+      .select('table_count').eq('espaco_slug', CONFIG.slug).maybeSingle();
+    if (data && data.table_count) {
+      nexoMaxTable = data.table_count;
+      const input = document.getElementById('confirm-table-input');
+      if (input) input.placeholder = `1 a ${nexoMaxTable}`;
+    }
+  } catch (_) { /* não-crítico — sem limite */ }
+}
 
 async function initAvailabilityRealtime() {
   const { supabaseUrl, supabaseAnonKey } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
@@ -4594,6 +4658,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSharedCart();
   initMenuOverrides();
   initAvailabilityRealtime();
+  loadVenueConfig();
   setupQuickNav();
   setupSearch();
   setupDietFilter();

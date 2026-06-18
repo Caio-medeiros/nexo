@@ -351,10 +351,43 @@
         </aside>
       </div>
 
+      <section style="margin-top:8px">
+        <p class="dash-section-label" style="margin-bottom:12px">Atalhos operacionais</p>
+        <div class="ops-launch-grid">
+          <a class="ops-launch" href="/portal/cozinha/"><span class="ops-ico">🍳</span><span class="ops-lbl">Cozinha</span><span class="ops-badge" id="ops-cozinha" style="display:none"></span></a>
+          <a class="ops-launch" href="/portal/restaurante/"><span class="ops-ico">💰</span><span class="ops-lbl">Caixa</span><span class="ops-badge" id="ops-caixa" style="display:none"></span></a>
+          <a class="ops-launch" href="/portal/estatisticas/"><span class="ops-ico">📊</span><span class="ops-lbl">Estatísticas</span></a>
+          <a class="ops-launch" href="/portal/clientes/"><span class="ops-ico">👥</span><span class="ops-lbl">Clientes</span></a>
+          <a class="ops-launch" href="/portal/configuracoes/"><span class="ops-ico">⚙️</span><span class="ops-lbl">Configurações</span></a>
+        </div>
+      </section>
+
       ${forecastHtml}`;
 
     document.getElementById('page-skeleton').style.display = 'none';
     document.getElementById('page-content').style.display = 'block';
+
+    // ── Atalhos operacionais — live ticket counts ──
+    (async () => {
+      if (!slug) return;
+      try {
+        const [{ count: koz }, { count: cax }] = await Promise.all([
+          db.from('comandas').select('id', { count: 'exact', head: true })
+            .eq('espaco_slug', slug).in('status', ['submitted', 'preparing']),
+          db.from('comandas').select('id', { count: 'exact', head: true })
+            .eq('espaco_slug', slug).in('status', ['open', 'submitted', 'preparing', 'ready']),
+        ]);
+        const setBadge = (id, n, cls) => {
+          const el = document.getElementById(id);
+          if (!el || !n) return;
+          el.textContent = `● ${n} pedido${n === 1 ? '' : 's'}`;
+          el.className = 'ops-badge ' + cls;
+          el.style.display = 'inline-flex';
+        };
+        setBadge('ops-cozinha', koz, koz > 0 ? 'ops-badge--warning' : '');
+        setBadge('ops-caixa', cax, 'ops-badge--success');
+      } catch (_) {}
+    })();
 
     // briefing — fechar por hoje (sessionStorage, reaparece amanhã)
     const briefCloseBtn = document.getElementById('brief-close');
