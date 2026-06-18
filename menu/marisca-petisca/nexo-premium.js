@@ -319,7 +319,7 @@
       <canvas id="staff-qr-canvas" width="120" height="120"></canvas>
       <p class="staff-qr-hint">Escanear para gerir esta comanda</p>`;
     view.appendChild(section);
-    const url = `https://nexosolutions.pt/portal/restaurante/?comanda=${comanda.session_code}&slug=${SLUG}`;
+    const url = `https://nexosolutions.pt/portal/sala/?comanda=${comanda.session_code}&slug=${SLUG}`;
     drawQR(url, document.getElementById('staff-qr-canvas'));
   }
   // Minimal QR: use existing global if present, else load a tiny lib lazily.
@@ -412,17 +412,54 @@
     return submitComanda(comanda.id);
   }
 
+  // Signature of an order (item name × qty, order-independent). Notes are
+  // ignored on purpose so "sem ovo" re-taps still count as the same order.
+  function cartSignature(items) {
+    return (items || []).map(i => {
+      const name = (i.name || i.item_name || '').trim().toLowerCase();
+      const qty = i.qty || i.quantity || 1;
+      return name + '×' + qty;
+    }).sort().join('|');
+  }
+
+  // True if the SAME table already has an identical order in the kitchen
+  // within the dedupe window. Different tables never collide. Fail-open:
+  // any error returns false so a real order is never wrongly blocked.
+  async function isDuplicateRecentOrder(tableLabel, items) {
+    try {
+      const client = await sb();
+      const mins = (F.takeaway && F.takeaway.dedupeMinutes) || 3;
+      const since = new Date(Date.now() - mins * 60000).toISOString();
+      const { data, error } = await client.from('comandas')
+        .select('id, comanda_items(item_name, quantity)')
+        .eq('espaco_slug', SLUG)
+        .eq('table_label', tableLabel)
+        .in('status', ['submitted', 'preparing', 'ready'])
+        .gte('created_at', since)
+        .limit(8);
+      if (error || !data || !data.length) return false;
+      const sig = cartSignature(items);
+      return data.some(c => cartSignature(c.comanda_items) === sig);
+    } catch (_) { return false; }
+  }
+
   // Called by the menu right after an order is confirmed (WhatsApp or
   // "Mostrar ao Staff"). Routes the order into the kitchen/caixa.
   let _confirmLock = 0;
   async function onOrderConfirmed() {
     if (!HAS_TAKEAWAY || !SLUG) return null;        // gated by the premium toggle
-    if (Date.now() < _confirmLock) return null;     // anti double-submit
+    if (Date.now() < _confirmLock) return null;     // anti double-submit (same session)
     _confirmLock = Date.now() + 6000;
     try {
       const items = readMenuCart();
       if (!items.length) return null;
-      const res = await pushOrder(currentTableLabel(), items);
+      const tableLabel = currentTableLabel();
+      // Anti-duplicado: mesmo pedido, mesma mesa, dentro da janela → não reenvia.
+      if (await isDuplicateRecentOrder(tableLabel, items)) {
+        toast('Pedido igual já enviado para esta mesa.');
+        return null;
+      }
+      const res = await pushOrder(tableLabel, items);
       toast(modeSwitcher.current === 'take_away'
         ? 'Take away enviado para a cozinha ✓' : 'Pedido enviado para a cozinha ✓');
       return res;

@@ -51,9 +51,14 @@
       <button class="filter-pill" data-filter="ready" onclick="setFilter('ready')">✅ Prontas</button>
     </div>
 
+    <div class="sala-mesas-ctl">
+      <span class="mesas-ctl-label">Mesas</span>
+      <button class="mesas-btn" onclick="removeTable()" aria-label="Remover mesa">−</button>
+      <span class="mesas-total" id="mesas-total">0</span>
+      <button class="mesas-btn" onclick="addTable()" aria-label="Adicionar mesa">+</button>
+    </div>
     <div class="sala-mode-links">
       <a href="/portal/cozinha/" class="mode-link cozinha">👨‍🍳 Cozinha</a>
-      <a href="/portal/restaurante/" class="mode-link caixa">💰 Caixa</a>
     </div>
   </div>
 
@@ -76,6 +81,7 @@
       </div>
       <div class="tdp-header-actions">
         <button class="tdp-action-btn kitchen" onclick="sendToKitchenFromPanel()">👨‍🍳 Cozinha</button>
+        <button class="tdp-action-btn split" onclick="splitTableFromPanel()">✂️ Dividir</button>
         <button class="tdp-action-btn pay" onclick="processPaymentFromPanel()">💰 Cobrar</button>
         <button class="tdp-close" onclick="closeTableDetail()" aria-label="Fechar">✕</button>
       </div>

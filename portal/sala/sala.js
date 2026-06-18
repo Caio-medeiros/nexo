@@ -20,6 +20,10 @@ const state = {
 
 function fmtEUR(v) { return '€' + (Number(v) || 0).toFixed(2).replace('.', ','); }
 
+// Items of the currently-open table (for the payment log) + gift card state.
+let selectedItems = [];
+let giftDiscount = 0, giftCodeUsed = null;
+
 // ─────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────
@@ -36,10 +40,15 @@ async function initSala() {
   }
 
   renderFloorPlan(state.tableCount, false);
+  updateTableCountLabel();
   await loadActiveComandas();
   await loadTodayStats();
   subscribeToRealtime();
   subscribeToVenueChanges();
+
+  // Deep-link from the menu's "Mostrar ao staff" QR
+  const pre = new URLSearchParams(location.search).get('comanda');
+  if (pre) openTableByCode(pre);
 }
 window.initSala = initSala;
 
@@ -284,6 +293,7 @@ function subscribeToVenueChanges() {
         state.tableCount = newCount;
         for (let i = 1; i <= newCount; i++) if (!state.tables[i]) state.tables[i] = { status: 'empty', comanda: null, calls: [] };
         renderFloorPlan(newCount, true);
+        updateTableCountLabel();
         salaToast(`Layout actualizado para ${newCount} mesas`);
       }
     })
@@ -313,8 +323,10 @@ async function openTableDetail(tableNum) {
   if (tableData?.comanda?.id) {
     const { data: items } = await db.from('comanda_items').select('*')
       .eq('comanda_id', tableData.comanda.id).neq('status', 'cancelled').order('created_at');
-    renderTableDetailItems(items || [], tableData.comanda);
+    selectedItems = items || [];
+    renderTableDetailItems(selectedItems, tableData.comanda);
   } else {
+    selectedItems = [];
     body.innerHTML = `<div class="tdp-empty"><p>Mesa livre</p>
       <button class="tdp-full-btn" onclick="createComandaForTable(${tableNum})">+ Abrir comanda</button></div>`;
   }
@@ -405,11 +417,123 @@ async function sendToKitchenFromPanel() {
   closeTableDetail();
 }
 
+// ── Inline payment (Caixa, merged into Sala) ──────────────────
 function processPaymentFromPanel() {
-  const tableNum = state.selectedTable;
-  const c = state.tables[tableNum]?.comanda;
-  if (!c?.code) { window.location.href = '/portal/restaurante/'; return; }
-  window.location.href = `/portal/restaurante/?comanda=${encodeURIComponent(c.code)}`;
+  const c = state.tables[state.selectedTable]?.comanda;
+  if (!c?.id) { salaToast('Mesa sem comanda para cobrar'); return; }
+  renderPaymentPanel(c);
+}
+
+function renderPaymentPanel(c) {
+  giftDiscount = 0; giftCodeUsed = null;
+  const body = document.getElementById('tdp-body');
+  body.innerHTML = `
+    <button class="tdp-full-btn" id="pay-back" style="margin-bottom:14px">← Voltar à comanda</button>
+    <div class="tdp-total-row"><span>Total a pagar</span><span class="tdp-total-amount" id="pay-due">${fmtEUR(c.total)}</span></div>
+    <p class="pay-title">Forma de pagamento</p>
+    <div class="pay-methods">
+      <button class="pay-btn" data-pay="cash">💵 Numerário</button>
+      <button class="pay-btn" data-pay="card">💳 Cartão</button>
+      <button class="pay-btn" data-pay="mbway">📱 MB Way</button>
+    </div>
+    <div class="gift-row">
+      <input id="gift-code" placeholder="Código de oferta..." autocomplete="off">
+      <button class="tdp-action-btn" id="gift-apply">Aplicar</button>
+    </div>
+    <div class="gift-applied" id="gift-applied" style="display:none"></div>`;
+  body.querySelector('#pay-back').addEventListener('click', () => openTableDetail(state.selectedTable));
+  body.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => salaProcessPayment(b.dataset.pay, c)));
+  body.querySelector('#gift-apply').addEventListener('click', () => salaApplyGiftCard(c));
+}
+
+async function salaApplyGiftCard(c) {
+  const code = (document.getElementById('gift-code').value || '').trim().toUpperCase();
+  if (!code) return;
+  const { data: gift } = await db.from('gift_cards').select('*')
+    .eq('code', code).eq('espaco_slug', window.ESPACO_SLUG).in('status', ['active', 'partially_used']).maybeSingle();
+  if (!gift) { salaToast('Código de oferta inválido'); return; }
+  giftDiscount = Math.min(Number(gift.remaining_value), Number(c.total));
+  giftCodeUsed = code;
+  const due = document.getElementById('pay-due');
+  if (due) due.textContent = fmtEUR(Math.max(0, Number(c.total) - giftDiscount));
+  const el = document.getElementById('gift-applied');
+  el.style.display = 'block';
+  el.textContent = `✓ ${fmtEUR(giftDiscount)} de desconto (resta ${fmtEUR(gift.remaining_value - giftDiscount)})`;
+}
+
+async function salaProcessPayment(method, c) {
+  const due = Math.max(0, Number(c.total) - giftDiscount);
+  const ML = { cash: 'Numerário', card: 'Cartão', mbway: 'MB Way' };
+  const ok = await confirmModal({
+    title: `Fechar Mesa ${state.selectedTable}`,
+    body: `Total ${fmtEUR(c.total)}${giftDiscount ? ` · Oferta −${fmtEUR(giftDiscount)}` : ''} · A pagar ${fmtEUR(due)} via ${ML[method]}.`,
+    confirmLabel: 'Confirmar pagamento',
+  });
+  if (!ok) return;
+  try {
+    await db.from('comandas').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', c.id);
+    await db.from('orders_log').insert({
+      espaco_slug: window.ESPACO_SLUG, table_label: c.table_label || `Mesa ${state.selectedTable}`,
+      total: c.total, channel: 'staff', is_takeaway: c.mode === 'take_away', comanda_id: c.id,
+      items: selectedItems.map(i => ({ name: i.item_name, qty: i.quantity, price: i.item_price })),
+    });
+    if (giftCodeUsed && giftDiscount > 0) {
+      const { data: g } = await db.from('gift_cards').select('remaining_value').eq('code', giftCodeUsed).maybeSingle();
+      if (g) {
+        const rem = Math.max(0, Number(g.remaining_value) - giftDiscount);
+        await db.from('gift_cards').update({ remaining_value: rem, status: rem > 0 ? 'partially_used' : 'fully_used', used_at: new Date().toISOString() }).eq('code', giftCodeUsed);
+      }
+    }
+    salaToast(`Mesa ${state.selectedTable} fechada — ${fmtEUR(due)}`);
+    giftDiscount = 0; giftCodeUsed = null;
+    closeTableDetail();
+    // realtime comanda(closed) clears the table; the local fallback below is instant
+    handleComandaUpdate({ id: c.id, table_label: c.table_label || `Mesa ${state.selectedTable}`, status: 'closed' });
+  } catch (e) { console.error(e); salaToast('Erro ao processar pagamento'); }
+}
+
+// ── Dynamic table management (owner sets/updates the floor) ────
+async function setTableCount(n) {
+  n = Math.max(1, Math.min(60, n));
+  if (n === state.tableCount) return n;
+  state.tableCount = n;
+  for (let i = 1; i <= n; i++) if (!state.tables[i]) state.tables[i] = { status: 'empty', comanda: null, calls: [] };
+  renderFloorPlan(n, true);
+  updateTableCountLabel();
+  try { await db.from('venue_settings').update({ table_count: n }).eq('espaco_slug', window.ESPACO_SLUG); } catch (_) {}
+  return n;
+}
+function addTable() { setTableCount(state.tableCount + 1).then(() => salaToast('Mesa adicionada')); }
+function removeTable() {
+  const last = state.tableCount;
+  if (last <= 1) { salaToast('Tem de existir pelo menos 1 mesa'); return; }
+  if (state.tables[last] && state.tables[last].status !== 'empty') { salaToast(`Mesa ${last} está ocupada — liberte-a primeiro`); return; }
+  setTableCount(last - 1);
+}
+// Split: a 4-top becomes two tables → add one and open a comanda on it.
+async function splitTableFromPanel() {
+  const newNum = state.tableCount + 1;
+  if (newNum > 60) { salaToast('Máximo de 60 mesas'); return; }
+  await setTableCount(newNum);
+  try {
+    await db.from('comandas').insert({ espaco_slug: window.ESPACO_SLUG, table_label: `Mesa ${newNum}`, status: 'open', mode: 'dine_in', guest_count: 1 });
+  } catch (_) {}
+  salaToast(`Mesa ${newNum} criada — divida os clientes/itens`);
+  closeTableDetail();
+}
+function updateTableCountLabel() {
+  const el = document.getElementById('mesas-total');
+  if (el) el.textContent = state.tableCount;
+}
+
+// Open a specific table from the menu's "Mostrar ao staff" QR (?comanda=CODE).
+async function openTableByCode(code) {
+  try {
+    const { data } = await db.from('comandas').select('table_label')
+      .eq('session_code', String(code).toUpperCase()).eq('espaco_slug', window.ESPACO_SLUG).maybeSingle();
+    const num = data && extractTableNumber(data.table_label);
+    if (num && state.tables[num]) openTableDetail(num);
+  } catch (_) {}
 }
 
 // ─────────────────────────────────────────

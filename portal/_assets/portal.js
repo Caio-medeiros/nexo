@@ -389,9 +389,9 @@ function renderLayout(activeNav, clientData) {
       { href: '/portal/dashboard/', icon: 'grid', label: 'Dashboard' },
     ]},
     { label: 'Operação', items: [
-      { href: '/portal/sala/', icon: 'monitor', label: 'Sala em Directo' },
+      // Salão + Caixa unificados num só tab (o único preciso ao balcão).
+      { href: '/portal/sala/', icon: 'cashier', label: 'Modo Restaurante' },
       { href: '/portal/cozinha/', icon: 'chef', label: 'Modo Cozinha' },
-      { href: '/portal/restaurante/', icon: 'cashier', label: 'Modo Restaurante' },
       { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
       { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
     ]},
