@@ -553,7 +553,7 @@ async function salaProcessPayment(method, c) {
     await db.from('comandas').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', c.id);
     await db.from('orders_log').insert({
       espaco_slug: window.ESPACO_SLUG, table_label: c.table_label || `Mesa ${state.selectedTable}`,
-      total: c.total, channel: 'staff', is_takeaway: false, comanda_id: c.id,
+      total: c.total, channel: 'staff', comanda_id: c.id,
       items: selectedItems.map(i => ({ name: i.item_name, qty: i.quantity, price: i.item_price })),
     });
     if (giftCodeUsed && giftDiscount > 0) {

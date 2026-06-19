@@ -1,7 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    NEXO PREMIUM — Menu add-ons
-   Phase 1 · Take-away mode      Phase 2 · Comanda (full table order)
-   Phase 3 · Promotional banners
+   Comanda (full table order)  ·  Promotional banners
    ───────────────────────────────────────────────────────────────
    Additive, backward-compatible layer. Loaded AFTER script.js, so it
    shares the global scope (CONFIG, cart, currentLang, loadSupabase,
@@ -13,8 +12,7 @@
 
   const F = (typeof CONFIG !== 'undefined' && CONFIG.features) || {};
   // "comanda" liga o encaminhamento de pedidos p/ Cozinha/Caixa/Salão.
-  // (aceita a chave legada "takeaway" do config — já SEM qualquer modo take-away.)
-  const HAS_COMANDA = !!((F.comanda && F.comanda.enabled) || (F.takeaway && F.takeaway.enabled));
+  const HAS_COMANDA = !!(F.comanda && F.comanda.enabled);
   const HAS_BANNERS = !!(F.banners && F.banners.enabled);
   if (!HAS_COMANDA && !HAS_BANNERS) return; // nothing to do
 
@@ -139,7 +137,7 @@
     const client = await sb();
     const { data, error } = await client.from('comandas').update({
       status: 'submitted', submitted_at: new Date().toISOString(),
-    }).eq('id', comandaId).select('total, table_label, mode, pickup_time, session_code').single();
+    }).eq('id', comandaId).select('total, table_label, mode, session_code').single();
     if (error) throw error;
     if (typeof track === 'function') {
       try { track('comanda_submitted', { espaco_slug: SLUG, total: data.total, mode: data.mode }); } catch (_) {}
@@ -360,8 +358,7 @@
   async function isDuplicateRecentOrder(tableLabel, items) {
     try {
       const client = await sb();
-      const cfg = F.comanda || F.takeaway || {};
-      const mins = cfg.dedupeMinutes || 3;
+      const mins = (F.comanda && F.comanda.dedupeMinutes) || 3;
       const since = new Date(Date.now() - mins * 60000).toISOString();
       const { data, error } = await client.from('comandas')
         .select('id, comanda_items(item_name, quantity)')

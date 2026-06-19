@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   NEXO PREMIUM — Menu add-ons (Take-away · Comanda · Banners)
-   Additive layer. Loads only when CONFIG.features.takeaway/banners
+   NEXO PREMIUM — Menu add-ons (Comanda · Banners)
+   Additive layer. Loads only when CONFIG.features.comanda/banners
    are enabled. Does not touch the core menu styles.
    Tokens mirror the NEXO operational design system.
    ═══════════════════════════════════════════════════════════════ */
