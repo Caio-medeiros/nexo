@@ -126,10 +126,12 @@ function createTableCard(num) {
   card.innerHTML = `
     <span class="chair chair-top"></span><span class="chair chair-bottom"></span>
     <span class="chair chair-left"></span><span class="chair chair-right"></span>
-    <div class="table-notifications" id="notifs-${num}"></div>
     <div class="card-top">
       <div class="table-number">${num}</div>
-      <div class="table-status-dot"></div>
+      <div class="card-top-right">
+        <span class="call-chip" aria-label="A chamar">🙋</span>
+        <div class="table-status-dot"></div>
+      </div>
     </div>
     <div class="card-summary">
       <p class="card-state-label" id="state-${num}">Livre</p>
@@ -191,40 +193,12 @@ function updateTableStatus(tableNum, status, data = {}) {
 }
 
 // ─────────────────────────────────────────
-// NOTIFICATION BADGES
-// ─────────────────────────────────────────
-const notifTimers = {};
-function showTableNotification(tableNum, type, text, autoDismiss = 8000) {
-  const container = document.getElementById(`notifs-${tableNum}`);
-  if (!container) return null;
-  const id = `notif-${tableNum}-${Date.now()}`;
-  const badge = document.createElement('div');
-  badge.className = `notif-badge ${type}`;
-  badge.id = id;
-  badge.innerHTML = text;
-  container.appendChild(badge);
-
-  if (MOTION) gsap.fromTo(badge, { scale: 0, y: 8, opacity: 0, transformOrigin: 'bottom center' },
-    { scale: 1, y: 0, opacity: 1, duration: 0.45, ease: 'back.out(2)' });
-  else { badge.style.opacity = '1'; badge.style.transform = 'none'; }
-
-  playSoundForEvent(type);
-  if (autoDismiss > 0) notifTimers[id] = setTimeout(() => dismissNotification(id, badge), autoDismiss);
-  return id;
-}
-function dismissNotification(id, badge) {
-  clearTimeout(notifTimers[id]);
-  if (!badge) badge = document.getElementById(id);
-  if (!badge) return;
-  if (MOTION) gsap.to(badge, { scale: 0, opacity: 0, y: -4, duration: 0.2, ease: 'power2.in', onComplete: () => badge.remove() });
-  else badge.remove();
-}
-function clearTableBadges(tableNum) {
-  document.getElementById(`notifs-${tableNum}`)?.querySelectorAll('.notif-badge').forEach(b => {
-    if (MOTION) gsap.to(b, { scale: 0, opacity: 0, duration: 0.2, ease: 'power2.in', onComplete: () => b.remove() });
-    else b.remove();
-  });
-}
+// ALERTAS DA MESA
+// Sem "pills" flutuantes (transbordavam para as mesas vizinhas quando havia
+// pedido + chamada ao mesmo tempo). O estado da mesa é sempre legível DENTRO
+// do cartão: borda + rótulo (Novo pedido) + anel/chip vermelho (A chamar).
+// Aqui só fica o sinal sonoro.
+function alertSound(type) { playSoundForEvent(type); }
 
 // ─────────────────────────────────────────
 // REALTIME
@@ -247,7 +221,7 @@ function handleNewComanda(comanda) {
   updateTableStatus(tableNum, 'active', { comanda: {
     id: comanda.id, total: comanda.total, itemCount: 0,
     guestCount: comanda.guest_count, code: comanda.session_code, mode: comanda.mode } });
-  showTableNotification(tableNum, 'cart', '🛒 Comanda aberta');
+  alertSound('cart');
   addToActivityFeed({ type: 'order_new', title: `🛒 Comanda — ${comanda.table_label}`, created_at: new Date().toISOString() });
 }
 
@@ -265,7 +239,6 @@ function handleComandaUpdate(comanda) {
       const tEl = document.getElementById(`total-${tableNum}`); if (tEl) tEl.textContent = '€0,00';
       const mEl = document.getElementById(`meta-${tableNum}`); if (mEl) mEl.textContent = '';
       const sEl = document.getElementById(`state-${tableNum}`); if (sEl) sEl.textContent = STATE_LABELS.empty; }
-    clearTableBadges(tableNum);
     updateStats();
     return;
   }
@@ -284,10 +257,10 @@ function handleComandaUpdate(comanda) {
   });
 
   if (comanda.status === 'submitted') {
-    showTableNotification(tableNum, 'order', `🍽️ Novo pedido · ${fmtEUR(comanda.total)}`);
+    alertSound('order');
     state.todayStats.orders++; state.todayStats.revenue += Number(comanda.total) || 0; updateStats();
   }
-  if (comanda.status === 'ready') showTableNotification(tableNum, 'ready', '✅ Pronto para servir', 15000);
+  if (comanda.status === 'ready') alertSound('ready');
 }
 
 function handleStaffCall(call) {
@@ -305,22 +278,19 @@ function handleStaffCall(call) {
       .to(sel, { x: -3, duration: 0.05 })
       .to(sel, { x: 0, duration: 0.05 });
   }
-  const notifId = showTableNotification(tableNum, 'call', '🙋 A chamar', 0);
-  state.tables[tableNum].callNotifId = notifId;
+  alertSound('call');
   state.todayStats.calls++; updateStats();
   addToActivityFeed({ type: 'staff_call', title: `🙋 Chamada — ${call.table_label}`, created_at: new Date().toISOString() });
 }
 
 // Liga/desliga a camada "A chamar" sem tocar no estado base (pedido/ocupada).
+// O chip 🙋 e o anel vermelho são CSS, accionados por data-calling — sempre
+// dentro do cartão, nunca transbordam para as mesas vizinhas.
 function setCalling(tableNum, on) {
   if (!state.tables[tableNum]) return;
   state.tables[tableNum].calling = on;
   const card = document.querySelector(`[data-table-num="${tableNum}"]`);
   if (card) { if (on) card.dataset.calling = 'true'; else card.removeAttribute('data-calling'); }
-  if (!on && state.tables[tableNum].callNotifId) {
-    dismissNotification(state.tables[tableNum].callNotifId);
-    state.tables[tableNum].callNotifId = null;
-  }
 }
 
 function handleNewOrder(order) {
@@ -335,7 +305,7 @@ function handleNewOrder(order) {
     updateTableStatus(tableNum, 'active', { comanda: {
       total: order.total, itemCount: (order.items || []).length, guestCount: order.member_count } });
   }
-  showTableNotification(tableNum, 'order', `🍽️ ${fmtEUR(order.total)}`);
+  alertSound('order');
 }
 
 // ─────────────────────────────────────────

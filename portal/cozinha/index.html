@@ -217,12 +217,23 @@
     const GRACE_MS = 30000;
     const dismissed = new Set();   // ids já retirados do ecrã da cozinha
     const readyAt = {};            // comandaId -> timestamp em que ficou pronto
-    function markReady(cid) { if (!readyAt[cid]) readyAt[cid] = Date.now(); }
-    function unmarkReady(cid) { delete readyAt[cid]; }
+    // O instante "pronto" é guardado em localStorage para SOBREVIVER a recargas:
+    // se o empregado recarregar, um pedido pronto há muito sai logo (vai p/ a
+    // side tab "Hoje") em vez de ganhar novos 30s.
+    const RK = (cid) => 'nexo_kReady_' + cid;
+    function markReady(cid) {
+      if (readyAt[cid]) return;
+      let t = parseInt(localStorage.getItem(RK(cid)) || '', 10);
+      if (isNaN(t)) { t = Date.now(); try { localStorage.setItem(RK(cid), String(t)); } catch (_) {} }
+      readyAt[cid] = t;
+    }
+    function unmarkReady(cid) { delete readyAt[cid]; try { localStorage.removeItem(RK(cid)); } catch (_) {} }
     function sweepReady() {
       let changed = false;
       Object.keys(readyAt).forEach(cid => {
         if (Date.now() - readyAt[cid] >= GRACE_MS) {
+          // sai do ecrã mas MANTÉM o timestamp em localStorage — assim continua
+          // fora do quadro mesmo após recarga (fica só na side tab "Hoje").
           dismissed.add(cid); delete state[cid]; stopTimer(cid); delete readyAt[cid];
           changed = true;
         }
@@ -466,6 +477,15 @@
     if (new URLSearchParams(location.search).get('fullscreen') === '1') {
       document.documentElement.requestFullscreen?.().catch(() => {});
     }
+
+    // Limpa timestamps "pronto" antigos (>12h) para o localStorage não crescer.
+    try {
+      const cutoff = Date.now() - 12 * 3600 * 1000;
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('nexo_kReady_') && parseInt(localStorage.getItem(k) || '0', 10) < cutoff) localStorage.removeItem(k);
+      }
+    } catch (_) {}
 
     await loadAll();
     loadHistory(); // contador do botão "Hoje"
