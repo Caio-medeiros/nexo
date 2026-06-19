@@ -108,6 +108,7 @@ function renderFloorPlan(count, animate = true) {
       { scale: 1, opacity: 1, duration: 0.32, ease: 'back.out(1.4)', overwrite: 'auto', clearProps: 'transform,opacity',
         stagger: { amount: Math.min(0.3, newCards.length * 0.03), from: 'start' } });
   }
+  if (state.activeFilter !== 'all') applyCurrentFilter();
 }
 
 // Estados visuais → rótulo legível (intuitivo para o empregado).
@@ -652,7 +653,9 @@ function updateStats() {
   document.getElementById('stat-orders').textContent = state.todayStats.orders;
   document.getElementById('stat-calls').textContent = state.todayStats.calls;
   // "faturado hoje" foi removido do Modo Restaurante (é ecrã de staff, não CEO).
-  applyCurrentFilter();
+  // Filtro só re-aplica quando há filtro activo (evita varrer todas as mesas a
+  // cada evento — essencial em salas grandes com muito tráfego).
+  if (state.activeFilter !== 'all') applyCurrentFilter();
 }
 
 function applyCurrentFilter() {

@@ -96,6 +96,34 @@
     body.kitchen-takeover .portal-nav,
     body.kitchen-takeover .portal-sidebar { display: none; }
     body.kitchen-takeover .portal-main { margin-left: 0; padding: 0; max-width: none; }
+
+    /* Botão "Hoje" + painel lateral de histórico */
+    .k-hist-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--bg-elevated); border: 1px solid var(--border-md); color: var(--text-secondary); font-size: 12px; font-weight: 600; padding: 6px 12px; min-height: 36px; border-radius: 8px; cursor: pointer; }
+    .k-hist-btn:hover { color: var(--text-primary); border-color: var(--border-strong); }
+    .k-hist-count { font-family: 'Azeret Mono', monospace; font-size: 11px; font-weight: 700; background: var(--bg-hover); color: var(--text-primary); border-radius: 100px; padding: 1px 7px; }
+    .hist-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 40; opacity: 0; visibility: hidden; transition: opacity 220ms ease, visibility 220ms; }
+    .hist-overlay.visible { opacity: 1; visibility: visible; }
+    .hist-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 41; width: 360px; max-width: 90vw; background: var(--bg-surface); border-left: 1px solid var(--border-md); transform: translateX(100%); transition: transform 280ms cubic-bezier(0.16,1,0.3,1); display: flex; flex-direction: column; }
+    .hist-panel.visible { transform: translateX(0); }
+    .hist-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .hist-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    .hist-close { width: 34px; height: 34px; border-radius: 8px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; font-size: 13px; }
+    .hist-close:hover { color: var(--text-primary); border-color: var(--border-md); }
+    .hist-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .hist-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 40px 16px; }
+    .hist-row { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+    .hist-row-main { flex: 1; min-width: 0; }
+    .hist-row-top { display: flex; align-items: baseline; gap: 8px; }
+    .hist-row-table { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .hist-row-time { font-family: 'Azeret Mono', monospace; font-size: 11px; color: var(--text-muted); }
+    .hist-row-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .hist-row-total { font-family: 'Azeret Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+    .hist-chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
+    .hist-chip.cozinha { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .hist-chip.pronto { background: rgba(34,197,94,0.15); color: var(--success); }
+    .hist-chip.paga { background: rgba(59,130,246,0.15); color: var(--info); }
+    .hist-repor { background: transparent; border: 1px solid var(--border-md); color: var(--text-secondary); font-size: 11px; font-weight: 700; padding: 7px 10px; min-height: 38px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+    .hist-repor:hover { border-color: var(--warning); color: var(--warning); background: rgba(245,158,11,0.08); }
   </style>
 </head>
 <body class="kitchen-takeover">
@@ -114,6 +142,7 @@
       <div class="kitchen-header-right">
         <a class="k-back" href="/portal/dashboard/">← Voltar ao portal</a>
         <span class="k-live" id="live-indicator"><span class="live-dot"></span><span class="live-text">Em directo</span></span>
+        <button class="k-hist-btn" id="hist-btn" type="button">📋 Hoje <span class="k-hist-count" id="hist-count">0</span></button>
         <button class="k-fullscreen" id="fullscreen-btn">⛶ Ecrã completo</button>
       </div>
     </header>
@@ -125,6 +154,16 @@
       <p class="kitchen-empty-sub">Os pedidos aparecem aqui quando chegarem</p>
     </div>
   </main>
+
+  <!-- Side tab: pedidos de hoje + repor (anular "feito" por engano) -->
+  <div class="hist-overlay" id="hist-overlay"></div>
+  <aside class="hist-panel" id="hist-panel" aria-hidden="true">
+    <div class="hist-head">
+      <span class="hist-title">Pedidos de hoje</span>
+      <button class="hist-close" id="hist-close" type="button" aria-label="Fechar">✕</button>
+    </div>
+    <div class="hist-list" id="hist-list"></div>
+  </aside>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/portal/_assets/icons.js"></script>
@@ -144,7 +183,8 @@
     const grid = document.getElementById('ticket-grid');
     const emptyEl = document.getElementById('kitchen-empty');
     const ACTIVE = ['submitted', 'preparing', 'ready'];
-    const timers = {};
+    const arrivals = {}; // comandaId -> instante de chegada (um único loop actualiza todos)
+    const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
     // ── audio ──────────────────────────────────────
     let _ac = null;
@@ -191,13 +231,16 @@
     }
 
     async function loadAll() {
-      const { data: comandas } = await db.from('comandas').select('*')
+      // Só as colunas usadas — menos payload/parse em salas com muitos pedidos.
+      const { data: comandas } = await db.from('comandas')
+        .select('id, table_label, total, status, mode, submitted_at, created_at, session_code')
         .eq('espaco_slug', slug).in('status', ACTIVE)
         .order('submitted_at', { ascending: true });
       const ids = (comandas || []).map(c => c.id);
       let items = [];
       if (ids.length) {
-        const { data } = await db.from('comanda_items').select('*')
+        const { data } = await db.from('comanda_items')
+          .select('id, comanda_id, item_name, quantity, status, notes')
           .in('comanda_id', ids).order('created_at', { ascending: true });
         items = data || [];
       }
@@ -217,13 +260,11 @@
       const list = Object.values(state).sort((a, b) =>
         new Date(b.comanda.submitted_at || b.comanda.created_at) - new Date(a.comanda.submitted_at || a.comanda.created_at));
       if (!list.length) { grid.innerHTML = ''; emptyEl.style.display = 'flex';
-        Object.keys(timers).forEach(stopTimer); return; }
+        Object.keys(arrivals).forEach(stopTimer); return; }
       emptyEl.style.display = 'none';
       grid.innerHTML = list.map(renderTicket).join('');
-      list.forEach(({ comanda }) => {
-        const arrived = comanda.submitted_at || comanda.created_at;
-        startTimer(comanda.id, arrived);
-      });
+      list.forEach(({ comanda }) => startTimer(comanda.id, comanda.submitted_at || comanda.created_at));
+      tickAll(); // pinta os contadores já, sem esperar 1s
     }
 
     function renderTicket({ comanda, items }) {
@@ -266,21 +307,19 @@
       </div>`;
     }
 
-    // ── timers ─────────────────────────────────────
-    function startTimer(comandaId, arrivedAt) {
-      stopTimer(comandaId);
-      const tick = () => {
-        const el = document.getElementById(`timer-${comandaId}`);
-        if (!el) { stopTimer(comandaId); return; }
-        const elapsed = Date.now() - new Date(arrivedAt).getTime();
+    // ── timers (UM único loop para TODOS os tickets — escala p/ muito tráfego) ──
+    function startTimer(comandaId, arrivedAt) { arrivals[comandaId] = new Date(arrivedAt).getTime(); }
+    function stopTimer(comandaId) { delete arrivals[comandaId]; }
+    function tickAll() {
+      for (const cid in arrivals) {
+        const el = document.getElementById(`timer-${cid}`);
+        if (!el) continue;
+        const elapsed = Date.now() - arrivals[cid];
         const mins = Math.floor(elapsed / 60000), secs = Math.floor((elapsed % 60000) / 1000);
         el.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
         el.className = 'ticket-timer mono' + (mins >= 20 ? ' age-high' : mins >= 10 ? ' age-medium' : '');
-      };
-      tick();
-      timers[comandaId] = setInterval(tick, 1000);
+      }
     }
-    function stopTimer(comandaId) { clearInterval(timers[comandaId]); delete timers[comandaId]; }
 
     // ── actions ────────────────────────────────────
     grid.addEventListener('click', async (e) => {
@@ -335,21 +374,88 @@
       } catch (err) { console.error(err); }
     }
 
-    // ── realtime ───────────────────────────────────
+    // ── realtime (alto tráfego: eventos em rajada são COALESCIDOS) ───────
+    // Em vez de recarregar a cada evento, juntamos as alterações numa só
+    // recarga (~180ms) — evita dezenas de fetch/re-render por segundo.
+    let _pendingNewOrder = false;
+    const scheduleHistory = debounce(loadHistory, 500);
+    const scheduleReload = debounce(async () => {
+      await loadAll();
+      if (_pendingNewOrder) { playNewOrderSound(); _pendingNewOrder = false; }
+      scheduleHistory();
+    }, 180);
+
     const ch = db.channel('cozinha_' + slug);
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `espaco_slug=eq.${slug}` },
       (payload) => {
         const row = payload.new || payload.old;
         const wasActive = !!state[row.id];
         if (payload.new && ACTIVE.includes(payload.new.status)) {
-          const justArrived = !wasActive;
-          loadAll().then(() => { if (justArrived && payload.new.status === 'submitted') playNewOrderSound(); });
-        } else if (wasActive) { delete state[row.id]; stopTimer(row.id); unmarkReady(row.id); renderAll(); }
+          if (!wasActive && payload.new.status === 'submitted') _pendingNewOrder = true;
+          scheduleReload();
+        } else if (wasActive) {
+          delete state[row.id]; stopTimer(row.id); unmarkReady(row.id); renderAll(); scheduleHistory();
+        }
       });
-    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items' },
-      (payload) => { const cid = (payload.new || payload.old).comanda_id; if (state[cid]) loadAll(); });
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items', filter: `espaco_slug=eq.${slug}` },
+      (payload) => { const cid = (payload.new || payload.old).comanda_id; if (state[cid]) scheduleReload(); });
     ch.subscribe((status) => setLiveState(status === 'SUBSCRIBED' ? 'connected' : 'reconnecting'));
     trackChannel(ch);
+
+    // ── Histórico de hoje + repor ("anular feito" por engano) ──────
+    const STATUS_PT = { submitted: 'Na cozinha', preparing: 'Na cozinha', ready: 'Pronto', closed: 'Servida' };
+    const histOverlay = document.getElementById('hist-overlay');
+    const histPanel = document.getElementById('hist-panel');
+    const histList = document.getElementById('hist-list');
+    function startOfTodayISO() { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); }
+
+    async function loadHistory() {
+      const { data } = await db.from('comandas')
+        .select('id, table_label, total, status, submitted_at, created_at, comanda_items(id, status)')
+        .eq('espaco_slug', slug).in('status', ['submitted', 'preparing', 'ready', 'closed'])
+        .gte('created_at', startOfTodayISO())
+        .order('submitted_at', { ascending: false, nullsFirst: false });
+      const rows = data || [];
+      document.getElementById('hist-count').textContent = rows.length;
+      if (histPanel.classList.contains('visible')) renderHistory(rows);
+    }
+
+    function renderHistory(rows) {
+      if (!rows.length) { histList.innerHTML = '<div class="hist-empty">Ainda sem pedidos hoje.</div>'; return; }
+      histList.innerHTML = rows.map(c => {
+        const when = new Date(c.submitted_at || c.created_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+        const n = (c.comanda_items || []).filter(i => i.status !== 'cancelled').length;
+        const chipCls = c.status === 'ready' ? 'pronto' : c.status === 'closed' ? 'paga' : 'cozinha';
+        const canRepor = c.status === 'ready'; // dado como "feito" mas ainda na casa → pode voltar
+        return `<div class="hist-row">
+          <div class="hist-row-main">
+            <div class="hist-row-top"><span class="hist-row-table">${escapeHtml(c.table_label || 'Mesa')}</span><span class="hist-row-time">${when}</span></div>
+            <div class="hist-row-sub">${n} ${n === 1 ? 'item' : 'itens'} · <span class="hist-row-total">${formatEUR(c.total)}</span></div>
+          </div>
+          <span class="hist-chip ${chipCls}">${STATUS_PT[c.status] || c.status}</span>
+          ${canRepor ? `<button class="hist-repor" data-repor="${c.id}">↩ Repor</button>` : ''}
+        </div>`;
+      }).join('');
+      histList.querySelectorAll('[data-repor]').forEach(b => b.addEventListener('click', () => reopenComanda(b.dataset.repor)));
+    }
+
+    async function reopenComanda(cid) {
+      // Anula o "feito": o pedido volta para a cozinha (a preparar).
+      dismissed.delete(cid); unmarkReady(cid);
+      try {
+        await db.from('comanda_items').update({ status: 'preparing' }).eq('comanda_id', cid).eq('status', 'ready');
+        await db.from('comandas').update({ status: 'preparing' }).eq('id', cid);
+      } catch (e) { console.error(e); }
+      await loadAll();
+      await loadHistory();
+    }
+
+    function openHist() { histOverlay.classList.add('visible'); histPanel.classList.add('visible'); histPanel.setAttribute('aria-hidden', 'false'); loadHistory(); }
+    function closeHist() { histOverlay.classList.remove('visible'); histPanel.classList.remove('visible'); histPanel.setAttribute('aria-hidden', 'true'); }
+    document.getElementById('hist-btn').addEventListener('click', openHist);
+    document.getElementById('hist-close').addEventListener('click', closeHist);
+    histOverlay.addEventListener('click', closeHist);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHist(); });
 
     // ── fullscreen ─────────────────────────────────
     const fsBtn = document.getElementById('fullscreen-btn');
@@ -362,6 +468,8 @@
     }
 
     await loadAll();
+    loadHistory(); // contador do botão "Hoje"
+    setInterval(tickAll, 1000);    // UM loop p/ todos os contadores
     setInterval(sweepReady, 5000); // retira pedidos prontos passados 30s (fiável)
   })();
   </script>
