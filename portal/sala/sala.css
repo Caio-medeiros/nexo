@@ -213,3 +213,28 @@
 /* 3 action buttons + close — wrap cleanly on narrow panels */
 .tdp-header-actions { flex-wrap: wrap; justify-content: flex-end; }
 .tdp-table-name { max-width: 9ch; }
+
+/* ─── Por enviar (pending) + ronda + anular item ─── */
+.tdp-pending-block { background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.25); border-radius: 12px; padding: 10px 12px; margin-bottom: 16px; }
+.tdp-section-head { font-size: 12px; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.tdp-section-head.pending { color: var(--warning); }
+.tdp-pending-count { font-family: 'Azeret Mono', monospace; font-size: 11px; font-weight: 700; background: rgba(245,158,11,0.18); color: var(--warning); border-radius: 100px; padding: 1px 8px; }
+.tdp-item.pending { background: transparent; }
+.tdp-remove-btn { width: 30px; height: 30px; min-width: 44px; min-height: 44px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--text-muted); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.tdp-remove-btn:hover { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--danger); }
+.tdp-fire-btn { width: 100%; margin-top: 8px; padding: 12px; min-height: 48px; border-radius: 10px; border: none; background: var(--text-primary); color: var(--bg-base); font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 150ms ease, transform 150ms ease; }
+.tdp-fire-btn:active { transform: scale(0.98); opacity: 0.9; }
+.tdp-void-btn { width: 28px; height: 28px; min-width: 40px; min-height: 40px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--text-muted); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.tdp-void-btn:hover { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--danger); }
+
+/* ─── Void modal ─── */
+.void-modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.void-modal { width: 100%; max-width: 360px; background: var(--bg-surface); border: 1px solid var(--border-md); border-radius: 18px; padding: 22px; }
+.void-modal-title { font-size: 17px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
+.void-modal-item-name { font-size: 15px; color: var(--text-primary); font-weight: 600; margin: 0 0 8px; }
+.void-modal-sub { font-size: 13px; color: var(--text-muted); margin: 0 0 16px; }
+.void-reasons { display: flex; flex-direction: column; gap: 8px; }
+.void-reason-btn { width: 100%; text-align: left; padding: 13px 14px; min-height: 48px; border-radius: 10px; border: 1px solid var(--border-md); background: var(--bg-elevated); color: var(--text-primary); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 150ms ease; }
+.void-reason-btn:hover { border-color: rgba(239,68,68,0.4); color: var(--danger); background: rgba(239,68,68,0.06); }
+.void-cancel-btn { width: 100%; margin-top: 14px; padding: 12px; min-height: 46px; border-radius: 10px; border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
+.void-cancel-btn:hover { color: var(--text-secondary); }

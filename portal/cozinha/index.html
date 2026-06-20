@@ -35,6 +35,26 @@
     .k-fullscreen { background: transparent; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
     .k-fullscreen:hover { color: var(--text-secondary); }
 
+    /* ── Voids strip (ANULAÇÕES) — kitchen must see these immediately ── */
+    .voids-strip { display: none; padding: 12px 16px 0; gap: 12px; flex-wrap: wrap; }
+    .voids-strip.has-voids { display: flex; }
+    .void-card {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.55);
+      border-radius: 14px; padding: 12px 14px; min-width: 240px; flex: 0 1 280px;
+      animation: voidArrive 320ms cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes voidArrive { from { transform: translateY(-10px) scale(0.97); opacity: 0; } }
+    .void-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .void-label { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; color: var(--danger); }
+    .void-table { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .void-item { display: flex; align-items: baseline; gap: 8px; }
+    .void-qty { font-family: 'Azeret Mono', monospace; font-size: 14px; font-weight: 700; color: var(--danger); }
+    .void-name { font-size: 15px; font-weight: 600; color: var(--text-primary); text-decoration: line-through; text-decoration-color: rgba(239,68,68,0.6); }
+    .void-reason { font-size: 12px; color: var(--text-secondary); margin: 4px 0 10px; }
+    .btn-void-ack { width: 100%; background: var(--danger); color: #fff; border: none; border-radius: 8px; padding: 9px 12px; min-height: 44px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .btn-void-ack:active { opacity: 0.85; transform: scale(0.98); }
+
     /* Grid */
     .ticket-grid {
       padding: 16px;
@@ -49,41 +69,47 @@
       animation: ticketArrive 400ms cubic-bezier(0.16,1,0.3,1) both;
     }
     @keyframes ticketArrive { from { transform: translateY(-20px) scale(0.97); opacity: 0; } }
-    .ticket[data-status="submitted"] {
+    .ticket[data-status="fired"] {
       border-color: rgba(245,158,11,0.5);
       animation: ticketArrive 400ms cubic-bezier(0.16,1,0.3,1) both, borderPulse 2s ease 400ms 3;
     }
     @keyframes borderPulse { 0%,100% { border-color: rgba(245,158,11,0.5); } 50% { border-color: rgba(245,158,11,1); } }
-    .ticket[data-status="preparing"] { border-color: rgba(59,130,246,0.3); }
-    .ticket[data-status="ready"] { border-color: rgba(34,197,94,0.5); }
+    .ticket[data-status="acknowledged"] { border-color: rgba(59,130,246,0.3); }
+    .ticket[data-status="done"] { border-color: rgba(34,197,94,0.5); }
 
     .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
-    .ticket-table { font-size: 20px; font-weight: 700; color: var(--text-primary); display: block; line-height: 1; }
-    .ticket-mode { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block; }
+    .ticket-left { display: flex; flex-direction: column; gap: 4px; }
+    .ticket-table-row { display: flex; align-items: center; gap: 8px; }
+    .ticket-table { font-size: 20px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+    .ticket-round-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--bg-hover); color: var(--text-secondary); border-radius: 100px; padding: 2px 9px; white-space: nowrap; }
+    .ticket-round-badge.r-first { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .ticket-mode { font-size: 11px; color: var(--text-muted); }
     .ticket-timer { font-family: 'Azeret Mono', monospace; font-size: 22px; font-weight: 700; color: var(--text-primary); display: block; text-align: right; line-height: 1; }
     .ticket-timer.age-medium { color: var(--warning); }
     .ticket-timer.age-high { color: var(--danger); }
-    .ticket-code { font-family: 'Azeret Mono', monospace; font-size: 10px; color: var(--text-muted); text-align: right; display: block; margin-top: 4px; letter-spacing: 0.1em; }
 
     .ticket-items { padding: 8px 0; }
     .ticket-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; transition: background 150ms ease; }
-    .ticket-item[data-status="ready"] { background: rgba(34,197,94,0.04); }
+    .ticket-item[data-status="ready"], .ticket-item[data-status="served"] { background: rgba(34,197,94,0.04); }
     .ticket-item[data-status="preparing"] { background: rgba(59,130,246,0.04); }
     .item-check { width: 32px; height: 32px; min-width: 48px; min-height: 48px; border-radius: 50%; border: 2px solid var(--border-md); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 200ms cubic-bezier(0.16,1,0.3,1); }
     .item-check:hover { border-color: var(--success); background: rgba(34,197,94,0.1); }
     .ticket-item[data-status="preparing"] .item-check { border-color: var(--info); }
-    .ticket-item[data-status="ready"] .item-check { border-color: var(--success); background: var(--success); }
+    .ticket-item[data-status="ready"] .item-check, .ticket-item[data-status="served"] .item-check { border-color: var(--success); background: var(--success); }
     .check-icon { font-size: 16px; color: var(--text-muted); }
-    .ticket-item[data-status="ready"] .check-icon { color: #fff; }
+    .ticket-item[data-status="ready"] .check-icon, .ticket-item[data-status="served"] .check-icon { color: #fff; }
     .item-info { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
     .item-name { font-size: 16px; font-weight: 600; color: var(--text-primary); }
-    .ticket-item[data-status="ready"] .item-name { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--success); }
+    .ticket-item[data-status="ready"] .item-name, .ticket-item[data-status="served"] .item-name { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--success); }
     .item-qty { font-family: 'Azeret Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text-secondary); flex-shrink: 0; }
-    .item-status-label { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
-    .item-note { font-size: 11px; color: var(--warning); font-style: italic; width: 100%; padding-left: 60px; margin-top: -2px; }
+    .item-course { font-size: 14px; flex-shrink: 0; }
+    .staff-added-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; background: var(--bg-hover); color: var(--text-muted); border-radius: 4px; padding: 1px 5px; }
+    .item-note { font-size: 12px; color: var(--warning); font-style: italic; width: 100%; padding-left: 60px; margin-top: -2px; }
 
-    .ticket-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--border); }
-    .ticket-total { font-family: 'Azeret Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .ticket-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+    .btn-ack { background: transparent; color: var(--info); border: 1px solid rgba(59,130,246,0.4); border-radius: 8px; padding: 12px 14px; min-height: 48px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 150ms ease; }
+    .btn-ack:hover { background: rgba(59,130,246,0.1); }
+    .btn-ack:active { transform: scale(0.96); }
     .btn-all-done { background: var(--success); color: #fff; border: none; border-radius: 8px; padding: 12px 16px; min-height: 48px; font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity 150ms ease, transform 150ms ease; }
     .btn-all-done:active { transform: scale(0.96); opacity: 0.85; }
 
@@ -117,11 +143,9 @@
     .hist-row-table { font-size: 14px; font-weight: 700; color: var(--text-primary); }
     .hist-row-time { font-family: 'Azeret Mono', monospace; font-size: 11px; color: var(--text-muted); }
     .hist-row-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-    .hist-row-total { font-family: 'Azeret Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text-primary); }
     .hist-chip { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
     .hist-chip.cozinha { background: rgba(245,158,11,0.15); color: var(--warning); }
     .hist-chip.pronto { background: rgba(34,197,94,0.15); color: var(--success); }
-    .hist-chip.paga { background: rgba(59,130,246,0.15); color: var(--info); }
     .hist-repor { background: transparent; border: 1px solid var(--border-md); color: var(--text-secondary); font-size: 11px; font-weight: 700; padding: 7px 10px; min-height: 38px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
     .hist-repor:hover { border-color: var(--warning); color: var(--warning); background: rgba(245,158,11,0.08); }
   </style>
@@ -147,19 +171,22 @@
       </div>
     </header>
 
+    <!-- ANULAÇÕES — itens anulados pelo salão. Aparecem aqui de imediato. -->
+    <div class="voids-strip" id="voids-strip"></div>
+
     <div class="ticket-grid" id="ticket-grid"></div>
     <div class="kitchen-empty" id="kitchen-empty" style="display:none">
       <div class="kitchen-empty-icon">👨‍🍳</div>
       <p class="kitchen-empty-title">Cozinha em ordem</p>
-      <p class="kitchen-empty-sub">Os pedidos aparecem aqui quando chegarem</p>
+      <p class="kitchen-empty-sub">As rondas aparecem aqui quando chegarem</p>
     </div>
   </main>
 
-  <!-- Side tab: pedidos de hoje + repor (anular "feito" por engano) -->
+  <!-- Side tab: rondas de hoje + repor (anular "feito" por engano) -->
   <div class="hist-overlay" id="hist-overlay"></div>
   <aside class="hist-panel" id="hist-panel" aria-hidden="true">
     <div class="hist-head">
-      <span class="hist-title">Pedidos de hoje</span>
+      <span class="hist-title">Rondas de hoje</span>
       <button class="hist-close" id="hist-close" type="button" aria-label="Fechar">✕</button>
     </div>
     <div class="hist-list" id="hist-list"></div>
@@ -182,8 +209,11 @@
 
     const grid = document.getElementById('ticket-grid');
     const emptyEl = document.getElementById('kitchen-empty');
-    const ACTIVE = ['submitted', 'preparing', 'ready'];
-    const arrivals = {}; // comandaId -> instante de chegada (um único loop actualiza todos)
+    // Comandas que ainda contam (a ronda mostra-se enquanto a conta vive).
+    const ACTIVE_COMANDA = ['open', 'submitted', 'preparing', 'ready'];
+    // Estados de ronda visíveis (inclui 'done' p/ o período de graça de 30s).
+    const ROUND_VISIBLE = ['fired', 'acknowledged', 'done'];
+    const arrivals = {}; // roundId -> instante em que disparou (um loop p/ todos)
     const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
     // ── audio ──────────────────────────────────────
@@ -205,127 +235,133 @@
     }
     function playNewOrderSound() { [880, 660, 440].forEach((f, i) => setTimeout(() => tone(f, 0.25, 0.15), i * 80)); }
     function playCompletionSound() { [440, 550, 660, 880].forEach((f, i) => setTimeout(() => tone(f, 0.2, 0.1), i * 60)); }
+    // Anulação: som grave e distinto do pedido novo (alerta, não festa).
+    function playVoidSound() { tone(200, 0.3, 0.18, 'square'); setTimeout(() => tone(150, 0.4, 0.18, 'square'), 180); }
 
     // ── data ───────────────────────────────────────
-    const state = {}; // comandaId -> { comanda, items }
+    const state = {}; // roundId -> { round, comanda, items }
 
-    // Depois de "Pronto", o pedido sai da cozinha 30s depois — o ecrã mostra
-    // sempre só o que falta fazer. Continua activo (p/ Caixa/Salão).
-    // Robusto: marca-se o instante em que ficou pronto (readyAt) e um varrimento
-    // periódico retira-o — nunca depende de um único setTimeout (que se perdia
-    // em re-renders/recargas e deixava o pedido "preso" no ecrã).
+    // Período de graça: depois de "Tudo pronto", a ronda fica 30s e sai
+    // (vai p/ a side tab "Hoje"). O instante "pronto" sobrevive a recargas.
     const GRACE_MS = 30000;
-    const dismissed = new Set();   // ids já retirados do ecrã da cozinha
-    const readyAt = {};            // comandaId -> timestamp em que ficou pronto
-    // O instante "pronto" é guardado em localStorage para SOBREVIVER a recargas:
-    // se o empregado recarregar, um pedido pronto há muito sai logo (vai p/ a
-    // side tab "Hoje") em vez de ganhar novos 30s.
-    const RK = (cid) => 'nexo_kReady_' + cid;
-    function markReady(cid) {
-      if (readyAt[cid]) return;
-      let t = parseInt(localStorage.getItem(RK(cid)) || '', 10);
-      if (isNaN(t)) { t = Date.now(); try { localStorage.setItem(RK(cid), String(t)); } catch (_) {} }
-      readyAt[cid] = t;
+    const dismissed = new Set();   // rondas já retiradas do ecrã
+    const readyAt = {};            // roundId -> timestamp em que ficou pronta
+    const RK = (rid) => 'nexo_kReadyR_' + rid;
+    function markReady(rid) {
+      if (readyAt[rid]) return;
+      let t = parseInt(localStorage.getItem(RK(rid)) || '', 10);
+      if (isNaN(t)) { t = Date.now(); try { localStorage.setItem(RK(rid), String(t)); } catch (_) {} }
+      readyAt[rid] = t;
     }
-    function unmarkReady(cid) { delete readyAt[cid]; try { localStorage.removeItem(RK(cid)); } catch (_) {} }
+    function unmarkReady(rid) { delete readyAt[rid]; try { localStorage.removeItem(RK(rid)); } catch (_) {} }
     function sweepReady() {
       let changed = false;
-      Object.keys(readyAt).forEach(cid => {
-        if (Date.now() - readyAt[cid] >= GRACE_MS) {
-          // sai do ecrã mas MANTÉM o timestamp em localStorage — assim continua
-          // fora do quadro mesmo após recarga (fica só na side tab "Hoje").
-          dismissed.add(cid); delete state[cid]; stopTimer(cid); delete readyAt[cid];
+      Object.keys(readyAt).forEach(rid => {
+        if (Date.now() - readyAt[rid] >= GRACE_MS) {
+          dismissed.add(rid); delete state[rid]; stopTimer(rid); delete readyAt[rid];
           changed = true;
         }
       });
       if (changed) renderAll();
     }
 
+    // True quando todos os itens (não anulados) da ronda estão prontos/servidos.
+    function roundIsDone(round) {
+      if (round.status === 'done') return true;
+      const live = (round.items || []).filter(i => i.status !== 'cancelled');
+      return live.length > 0 && live.every(i => i.status === 'ready' || i.status === 'served' || i.status === 'delivered');
+    }
+
     async function loadAll() {
-      // Só as colunas usadas — menos payload/parse em salas com muitos pedidos.
-      const { data: comandas } = await db.from('comandas')
-        .select('id, table_label, total, status, mode, submitted_at, created_at, session_code')
-        .eq('espaco_slug', slug).in('status', ACTIVE)
-        .order('submitted_at', { ascending: true });
-      const ids = (comandas || []).map(c => c.id);
-      let items = [];
-      if (ids.length) {
-        const { data } = await db.from('comanda_items')
-          .select('id, comanda_id, item_name, quantity, status, notes')
-          .in('comanda_id', ids).order('created_at', { ascending: true });
-        items = data || [];
-      }
+      const { data: rounds } = await db.from('comanda_rounds')
+        .select('id, comanda_id, round_number, fired_at, status, ' +
+                'comandas!inner(table_label, status, mode, session_code), ' +
+                'comanda_items(id, item_name, quantity, status, notes, course, added_by)')
+        .eq('espaco_slug', slug)
+        .in('status', ROUND_VISIBLE)
+        .in('comandas.status', ACTIVE_COMANDA)
+        .order('fired_at', { ascending: true });
+
       Object.keys(state).forEach(k => delete state[k]);
-      (comandas || []).forEach(c => {
-        if (dismissed.has(c.id)) return; // já retirado do ecrã da cozinha
-        if (c.status === 'ready') markReady(c.id); // 30s a contar de quando o vemos pronto
-        else unmarkReady(c.id);
-        state[c.id] = { comanda: c, items: items.filter(i => i.comanda_id === c.id) };
+      (rounds || []).forEach(r => {
+        if (dismissed.has(r.id)) return; // já retirada do ecrã
+        const entry = {
+          round: r, comanda: r.comandas || {},
+          items: (r.comanda_items || []).filter(i => i.status !== 'cancelled'),
+        };
+        if (roundIsDone({ status: r.status, items: entry.items })) markReady(r.id);
+        else unmarkReady(r.id);
+        state[r.id] = entry;
       });
-      sweepReady(); // remove imediatamente pedidos prontos já fora do prazo
+      sweepReady();   // retira rondas prontas já fora do prazo
       renderAll();
     }
 
     function renderAll() {
-      // Pedidos novos aparecem sempre à esquerda (mais recente primeiro).
+      // Rondas novas à esquerda (mais recente primeiro).
       const list = Object.values(state).sort((a, b) =>
-        new Date(b.comanda.submitted_at || b.comanda.created_at) - new Date(a.comanda.submitted_at || a.comanda.created_at));
+        new Date(b.round.fired_at) - new Date(a.round.fired_at));
       if (!list.length) { grid.innerHTML = ''; emptyEl.style.display = 'flex';
         Object.keys(arrivals).forEach(stopTimer); return; }
       emptyEl.style.display = 'none';
       grid.innerHTML = list.map(renderTicket).join('');
-      list.forEach(({ comanda }) => startTimer(comanda.id, comanda.submitted_at || comanda.created_at));
-      tickAll(); // pinta os contadores já, sem esperar 1s
+      list.forEach(({ round }) => startTimer(round.id, round.fired_at));
+      tickAll();
     }
 
-    function renderTicket({ comanda, items }) {
-      const visible = items.filter(i => i.status !== 'cancelled');
-      const modeLabel = '🍽️ Na mesa';
+    const COURSE_EMOJI = { entrada: '🥗', principal: '🍽️', sobremesa: '🍮', bebida: '🥤', outro: '•' };
+    function roundLabel(n) { return n === 1 ? '1ª ronda' : n + 'ª ronda'; }
+
+    function renderTicket({ round, comanda, items }) {
+      const modeLabel = comanda.mode === 'take_away' ? '🥡 Take Away' : '🍽️ Na mesa';
       return `
-      <div class="ticket" data-comanda-id="${comanda.id}" data-status="${comanda.status}" data-mode="${comanda.mode}">
+      <div class="ticket" data-round-id="${round.id}" data-comanda-id="${round.comanda_id}" data-status="${round.status}">
         <div class="ticket-header">
           <div class="ticket-left">
-            <span class="ticket-table">${escapeHtml(comanda.table_label || 'Mesa')}</span>
+            <div class="ticket-table-row">
+              <span class="ticket-table">${escapeHtml(comanda.table_label || 'Mesa')}</span>
+              <span class="ticket-round-badge ${round.round_number === 1 ? 'r-first' : ''}">${roundLabel(round.round_number)}</span>
+            </div>
             <span class="ticket-mode">${modeLabel}</span>
           </div>
           <div class="ticket-right">
-            <span class="ticket-timer mono" id="timer-${comanda.id}">0:00</span>
-            <span class="ticket-code">${escapeHtml(comanda.session_code || '')}</span>
+            <span class="ticket-timer mono" id="timer-${round.id}">0:00</span>
           </div>
         </div>
         <div class="ticket-items">
-          ${visible.map(renderItem).join('') || '<div style="padding:10px 16px;color:var(--text-muted);font-size:13px">Sem itens</div>'}
+          ${items.map(renderItem).join('') || '<div style="padding:10px 16px;color:var(--text-muted);font-size:13px">Sem itens</div>'}
         </div>
         <div class="ticket-footer">
-          <span class="ticket-total mono">${formatEUR(comanda.total)}</span>
-          <button class="btn-all-done" data-all-done="${comanda.id}">Tudo pronto ✓</button>
+          ${round.status === 'fired' ? `<button class="btn-ack" data-ack="${round.id}">Recebi ✓</button>` : ''}
+          <button class="btn-all-done" data-all-done="${round.id}">Tudo pronto ✅</button>
         </div>
       </div>`;
     }
-    const STATUS_LABEL = { pending: 'Pendente', preparing: 'A preparar', ready: 'Pronto', delivered: 'Entregue' };
+    const STATUS_LABEL = { sent: 'Novo', preparing: 'A preparar', ready: 'Pronto', served: 'Servido', delivered: 'Servido' };
     function renderItem(i) {
       return `
       <div class="ticket-item" data-item-id="${i.id}" data-status="${i.status}">
         <button class="item-check" data-toggle="${i.id}" aria-label="Mudar estado">
-          <span class="check-icon">${i.status === 'ready' ? '✓' : '○'}</span>
+          <span class="check-icon">${(i.status === 'ready' || i.status === 'served') ? '✓' : '○'}</span>
         </button>
         <div class="item-info">
+          <span class="item-qty">${i.quantity}×</span>
           <span class="item-name">${escapeHtml(i.item_name)}</span>
-          <span class="item-qty">× ${i.quantity}</span>
+          ${i.added_by === 'staff' ? '<span class="staff-added-tag">staff</span>' : ''}
         </div>
-        <span class="item-status-label">${STATUS_LABEL[i.status] || ''}</span>
-        ${i.notes ? `<span class="item-note">${escapeHtml(i.notes)}</span>` : ''}
+        <span class="item-course">${COURSE_EMOJI[i.course] || '•'}</span>
+        ${i.notes ? `<span class="item-note">⚠️ ${escapeHtml(i.notes)}</span>` : ''}
       </div>`;
     }
 
-    // ── timers (UM único loop para TODOS os tickets — escala p/ muito tráfego) ──
-    function startTimer(comandaId, arrivedAt) { arrivals[comandaId] = new Date(arrivedAt).getTime(); }
-    function stopTimer(comandaId) { delete arrivals[comandaId]; }
+    // ── timers (UM único loop para TODAS as rondas — escala p/ tráfego) ──
+    function startTimer(roundId, firedAt) { arrivals[roundId] = new Date(firedAt).getTime(); }
+    function stopTimer(roundId) { delete arrivals[roundId]; }
     function tickAll() {
-      for (const cid in arrivals) {
-        const el = document.getElementById(`timer-${cid}`);
+      for (const rid in arrivals) {
+        const el = document.getElementById(`timer-${rid}`);
         if (!el) continue;
-        const elapsed = Date.now() - arrivals[cid];
+        const elapsed = Date.now() - arrivals[rid];
         const mins = Math.floor(elapsed / 60000), secs = Math.floor((elapsed % 60000) / 1000);
         el.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
         el.className = 'ticket-timer mono' + (mins >= 20 ? ' age-high' : mins >= 10 ? ' age-medium' : '');
@@ -336,58 +372,134 @@
     grid.addEventListener('click', async (e) => {
       const toggle = e.target.closest('[data-toggle]');
       const allDone = e.target.closest('[data-all-done]');
+      const ack = e.target.closest('[data-ack]');
       if (toggle) return toggleItem(toggle.dataset.toggle, toggle);
       if (allDone) return markAllDone(allDone.dataset.allDone);
+      if (ack) return acknowledgeRound(ack.dataset.ack);
     });
+
+    function findRoundOf(itemId) {
+      for (const rid in state) {
+        const it = state[rid].items.find(x => x.id === itemId);
+        if (it) return { rid, it };
+      }
+      return null;
+    }
 
     async function toggleItem(itemId, btn) {
       const itemEl = btn.closest('.ticket-item');
       const cur = itemEl.dataset.status;
-      const next = cur === 'pending' ? 'preparing' : cur === 'preparing' ? 'ready' : 'pending';
+      // sent → preparing → ready → (volta a) sent
+      const next = cur === 'sent' ? 'preparing' : cur === 'preparing' ? 'ready' : 'sent';
       itemEl.dataset.status = next;
       itemEl.querySelector('.check-icon').textContent = next === 'ready' ? '✓' : '○';
-      itemEl.querySelector('.item-status-label').textContent = STATUS_LABEL[next] || '';
       playStatusSound(next);
-      // local state
-      const ticket = btn.closest('.ticket');
-      const cid = ticket.dataset.comandaId;
-      const st = state[cid]; if (st) { const it = st.items.find(x => x.id === itemId); if (it) it.status = next; }
+      const found = findRoundOf(itemId);
+      if (found) found.it.status = next;
       try { await db.from('comanda_items').update({ status: next }).eq('id', itemId); } catch (err) { console.error(err); }
-      maybeMarkComandaStatus(cid);
+      if (found) maybeMarkRoundDone(found.rid);
     }
 
-    async function maybeMarkComandaStatus(cid) {
-      const st = state[cid]; if (!st) return;
-      const active = st.items.filter(i => i.status !== 'cancelled');
-      const allReady = active.length > 0 && active.every(i => i.status === 'ready');
-      const anyPrep = active.some(i => i.status === 'preparing' || i.status === 'ready');
-      const newStatus = allReady ? 'ready' : anyPrep ? 'preparing' : 'submitted';
-      if (newStatus !== st.comanda.status) {
-        st.comanda.status = newStatus;
-        const ticket = grid.querySelector(`.ticket[data-comanda-id="${cid}"]`);
-        if (ticket) ticket.dataset.status = newStatus;
-        if (allReady) { playCompletionSound(); markReady(cid); }
-        else unmarkReady(cid); // voltou a faltar algo → não retirar
-        try { await db.from('comandas').update({ status: newStatus }).eq('id', cid); } catch (_) {}
+    async function maybeMarkRoundDone(rid) {
+      const st = state[rid]; if (!st) return;
+      const live = st.items.filter(i => i.status !== 'cancelled');
+      const allReady = live.length > 0 && live.every(i => i.status === 'ready' || i.status === 'served' || i.status === 'delivered');
+      const newStatus = allReady ? 'done' : st.round.status === 'fired' ? 'fired' : 'acknowledged';
+      if (newStatus !== st.round.status) {
+        st.round.status = newStatus;
+        const tk = grid.querySelector(`.ticket[data-round-id="${rid}"]`);
+        if (tk) tk.dataset.status = newStatus;
+        if (allReady) { playCompletionSound(); markReady(rid); }
+        else unmarkReady(rid);
+        try { await db.from('comanda_rounds').update({ status: newStatus }).eq('id', rid); } catch (_) {}
+        if (allReady) syncComandaReady(st.round.comanda_id);
       }
     }
 
-    async function markAllDone(cid) {
-      const st = state[cid]; if (!st) return;
+    // Quando a comanda inteira está feita (sem itens por terminar nem por
+    // enviar), marca-a 'ready' — é o sinal que o Salão usa p/ "Pronto".
+    async function syncComandaReady(comandaId) {
+      if (!comandaId) return;
+      try {
+        const { count } = await db.from('comanda_items')
+          .select('*', { count: 'exact', head: true })
+          .eq('comanda_id', comandaId)
+          .in('status', ['sent', 'preparing', 'pending']);
+        if (!count) {
+          await db.from('comandas').update({ status: 'ready' })
+            .eq('id', comandaId).in('status', ['submitted', 'preparing']);
+        }
+      } catch (_) {}
+    }
+
+    async function acknowledgeRound(rid) {
+      const st = state[rid]; if (!st) return;
+      st.round.status = 'acknowledged';
+      const tk = grid.querySelector(`.ticket[data-round-id="${rid}"]`);
+      if (tk) { tk.dataset.status = 'acknowledged'; const b = tk.querySelector('[data-ack]'); if (b) b.remove(); }
+      try {
+        await db.from('comanda_rounds').update({ status: 'acknowledged' }).eq('id', rid);
+        // marca a comanda como "a preparar" (informa Salão/Caixa)
+        await db.from('comandas').update({ status: 'preparing' }).eq('id', st.round.comanda_id).eq('status', 'submitted');
+      } catch (_) {}
+    }
+
+    async function markAllDone(rid) {
+      const st = state[rid]; if (!st) return;
       st.items.forEach(i => { if (i.status !== 'cancelled') i.status = 'ready'; });
-      st.comanda.status = 'ready';
-      markReady(cid); // sai do ecrã da cozinha 30s depois
+      st.round.status = 'done';
+      markReady(rid);
       renderAll();
       playCompletionSound();
       try {
-        await db.from('comanda_items').update({ status: 'ready' }).eq('comanda_id', cid).neq('status', 'cancelled');
-        await db.from('comandas').update({ status: 'ready' }).eq('id', cid);
+        await db.from('comanda_items').update({ status: 'ready' }).eq('round_id', rid).neq('status', 'cancelled');
+        await db.from('comanda_rounds').update({ status: 'done' }).eq('id', rid);
+        await syncComandaReady(st.round.comanda_id);
       } catch (err) { console.error(err); }
     }
 
-    // ── realtime (alto tráfego: eventos em rajada são COALESCIDOS) ───────
-    // Em vez de recarregar a cada evento, juntamos as alterações numa só
-    // recarga (~180ms) — evita dezenas de fetch/re-render por segundo.
+    // ════════════════════════════════════════════════
+    // ANULAÇÕES (voids)
+    // ════════════════════════════════════════════════
+    const VOID_REASON = {
+      erro_pedido: 'Erro no pedido', cliente_desistiu: 'Cliente mudou de ideia',
+      produto_esgotado: 'Produto esgotado', duplicado: 'Pedido duplicado', outro: 'Outro motivo',
+    };
+    const voidsStrip = document.getElementById('voids-strip');
+    async function loadVoids() {
+      const { data } = await db.from('comanda_voids')
+        .select('id, item_name, quantity, table_label, void_reason')
+        .eq('espaco_slug', slug).eq('acknowledged', false)
+        .order('created_at', { ascending: false });
+      renderVoids(data || []);
+    }
+    function renderVoids(voids) {
+      if (!voids.length) { voidsStrip.classList.remove('has-voids'); voidsStrip.innerHTML = ''; return; }
+      voidsStrip.classList.add('has-voids');
+      voidsStrip.innerHTML = voids.map(v => `
+        <div class="void-card" data-void-id="${v.id}">
+          <div class="void-head">
+            <span class="void-label">⚠️ ANULAÇÃO</span>
+            <span class="void-table">${escapeHtml(v.table_label || 'Mesa')}</span>
+          </div>
+          <div class="void-item">
+            <span class="void-qty">${v.quantity}×</span>
+            <span class="void-name">${escapeHtml(v.item_name)}</span>
+          </div>
+          <div class="void-reason">${VOID_REASON[v.void_reason] || v.void_reason}</div>
+          <button class="btn-void-ack" data-void-ack="${v.id}">Entendido ✓</button>
+        </div>`).join('');
+    }
+    voidsStrip.addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-void-ack]');
+      if (!b) return;
+      const id = b.dataset.voidAck;
+      const card = b.closest('.void-card'); if (card) card.remove();
+      if (!voidsStrip.querySelector('.void-card')) voidsStrip.classList.remove('has-voids');
+      try { await db.from('comanda_voids').update({ acknowledged: true, acknowledged_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
+    });
+
+    // ── realtime (alto tráfego: rajadas são COALESCIDAS) ───────
     let _pendingNewOrder = false;
     const scheduleHistory = debounce(loadHistory, 500);
     const scheduleReload = debounce(async () => {
@@ -397,65 +509,69 @@
     }, 180);
 
     const ch = db.channel('cozinha_' + slug);
-    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `espaco_slug=eq.${slug}` },
-      (payload) => {
-        const row = payload.new || payload.old;
-        const wasActive = !!state[row.id];
-        if (payload.new && ACTIVE.includes(payload.new.status)) {
-          if (!wasActive && payload.new.status === 'submitted') _pendingNewOrder = true;
-          scheduleReload();
-        } else if (wasActive) {
-          delete state[row.id]; stopTimer(row.id); unmarkReady(row.id); renderAll(); scheduleHistory();
-        }
-      });
+    // Nova ronda → som + recarrega
+    ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comanda_rounds', filter: `espaco_slug=eq.${slug}` },
+      () => { _pendingNewOrder = true; scheduleReload(); });
+    ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'comanda_rounds', filter: `espaco_slug=eq.${slug}` },
+      () => scheduleReload());
+    // Itens mudam de estado (salão adiciona/anula; outro ecrã marca pronto)
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items', filter: `espaco_slug=eq.${slug}` },
-      (payload) => { const cid = (payload.new || payload.old).comanda_id; if (state[cid]) scheduleReload(); });
+      () => scheduleReload());
+    // Anulações chegam ao instante
+    ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comanda_voids', filter: `espaco_slug=eq.${slug}` },
+      () => { playVoidSound(); loadVoids(); });
+    ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'comanda_voids', filter: `espaco_slug=eq.${slug}` },
+      () => loadVoids());
     ch.subscribe((status) => setLiveState(status === 'SUBSCRIBED' ? 'connected' : 'reconnecting'));
     trackChannel(ch);
 
-    // ── Histórico de hoje + repor ("anular feito" por engano) ──────
-    const STATUS_PT = { submitted: 'Na cozinha', preparing: 'Na cozinha', ready: 'Pronto', closed: 'Servida' };
+    // ── Histórico de hoje (rondas) + repor ("anular feito" por engano) ──
+    const STATUS_PT = { fired: 'Na cozinha', acknowledged: 'Na cozinha', done: 'Pronto' };
     const histOverlay = document.getElementById('hist-overlay');
     const histPanel = document.getElementById('hist-panel');
     const histList = document.getElementById('hist-list');
     function startOfTodayISO() { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); }
 
     async function loadHistory() {
-      const { data } = await db.from('comandas')
-        .select('id, table_label, total, status, submitted_at, created_at, comanda_items(id, status)')
-        .eq('espaco_slug', slug).in('status', ['submitted', 'preparing', 'ready', 'closed'])
-        .gte('created_at', startOfTodayISO())
-        .order('submitted_at', { ascending: false, nullsFirst: false });
+      const { data } = await db.from('comanda_rounds')
+        .select('id, round_number, fired_at, status, comandas(table_label), comanda_items(id, status)')
+        .eq('espaco_slug', slug)
+        .gte('fired_at', startOfTodayISO())
+        .order('fired_at', { ascending: false });
       const rows = data || [];
       document.getElementById('hist-count').textContent = rows.length;
       if (histPanel.classList.contains('visible')) renderHistory(rows);
     }
 
     function renderHistory(rows) {
-      if (!rows.length) { histList.innerHTML = '<div class="hist-empty">Ainda sem pedidos hoje.</div>'; return; }
-      histList.innerHTML = rows.map(c => {
-        const when = new Date(c.submitted_at || c.created_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-        const n = (c.comanda_items || []).filter(i => i.status !== 'cancelled').length;
-        const chipCls = c.status === 'ready' ? 'pronto' : c.status === 'closed' ? 'paga' : 'cozinha';
-        const canRepor = c.status === 'ready'; // dado como "feito" mas ainda na casa → pode voltar
+      if (!rows.length) { histList.innerHTML = '<div class="hist-empty">Ainda sem rondas hoje.</div>'; return; }
+      histList.innerHTML = rows.map(r => {
+        const when = new Date(r.fired_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+        const n = (r.comanda_items || []).filter(i => i.status !== 'cancelled').length;
+        const chipCls = r.status === 'done' ? 'pronto' : 'cozinha';
+        const table = (r.comandas && r.comandas.table_label) || 'Mesa';
+        const canRepor = r.status === 'done'; // dada como feita mas pode voltar
         return `<div class="hist-row">
           <div class="hist-row-main">
-            <div class="hist-row-top"><span class="hist-row-table">${escapeHtml(c.table_label || 'Mesa')}</span><span class="hist-row-time">${when}</span></div>
-            <div class="hist-row-sub">${n} ${n === 1 ? 'item' : 'itens'} · <span class="hist-row-total">${formatEUR(c.total)}</span></div>
+            <div class="hist-row-top"><span class="hist-row-table">${escapeHtml(table)}</span><span class="hist-row-time">${when}</span></div>
+            <div class="hist-row-sub">${roundLabel(r.round_number)} · ${n} ${n === 1 ? 'item' : 'itens'}</div>
           </div>
-          <span class="hist-chip ${chipCls}">${STATUS_PT[c.status] || c.status}</span>
-          ${canRepor ? `<button class="hist-repor" data-repor="${c.id}">↩ Repor</button>` : ''}
+          <span class="hist-chip ${chipCls}">${STATUS_PT[r.status] || r.status}</span>
+          ${canRepor ? `<button class="hist-repor" data-repor="${r.id}">↩ Repor</button>` : ''}
         </div>`;
       }).join('');
-      histList.querySelectorAll('[data-repor]').forEach(b => b.addEventListener('click', () => reopenComanda(b.dataset.repor)));
+      histList.querySelectorAll('[data-repor]').forEach(b => b.addEventListener('click', () => reopenRound(b.dataset.repor)));
     }
 
-    async function reopenComanda(cid) {
-      // Anula o "feito": o pedido volta para a cozinha (a preparar).
-      dismissed.delete(cid); unmarkReady(cid);
+    async function reopenRound(rid) {
+      // Anula o "feito": a ronda volta para a cozinha (a preparar).
+      dismissed.delete(rid); unmarkReady(rid);
       try {
-        await db.from('comanda_items').update({ status: 'preparing' }).eq('comanda_id', cid).eq('status', 'ready');
-        await db.from('comandas').update({ status: 'preparing' }).eq('id', cid);
+        const { data: r } = await db.from('comanda_rounds').select('comanda_id').eq('id', rid).maybeSingle();
+        await db.from('comanda_items').update({ status: 'preparing' }).eq('round_id', rid).eq('status', 'ready');
+        await db.from('comanda_rounds').update({ status: 'acknowledged' }).eq('id', rid);
+        // a comanda deixa de estar "pronta" (Salão volta a "a preparar").
+        if (r && r.comanda_id) await db.from('comandas').update({ status: 'preparing' }).eq('id', r.comanda_id).eq('status', 'ready');
       } catch (e) { console.error(e); }
       await loadAll();
       await loadHistory();
@@ -478,19 +594,20 @@
       document.documentElement.requestFullscreen?.().catch(() => {});
     }
 
-    // Limpa timestamps "pronto" antigos (>12h) para o localStorage não crescer.
+    // Limpa timestamps "pronto" antigos (>12h) p/ o localStorage não crescer.
     try {
       const cutoff = Date.now() - 12 * 3600 * 1000;
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
-        if (k && k.startsWith('nexo_kReady_') && parseInt(localStorage.getItem(k) || '0', 10) < cutoff) localStorage.removeItem(k);
+        if (k && k.startsWith('nexo_kReadyR_') && parseInt(localStorage.getItem(k) || '0', 10) < cutoff) localStorage.removeItem(k);
       }
     } catch (_) {}
 
     await loadAll();
+    await loadVoids();
     loadHistory(); // contador do botão "Hoje"
     setInterval(tickAll, 1000);    // UM loop p/ todos os contadores
-    setInterval(sweepReady, 5000); // retira pedidos prontos passados 30s (fiável)
+    setInterval(sweepReady, 5000); // retira rondas prontas passados 30s
   })();
   </script>
 </body>

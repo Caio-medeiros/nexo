@@ -330,16 +330,73 @@
     return 'Mesa';
   }
 
-  // Create + fill + submit a comanda from the cart. No WhatsApp here —
-  // the menu's existing confirm handler keeps owning that channel.
+  // Course (prato) a partir da categoria — a cozinha agrupa por isto.
+  function courseFor(item) {
+    const c = String((item && (item.category || item.item_category)) || '').toLowerCase();
+    if (/bebid|drink|vinho|cerveja|sumo|água|agua|refrig|caf[eé]|bar\b/.test(c)) return 'bebida';
+    if (/sobremes|dessert|doce|gelad/.test(c)) return 'sobremesa';
+    if (/entrada|starter|petisc|couvert/.test(c)) return 'entrada';
+    if (/prato|main|principal|carne|peixe|massa|risot/.test(c)) return 'principal';
+    return 'principal';
+  }
+
+  // Reutiliza a comanda activa da mesa (open/submitted/preparing) ou cria
+  // uma nova. Persistir a comanda é o que transforma cada confirmação numa
+  // RONDA dentro da mesma conta — a base do modelo de rondas da cozinha.
+  async function openOrGetComanda(tableLabel) {
+    const client = await sb();
+    const { data: existing } = await client.from('comandas')
+      .select('id, session_code, table_label, status')
+      .eq('espaco_slug', SLUG).eq('table_label', tableLabel)
+      .in('status', ['open', 'submitted', 'preparing'])
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (existing) { storeComanda(existing); return existing; }
+    return createComanda(tableLabel, sharedGuestCount());
+  }
+
+  async function nextRoundNumber(client, comandaId) {
+    const { data } = await client.from('comanda_rounds')
+      .select('round_number').eq('comanda_id', comandaId)
+      .order('round_number', { ascending: false }).limit(1).maybeSingle();
+    return (data && data.round_number || 0) + 1;
+  }
+
+  // Cria uma RONDA (comanda_rounds) e dispara os itens já com round_id +
+  // status 'sent'. A cozinha vê só os itens novos desta ronda — nunca o total.
+  async function fireRound(comanda, items) {
+    const client = await sb();
+    const roundNumber = await nextRoundNumber(client, comanda.id);
+    const { data: round, error: rErr } = await client.from('comanda_rounds').insert({
+      comanda_id: comanda.id, espaco_slug: SLUG, round_number: roundNumber,
+      fired_by: 'customer', item_count: items.length,
+    }).select('id').single();
+    if (rErr) throw rErr;
+    const rows = items.map(i => ({
+      comanda_id: comanda.id, espaco_slug: SLUG, item_id: i.id,
+      item_name: i.name, item_category: i.category, item_price: i.price,
+      quantity: i.qty, notes: i.note || null, added_by: 'customer',
+      course: courseFor(i), status: 'sent', round_id: round.id,
+      round_number: roundNumber,
+    }));
+    const { error: iErr } = await client.from('comanda_items').insert(rows);
+    if (iErr) throw iErr;
+    await client.from('comandas').update({
+      status: 'submitted', submitted_at: new Date().toISOString(),
+    }).eq('id', comanda.id);
+    if (typeof track === 'function') {
+      try { track('comanda_fired', { espaco_slug: SLUG, round: roundNumber, item_count: items.length }); } catch (_) {}
+    }
+    return { round, roundNumber };
+  }
+
+  // Confirmação do menu → dispara uma ronda na comanda persistente da mesa.
+  // Mantém a conta aberta: a próxima confirmação cria a ronda seguinte.
   async function pushOrder(tableLabel, items) {
     if (!items || !items.length) return null;
     // guest_count = nº de pessoas a partilhar a mesa pelo menu (carrinho
     // partilhado). Sem partilha = 1. Nunca inferido do nº de itens.
-    const comanda = await createComanda(tableLabel, sharedGuestCount());
-    await addItemsToComanda(comanda.id, items);
-    sessionStorage.removeItem(COMANDA_KEY); // single-shot order, not a running tab
-    return submitComanda(comanda.id);
+    const comanda = await openOrGetComanda(tableLabel);
+    return fireRound(comanda, items);
   }
 
   // Signature of an order (item name × qty, order-independent). Notes are

@@ -395,20 +395,45 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && state.selectedTable != null) forceCloseTableDetail();
 });
 
+const TDP_STATUS_ICON = { sent: '⏳', preparing: '🔥', ready: '✅', served: '✓', delivered: '✓', pending: '📋' };
 function renderTableDetailItems(items, comanda) {
   const body = document.getElementById('tdp-body');
   if (!items.length) { body.innerHTML = '<div class="tdp-empty"><p>Sem itens ainda</p>' +
     `<button class="tdp-full-btn" onclick="addItemToActiveTable()">+ Adicionar item</button></div>`; return; }
 
-  const rounds = {};
-  items.forEach(it => { const r = it.round_number || 1; (rounds[r] = rounds[r] || []).push(it); });
-  const multiRound = Object.keys(rounds).length > 1;
+  // Itens por enviar (adicionados pelo staff, ainda sem ronda) vs. já enviados.
+  const pending = items.filter(i => i.status === 'pending' && !i.round_id);
+  const sent = items.filter(i => !(i.status === 'pending' && !i.round_id));
 
   let html = '';
-  Object.entries(rounds).forEach(([round, rItems]) => {
-    if (multiRound) html += `<div class="tdp-round-label">${parseInt(round) === 1 ? '1ª Ordem' : `${round}ª Ordem`}</div>`;
-    rItems.forEach(it => {
-      const isReady = it.status === 'ready', isDone = it.status === 'delivered';
+
+  // ── POR ENVIAR (destaque) ──
+  if (pending.length) {
+    html += `<div class="tdp-pending-block">
+      <div class="tdp-section-head pending">📋 Por enviar à cozinha <span class="tdp-pending-count">${pending.length}</span></div>`;
+    pending.forEach(it => {
+      html += `<div class="tdp-item pending" data-item-id="${it.id}">
+        <div class="tdp-item-info">
+          <span class="tdp-item-name">${escapeHtml(it.item_name)}</span>
+          ${it.notes ? `<span class="tdp-item-note">${escapeHtml(it.notes)}</span>` : ''}
+        </div>
+        <span class="tdp-item-qty">×${it.quantity}</span>
+        <span class="tdp-item-price">${fmtEUR((it.item_price || 0) * it.quantity)}</span>
+        <button class="tdp-remove-btn" onclick="removePendingItemSala('${it.id}')" title="Remover">×</button>
+      </div>`;
+    });
+    html += `<button class="tdp-fire-btn" onclick="sendToKitchenFromPanel()">🍳 Enviar para a cozinha</button></div>`;
+  }
+
+  // ── JÁ ENVIADO (por ronda) ──
+  const rounds = {};
+  sent.forEach(it => { const r = it.round_number || 1; (rounds[r] = rounds[r] || []).push(it); });
+  const roundKeys = Object.keys(rounds).sort((a, b) => a - b);
+  roundKeys.forEach(round => {
+    if (roundKeys.length > 1 || pending.length) html += `<div class="tdp-round-label">${parseInt(round) === 1 ? '1ª Ronda' : `${round}ª Ronda`}</div>`;
+    rounds[round].forEach(it => {
+      const isReady = it.status === 'ready', isDone = it.status === 'served' || it.status === 'delivered';
+      const voidable = !['served', 'delivered', 'cancelled'].includes(it.status);
       html += `<div class="tdp-item ${isReady ? 'ready' : ''} ${isDone ? 'done' : ''}" data-item-id="${it.id}">
         <div class="tdp-item-info">
           <span class="tdp-item-name">${escapeHtml(it.item_name)}</span>
@@ -416,17 +441,68 @@ function renderTableDetailItems(items, comanda) {
         </div>
         <span class="tdp-item-qty">×${it.quantity}</span>
         <span class="tdp-item-price">${fmtEUR((it.item_price || 0) * it.quantity)}</span>
-        <span class="tdp-item-status">${isReady ? '✅' : isDone ? '✓' : '⏳'}</span>
+        <span class="tdp-item-status">${TDP_STATUS_ICON[it.status] || '⏳'}</span>
+        ${voidable ? `<button class="tdp-void-btn" onclick="showVoidModal('${it.id}')" title="Anular item">✕</button>` : ''}
       </div>`;
     });
   });
 
+  // Total cobrável: exclui anulados (a comanda.total já é mantida assim no servidor).
   const total = comanda.total || items.reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
-  html += `<div class="tdp-total-row"><span>Total</span><span class="tdp-total-amount">${fmtEUR(total)}</span></div>
+  html += `<div class="tdp-total-row"><span>Total da conta</span><span class="tdp-total-amount">${fmtEUR(total)}</span></div>
     <div class="tdp-actions-row"><button class="tdp-full-btn" onclick="addItemToActiveTable()">+ Adicionar item</button></div>`;
   body.innerHTML = html;
   if (MOTION) gsap.from('.tdp-item', { opacity: 0, x: -8, duration: 0.25, stagger: 0.04, ease: 'power2.out' });
 }
+
+// ── Anulação de item enviado (gera notificação p/ a Cozinha via trigger) ──
+const VOID_REASONS_SALA = [
+  ['erro_pedido', 'Erro no pedido'], ['cliente_desistiu', 'Cliente mudou de ideia'],
+  ['produto_esgotado', 'Produto esgotado'], ['duplicado', 'Pedido duplicado'],
+];
+function showVoidModal(itemId) {
+  const it = (selectedItems || []).find(x => x.id === itemId);
+  const name = it ? it.item_name : 'Item';
+  closeVoidModal();
+  const modal = document.createElement('div');
+  modal.className = 'void-modal-overlay';
+  modal.id = 'void-modal-overlay';
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeVoidModal(); });
+  modal.innerHTML = `
+    <div class="void-modal">
+      <h3 class="void-modal-title">Anular item</h3>
+      <p class="void-modal-item-name">“${escapeHtml(name)}”</p>
+      <p class="void-modal-sub">Este item já foi enviado à cozinha. Indique o motivo:</p>
+      <div class="void-reasons">
+        ${VOID_REASONS_SALA.map(([r, label]) => `<button class="void-reason-btn" onclick="confirmVoid('${itemId}','${r}')">${label}</button>`).join('')}
+      </div>
+      <button class="void-cancel-btn" onclick="closeVoidModal()">Cancelar</button>
+    </div>`;
+  document.body.appendChild(modal);
+  if (MOTION) gsap.from(modal.querySelector('.void-modal'), { scale: 0.95, opacity: 0, duration: 0.2, ease: 'power2.out' });
+}
+function closeVoidModal() { const m = document.getElementById('void-modal-overlay'); if (m) m.remove(); }
+async function confirmVoid(itemId, reason) {
+  closeVoidModal();
+  try {
+    await db.from('comanda_items').update({
+      status: 'cancelled', void_reason: reason,
+      void_at: new Date().toISOString(), void_by: 'staff',
+    }).eq('id', itemId);
+    salaToast('Item anulado. Cozinha notificada.');
+    if (state.selectedTable) await openTableDetail(state.selectedTable);
+  } catch (e) { console.error(e); salaToast('Erro ao anular'); }
+}
+
+// Remove um item ainda por enviar (pendente) — só funciona antes de ir à cozinha.
+async function removePendingItemSala(itemId) {
+  try {
+    await db.from('comanda_items').delete().eq('id', itemId).eq('status', 'pending').is('round_id', null);
+    if (state.selectedTable) await openTableDetail(state.selectedTable);
+  } catch (e) { console.error(e); salaToast('Erro ao remover'); }
+}
+window.showVoidModal = showVoidModal; window.confirmVoid = confirmVoid;
+window.closeVoidModal = closeVoidModal; window.removePendingItemSala = removePendingItemSala;
 
 async function addItemToActiveTable() {
   const tableNum = state.selectedTable;
@@ -440,9 +516,11 @@ async function addItemToActiveTable() {
   const name = prompt('Nome do item:'); if (!name) return;
   const price = parseFloat((prompt('Preço (€):') || '').replace(',', '.')); if (isNaN(price)) return;
   const qty = parseInt(prompt('Quantidade:') || '1') || 1;
+  // Entra como PENDENTE (por enviar). O botão "Enviar para a cozinha" cria a ronda.
   await db.from('comanda_items').insert({
     comanda_id: tableData.comanda.id, espaco_slug: window.ESPACO_SLUG,
-    item_name: name, item_price: price, quantity: qty, added_by: 'staff', round_number: 2 });
+    item_name: name, item_price: price, quantity: qty, added_by: 'staff',
+    status: 'pending', course: 'principal' });
   await openTableDetail(tableNum);
 }
 
@@ -458,10 +536,24 @@ async function ensureComanda(tableNum) {
   return state.tables[tableNum].comanda;
 }
 
+// Dispara uma RONDA com os itens pendentes (adicionados pelo staff). Os itens
+// do menu já chegam enviados — aqui só se enviam os novos por enviar.
 async function sendToKitchenFromPanel() {
   const tableNum = state.selectedTable;
   const c = state.tables[tableNum]?.comanda;
   if (!c?.id) { salaToast('Mesa sem comanda'); return; }
+  const { data: pending } = await db.from('comanda_items').select('id')
+    .eq('comanda_id', c.id).eq('status', 'pending').is('round_id', null);
+  if (!pending || !pending.length) { salaToast('Sem itens novos para enviar'); return; }
+  const { data: last } = await db.from('comanda_rounds').select('round_number')
+    .eq('comanda_id', c.id).order('round_number', { ascending: false }).limit(1).maybeSingle();
+  const rn = (last && last.round_number || 0) + 1;
+  const { data: round, error } = await db.from('comanda_rounds').insert({
+    comanda_id: c.id, espaco_slug: window.ESPACO_SLUG, round_number: rn,
+    fired_by: 'staff', item_count: pending.length }).select('id').single();
+  if (error) { console.error(error); salaToast('Erro ao enviar'); return; }
+  await db.from('comanda_items').update({ status: 'sent', round_id: round.id, round_number: rn })
+    .in('id', pending.map(p => p.id));
   await db.from('comandas').update({ status: 'submitted', submitted_at: new Date().toISOString() }).eq('id', c.id);
   salaToast('Enviado para a cozinha ✓');
   closeTableDetail();
