@@ -345,10 +345,12 @@
   // RONDA dentro da mesma conta — a base do modelo de rondas da cozinha.
   async function openOrGetComanda(tableLabel) {
     const client = await sb();
+    // Inclui 'ready': se a cozinha já terminou a ronda anterior, a próxima
+    // ronda entra na MESMA conta (e reabre p/ 'submitted'), não numa nova.
     const { data: existing } = await client.from('comandas')
       .select('id, session_code, table_label, status')
       .eq('espaco_slug', SLUG).eq('table_label', tableLabel)
-      .in('status', ['open', 'submitted', 'preparing'])
+      .in('status', ['open', 'submitted', 'preparing', 'ready'])
       .order('created_at', { ascending: false }).limit(1).maybeSingle();
     if (existing) { storeComanda(existing); return existing; }
     return createComanda(tableLabel, sharedGuestCount());
@@ -417,16 +419,23 @@
       const client = await sb();
       const mins = (F.comanda && F.comanda.dedupeMinutes) || 3;
       const since = new Date(Date.now() - mins * 60000).toISOString();
-      const { data, error } = await client.from('comandas')
+      // Comparar por RONDA (não pela comanda inteira): com a conta persistente
+      // a comanda acumula várias rondas, por isso a assinatura tem de ser a
+      // de cada ronda recente vs. o carrinho actual.
+      const { data: comandas } = await client.from('comandas')
+        .select('id')
+        .eq('espaco_slug', SLUG).eq('table_label', tableLabel)
+        .in('status', ['open', 'submitted', 'preparing', 'ready'])
+        .limit(4);
+      if (!comandas || !comandas.length) return false;
+      const { data: rounds } = await client.from('comanda_rounds')
         .select('id, comanda_items(item_name, quantity)')
-        .eq('espaco_slug', SLUG)
-        .eq('table_label', tableLabel)
-        .in('status', ['submitted', 'preparing', 'ready'])
-        .gte('created_at', since)
-        .limit(8);
-      if (error || !data || !data.length) return false;
+        .in('comanda_id', comandas.map(c => c.id))
+        .gte('fired_at', since)
+        .limit(12);
+      if (!rounds || !rounds.length) return false;
       const sig = cartSignature(items);
-      return data.some(c => cartSignature(c.comanda_items) === sig);
+      return rounds.some(r => cartSignature(r.comanda_items) === sig);
     } catch (_) { return false; }
   }
 

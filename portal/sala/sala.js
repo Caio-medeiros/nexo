@@ -417,7 +417,11 @@ function renderTableDetailItems(items, comanda) {
           <span class="tdp-item-name">${escapeHtml(it.item_name)}</span>
           ${it.notes ? `<span class="tdp-item-note">${escapeHtml(it.notes)}</span>` : ''}
         </div>
-        <span class="tdp-item-qty">×${it.quantity}</span>
+        <div class="tdp-qty-ctl">
+          <button class="tdp-qty-btn" onclick="changePendingQty('${it.id}',-1)" aria-label="Menos um">−</button>
+          <span class="tdp-qty-val">${it.quantity}</span>
+          <button class="tdp-qty-btn" onclick="changePendingQty('${it.id}',1)" aria-label="Mais um">+</button>
+        </div>
         <span class="tdp-item-price">${fmtEUR((it.item_price || 0) * it.quantity)}</span>
         <button class="tdp-remove-btn" onclick="removePendingItemSala('${it.id}')" title="Remover">×</button>
       </div>`;
@@ -501,8 +505,21 @@ async function removePendingItemSala(itemId) {
     if (state.selectedTable) await openTableDetail(state.selectedTable);
   } catch (e) { console.error(e); salaToast('Erro ao remover'); }
 }
+// Ajusta a quantidade de um item pendente (≤0 remove). Só itens por enviar.
+async function changePendingQty(itemId, delta) {
+  const it = (selectedItems || []).find(x => x.id === itemId);
+  if (!it) return;
+  const next = (it.quantity || 1) + delta;
+  if (next < 1) return removePendingItemSala(itemId);
+  try {
+    await db.from('comanda_items').update({ quantity: next })
+      .eq('id', itemId).eq('status', 'pending').is('round_id', null);
+    if (state.selectedTable) await openTableDetail(state.selectedTable);
+  } catch (e) { console.error(e); }
+}
 window.showVoidModal = showVoidModal; window.confirmVoid = confirmVoid;
 window.closeVoidModal = closeVoidModal; window.removePendingItemSala = removePendingItemSala;
+window.changePendingQty = changePendingQty;
 
 async function addItemToActiveTable() {
   const tableNum = state.selectedTable;

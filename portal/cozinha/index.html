@@ -36,7 +36,7 @@
     .k-fullscreen:hover { color: var(--text-secondary); }
 
     /* ── Voids strip (ANULAÇÕES) — kitchen must see these immediately ── */
-    .voids-strip { display: none; padding: 12px 16px 0; gap: 12px; flex-wrap: wrap; }
+    .voids-strip { display: none; position: relative; z-index: 25; padding: 12px 16px 0; gap: 12px; flex-wrap: wrap; }
     .voids-strip.has-voids { display: flex; }
     .void-card {
       background: rgba(239,68,68,0.08);
@@ -289,6 +289,9 @@
           round: r, comanda: r.comandas || {},
           items: (r.comanda_items || []).filter(i => i.status !== 'cancelled'),
         };
+        // Ronda sem itens visíveis (toda anulada, ou itens ainda a chegar
+        // logo após disparar) não ocupa o ecrã.
+        if (!entry.items.length) { unmarkReady(r.id); return; }
         if (roundIsDone({ status: r.status, items: entry.items })) markReady(r.id);
         else unmarkReady(r.id);
         state[r.id] = entry;
@@ -297,14 +300,22 @@
       renderAll();
     }
 
+    // "Cozinha em ordem" só quando não há rondas NEM anulações por ver —
+    // senão o ecrã vazio (fixed) tapava a tira de anulações.
+    function refreshEmpty() {
+      const hasTickets = grid.children.length > 0;
+      const hasVoids = voidsStrip.classList.contains('has-voids');
+      emptyEl.style.display = (!hasTickets && !hasVoids) ? 'flex' : 'none';
+    }
+
     function renderAll() {
       // Rondas novas à esquerda (mais recente primeiro).
       const list = Object.values(state).sort((a, b) =>
         new Date(b.round.fired_at) - new Date(a.round.fired_at));
-      if (!list.length) { grid.innerHTML = ''; emptyEl.style.display = 'flex';
-        Object.keys(arrivals).forEach(stopTimer); return; }
-      emptyEl.style.display = 'none';
+      if (!list.length) { grid.innerHTML = '';
+        Object.keys(arrivals).forEach(stopTimer); refreshEmpty(); return; }
       grid.innerHTML = list.map(renderTicket).join('');
+      refreshEmpty();
       list.forEach(({ round }) => startTimer(round.id, round.fired_at));
       tickAll();
     }
@@ -474,7 +485,7 @@
       renderVoids(data || []);
     }
     function renderVoids(voids) {
-      if (!voids.length) { voidsStrip.classList.remove('has-voids'); voidsStrip.innerHTML = ''; return; }
+      if (!voids.length) { voidsStrip.classList.remove('has-voids'); voidsStrip.innerHTML = ''; refreshEmpty(); return; }
       voidsStrip.classList.add('has-voids');
       voidsStrip.innerHTML = voids.map(v => `
         <div class="void-card" data-void-id="${v.id}">
@@ -495,7 +506,7 @@
       if (!b) return;
       const id = b.dataset.voidAck;
       const card = b.closest('.void-card'); if (card) card.remove();
-      if (!voidsStrip.querySelector('.void-card')) voidsStrip.classList.remove('has-voids');
+      if (!voidsStrip.querySelector('.void-card')) { voidsStrip.classList.remove('has-voids'); refreshEmpty(); }
       try { await db.from('comanda_voids').update({ acknowledged: true, acknowledged_at: new Date().toISOString() }).eq('id', id); } catch (_) {}
     });
 
