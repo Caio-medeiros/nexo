@@ -2586,6 +2586,7 @@ body.has-cart {
   background: var(--bg-alt);
   padding: var(--s3) 0 0;
   max-height: 85vh;
+  max-height: 85dvh; /* viewport dinâmico — o rodapé (Confirmar) não fica sob a barra do browser no telemóvel */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -4622,10 +4623,11 @@ body.has-cart {
 .confirm-screen {
   position: fixed;
   top: 0;
-  bottom: 0;
   left: 50%;
   width: 100%;
   max-width: 520px;
+  height: 100vh;
+  height: 100dvh; /* viewport dinâmico — os botões de confirmar ficam acima da barra do browser */
   z-index: 900;
   background: #071428;
   display: flex;

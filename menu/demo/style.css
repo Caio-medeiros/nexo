@@ -1610,6 +1610,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   padding: var(--s3) var(--s3) var(--s4);
   max-height: 85vh;
+  max-height: 85dvh; /* viewport dinâmico — o botão Confirmar não fica sob a barra do browser no telemóvel */
   overflow-y: auto;
   animation: slideUp 0.44s cubic-bezier(0.16, 1, 0.3, 1);
 }
