@@ -87,6 +87,7 @@ const UI = {
     confirmTableRequired: "Indique o número da mesa para continuar.",
     confirmWhatsapp: "Enviar por WhatsApp",
     confirmStaff: "Mostrar ao Staff",
+    confirmKitchen: "Enviar para a cozinha",
     confirmOpeningWA: "✓ A abrir WhatsApp...",
     cartNotesBadge: "Notas adicionadas",
     noteAdd: "+ adicionar nota",
@@ -181,6 +182,7 @@ const UI = {
     confirmTableRequired: "Please enter the table number to continue.",
     confirmWhatsapp: "Send via WhatsApp",
     confirmStaff: "Show to Staff",
+    confirmKitchen: "Send to kitchen",
     confirmOpeningWA: "✓ Opening WhatsApp...",
     cartNotesBadge: "Notes added",
     noteAdd: "+ add note",
@@ -267,6 +269,7 @@ const UI = {
     confirmTableRequired: "Indique el número de mesa para continuar.",
     confirmWhatsapp: "Enviar por WhatsApp",
     confirmStaff: "Mostrar al Staff",
+    confirmKitchen: "Enviar a la cocina",
     confirmOpeningWA: "✓ Abriendo WhatsApp...",
     cartNotesBadge: "Notas añadidas",
     noteAdd: "+ añadir nota",
@@ -353,6 +356,7 @@ const UI = {
     confirmTableRequired: "Indiquez le numéro de table pour continuer.",
     confirmWhatsapp: "Envoyer par WhatsApp",
     confirmStaff: "Montrer au Personnel",
+    confirmKitchen: "Envoyer en cuisine",
     confirmOpeningWA: "✓ Ouverture de WhatsApp...",
     cartNotesBadge: "Notes ajoutées",
     noteAdd: "+ ajouter une note",
@@ -2779,15 +2783,14 @@ function renderConfirmScreen() {
   if (tableWrap) tableWrap.style.display = tableEnabled ? 'block' : 'none';
   if (tableInput && confirmTableValue) tableInput.value = confirmTableValue;
 
-  // WhatsApp button
-  const hasWA = CONFIG.orderWhatsapp && CONFIG.orderWhatsapp.trim() &&
-                CONFIG.orderWhatsapp !== '{{ESPACO_WHATSAPP}}';
-  if (whatsappBtn) whatsappBtn.style.display = hasWA ? 'flex' : 'none';
+  // "Enviar para a cozinha" é sempre o botão primário (topo).
+  const kitchenLabel = document.getElementById('confirm-kitchen-label');
+  if (kitchenLabel) kitchenLabel.textContent = t().confirmKitchen;
 
-  // If no WhatsApp, make staff button primary style
-  if (staffBtn) {
-    staffBtn.classList.toggle('confirm-btn-staff-primary', !hasWA);
-  }
+  // WhatsApp passou a ser canal de RECURSO (fallback) — o botão nunca aparece.
+  if (whatsappBtn) whatsappBtn.style.display = 'none';
+  // Staff é sempre o botão secundário.
+  if (staffBtn) staffBtn.classList.remove('confirm-btn-staff-primary');
 }
 
 function validateTableInput() {
@@ -2878,7 +2881,10 @@ let _orderLockUntil = 0;
 function orderLocked() { return Date.now() < _orderLockUntil; }
 function lockOrder(ms) { _orderLockUntil = Date.now() + (ms || 6000); }
 
-function sendToWhatsApp() {
+// Botão primário: enviar directamente para a cozinha (comanda). O WhatsApp
+// passou a ser canal de RECURSO — o cliente nunca o escolhe; só entra em acção
+// se a cozinha falhar, para nenhum pedido se perder.
+async function sendToKitchen() {
   if (!validateTableInput()) return;
   if (orderLocked()) return;
   lockOrder();
@@ -2886,25 +2892,39 @@ function sendToWhatsApp() {
   const tableValue = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
   confirmTableValue = tableValue;
 
+  const routing = !!(window.NEXOPremium && window.NEXOPremium.comandaRouting && window.NEXOPremium.onOrderConfirmed);
+  let res = null;
+  if (routing) {
+    try { res = await window.NEXOPremium.onOrderConfirmed(); }
+    catch (_) { res = { ok: false, reason: 'error' }; }
+    // Duplicado/lock: intencional — não reenviar nem cair para o recurso.
+    if (res && (res.reason === 'duplicate' || res.reason === 'locked')) { closeConfirmScreen(); return; }
+  }
+
+  if (res && res.ok) {
+    closeConfirmScreen();          // comanda criou a ronda (mostra toast próprio)
+  } else {
+    whatsappFallback(tableValue);  // recurso: garante que o pedido chega na mesma
+    closeConfirmScreen();
+  }
+}
+
+// Canal de recurso (fallback) silencioso: regista o pedido e, se houver número
+// configurado, abre o WhatsApp. Só corre quando a cozinha não capturou o pedido
+// (routing desligado ou falha) — assim um pedido nunca se perde.
+function whatsappFallback(tableValue) {
+  logOrderToSupabase(sharedCart ? 'shared' : 'whatsapp', tableValue);
+  const number = (CONFIG.orderWhatsapp || '').replace(/\D/g, '');
+  if (!number || CONFIG.orderWhatsapp === '{{ESPACO_WHATSAPP}}') return; // sem WA: ao menos ficou no log
+  const message = generateOrderMessage(cart, tableValue);
+  const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
   const toast = document.getElementById('confirm-wa-toast');
   if (toast) {
     toast.textContent = t().confirmOpeningWA;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 1600);
   }
-
-  setTimeout(() => {
-    const message = generateOrderMessage(cart, tableValue);
-    const encoded = encodeURIComponent(message);
-    const number = (CONFIG.orderWhatsapp || '').replace(/\D/g, '');
-    const url = `https://wa.me/${number}?text=${encoded}`;
-    // NEXO Premium: when comanda routing is on, the comanda is the source of
-    // truth (Caixa logs orders_log at payment) — avoid a duplicate order row.
-    if (!(window.NEXOPremium && window.NEXOPremium.comandaRouting))
-      logOrderToSupabase(sharedCart ? 'shared' : 'whatsapp', tableValue);
-    if (window.NEXOPremium && window.NEXOPremium.onOrderConfirmed) window.NEXOPremium.onOrderConfirmed();
-    window.open(url, '_blank');
-  }, 350);
+  window.open(url, '_blank');
 }
 
 function setupConfirmScreen() {
@@ -2916,12 +2936,12 @@ function setupConfirmScreen() {
     });
   }
 
-  const waBtn = document.getElementById('confirm-btn-whatsapp');
-  if (waBtn) {
-    waBtn.addEventListener('click', () => {
+  const kitchenBtn = document.getElementById('confirm-btn-kitchen');
+  if (kitchenBtn) {
+    kitchenBtn.addEventListener('click', () => {
       haptic();
-      sendToWhatsApp();
-      track('order_whatsapp', { item_count: getCartItemCount(), order_total: getCartTotal() });
+      sendToKitchen();
+      track('order_kitchen', { item_count: getCartItemCount(), order_total: getCartTotal() });
     });
   }
 

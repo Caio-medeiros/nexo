@@ -527,18 +527,22 @@
   // Called by the menu right after an order is confirmed (WhatsApp or
   // "Mostrar ao Staff"). Routes the order into the kitchen/caixa.
   let _confirmLock = 0;
+  // Resultado estruturado p/ o menu decidir se precisa do canal de recurso:
+  //   { ok:true }                → a comanda criou a ronda (sem WhatsApp)
+  //   { ok:false, reason:'...' } → não criou (o menu cai p/ o recurso, excepto
+  //                                'duplicate'/'locked', que são intencionais)
   async function onOrderConfirmed() {
-    if (!HAS_COMANDA || !SLUG) return null;          // gated by the comanda toggle
-    if (Date.now() < _confirmLock) return null;     // anti double-submit (same session)
+    if (!HAS_COMANDA || !SLUG) return { ok: false, reason: 'disabled' }; // routing desligado
+    if (Date.now() < _confirmLock) return { ok: false, reason: 'locked' }; // anti double-submit
     _confirmLock = Date.now() + 6000;
     try {
       const items = readMenuCart();
-      if (!items.length) return null;
+      if (!items.length) return { ok: false, reason: 'empty' };
       const tableLabel = currentTableLabel();
       // Anti-duplicado: mesmo pedido, mesma mesa, dentro da janela → não reenvia.
       if (await isDuplicateRecentOrder(tableLabel, items)) {
         toast('Pedido igual já enviado para esta mesa.');
-        return null;
+        return { ok: false, reason: 'duplicate' };
       }
       const res = await pushOrder(tableLabel, items);
       toast('Pedido enviado para a cozinha ✓');
@@ -546,8 +550,8 @@
       // secção "Já enviado". Atrasado para não apanhar a vista "Mostrar ao
       // Staff" (que renderiza a partir do carrinho a ~270ms).
       setTimeout(() => { try { if (typeof clearCart === 'function') clearCart(); } catch (_) {} }, 1200);
-      return res;
-    } catch (e) { console.warn('[NEXO Premium] onOrderConfirmed', e); return null; }
+      return { ok: true, result: res };
+    } catch (e) { console.warn('[NEXO Premium] onOrderConfirmed', e); return { ok: false, reason: 'error' }; }
   }
 
   // ── Public API ───────────────────────────────────────────────

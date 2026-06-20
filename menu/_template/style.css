@@ -4786,6 +4786,12 @@ body.has-cart {
 
 .confirm-btn:active { transform: scale(0.98); }
 
+.confirm-btn-kitchen {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
 .confirm-btn-whatsapp {
   background: #25D366;
   color: white;
