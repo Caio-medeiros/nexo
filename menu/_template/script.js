@@ -4339,6 +4339,26 @@ async function joinSharedCart(code, name) {
     });
   });
 
+  // Validação: o carrinho existe? Depois de nos anunciarmos, o anfitrião (e
+  // outros membros) respondem com o seu estado. Se ninguém responder em ~2s,
+  // o código não existe → não deixamos entrar num carrinho inexistente.
+  const exists = await new Promise((resolve) => {
+    const start = Date.now();
+    const iv = setInterval(() => {
+      const others = Object.keys(_memberStates).filter(k => k !== _myPresenceKey).length;
+      if (others > 0) { clearInterval(iv); resolve(true); }
+      else if (Date.now() - start > 2000) { clearInterval(iv); resolve(false); }
+    }, 120);
+  });
+  if (!exists) {
+    try { await channel.send({ type: 'broadcast', event: 'bye', payload: { memberKey: _myPresenceKey } }); } catch (_) {}
+    try { sb.removeChannel(channel); } catch (_) {}
+    _sharedCartChannel = null; sharedCart = null; sharedMemberName = '';
+    sharedCartItems = []; _myCartItems = []; _memberStates = {}; _myPresenceKey = null;
+    _clearSharedSession();
+    const err = new Error('CART_NOT_FOUND'); err.code = 'NOT_FOUND'; throw err;
+  }
+
   track('shared_cart_joined', { espaco_slug: CONFIG.slug });
 }
 
@@ -4548,7 +4568,13 @@ function setupSharedCart() {
       closeSharedCartSheet();
       setTimeout(() => openModal('cart-sheet'), 200);
     } catch (e) {
-      showCartToast('Erro de ligação — tenta novamente.');
+      if (joinError) {
+        joinError.textContent = (e && e.code === 'NOT_FOUND')
+          ? 'Código não encontrado. Confirma e tenta de novo.'
+          : 'Erro de ligação — tenta novamente.';
+        joinError.style.display = 'block';
+      }
+      joinCode?.focus();
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Juntar'; }
     }
