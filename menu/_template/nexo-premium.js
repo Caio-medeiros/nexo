@@ -169,57 +169,139 @@
   }
   window.nexoSendCartAsComanda = sendCartAsComanda;
 
-  // Comanda bar (fixed). Pass null to remove.
+  // ════════════════════════════════════════════════════════════
+  // RUNNING TAB (comanda-bar) + sent-rounds view
+  // Depois de disparar uma ronda, o cliente mantém um "separador":
+  // uma barra fixa com mesa + total + estado da cozinha, e o detalhe
+  // por ronda dentro do painel do carrinho ("Já enviado" + conta).
+  // ════════════════════════════════════════════════════════════
   let _comandaCh = null;
-  function renderComandaBar(comanda) {
+  let _activeComandaId = null;
+
+  const ITEM_ICON = { pending: '🛒', sent: '⏳', preparing: '🔥', ready: '✅', served: '✓', delivered: '✓', cancelled: '✗' };
+  const ITEM_STATUS_PT = { pending: 'No carrinho', sent: 'Enviado', preparing: 'A preparar', ready: 'Pronto', served: 'Servido', delivered: 'Servido' };
+  const TAB_STATUS = { open: '🛒 Em aberto', submitted: '⏳ Na cozinha', preparing: '🔥 Em preparação', ready: '✅ Pronto' };
+
+  function renderTabBar(info) {
     let bar = document.getElementById('comanda-bar');
-    if (!comanda) { if (bar) bar.remove(); if (_comandaCh) { try { _sb.removeChannel(_comandaCh); } catch (_) {} _comandaCh = null; } return; }
+    if (!info) { if (bar) bar.remove(); return; }
     if (!bar) {
       bar = document.createElement('div');
       bar.id = 'comanda-bar';
       bar.className = 'comanda-bar';
+      bar.setAttribute('role', 'button');
+      bar.setAttribute('tabindex', '0');
+      bar.addEventListener('click', openTabSheet);
+      bar.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTabSheet(); } });
       document.body.appendChild(bar);
     }
     bar.innerHTML = `
       <div class="comanda-bar-left">
-        <span class="comanda-code">${comanda.session_code || ''}</span>
-        <span class="comanda-table">${comanda.table_label || 'Mesa'}</span>
+        <span class="comanda-table">${escapeHTML(info.table_label || 'Mesa')}</span>
+        <span class="comanda-status">${TAB_STATUS[info.status] || ''}</span>
       </div>
-      <div class="comanda-bar-center">
-        <span class="comanda-total" id="comanda-total">${fmtEUR(comanda.total || 0)}</span>
-        <span class="comanda-items" id="comanda-items">—</span>
-      </div>
-      <button class="comanda-submit-btn" type="button">Enviar →</button>`;
-    bar.querySelector('.comanda-submit-btn').addEventListener('click', async () => {
-      try { await submitComanda(comanda.id); sessionStorage.removeItem(COMANDA_KEY); renderComandaBar(null); toast('Comanda enviada ✓'); }
-      catch (e) { toast('Erro ao enviar'); console.error(e); }
-    });
-    subscribeComanda(comanda.id);
+      <div class="comanda-bar-right">
+        <span class="comanda-total">${fmtEUR(info.total || 0)}</span>
+        <span class="comanda-bar-cta">Ver conta →</span>
+      </div>`;
+  }
+  function openTabSheet() { try { openModal('cart-sheet'); } catch (_) {} }
+
+  async function loadTab(comandaId) {
+    const client = await sb();
+    const [cRes, rRes, iRes] = await Promise.all([
+      client.from('comandas').select('id, table_label, status, total').eq('id', comandaId).maybeSingle(),
+      client.from('comanda_rounds').select('id, round_number, fired_at, status').eq('comanda_id', comandaId).order('round_number'),
+      client.from('comanda_items').select('id, item_name, quantity, item_price, status, round_id').eq('comanda_id', comandaId).order('created_at'),
+    ]);
+    return { comanda: cRes.data, rounds: rRes.data || [], items: iRes.data || [] };
   }
 
-  async function subscribeComanda(comandaId) {
+  async function refreshTab() {
+    if (!_activeComandaId) return;
+    let data;
+    try { data = await loadTab(_activeComandaId); } catch (_) { return; }
+    if (!data.comanda || data.comanda.status === 'closed' || data.comanda.status === 'cancelled') { clearTab(); return; }
+    const hasSent = (data.items || []).some(i => i.round_id && i.status !== 'cancelled');
+    if (!hasSent) { renderTabBar(null); hideSentSection(); return; } // ainda sem nada enviado
+    renderTabBar(data.comanda);
+    renderSentSection(data);
+  }
+
+  function clearTab() {
+    _activeComandaId = null;
+    sessionStorage.removeItem(COMANDA_KEY);
+    renderTabBar(null);
+    hideSentSection();
+    if (_comandaCh) { try { _sb.removeChannel(_comandaCh); } catch (_) {} _comandaCh = null; }
+  }
+  function hideSentSection() { const s = document.getElementById('nexo-sent-section'); if (s) { s.style.display = 'none'; s.innerHTML = ''; } }
+
+  // Secção "Já enviado" injectada no painel do carrinho (sobrevive aos
+  // re-renders do menu, que só tocam em #cart-list).
+  function renderSentSection(data) {
+    const panel = document.getElementById('panel-order');
+    if (!panel) return;
+    let sec = document.getElementById('nexo-sent-section');
+    if (!sec) {
+      sec = document.createElement('div');
+      sec.id = 'nexo-sent-section';
+      sec.className = 'nexo-sent-section';
+      const footer = panel.querySelector('.cart-footer');
+      if (footer) footer.insertAdjacentElement('afterend', sec);
+      else panel.appendChild(sec);
+    }
+    const sent = (data.items || []).filter(i => i.round_id && i.status !== 'cancelled');
+    if (!sent.length) { sec.style.display = 'none'; sec.innerHTML = ''; return; }
+    sec.style.display = 'block';
+
+    const roundById = {};
+    (data.rounds || []).forEach(r => { roundById[r.id] = r; });
+    const byRound = {};
+    sent.forEach(i => { (byRound[i.round_id] = byRound[i.round_id] || []).push(i); });
+    const orderedRoundIds = Object.keys(byRound).sort((a, b) =>
+      ((roundById[a] && roundById[a].round_number) || 0) - ((roundById[b] && roundById[b].round_number) || 0));
+
+    let html = `<div class="nexo-sent-label"><span>Já enviado</span></div>`;
+    orderedRoundIds.forEach(rid => {
+      const r = roundById[rid] || {};
+      const time = r.fired_at ? new Date(r.fired_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
+      const rstatus = r.status === 'done' ? '✅' : r.status === 'acknowledged' ? '👨‍🍳' : '⏳';
+      const label = (r.round_number === 1) ? '1.ª ronda' : `${r.round_number}.ª ronda`;
+      html += `<div class="nexo-round-head"><span>${label}</span><span class="nexo-round-time">${time}</span><span>${rstatus}</span></div>`;
+      byRound[rid].forEach(it => {
+        html += `<div class="nexo-sent-item">
+          <span class="nexo-sent-name">${escapeHTML(it.item_name)}</span>
+          <span class="nexo-sent-qty">×${it.quantity}</span>
+          <span class="nexo-sent-status" title="${ITEM_STATUS_PT[it.status] || ''}">${ITEM_ICON[it.status] || '⏳'}</span>
+        </div>`;
+      });
+    });
+    const bill = (data.items || []).filter(i => i.status !== 'cancelled')
+      .reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
+    html += `<div class="nexo-bill-row"><span>Total da mesa</span><span class="nexo-bill-amount">${fmtEUR(bill)}</span></div>
+      <p class="nexo-bill-hint">Peça a conta ao empregado</p>`;
+    sec.innerHTML = html;
+  }
+
+  async function subscribeTab(comandaId) {
     const client = await sb();
     if (_comandaCh) { try { client.removeChannel(_comandaCh); } catch (_) {} }
-    _comandaCh = client.channel(`comanda_${comandaId}`)
-      .on('postgres_changes', { event: '*', schema: 'public',
-        table: 'comanda_items', filter: `comanda_id=eq.${comandaId}` },
-        () => refreshComandaBar(comandaId))
+    _comandaCh = client.channel(`tab_${comandaId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items', filter: `comanda_id=eq.${comandaId}` }, () => refreshTab())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_rounds', filter: `comanda_id=eq.${comandaId}` }, () => refreshTab())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `id=eq.${comandaId}` }, () => refreshTab())
       .subscribe();
   }
-  async function refreshComandaBar(comandaId) {
-    const client = await sb();
-    const { data } = await client.from('comandas')
-      .select('total, table_label, session_code').eq('id', comandaId).maybeSingle();
-    if (data) {
-      const t = document.getElementById('comanda-total');
-      if (t) t.textContent = fmtEUR(data.total);
-    }
-    const { count } = await client.from('comanda_items')
-      .select('*', { count: 'exact', head: true })
-      .eq('comanda_id', comandaId).neq('status', 'cancelled');
-    const it = document.getElementById('comanda-items');
-    if (it) it.textContent = `${count || 0} ${count === 1 ? 'item' : 'itens'}`;
+
+  async function activateTab(comandaId) {
+    if (!comandaId) return;
+    _activeComandaId = comandaId;
+    await subscribeTab(comandaId);
+    await refreshTab();
   }
+  // Compat: chamadas antigas usavam renderComandaBar(null) p/ encerrar.
+  function renderComandaBar(c) { if (!c) clearTab(); else activateTab(c.id); }
 
   // Staff takeover QR inside the staff fullscreen view.
   function mountStaffTakeover() {
@@ -398,7 +480,10 @@
     // guest_count = nº de pessoas a partilhar a mesa pelo menu (carrinho
     // partilhado). Sem partilha = 1. Nunca inferido do nº de itens.
     const comanda = await openOrGetComanda(tableLabel);
-    return fireRound(comanda, items);
+    const res = await fireRound(comanda, items);
+    // separador (conta a correr) — total + estado + detalhe por ronda.
+    try { storeComanda({ id: comanda.id, table_label: comanda.table_label, status: 'submitted' }); activateTab(comanda.id); } catch (_) {}
+    return res;
   }
 
   // Signature of an order (item name × qty, order-independent). Notes are
@@ -457,6 +542,10 @@
       }
       const res = await pushOrder(tableLabel, items);
       toast('Pedido enviado para a cozinha ✓');
+      // Esvazia o carrinho pendente após disparar — os itens passam a viver na
+      // secção "Já enviado". Atrasado para não apanhar a vista "Mostrar ao
+      // Staff" (que renderiza a partir do carrinho a ~270ms).
+      setTimeout(() => { try { if (typeof clearCart === 'function') clearCart(); } catch (_) {} }, 1200);
       return res;
     } catch (e) { console.warn('[NEXO Premium] onOrderConfirmed', e); return null; }
   }
@@ -480,9 +569,16 @@
       const label = document.getElementById('cart-confirm-label');
       if (label && !label.dataset.orig) label.dataset.orig = label.textContent;
       loadBanners();
-      // Resume an open comanda if present in this session
+      // Retoma o separador (conta a correr) desta sessão, se existir.
       const c = getStoredComanda();
-      if (c && c.status === 'open') { renderComandaBar(c); refreshComandaBar(c.id); }
+      if (c && c.id) activateTab(c.id);
+      // Refrescar o detalhe "Já enviado" sempre que o painel do carrinho abre.
+      const cartSheet = document.getElementById('cart-sheet');
+      if (cartSheet) {
+        new MutationObserver(() => {
+          if (cartSheet.classList.contains('show') && _activeComandaId) refreshTab();
+        }).observe(cartSheet, { attributes: true, attributeFilter: ['class'] });
+      }
       // Mount staff takeover QR whenever the staff view opens
       const staffView = document.getElementById('staff-view');
       if (staffView) {

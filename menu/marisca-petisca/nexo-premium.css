@@ -59,7 +59,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  z-index: 99990;
+  z-index: 150; /* mesma camada do cart-pill: por baixo dos modais (200) */
   box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
   animation: npSlideUp 300ms var(--np-ease) both;
   color: var(--np-text);
@@ -150,3 +150,24 @@
   padding: 8px;
 }
 .staff-qr-hint { font-size: 11px; opacity: 0.6; margin: 0; }
+
+/* ── Running tab: comanda-bar (clicável) + estado ── */
+.comanda-bar { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.comanda-bar:active { transform: scale(0.99); }
+.comanda-status { font-size: 11px; color: var(--np-text-2); display: block; margin-top: 2px; }
+.comanda-bar-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.comanda-bar-cta { font-size: 11px; font-weight: 600; color: var(--np-text-2); }
+
+/* ── "Já enviado" (rondas) dentro do painel do carrinho ── */
+.nexo-sent-section { border-top: 1px dashed var(--np-border-md); margin-top: 14px; padding-top: 12px; }
+.nexo-sent-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--np-text-2); margin-bottom: 8px; }
+.nexo-round-head { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--np-text-muted); margin: 12px 0 4px; }
+.nexo-round-time { font-family: 'Azeret Mono', ui-monospace, monospace; }
+.nexo-round-head span:last-child { margin-left: auto; }
+.nexo-sent-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
+.nexo-sent-name { flex: 1; color: var(--np-text-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nexo-sent-qty { font-family: 'Azeret Mono', ui-monospace, monospace; font-size: 12px; color: var(--np-text-muted); }
+.nexo-sent-status { font-size: 13px; flex-shrink: 0; }
+.nexo-bill-row { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--np-border-md); margin-top: 12px; padding-top: 12px; font-size: 14px; font-weight: 600; color: var(--np-text); }
+.nexo-bill-amount { font-family: 'Azeret Mono', ui-monospace, monospace; font-size: 20px; font-weight: 700; }
+.nexo-bill-hint { font-size: 11px; color: var(--np-text-muted); text-align: center; margin: 8px 0 0; }
