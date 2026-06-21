@@ -34,7 +34,17 @@ let db = null;
 if (typeof supabase === 'undefined') {
   console.error('NEXO Portal: Supabase CDN não carregou.');
 } else {
-  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // persistSession + autoRefreshToken: the portal lives open 24/7 on the
+  // kitchen/counter tablet — the token must refresh silently, never expire
+  // the staff mid-service.
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
+  window.db = db;
 }
 
 // ─── AUTH ─────────────────────────────────
@@ -49,6 +59,7 @@ async function requireAuth() {
       encodeURIComponent(window.location.pathname);
     return null;
   }
+  initAuthResilience();
   return session;
 }
 
@@ -209,6 +220,127 @@ async function signOut() {
   if (db) await db.auth.signOut();
   window.location.href = '/portal/';
 }
+
+// ─── AUTH RESILIENCE ──────────────────────
+// NO auto-logout, NO inactivity timeout. The portal runs all day on a mounted
+// tablet. Supabase already refreshes the token silently (autoRefreshToken).
+// Here we only handle the edge cases gracefully — a non-intrusive banner,
+// never a forced redirect that would interrupt service.
+let _authResilienceBound = false;
+function initAuthResilience() {
+  if (_authResilienceBound || !db) return;
+  _authResilienceBound = true;
+
+  db.auth.onAuthStateChange((event, session) => {
+    if (event === 'TOKEN_REFRESHED' && session) {
+      // Keep Realtime authenticated after a silent refresh (RLS-gated channels).
+      try { db.realtime.setAuth(session.access_token); } catch (_) {}
+      hideAuthWarning();
+    }
+    if (event === 'SIGNED_OUT') {
+      // Could be a sign-out on another device. DO NOT redirect — staff might be
+      // mid-service. Show a dismissable banner with a manual reload option.
+      showAuthWarning('Sessão terminada. Recarregue para continuar a usar o portal.');
+    }
+  });
+}
+
+function showAuthWarning(message) {
+  if (document.getElementById('nexo-auth-warning')) return; // don't stack
+  const banner = document.createElement('div');
+  banner.id = 'nexo-auth-warning';
+  banner.className = 'nexo-auth-warning';
+  banner.innerHTML = `
+    <span>⚠️ ${escapeHtml(message)}</span>
+    <button type="button" onclick="window.location.reload()">Recarregar</button>
+    <button type="button" aria-label="Dispensar" onclick="this.parentElement.remove()">✕</button>`;
+  document.body.insertBefore(banner, document.body.firstChild);
+  if (window.gsap) { try { gsap.from(banner, { y: -40, opacity: 0, duration: 0.3, ease: 'power2.out' }); } catch (_) {} }
+}
+function hideAuthWarning() { document.getElementById('nexo-auth-warning')?.remove(); }
+
+// ─── CONNECTION MONITOR ───────────────────
+// Shows an offline banner on connection loss and resyncs Realtime on recovery.
+const ConnectionMonitor = {
+  isOnline: navigator.onLine,
+  init() {
+    window.addEventListener('online', () => {
+      this.isOnline = true;
+      this.hideBanner();
+      this.resync();
+    });
+    window.addEventListener('offline', () => {
+      this.isOnline = false;
+      this.showBanner();
+    });
+  },
+  showBanner() {
+    if (document.getElementById('nexo-offline-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'nexo-offline-banner';
+    banner.className = 'nexo-offline-banner';
+    banner.textContent = '⚠️ Sem conexão à internet — funcionamento limitado';
+    document.body.appendChild(banner);
+    setLiveState('reconnecting');
+  },
+  hideBanner() {
+    document.getElementById('nexo-offline-banner')?.remove();
+  },
+  async resync() {
+    // Realtime channels drop on network loss. Re-subscribe via the page hook.
+    if (typeof window.nexoResubscribe === 'function') {
+      try { await window.nexoResubscribe(); } catch (_) {}
+    }
+    setLiveState('connected');
+  },
+};
+ConnectionMonitor.init();
+
+// ─── SUBMIT GUARD (prevent double-submit) ──
+const SubmitGuard = {
+  pending: new Set(),
+  guard(id) { if (this.pending.has(id)) return false; this.pending.add(id); return true; },
+  release(id) { this.pending.delete(id); },
+  async run(id, fn) {
+    if (!this.guard(id)) return null;
+    try { return await fn(); } finally { this.release(id); }
+  },
+};
+window.SubmitGuard = SubmitGuard;
+
+// ─── RESILIENT REALTIME CHANNEL ───────────
+// Auto-reconnects with exponential backoff (1s,2s,…,max 30s; 10 attempts).
+// Drop-in replacement for db.channel(...).on(...).subscribe().
+function createResilientChannel(name, config, handler) {
+  let channel = null;
+  let reconnectTimer = null;
+  let attempts = 0;
+  const MAX = 10;
+
+  function connect() {
+    channel = db.channel(name);
+    channel.on('postgres_changes', config, handler)
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') { attempts = 0; setLiveState('connected'); }
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { scheduleReconnect(); }
+      });
+    trackChannel(channel);
+    return channel;
+  }
+  function scheduleReconnect() {
+    if (attempts >= MAX) return;
+    setLiveState('reconnecting');
+    const delay = Math.min(1000 * Math.pow(2, attempts), 30_000);
+    attempts++;
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(async () => {
+      if (channel) { try { await db.removeChannel(channel); } catch (_) {} }
+      connect();
+    }, delay);
+  }
+  return connect();
+}
+window.createResilientChannel = createResilientChannel;
 
 // ─── TOAST ────────────────────────────────
 function showToast(message, type = 'info', duration = 3000) {
@@ -700,3 +832,126 @@ if (document.readyState === 'loading') {
 } else {
   initPortalMotion();
 }
+
+// ─── PWA: SERVICE WORKER ──────────────────
+// Installable on tablets/phones; caches key assets for fast load. The portal
+// stays open 24/7 — updates are offered via a non-intrusive banner, never
+// forced, so staff are never interrupted mid-service.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('/portal/sw.js', { scope: '/portal/' });
+      setInterval(() => { try { reg.update(); } catch (_) {} }, 3600000); // hourly
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
+        });
+      });
+    } catch (err) {
+      console.log('[NEXO SW] registo falhou:', err && err.message);
+    }
+  });
+}
+
+function showUpdateBanner() {
+  if (document.getElementById('nexo-update-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'nexo-update-banner';
+  banner.style.cssText =
+    'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg-elevated);' +
+    'border:1px solid var(--border-md);border-radius:12px;padding:12px 20px;display:flex;align-items:center;' +
+    'gap:12px;font-size:13px;color:var(--text-primary);z-index:9997;box-shadow:0 8px 32px rgba(0,0,0,.4)';
+  banner.innerHTML =
+    '<span>✨ Nova versão disponível</span>' +
+    '<button onclick="window.location.reload()" style="background:var(--text-primary);color:var(--bg-base);' +
+    'border:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">Actualizar</button>' +
+    '<button aria-label="Dispensar" onclick="this.parentElement.remove()" style="background:none;border:none;' +
+    'color:var(--text-muted);cursor:pointer;padding:4px">✕</button>';
+  document.body.appendChild(banner);
+}
+
+// ─── PWA: INSTALL PROMPT ──────────────────
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  let dismissed, installed;
+  try {
+    dismissed = localStorage.getItem('nexo_pwa_dismissed');
+    installed = localStorage.getItem('nexo_pwa_installed');
+  } catch (_) {}
+  // Wait 30s so we never interrupt immediate work.
+  if (!dismissed && !installed) setTimeout(showInstallBanner, 30000);
+});
+
+function showInstallBanner() {
+  if (!deferredInstallPrompt || document.getElementById('nexo-install-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'nexo-install-banner';
+  banner.style.cssText =
+    'position:fixed;bottom:20px;right:20px;background:var(--bg-elevated);border:1px solid var(--border-md);' +
+    'border-radius:16px;padding:16px 20px;max-width:300px;z-index:9997;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+  banner.innerHTML =
+    '<div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px">📱 Instalar NEXO como app</div>' +
+    '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;line-height:1.5">Acesso mais rápido directo do ecrã principal.</div>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button onclick="installPWA()" style="flex:1;background:var(--text-primary);color:var(--bg-base);border:none;' +
+    'border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">Instalar</button>' +
+    '<button onclick="dismissInstall()" style="flex:1;background:var(--bg-hover);border:1px solid var(--border-md);' +
+    'color:var(--text-secondary);border-radius:8px;padding:8px;font-size:12px;cursor:pointer">Agora não</button>' +
+    '</div>';
+  document.body.appendChild(banner);
+  if (window.gsap) { try { gsap.from(banner, { y: 24, opacity: 0, duration: 0.3, ease: 'power2.out' }); } catch (_) {} }
+}
+
+async function installPWA() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  try {
+    const result = await deferredInstallPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      try { localStorage.setItem('nexo_pwa_installed', new Date().toISOString()); } catch (_) {}
+    }
+  } catch (_) {}
+  deferredInstallPrompt = null;
+  document.getElementById('nexo-install-banner')?.remove();
+}
+
+function dismissInstall() {
+  try { localStorage.setItem('nexo_pwa_dismissed', '1'); } catch (_) {}
+  document.getElementById('nexo-install-banner')?.remove();
+}
+
+window.addEventListener('appinstalled', () => {
+  try { localStorage.setItem('nexo_pwa_installed', new Date().toISOString()); } catch (_) {}
+  document.getElementById('nexo-install-banner')?.remove();
+});
+
+// ─── KIOSK MODE (Cozinha + Restaurante on mounted tablets) ──
+// Wake Lock keeps the screen on; fullscreen-on-first-tap only when installed
+// (standalone) so we never hijack a normal browser tab.
+(function initKiosk() {
+  if (!/\/portal\/(cozinha|restaurante)\//.test(location.pathname)) return;
+
+  async function acquireWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try { window.wakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+  }
+  acquireWakeLock();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') acquireWakeLock();
+  });
+
+  const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+  if (standalone) {
+    document.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      }
+    }, { once: true });
+  }
+})();
