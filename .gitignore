@@ -3,3 +3,10 @@ supabase/.temp/
 
 # Stray export
 --full-page
+
+# Secrets — never commit. Service-role / Anthropic / VAPID keys live only as
+# Supabase secrets, never in client-side files.
+.env
+.env.*
+*.env
+

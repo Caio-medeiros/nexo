@@ -1,5 +1,5 @@
 /**
- * NEXO Menu Config — rest-nexo-lisboa
+ * NEXO Menu Config — nexo-restaurant (demo)
  * ─────────────────────────────────────────────────────────
  * TAXONOMY: All category names, item fields, tags and
  * allergens MUST use the exact strings defined in:
