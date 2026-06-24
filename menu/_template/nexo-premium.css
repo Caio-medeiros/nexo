@@ -193,16 +193,120 @@
   to   { transform: scaleX(0); }
 }
 
-/* ── "Já enviado" (rondas) dentro do painel do carrinho ── */
-.nexo-sent-section { border-top: 1px dashed var(--np-border-md); margin-top: 14px; padding-top: 12px; }
-.nexo-sent-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--np-text-2); margin-bottom: 8px; }
-.nexo-round-head { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--np-text-muted); margin: 12px 0 4px; }
-.nexo-round-time { font-family: 'Azeret Mono', ui-monospace, monospace; }
-.nexo-round-head span:last-child { margin-left: auto; }
-.nexo-sent-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
-.nexo-sent-name { flex: 1; color: var(--np-text-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nexo-sent-qty { font-family: 'Azeret Mono', ui-monospace, monospace; font-size: 12px; color: var(--np-text-muted); }
-.nexo-sent-status { font-size: 13px; flex-shrink: 0; }
-.nexo-bill-row { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--np-border-md); margin-top: 12px; padding-top: 12px; font-size: 14px; font-weight: 600; color: var(--np-text); }
-.nexo-bill-amount { font-family: 'Azeret Mono', ui-monospace, monospace; font-size: 20px; font-weight: 700; }
-.nexo-bill-hint { font-size: 11px; color: var(--np-text-muted); text-align: center; margin: 8px 0 0; }
+/* ── "Já enviado" — card redesign ── */
+.nexo-sent-section {
+  margin-top: 20px;
+  border-top: 1px dashed var(--np-border-md);
+  padding-top: 16px;
+}
+
+/* header row: label + total */
+.ns-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.ns-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--np-text-muted);
+}
+.ns-total {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--np-text-2);
+}
+
+/* rounds container */
+.ns-rounds {
+  background: var(--np-bg-elevated);
+  border: 1px solid var(--np-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* round header */
+.nexo-round-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid var(--np-border);
+}
+.nexo-round-head + .nexo-round-head {
+  border-top: 1px solid var(--np-border-md);
+}
+.nexo-round-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--np-text-muted);
+}
+.nexo-round-time {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--np-text-muted);
+  margin-left: 2px;
+}
+.nexo-round-svg {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* sent items */
+.nexo-sent-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--np-border);
+}
+.nexo-sent-item:last-child { border-bottom: none; }
+.nexo-sent-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--np-text-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nexo-sent-qty {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--np-text-muted);
+  flex-shrink: 0;
+}
+.nexo-sent-status {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* status colours */
+.ns-status--done   { color: var(--np-success); }
+.ns-status--prep   { color: var(--np-warning); }
+.ns-status--pending{ color: var(--np-text-muted); }
+
+/* hint row */
+.ns-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 9px 12px;
+  background: var(--np-bg-elevated);
+  border: 1px solid var(--np-border);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--np-text-muted);
+}
+.ns-hint svg { flex-shrink: 0; }

@@ -2356,11 +2356,11 @@ function renderCartPill() {
   const totalEl = document.getElementById('cart-pill-total');
   if (!pill || !textEl || !totalEl) return;
 
+  const countBadge = document.getElementById('cart-pill-count');
   const count = getCartItemCount();
   const comandaInfo = window._nexoComandaInfo || null;
 
   // ── Comanda mode: carrinho vazio mas comanda activa ──────────
-  // O pill central transforma-se em "Ver comanda" com estado e total da mesa.
   if (count === 0 && comandaInfo) {
     const statusIcon = { open: '🛒', submitted: '⏳', preparing: '🔥', ready: '✅' }[comandaInfo.status] || '⏳';
     textEl.textContent = `${statusIcon} ${comandaInfo.table_label || 'Mesa'} · Ver comanda`;
@@ -2369,11 +2369,13 @@ function renderCartPill() {
     pill.classList.add('show', 'cart-pill--comanda');
     document.body.classList.add('has-cart');
     pill.setAttribute('aria-label', 'Ver comanda da mesa');
+    if (countBadge) { countBadge.textContent = ''; countBadge.style.display = 'none'; }
     return;
   }
 
   // ── Normal mode ───────────────────────────────────────────────
   pill.classList.remove('cart-pill--comanda');
+  if (countBadge) { countBadge.style.display = ''; countBadge.textContent = String(count); }
 
   if (count === 0) {
     pill.classList.remove('show');
@@ -2381,11 +2383,9 @@ function renderCartPill() {
     return;
   }
 
-  const label = count === 1 ? t().cartItem : t().cartItems;
-  textEl.textContent = sharedCart
-    ? `👥 ${t().viewOrder} · ${count} ${label}`
-    : `${t().viewOrder} · ${count} ${label}`;
-  pill.setAttribute('aria-label', `${t().viewOrder}: ${count} ${label}`);
+  // Badge shows count; text shows label only (no redundant count in text)
+  textEl.textContent = sharedCart ? `👥 ${t().viewOrder}` : t().viewOrder;
+  pill.setAttribute('aria-label', `${t().viewOrder}: ${count} ${count === 1 ? t().cartItem : t().cartItems}`);
 
   const total = getCartTotal();
   if (total > 0) {
