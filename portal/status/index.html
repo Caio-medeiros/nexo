@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/portal/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NEXO">
+  <meta name="theme-color" content="#0A0A0A">
+  <link rel="apple-touch-icon" href="/portal/icons/icon-192.png">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Estado do Sistema — NEXO Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/_assets/portal.css">
+  <style>
+    .mono { font-family: 'Azeret Mono', ui-monospace, monospace; }
+    .status-overall { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .status-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 18px; }
+    .status-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 8px 20px; }
+    .check-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .check-row:last-child { border-bottom: none; }
+    .check-ico { font-size: 16px; flex-shrink: 0; }
+    .check-name { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0; }
+    .check-detail { font-size: 12px; margin: 2px 0 0; word-break: break-word; }
+    .status-actions { display: flex; gap: 10px; margin-top: 18px; align-items: center; }
+    .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border-md); border-top-color: var(--text-primary); border-radius: 50%; animation: nxspin .7s linear infinite; }
+    @keyframes nxspin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+    /* ── Client status grid ─────────────────────────────────────────────── */
+    .status-section-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 28px 0 12px; }
+    .status-summary-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+    .status-summary-bar.ok       { background: rgba(34,197,94,0.08);  border: 1px solid rgba(34,197,94,0.2);  color: var(--success); }
+    .status-summary-bar.warning  { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: var(--warning); }
+    .status-summary-bar.critical { background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.2);  color: var(--danger); }
+    .status-summary-bar.loading  { background: var(--bg-surface);     border: 1px solid var(--border);        color: var(--text-muted); }
+    .status-time { margin-left: auto; font-size: 11px; opacity: 0.7; font-family: 'Azeret Mono', monospace; }
+    .client-status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .client-status-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; transition: border-color 200ms ease; }
+    .client-status-card.has-issue { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.03); }
+    .csc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .csc-name { font-size: 14px; font-weight: 600; color: var(--text-primary); display: block; }
+    .csc-slug { font-family: 'Azeret Mono', monospace; font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px; }
+    .csc-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
+    .csc-badge.ok      { background: rgba(34,197,94,0.1);  color: var(--success); }
+    .csc-badge.warning { background: rgba(245,158,11,0.1); color: var(--warning); }
+    .csc-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+    .csc-metric { text-align: center; }
+    .csc-metric-value { font-size: 20px; font-weight: 700; color: var(--text-primary); display: block; font-family: 'Azeret Mono', monospace; }
+    .csc-metric-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .csc-last-event { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+    .csc-last-event.warning { color: var(--warning); }
+    .csc-actions { display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .csc-link { font-size: 12px; color: var(--info, #3b82f6); text-decoration: none; transition: opacity 150ms ease; }
+    .csc-link:hover { opacity: 0.7; }
+  </style>
+</head>
+<body>
+  <nav class="portal-nav" id="portal-nav"></nav>
+  <aside class="portal-sidebar" id="portal-sidebar"></aside>
+
+  <main class="portal-main" id="main">
+    <div id="page-skeleton">
+      <div class="page-header"><div class="nexo-skeleton" style="width:220px;height:28px"></div></div>
+      <div class="card nexo-skeleton" style="height:320px"></div>
+    </div>
+    <div id="page-content" style="display:none"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/portal/_assets/icons.js"></script>
+  <script src="/portal/_assets/portal.js"></script>
+  <script>
+  (async function () {
+    const client = await getClientData();
+    if (!client) return;
+    renderLayout('/portal/status/', client);
+    const slug = getMenuSlug(client);
+
+    document.getElementById('page-skeleton').style.display = 'none';
+    const content = document.getElementById('page-content');
+    content.style.display = 'block';
+    content.innerHTML = `
+      <div class="page-header">
+        <h1 class="page-title">Estado do Sistema</h1>
+        <p class="page-sub">Verificação interna (Caio/Bia). O sistema corre também uma verificação automática diária.</p>
+      </div>
+
+      <p class="status-section-title">Menus Activos</p>
+      <div id="client-summary-bar" class="status-summary-bar loading">
+        <span class="spin"></span> <span>A carregar menus…</span>
+      </div>
+      <div id="client-status-grid" class="client-status-grid"></div>
+
+      <p class="status-section-title">Infraestrutura</p>
+      <div id="status-overall" class="status-overall"><span class="spin"></span> A verificar…</div>
+      <div id="status-meta" class="status-meta"></div>
+      <div class="status-card" id="status-checks"></div>
+      <div class="status-actions">
+        <button class="btn btn-primary btn-sm" id="btn-recheck" type="button">Verificar agora</button>
+        <span class="status-meta" style="margin:0">Actualiza sozinho a cada 60s (sem o teste de escrita).</span>
+      </div>`;
+
+    const SB_URL = (typeof SUPABASE_URL !== 'undefined') ? SUPABASE_URL : '';
+    const SB_KEY = (typeof SUPABASE_KEY !== 'undefined') ? SUPABASE_KEY : '';
+
+    // ── Verificações (só leitura, excepto o probe opt-in) ──────────────────
+    async function dbCheck() {
+      const t = Date.now();
+      try {
+        const { error } = await db.from('venue_settings').select('id').eq('espaco_slug', slug).maybeSingle();
+        if (error) throw error;
+        return { name: 'Base de dados Supabase', ok: true, detail: `${Date.now() - t}ms` };
+      } catch (e) { return { name: 'Base de dados Supabase', ok: false, detail: e.message || 'sem ligação' }; }
+    }
+
+    async function backendCheck() {
+      try {
+        const { data, error } = await db.rpc('nexo_health_check');
+        if (error) throw error;
+        const ok = (data.core_tables >= 7) && data.order_notification_trigger === true && data.realtime_ok === true;
+        const parts = [
+          `${data.core_tables}/7 tabelas`,
+          data.order_notification_trigger ? 'trigger ✓' : 'trigger ✗',
+          data.realtime_ok ? 'realtime ✓' : 'realtime ✗',
+          `${data.menu_events_24h} eventos/24h`,
+          `${data.errors_last_hour} erros/1h`,
+        ];
+        return { name: 'Backend (estrutura + fluxo)', ok, detail: parts.join(' · ') };
+      } catch (e) {
+        return { name: 'Backend (estrutura + fluxo)', ok: false, detail: 'Função nexo_health_check em falta — corra a migração 025.' };
+      }
+    }
+
+    async function realtimeCheck() {
+      const ok = await new Promise((resolve) => {
+        let done = false;
+        const to = setTimeout(() => { if (!done) { done = true; resolve(false); } }, 5000);
+        try {
+          const ch = db.channel('health-' + Date.now()).subscribe((st) => {
+            if (st === 'SUBSCRIBED' && !done) { done = true; clearTimeout(to); try { db.removeChannel(ch); } catch (_) {} resolve(true); }
+          });
+        } catch (_) { clearTimeout(to); resolve(false); }
+      });
+      return { name: 'Realtime (WebSocket)', ok, detail: ok ? 'ligação activa' : 'não conseguiu ligar' };
+    }
+
+    function placeholderCheck() {
+      const ok = !document.documentElement.innerHTML.includes('{{');
+      return { name: 'Configuração (placeholders)', ok, detail: ok ? 'sem {{placeholders}}' : '⚠️ existem {{placeholders}} por substituir' };
+    }
+
+    // Probe da escrita anónima do menu — replica o INSERT do menu com a anon key
+    // (apanha o erro 42501). Não-disruptivo: menu_events não tem trigger/realtime
+    // para a Sala. Só corre no load e no botão (nunca no loop de 60s).
+    async function anonWriteProbe() {
+      if (!SB_URL || !SB_KEY) return { name: 'Escrita anónima (menu)', ok: false, detail: 'anon key indisponível na página' };
+      try {
+        const res = await fetch(`${SB_URL}/rest/v1/menu_events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, Prefer: 'return=minimal' },
+          body: JSON.stringify({ espaco_slug: slug, event_name: '__health_probe__', session_id: '__health__', language: 'pt' }),
+        });
+        if (res.ok) return { name: 'Escrita anónima (menu)', ok: true, detail: `OK (${res.status})` };
+        const body = await res.text();
+        return { name: 'Escrita anónima (menu)', ok: false, detail: `${res.status} — ${body.slice(0, 120)}` };
+      } catch (e) { return { name: 'Escrita anónima (menu)', ok: false, detail: e.message || 'falhou' }; }
+    }
+
+    function render(checks) {
+      const allOk = checks.every((c) => c.ok);
+      document.getElementById('status-overall').innerHTML = allOk
+        ? '<span style="color:var(--success)">✓ Todos os sistemas operacionais</span>'
+        : '<span style="color:var(--danger)">⚠️ Problemas detectados</span>';
+      document.getElementById('status-meta').textContent = 'Última verificação: ' + new Date().toLocaleString('pt-PT');
+      document.getElementById('status-checks').innerHTML = checks.map((c) => `
+        <div class="check-row">
+          <span class="check-ico">${c.ok ? '✅' : '❌'}</span>
+          <div style="flex:1">
+            <p class="check-name">${c.name}</p>
+            <p class="check-detail" style="color:${c.ok ? 'var(--text-muted)' : 'var(--danger)'}">${c.detail}</p>
+          </div>
+        </div>`).join('');
+    }
+
+    async function run(includeProbe) {
+      const base = [dbCheck(), backendCheck(), realtimeCheck()];
+      if (includeProbe) base.push(anonWriteProbe());
+      const checks = await Promise.all(base);
+      checks.push(placeholderCheck());
+      render(checks);
+    }
+
+    document.getElementById('btn-recheck').addEventListener('click', () => {
+      document.getElementById('status-overall').innerHTML = '<span class="spin"></span> A verificar…';
+      run(true);
+    });
+
+    // ── Per-client status grid ─────────────────────────────────────────────
+    function timeAgo(isoStr) {
+      if (!isoStr) return 'nunca';
+      const diff = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
+      if (diff < 1)   return 'agora mesmo';
+      if (diff < 60)  return `há ${diff}min`;
+      const h = Math.floor(diff / 60);
+      if (h < 24)     return `há ${h}h`;
+      return `há ${Math.floor(h / 24)}d`;
+    }
+
+    async function loadClientStatuses() {
+      const summaryBar = document.getElementById('client-summary-bar');
+      const grid       = document.getElementById('client-status-grid');
+
+      try {
+        const res = await fetch(`${SB_URL}/functions/v1/nexo-health-endpoint`, {
+          headers: { 'Authorization': `Bearer ${SB_KEY}`, 'apikey': SB_KEY },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const { total_active_menus, menus_with_issues, overall_status } = data.summary || {};
+        const statusEmoji = overall_status === 'ok' ? '✅' : '⚠️';
+        const statusText  = menus_with_issues > 0
+          ? `${total_active_menus} menus activos · ${menus_with_issues} com atenção`
+          : `${total_active_menus} menus activos · todos operacionais`;
+        const timeStr = data.generated_at
+          ? new Date(data.generated_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+          : '';
+
+        summaryBar.className = `status-summary-bar ${overall_status || 'ok'}`;
+        summaryBar.innerHTML = `
+          <span>${statusEmoji}</span>
+          <span>${statusText}</span>
+          <span class="status-time">${timeStr}</span>`;
+
+        const clients = (data.clients || []).slice().sort((a, b) => {
+          if (a.status === 'warning' && b.status !== 'warning') return -1;
+          if (b.status === 'warning' && a.status !== 'warning') return 1;
+          return a.client_name.localeCompare(b.client_name);
+        });
+
+        if (!clients.length) {
+          grid.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Sem clientes activos.</p>';
+          return;
+        }
+
+        grid.innerHTML = clients.map((c) => `
+          <div class="client-status-card${c.status === 'warning' ? ' has-issue' : ''}">
+            <div class="csc-header">
+              <div>
+                <span class="csc-name">${c.client_name}</span>
+                <span class="csc-slug">${c.slug}</span>
+              </div>
+              <span class="csc-badge ${c.status}">${c.status === 'ok' ? '✓ OK' : '⚠️ Atenção'}</span>
+            </div>
+            <div class="csc-metrics">
+              <div class="csc-metric">
+                <span class="csc-metric-value">${c.events_last_1h}</span>
+                <span class="csc-metric-label">última hora</span>
+              </div>
+              <div class="csc-metric">
+                <span class="csc-metric-value">${c.events_last_24h}</span>
+                <span class="csc-metric-label">últimas 24h</span>
+              </div>
+              <div class="csc-metric">
+                <span class="csc-metric-value">${c.orders_last_24h}</span>
+                <span class="csc-metric-label">pedidos hoje</span>
+              </div>
+            </div>
+            <div class="csc-last-event${!c.last_event_at ? ' warning' : ''}">
+              ${c.last_event_at ? `Último evento: ${timeAgo(c.last_event_at)}` : 'Sem eventos registados'}
+            </div>
+            <div class="csc-actions">
+              <a href="/menu/${c.slug}/" target="_blank" class="csc-link">Ver menu →</a>
+              <a href="/portal/estatisticas/?slug=${c.slug}" class="csc-link">Analytics →</a>
+            </div>
+          </div>`).join('');
+
+      } catch (e) {
+        summaryBar.className = 'status-summary-bar warning';
+        summaryBar.innerHTML = '⚠️ Não foi possível carregar os menus.';
+        grid.innerHTML = '';
+      }
+    }
+
+    loadClientStatuses();
+    const clientRefreshInterval = setInterval(loadClientStatuses, 5 * 60_000);
+
+    run(true);                       // load: verificação completa (com probe)
+    setInterval(() => run(false), 60_000); // loop: só leitura
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+name: NEXO tests (PR only)
+
+on:
+  pull_request:
+    branches: [main, staging]
+
+jobs:
+  # Fast, zero-infra gate: unit tests + config scan. Run on every push/PR.
+  unit-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Unit tests (nexo-security.js)
+        run: node tests/unit/run.mjs
+      - name: Config scan (placeholders / phantom slug / secrets)
+        run: node tests/scan/scan.mjs
+      - name: Upload unit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: tests/test-report.html
+
+  # Read-only end-to-end smoke against production. Never writes to Supabase.
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    needs: unit-and-scan
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci || npm install
+      - run: npx playwright install --with-deps chromium
+      - name: E2E smoke (menu + portal auth)
+        env:
+          NEXO_TEST_ENV: prod
+          CI: 'true'
+        run: npx playwright test -c tests/e2e/playwright.config.js menu-smoke.spec.js portal-auth.spec.js
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/playwright-report
+
+# Deploys are handled by .github/workflows/deploy.yml (push to main/staging).
+# This file runs tests only, as a gate for pull requests.

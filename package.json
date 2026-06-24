@@ -1,0 +1,16 @@
+{
+  "name": "nexo-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NEXO platform test suite (unit + config scan + Playwright E2E). No build step — the site is static.",
+  "type": "module",
+  "scripts": {
+    "test:unit": "node tests/unit/run.mjs",
+    "test:scan": "node tests/scan/scan.mjs",
+    "test": "npm run test:unit && npm run test:scan",
+    "test:e2e": "playwright test -c tests/e2e/playwright.config.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

@@ -20,6 +20,11 @@
                (typeof CONFIG !== 'undefined' && CONFIG.slug) || null;
   const lang = () => (typeof currentLang !== 'undefined' ? currentLang : 'pt');
 
+  // Security layer (defence-in-depth; degrades gracefully if not loaded).
+  const NS = window.NexoSecurity || null;
+  const clean     = (s, n) => (NS ? NS.sanitise(s, n) : s);
+  const cleanNote = (s)    => (s ? (NS ? NS.sanitiseNote(s) : s) : null);
+
   // ── helpers ──────────────────────────────────────────────────
   function parsePrice(p) {
     if (typeof p === 'number') return p;
@@ -98,11 +103,13 @@
 
   async function createComanda(tableLabel, guestCount) {
     const client = await sb();
+    const meta = window.NexoAccess ? NexoAccess.getOrderMetadata() : {};
     const { data, error } = await client.from('comandas').insert({
       espaco_slug: SLUG,
-      table_label: tableLabel || 'Mesa',
-      guest_count: guestCount || 1,
+      table_label: clean(tableLabel, 50) || 'Mesa',
+      guest_count: Math.min(Math.max(parseInt(guestCount, 10) || 1, 1), 100),
       mode: 'dine_in',
+      ...meta, // order_source + had_valid_token (TAT)
     }).select('id, session_code, table_label, status').single();
     if (error) throw error;
     storeComanda(data);
@@ -125,8 +132,10 @@
     const client = await sb();
     const rows = items.map(i => ({
       comanda_id: comandaId, espaco_slug: SLUG, item_id: i.id,
-      item_name: i.name, item_category: i.category, item_price: i.price,
-      quantity: i.qty, notes: i.note || null, added_by: 'customer',
+      item_name: clean(i.name, 200), item_category: i.category,
+      item_price: Math.min(Math.max(Number(i.price) || 0, 0), 999.99),
+      quantity: Math.min(Math.max(parseInt(i.qty, 10) || 1, 1), 50),
+      notes: cleanNote(i.note), added_by: 'customer',
       round_number: window.nexoComandaRound || 1,
     }));
     const { error } = await client.from('comanda_items').insert(rows);
@@ -150,6 +159,16 @@
   async function sendCartAsComanda(tableLabel) {
     const items = readLocalCart();
     if (!items.length) { toast('Carrinho vazio'); return null; }
+    // TAT: bloqueia pedidos sem token de mesa válido (modo BROWSE).
+    if (window.NexoAccess && !(await NexoAccess.guardOrder())) return null;
+    // Anti-spam + integrity (defence-in-depth; RLS enforces server-side).
+    if (NS) {
+      const sid = NS.getSessionId();
+      const rl = NS.checkRateLimit('order_submit', sid);
+      if (!rl.allowed) { toast(rl.message); return null; }
+      const v = NS.validateOrderItems(items);
+      if (!v.valid) { toast(v.error); return null; }
+    }
     let comanda = getStoredComanda();
     if (!comanda || comanda.status !== 'open') {
       comanda = await createComanda(tableLabel, 1);
@@ -177,33 +196,21 @@
   // ════════════════════════════════════════════════════════════
   let _comandaCh = null;
   let _activeComandaId = null;
+  let _barMiniTimer = null;
 
   const ITEM_ICON = { pending: '🛒', sent: '⏳', preparing: '🔥', ready: '✅', served: '✓', delivered: '✓', cancelled: '✗' };
   const ITEM_STATUS_PT = { pending: 'No carrinho', sent: 'Enviado', preparing: 'A preparar', ready: 'Pronto', served: 'Servido', delivered: 'Servido' };
   const TAB_STATUS = { open: '🛒 Em aberto', submitted: '⏳ Na cozinha', preparing: '🔥 Em preparação', ready: '✅ Pronto' };
 
   function renderTabBar(info) {
-    let bar = document.getElementById('comanda-bar');
-    if (!info) { if (bar) bar.remove(); return; }
-    if (!bar) {
-      bar = document.createElement('div');
-      bar.id = 'comanda-bar';
-      bar.className = 'comanda-bar';
-      bar.setAttribute('role', 'button');
-      bar.setAttribute('tabindex', '0');
-      bar.addEventListener('click', openTabSheet);
-      bar.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTabSheet(); } });
-      document.body.appendChild(bar);
-    }
-    bar.innerHTML = `
-      <div class="comanda-bar-left">
-        <span class="comanda-table">${escapeHTML(info.table_label || 'Mesa')}</span>
-        <span class="comanda-status">${TAB_STATUS[info.status] || ''}</span>
-      </div>
-      <div class="comanda-bar-right">
-        <span class="comanda-total">${fmtEUR(info.total || 0)}</span>
-        <span class="comanda-bar-cta">Ver conta →</span>
-      </div>`;
+    clearTimeout(_barMiniTimer);
+    // Remove any leftover floating bar from a previous session
+    const old = document.getElementById('comanda-bar');
+    if (old) old.remove();
+    // Expose comanda state globally so renderCartPill() in script.js can read it
+    window._nexoComandaInfo = info || null;
+    // Refresh the central cart pill to reflect comanda state
+    if (typeof renderCartPill === 'function') renderCartPill();
   }
   function openTabSheet() { try { openModal('cart-sheet'); } catch (_) {} }
 

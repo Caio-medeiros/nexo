@@ -237,6 +237,8 @@
       if (!error) {
         btn.textContent = 'Guardado ✓';
         gx('to', btn, { scale: 1.02, duration: 0.1, yoyo: true, repeat: 1 });
+        // Mesas podem ter mudado → o trigger (024) ajustou os tokens; recarrega a grelha.
+        if (window.__nexoReloadTokens) window.__nexoReloadTokens();
         setTimeout(() => { btn.textContent = 'Guardar configuração'; btn.disabled = false; }, 2000);
       } else { btn.textContent = 'Erro — tente novamente'; btn.disabled = false; showToast('Erro ao guardar.', 'error'); }
     });
@@ -255,6 +257,156 @@
         document.getElementById('tc-plus').disabled = data.table_count >= 60;
       }
       renderSettingsPreview(venueSettings.tableCount);
+    })();
+
+    // ════════════════════════════ QR CODES & TOKENS — TAT (Phase 4+5) ════════════════════════════
+    (function initTokens() {
+      const panel = document.getElementById('panel-salao');
+      const BASE = (n, tok, src) => `https://nexosolutions.pt/menu/${slug}/?mesa=${n}&tok=${tok}&src=${src}`;
+
+      panel.insertAdjacentHTML('beforeend', `
+        <div class="venue-card" style="margin-top:16px">
+          <div class="settings-card-header" style="margin-bottom:10px">
+            <h3 style="font-size:15px;font-weight:600;margin:0 0 4px">QR Codes e Tokens NFC</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin:0">Cada mesa tem um código único que garante que só quem está no espaço pode fazer pedidos. Ver o menu continua livre.</p>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+            <span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--text-secondary)">
+              <span id="token-status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text-muted)"></span>
+              <span id="token-status-label">A verificar…</span>
+            </span>
+            <span id="token-generated-at" style="font-size:12px;color:var(--text-muted)"></span>
+          </div>
+          <div id="token-table-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+            <button class="btn btn-secondary btn-sm" id="btn-print-all-qr" type="button">🖨️ Imprimir todos os QR</button>
+            <button class="btn btn-secondary btn-sm" id="btn-regen-tokens" type="button">🔄 Regenerar tokens</button>
+          </div>
+          <p style="font-size:12px;color:var(--warning);margin-top:10px;line-height:1.4">⚠️ Regenerar tokens invalida todos os QR Codes impressos — os chips NFC têm de ser reprogramados.</p>
+        </div>
+        <div class="venue-card" id="security-flags-section" style="margin-top:16px;display:none"></div>
+      `);
+
+      async function loadTokens() {
+        const { data } = await db.from('venue_settings').select('table_tokens, table_count, tokens_generated_at').eq('espaco_slug', slug).maybeSingle();
+        const tokens = (data && data.table_tokens) || {};
+        const count = (data && data.table_count) || 0;
+        const tokenCount = Object.keys(tokens).length;
+        window.VENUE_TABLE_COUNT = count;
+
+        const dot = document.getElementById('token-status-dot');
+        const label = document.getElementById('token-status-label');
+        if (tokenCount >= count && count > 0) { dot.style.background = '#22C55E'; label.textContent = `${count} mesas protegidas`; }
+        else { dot.style.background = '#F59E0B'; label.textContent = `${tokenCount}/${count} mesas configuradas`; }
+        document.getElementById('token-generated-at').textContent = (data && data.tokens_generated_at)
+          ? 'Gerado em ' + new Date(data.tokens_generated_at).toLocaleDateString('pt-PT') : '';
+
+        const grid = document.getElementById('token-table-grid');
+        if (count === 0) { grid.innerHTML = '<p style="font-size:13px;color:var(--text-muted)">Configure o número de mesas primeiro.</p>'; return; }
+        grid.innerHTML = Array.from({ length: count }, (_, i) => i + 1).map(num => {
+          const tok = tokens[String(num)];
+          const url = tok ? BASE(num, tok, 'qr') : '';
+          return `<div style="display:flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:8px 10px">
+            <span style="font-size:13px;font-weight:600;flex:1">Mesa ${num}</span>
+            ${tok ? `<button class="token-copy" data-url="${url}" title="Copiar URL" style="background:none;border:none;cursor:pointer;font-size:14px">📋</button>
+                     <button class="token-dl" data-num="${num}" data-url="${url}" title="Descarregar QR" style="background:none;border:none;cursor:pointer;font-size:14px">⬇️</button>`
+                  : `<span style="font-size:11px;color:var(--warning)">sem token</span>`}
+          </div>`;
+        }).join('');
+      }
+
+      document.getElementById('token-table-grid').addEventListener('click', async (e) => {
+        const copyBtn = e.target.closest('.token-copy');
+        const dlBtn = e.target.closest('.token-dl');
+        if (copyBtn) { try { await navigator.clipboard.writeText(copyBtn.dataset.url); showToast('URL da mesa copiado', 'success'); } catch (_) {} }
+        if (dlBtn) { await downloadQR(dlBtn.dataset.num, dlBtn.dataset.url); }
+      });
+
+      function ensureQRCode() {
+        return new Promise((resolve, reject) => {
+          if (window.QRCode) return resolve();
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+          s.onload = () => resolve(); s.onerror = reject;
+          document.head.appendChild(s);
+        });
+      }
+
+      async function downloadQR(num, url) {
+        try {
+          await ensureQRCode();
+          const canvas = document.createElement('canvas');
+          await QRCode.toCanvas(canvas, url, { width: 400, margin: 2, errorCorrectionLevel: 'H', color: { dark: '#000000', light: '#FFFFFF' } });
+          const out = document.createElement('canvas'); out.width = 400; out.height = 450;
+          const ctx = out.getContext('2d');
+          ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, 400, 450); ctx.drawImage(canvas, 0, 0);
+          ctx.fillStyle = '#0A0A0A'; ctx.font = '700 24px Arial'; ctx.textAlign = 'center'; ctx.fillText(`Mesa ${num}`, 200, 430);
+          const a = document.createElement('a'); a.download = `nexo-qr-mesa-${num}.png`; a.href = out.toDataURL('image/png'); a.click();
+        } catch (_) { showToast('Erro ao gerar QR.', 'error'); }
+      }
+
+      document.getElementById('btn-print-all-qr').addEventListener('click', async () => {
+        const { data } = await db.from('venue_settings').select('table_tokens, table_count').eq('espaco_slug', slug).maybeSingle();
+        if (!data) return;
+        const tokens = data.table_tokens || {};
+        const tables = Array.from({ length: data.table_count }, (_, i) => i + 1)
+          .filter(n => tokens[String(n)]).map(n => ({ num: n, url: BASE(n, tokens[String(n)], 'qr') }));
+        if (!tables.length) { showToast('Sem tokens. Configure as mesas primeiro.', 'error'); return; }
+        const win = window.open('', '_blank');
+        if (!win) { showToast('Permita pop-ups para imprimir.', 'error'); return; }
+        win.document.write('<!DOCTYPE html><html><head><title>QR Codes — NEXO</title>'
+          + '<style>body{font-family:Arial;margin:0}.qr-page{display:grid;grid-template-columns:repeat(3,1fr);gap:18mm;padding:16mm;box-sizing:border-box}.qr-item{display:flex;flex-direction:column;align-items:center;gap:6px;page-break-inside:avoid}.qr-label{font-size:14pt;font-weight:700;color:#0A0A0A}.qr-sub{font-size:8pt;color:#888}canvas{width:100%;max-width:200px}@media print{@page{size:A4;margin:0}}</style>'
+          + '<scr' + 'ipt src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></scr' + 'ipt></head>'
+          + '<body><div id="qr-grid" class="qr-page"></div><scr' + 'ipt>window.__render=async function(t){var g=document.getElementById("qr-grid");for(var i=0;i<t.length;i++){var d=document.createElement("div");d.className="qr-item";var c=document.createElement("canvas");await QRCode.toCanvas(c,t[i].url,{width:200,margin:1,errorCorrectionLevel:"H"});var l=document.createElement("div");l.className="qr-label";l.textContent="Mesa "+t[i].num;var s=document.createElement("div");s.className="qr-sub";s.textContent="NEXO";d.appendChild(c);d.appendChild(l);d.appendChild(s);g.appendChild(d);}setTimeout(function(){window.print();},600);};</scr' + 'ipt></body></html>');
+        win.document.close();
+        const tryRender = () => { if (win.__render) win.__render(tables); else setTimeout(tryRender, 100); };
+        tryRender();
+      });
+
+      document.getElementById('btn-regen-tokens').addEventListener('click', async () => {
+        if (!confirm('Regenerar tokens invalida TODOS os QR Codes impressos e os chips NFC têm de ser reprogramados.\n\nTem a certeza?')) return;
+        const btn = document.getElementById('btn-regen-tokens');
+        btn.textContent = 'A regenerar…'; btn.disabled = true;
+        try {
+          const { error } = await db.rpc('generate_table_tokens', { p_slug: slug, p_count: window.VENUE_TABLE_COUNT || venueSettings.tableCount });
+          if (error) throw error;
+          showToast('Tokens regenerados. Reimprima os QR Codes.', 'success');
+          await loadTokens();
+        } catch (_) { showToast('Erro ao regenerar.', 'error'); }
+        finally { btn.textContent = '🔄 Regenerar tokens'; btn.disabled = false; }
+      });
+
+      // ── Actividade suspeita (flags) ──
+      const FLAG_LABELS = { no_token: 'Pedido sem QR/NFC', invalid_token: 'Token inválido', outside_hours: 'Fora do horário', rate_limit: 'Spam detectado', impossible_table: 'Mesa inexistente', token_flood: 'Token usado em excesso' };
+      const FLAG_ICONS = { no_token: '🔗', invalid_token: '🔑', outside_hours: '🕐', rate_limit: '⚡', impossible_table: '🪑', token_flood: '📱' };
+
+      async function loadFlags() {
+        const { data: flags, count } = await db.from('order_flags').select('*', { count: 'exact' }).eq('espaco_slug', slug).eq('reviewed', false).order('created_at', { ascending: false }).limit(20);
+        const sec = document.getElementById('security-flags-section');
+        if (!count || count === 0) { sec.style.display = 'none'; return; }
+        sec.style.display = 'block';
+        sec.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
+            <span style="font-size:14px;font-weight:600;color:var(--warning)">⚠️ ${count} ocorrência${count !== 1 ? 's' : ''} não revista${count !== 1 ? 's' : ''}</span>
+            <button class="btn btn-secondary btn-sm" id="flags-mark-all" type="button">Marcar tudo como revisto</button>
+          </div>
+          ${(flags || []).map(f => `<div class="flag-row" data-flag="${f.id}" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)">
+            <span style="font-size:16px">${FLAG_ICONS[f.flag_type] || '⚠️'}</span>
+            <div style="flex:1;font-size:13px"><strong>${FLAG_LABELS[f.flag_type] || f.flag_type}</strong>${f.table_label ? ` · ${f.table_label}` : ''}<span style="color:var(--text-muted)"> · ${timeAgo(f.created_at)}</span></div>
+            <button class="flag-dismiss" data-flag="${f.id}" title="Marcar como revisto" style="background:none;border:none;cursor:pointer;color:#22C55E;font-size:15px">✓</button>
+          </div>`).join('')}`;
+      }
+
+      document.getElementById('security-flags-section').addEventListener('click', async (e) => {
+        const dismiss = e.target.closest('.flag-dismiss');
+        const markAll = e.target.closest('#flags-mark-all');
+        if (dismiss) { await db.from('order_flags').update({ reviewed: true }).eq('id', dismiss.dataset.flag); document.querySelector(`.flag-row[data-flag="${dismiss.dataset.flag}"]`)?.remove(); }
+        if (markAll) { await db.from('order_flags').update({ reviewed: true }).eq('espaco_slug', slug).eq('reviewed', false); document.getElementById('security-flags-section').style.display = 'none'; }
+      });
+
+      window.__nexoReloadTokens = loadTokens; // chamado após guardar nº de mesas
+      loadTokens();
+      loadFlags();
     })();
 
     // ════════════════════════════ GOOGLE (Phase 7) ════════════════════════════

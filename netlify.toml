@@ -1,10 +1,81 @@
 # NEXO — Netlify config
-# O Netlify serve /portal/dashboard/ → /portal/dashboard/index.html
-# nativamente (directory index), por isso não são precisos redirects.
+# Security headers (021 hardening). Hosts na CSP foram inventariados a partir
+# do código real: Supabase, GA4/GTM, Google Fonts, jsDelivr/cdnjs (GSAP,
+# supabase-js, Chart.js, QRCode), api.qrserver.com (QR), ntfy.sh (chamar
+# empregado), lh3.googleusercontent.com (fotos GMB).
+# 'unsafe-eval' é necessário: o portal lê /menu/<slug>/config.js via
+# new Function() (editor de menu, cor da marca, disponibilidade).
+#
+# Deploy pipeline: pushes to 'main' → production (nexosolutions.pt)
+#                  pushes to 'staging' → staging--nexosolutions.netlify.app
+#                  Pull requests → tests only (via GitHub Actions, no deploy)
 
+[build]
+  publish = "."
+  command = "echo 'Static site — no build step'"
+
+# Auto-deploy is DISABLED for all branches in Netlify dashboard.
+# GitHub Actions (deploy.yml) deploys via API after tests pass.
+# To disable: Netlify → Site config → Build & deploy → uncheck "Auto publish".
+
+[context.production]
+  environment = { NEXO_ENV = "production" }
+
+[context.staging]
+  environment = { NEXO_ENV = "staging" }
+
+# ─── Redirects — explicit SPA-style fallback for portal and menu pages ────
+# Netlify already serves directory index.html natively, but these rules
+# ensure clean URLs without trailing slash also resolve correctly.
+[[redirects]]
+  from = "/portal/*"
+  to = "/portal/:splat/index.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/menu/*"
+  to = "/menu/:splat/index.html"
+  status = 200
+  force = false
+
+# ─── Global: todas as páginas ─────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https://*.googletagmanager.com https://*.google-analytics.com https://lh3.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://ntfy.sh https://api.anthropic.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+
+# ─── Portal: mais restrito (sem embed; sem cache) ─────────────────────────
 [[headers]]
   for = "/portal/*"
   [headers.values]
     X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
+    Cache-Control = "no-store, no-cache, must-revalidate"
+
+# ─── Menu: pode ser embebido pelo próprio site do restaurante ─────────────
+[[headers]]
+  for = "/menu/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    Cache-Control = "public, max-age=300"
+
+# ─── Assets estáticos: cache agressivo ────────────────────────────────────
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.woff2"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

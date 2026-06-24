@@ -2357,6 +2357,23 @@ function renderCartPill() {
   if (!pill || !textEl || !totalEl) return;
 
   const count = getCartItemCount();
+  const comandaInfo = window._nexoComandaInfo || null;
+
+  // ── Comanda mode: carrinho vazio mas comanda activa ──────────
+  // O pill central transforma-se em "Ver comanda" com estado e total da mesa.
+  if (count === 0 && comandaInfo) {
+    const statusIcon = { open: '🛒', submitted: '⏳', preparing: '🔥', ready: '✅' }[comandaInfo.status] || '⏳';
+    textEl.textContent = `${statusIcon} ${comandaInfo.table_label || 'Mesa'} · Ver comanda`;
+    totalEl.textContent = formatPrice(comandaInfo.total || 0);
+    totalEl.classList.remove('hidden');
+    pill.classList.add('show', 'cart-pill--comanda');
+    document.body.classList.add('has-cart');
+    pill.setAttribute('aria-label', 'Ver comanda da mesa');
+    return;
+  }
+
+  // ── Normal mode ───────────────────────────────────────────────
+  pill.classList.remove('cart-pill--comanda');
 
   if (count === 0) {
     pill.classList.remove('show');
@@ -4077,11 +4094,14 @@ function nexoInsert(table, row) {
 
 // Regista chamada de mesa (Sala / Modo Staff do Portal)
 function logStaffCallToSupabase(tableLabel) {
+  var NS = window.NexoSecurity || null;
   nexoInsert('staff_calls', {
     espaco_slug: CONFIG.slug,
-    table_label: tableLabel || null,
+    table_label: tableLabel ? (NS ? NS.sanitise(tableLabel, 50) : tableLabel) : null,
   });
 }
+// (order_source/had_valid_token vivem em orders_log/comandas; staff_calls não
+//  tem essas colunas — a presença é garantida pelo guardStaffCall acima.)
 
 // Regista pedido no orders_log (Sala / Modo Staff do Portal)
 function logOrderToSupabase(channel, tableValue) {
@@ -4126,6 +4146,7 @@ function logOrderToSupabase(channel, tableValue) {
       total: getCartTotal(),
       member_count: memberCount,
       channel,
+      ...(window.NexoAccess ? NexoAccess.getOrderMetadata() : {}), // TAT source
     });
   } catch (_) {}
 }
@@ -4797,6 +4818,8 @@ function setupCallStaff() {
 
   if (sendBtn) {
     sendBtn.addEventListener('click', async () => {
+      // TAT: só permite chamar empregado em modo FULL (token de mesa válido)
+      if (window.NexoAccess && !(await NexoAccess.guardStaffCall())) return;
       if (cooldownActive) return;
       cooldownActive = true; // bloqueia reentrância imediata (evita spam/duplicados)
 

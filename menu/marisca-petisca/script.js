@@ -65,10 +65,10 @@ const UI = {
     navMenu: "Menu", navTop: "Mais pedidos", navWines: "Drinks",
     navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Avaliar",navInsta: "Instagram", navMesa: "Mesa",
     wineFilterCountry: "País", wineFilterType: "Tipo", wineFilterGrape: "Marca",
-    wineFilterWines: "Vinhos",
     wineEmpty: "Nenhuma bebida corresponde a estes filtros.",
     wineSpecCountry: "País", wineSpecRegion: "Região", wineSpecGrape: "Marca",
     wineSpecAbv: "Álcool", wineSpecVolume: "Volume",
+    vivinoSeeMore: "Ver no Vivino →",
     upsellTitle: "Combina com...",
     // Order system
     addToOrder: "Adicionar ao pedido", addedToOrder: "Adicionado ✓",
@@ -162,10 +162,10 @@ const UI = {
     navMenu: "Menu", navTop: "Most ordered", navWines: "Drinks",
     navWifi: "Wi-Fi", navContact: "Contact", navReview: "Rate", navInsta: "Instagram", navMesa: "Table",
     wineFilterCountry: "Country", wineFilterType: "Type", wineFilterGrape: "Brand",
-    wineFilterWines: "Wines",
     wineEmpty: "No drinks match these filters.",
     wineSpecCountry: "Country", wineSpecRegion: "Region", wineSpecGrape: "Brand",
     wineSpecAbv: "ABV", wineSpecVolume: "Volume",
+    vivinoSeeMore: "See on Vivino →",
     upsellTitle: "Goes well with...",
     addToOrder: "Add to order", addedToOrder: "Added ✓",
     inOrder: "In order", viewOrder: "View order", reduceQty: "Decrease quantity", increaseQty: "Increase quantity",
@@ -249,10 +249,10 @@ const UI = {
     navMenu: "Menú", navTop: "Más pedidos", navWines: "Drinks",
     navWifi: "Wi-Fi", navContact: "Contacto", navReview: "Valorar",navInsta: "Instagram", navMesa: "Mesa",
     wineFilterCountry: "País", wineFilterType: "Tipo", wineFilterGrape: "Marca",
-    wineFilterWines: "Vinos",
     wineEmpty: "Ninguna bebida coincide con estos filtros.",
     wineSpecCountry: "País", wineSpecRegion: "Región", wineSpecGrape: "Marca",
     wineSpecAbv: "Alcohol", wineSpecVolume: "Volumen",
+    vivinoSeeMore: "Ver en Vivino →",
     upsellTitle: "Combina con...",
     addToOrder: "Añadir al pedido", addedToOrder: "Añadido ✓",
     inOrder: "En el pedido", viewOrder: "Ver pedido", reduceQty: "Reducir cantidad", increaseQty: "Aumentar cantidad",
@@ -336,10 +336,10 @@ const UI = {
     navMenu: "Menu", navTop: "Plus commandés", navWines: "Drinks",
     navWifi: "Wi-Fi", navContact: "Contact", navReview: "Évaluer", navInsta: "Instagram", navMesa: "Table",
     wineFilterCountry: "Pays", wineFilterType: "Type", wineFilterGrape: "Marque",
-    wineFilterWines: "Vins",
     wineEmpty: "Aucune boisson ne correspond à ces filtres.",
     wineSpecCountry: "Pays", wineSpecRegion: "Région", wineSpecGrape: "Marque",
     wineSpecAbv: "Alcool", wineSpecVolume: "Volume",
+    vivinoSeeMore: "Voir sur Vivino →",
     upsellTitle: "Se marie avec...",
     addToOrder: "Ajouter à la commande", addedToOrder: "Ajouté ✓",
     inOrder: "Dans la commande", viewOrder: "Voir la commande", reduceQty: "Réduire la quantité", increaseQty: "Augmenter la quantité",
@@ -1040,20 +1040,10 @@ function renderWineFilters() {
     `<button class="wine-chip ${wineFilters.country === c ? 'active' : ''}" data-filter-type="country" data-filter-value="${c}">${c === 'all' ? t().all : c}</button>`
   ).join('');
 
-  const WINE_TYPES = ['tinto','branco','verde','rose','espumante'];
-  const presentTypes = [...new Set(CONFIG.wines.map(w => w.type))];
-  const hasWines = presentTypes.some(ty => WINE_TYPES.includes(ty));
-  const nonWineTypes = presentTypes.filter(ty => !WINE_TYPES.includes(ty));
-
-  const typeChips = [
-    `<button class="wine-chip ${wineFilters.type === 'all' ? 'active' : ''}" data-filter-type="type" data-filter-value="all">${t().all}</button>`,
-    ...(hasWines ? [`<button class="wine-chip ${wineFilters.type === 'vinhos' ? 'active' : ''}" data-filter-type="type" data-filter-value="vinhos">${t().wineFilterWines}</button>`] : []),
-    ...nonWineTypes.map(ty => {
-      const label = WINE_TYPE_LABELS[currentLang][ty] || ty;
-      return `<button class="wine-chip ${wineFilters.type === ty ? 'active' : ''}" data-filter-type="type" data-filter-value="${ty}">${label}</button>`;
-    })
-  ];
-  document.getElementById('wine-filter-type').innerHTML = typeChips.join('');
+  document.getElementById('wine-filter-type').innerHTML = types.map(ty => {
+    const label = ty === 'all' ? t().all : (WINE_TYPE_LABELS[currentLang][ty] || ty);
+    return `<button class="wine-chip ${wineFilters.type === ty ? 'active' : ''}" data-filter-type="type" data-filter-value="${ty}">${label}</button>`;
+  }).join('');
 
   document.getElementById('wine-filter-grape').innerHTML = grapes.map(g =>
     `<button class="wine-chip ${wineFilters.grape === g ? 'active' : ''}" data-filter-type="grape" data-filter-value="${g}">${g === 'all' ? t().all : g}</button>`
@@ -1095,8 +1085,7 @@ function renderWineList() {
 
   const filtered = CONFIG.wines.filter(w => {
     if (wineFilters.country !== 'all' && w.country !== wineFilters.country) return false;
-    if (wineFilters.type === 'vinhos' && !['tinto','branco','verde','rose','espumante'].includes(w.type)) return false;
-    else if (wineFilters.type !== 'all' && wineFilters.type !== 'vinhos' && w.type !== wineFilters.type) return false;
+    if (wineFilters.type !== 'all' && w.type !== wineFilters.type) return false;
     if (wineFilters.grape !== 'all' && !w.grape.toLowerCase().includes(wineFilters.grape.toLowerCase())) return false;
     return true;
   });
@@ -1120,6 +1109,7 @@ function renderWineList() {
     const vivinoHtml = w.vivinoRating ? `
       <div class="wine-card-vivino">
         ${renderVivinoStars(w.vivinoRating)}
+        <span class="vivino-score"></span>
         <span class="vivino-logo">Vivino</span>
       </div>
     ` : '';
@@ -1246,24 +1236,10 @@ function resetReviewModal() {
   hideReviewStep(s2h);
   hideReviewStep(s2u);
   hideReviewStep(s3);
-  // Pre-select 5 stars \u2014 user can reduce if unhappy
-  currentRating = 5;
-  document.querySelectorAll('.star-btn').forEach((b, i) => {
-    b.style.setProperty('--star-d', `${i * 60}ms`);
-    b.classList.toggle('lit', true);
-  });
+  // Reset stars
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('lit'));
   const label = document.getElementById('star-label');
-  if (label) {
-    label.textContent = t().starLabels[5] || 'Excelente!';
-    label.className = 'star-label pop positive';
-  }
-  // Show quick CTA
-  const quickCta = document.getElementById('review-quick-cta');
-  if (quickCta) {
-    quickCta.href = CONFIG.googleReviewUrl || '#';
-    setTimeout(() => quickCta.classList.add('visible'), 320);
-    quickCta.onclick = () => { track('review_google_clicked'); setTimeout(() => showThanks(true), 400); };
-  }
+  if (label) { label.textContent = '\u200B'; label.className = 'star-label'; }
   // Clear textarea
   const ta = document.getElementById('review-textarea');
   if (ta) ta.value = '';
@@ -1332,9 +1308,6 @@ function setupRatingGate() {
       b.style.setProperty('--star-d', `${i * 45}ms`);
       b.classList.toggle('lit', i < currentRating);
     });
-    // Hide quick CTA when user taps a star (they're committing)
-    const qc = document.getElementById('review-quick-cta');
-    if (qc) qc.classList.remove('visible');
 
     // Brief pause then advance to step 2
     setTimeout(() => {
@@ -2080,13 +2053,20 @@ function openWineModal(idx) {
     </div>
   `).join('');
 
-  // Vivino rating (no link — rating only)
+  // Vivino rating + link (optional — only if wine has rating)
   const vivinoBlock = document.getElementById('wine-modal-vivino');
   if (vivinoBlock) {
-    if (w.vivinoRating) {
+    if (w.vivinoRating && w.vivinoUrl) {
       vivinoBlock.style.display = 'flex';
       const starsEl = vivinoBlock.querySelector('.vivino-modal-stars');
+      const scoreEl = vivinoBlock.querySelector('.vivino-modal-score');
+      const linkEl = vivinoBlock.querySelector('.vivino-modal-link');
       if (starsEl) starsEl.innerHTML = renderVivinoStars(w.vivinoRating);
+      if (scoreEl) scoreEl.textContent = w.vivinoRating.toFixed(1);
+      if (linkEl) {
+        linkEl.href = w.vivinoUrl;
+        linkEl.textContent = t().vivinoSeeMore;
+      }
     } else {
       vivinoBlock.style.display = 'none';
     }
@@ -2107,7 +2087,6 @@ function setupReviewButton() {
 }
 
 // Close modals
-
 function setupModalCloses() {
   document.querySelectorAll('[data-close]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2342,6 +2321,7 @@ function getItemByRef(refId) {
 
 // Note helpers
 function setItemNote(refId, note) {
+  if (sharedCart) { sharedSetItemNote(refId, note); return; }
   const entry = cart.find(c => c.refId === refId);
   if (entry !== undefined) entry.note = note || '';
 }
@@ -2356,6 +2336,7 @@ function getItemNote(refId) {
 }
 
 function hasAnyNotes() {
+  if (sharedCart) return sharedCartItems.some(r => r.note && r.note.trim().length > 0);
   return cart.some(e => e.note && e.note.trim().length > 0);
 }
 
@@ -2376,6 +2357,23 @@ function renderCartPill() {
   if (!pill || !textEl || !totalEl) return;
 
   const count = getCartItemCount();
+  const comandaInfo = window._nexoComandaInfo || null;
+
+  // ── Comanda mode: carrinho vazio mas comanda activa ──────────
+  // O pill central transforma-se em "Ver comanda" com estado e total da mesa.
+  if (count === 0 && comandaInfo) {
+    const statusIcon = { open: '🛒', submitted: '⏳', preparing: '🔥', ready: '✅' }[comandaInfo.status] || '⏳';
+    textEl.textContent = `${statusIcon} ${comandaInfo.table_label || 'Mesa'} · Ver comanda`;
+    totalEl.textContent = formatPrice(comandaInfo.total || 0);
+    totalEl.classList.remove('hidden');
+    pill.classList.add('show', 'cart-pill--comanda');
+    document.body.classList.add('has-cart');
+    pill.setAttribute('aria-label', 'Ver comanda da mesa');
+    return;
+  }
+
+  // ── Normal mode ───────────────────────────────────────────────
+  pill.classList.remove('cart-pill--comanda');
 
   if (count === 0) {
     pill.classList.remove('show');
@@ -2383,21 +2381,11 @@ function renderCartPill() {
     return;
   }
 
-  // Count badge
-  const countEl = document.getElementById('cart-pill-count');
-  if (countEl) {
-    const prev = countEl.textContent;
-    countEl.textContent = count;
-    if (prev !== String(count)) {
-      countEl.classList.remove('tick'); void countEl.offsetWidth; countEl.classList.add('tick');
-      countEl.addEventListener('animationend', () => countEl.classList.remove('tick'), { once: true });
-    }
-  }
-  // Action label
-  const labels = { pt: 'Fazer pedido', en: 'Place order', es: 'Hacer pedido', fr: 'Passer commande' };
-  const pillLabel = labels[currentLang] || labels.pt;
-  textEl.textContent = sharedCart ? `${pillLabel}` : pillLabel;
-  pill.setAttribute('aria-label', `${textEl.textContent}: ${count} ${count === 1 ? t().cartItem : t().cartItems}`);
+  const label = count === 1 ? t().cartItem : t().cartItems;
+  textEl.textContent = sharedCart
+    ? `👥 ${t().viewOrder} · ${count} ${label}`
+    : `${t().viewOrder} · ${count} ${label}`;
+  pill.setAttribute('aria-label', `${t().viewOrder}: ${count} ${label}`);
 
   const total = getCartTotal();
   if (total > 0) {
@@ -2604,16 +2592,11 @@ function updateAddBtnBadges() {
     if (qty > 0) {
       if (existingBadge) {
         existingBadge.textContent = qty;
-        existingBadge.classList.remove('tick');
-        void existingBadge.offsetWidth;
-        existingBadge.classList.add('tick');
-        existingBadge.addEventListener('animationend', () => existingBadge.classList.remove('tick'), { once: true });
       } else {
         const badge = document.createElement('span');
-        badge.className = 'qty-badge tick';
+        badge.className = 'qty-badge';
         badge.textContent = qty;
         addBtn.appendChild(badge);
-        badge.addEventListener('animationend', () => badge.classList.remove('tick'), { once: true });
       }
     } else if (existingBadge) {
       existingBadge.remove();
@@ -2656,11 +2639,12 @@ function updateOpenItemModalControls() {
 
 // STAFF VIEW — fullscreen
 function openStaffView(tableOverride) {
-  if (!sharedCart && cart.length === 0) return;
+  if (getCartItemCount() === 0) return;
 
   track('order_placed', {
-    item_count: cart.reduce((s, e) => s + e.qty, 0),
+    item_count: getCartItemCount(),
     order_total: getCartTotal(),
+    shared: sharedCart !== null,
   });
 
   const staffView = document.getElementById('staff-view');
@@ -2757,7 +2741,7 @@ function renderConfirmScreen() {
 
   // Texts
   if (titleEl) titleEl.textContent = t().confirmTitle;
-  if (sectionLabelEl) sectionLabelEl.textContent = t().confirmSectionLabel;
+  if (sectionLabelEl) sectionLabelEl.textContent = sharedCart ? t().confirmSectionLabelShared || 'Pedido da mesa' : t().confirmSectionLabel;
   if (totalLabelEl) totalLabelEl.textContent = t().cartTotal;
   if (tableLabelEl) tableLabelEl.textContent = t().confirmTableLabel;
   if (tablePrefixEl) tablePrefixEl.textContent = t().confirmTablePrefix;
@@ -2855,6 +2839,7 @@ function validateTableInput() {
     if (errorEl) errorEl.style.display = 'none';
     return true;
   }
+  // Show error + shake
   if (field) {
     field.classList.add('error', 'shake');
     field.addEventListener('animationend', () => field.classList.remove('shake'), { once: true });
@@ -2865,7 +2850,7 @@ function validateTableInput() {
 }
 
 function generateOrderMessage(cartItems, tableValue) {
-  const n = tableValue?.trim() || 'Mesa não especificada';
+  const n = (tableValue && tableValue.trim()) ? tableValue.trim() : '—';
   const prefix = 'Mesa';
 
   let itemLines;
@@ -2989,6 +2974,7 @@ function setupConfirmScreen() {
       closeConfirmScreen();
       if (!(window.NEXOPremium && window.NEXOPremium.comandaRouting))
         logOrderToSupabase(sharedCart ? 'shared' : 'staff', tableVal);
+      // NEXO Premium: route the order into Cozinha/Caixa (comanda).
       if (window.NEXOPremium && window.NEXOPremium.onOrderConfirmed) window.NEXOPremium.onOrderConfirmed();
       setTimeout(() => openStaffView(tableVal), 270);
     });
@@ -3044,11 +3030,6 @@ function setupMenuAddButtons() {
     e.preventDefault();
     haptic();
     if (btn) {
-      // Ripple micro-interaction
-      btn.classList.remove('ripple');
-      void btn.offsetWidth;
-      btn.classList.add('ripple');
-      btn.addEventListener('animationend', () => btn.classList.remove('ripple'), { once: true });
       addToCart(btn.dataset.addRef);
     } else if (decBtn) {
       decrementCart(decBtn.dataset.decrementRef);
@@ -3185,7 +3166,7 @@ function saveNoteFromInput(input) {
   const note = input.value.trim();
   const oldNote = getItemNote(refId);
   if (note !== oldNote) {
-    setItemNote(refId, note || null);
+    setItemNote(refId, note);
     renderCartSheet();
   }
 }
@@ -3851,17 +3832,16 @@ function renderStaffHistory() {
   historyEl.innerHTML = `
     <div class="staff-order-block">
       ${rows.map(r => {
-        const note = r.note ? r.note.trim() : '';
-        const noteHtml = note ? `
+        const noteHtml = r.note ? `
           <div class="staff-item-note">
             <svg class="staff-note-pencil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
-            <span class="staff-note-text">${note}</span>
+            <span class="staff-note-text">${r.note}</span>
           </div>` : '';
         return `
-          <div class="staff-list-item${note ? ' has-note' : ''}">
+          <div class="staff-list-item${r.note ? ' has-note' : ''}">
             <span class="staff-list-qty">${r.qty}×</span>
             <div class="staff-list-name-wrap">
               <span class="staff-list-name">${r.name}</span>
@@ -3993,7 +3973,7 @@ function setupPersonRename() {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   12a. NEXO PORTAL — Disponibilidade realtime + registo de chamadas/pedidos
+   14b. NEXO PORTAL — Disponibilidade realtime + registo de chamadas/pedidos
    (todas opcionais — só activas quando CONFIG.supabaseUrl está preenchido)
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -4114,11 +4094,14 @@ function nexoInsert(table, row) {
 
 // Regista chamada de mesa (Sala / Modo Staff do Portal)
 function logStaffCallToSupabase(tableLabel) {
+  var NS = window.NexoSecurity || null;
   nexoInsert('staff_calls', {
     espaco_slug: CONFIG.slug,
-    table_label: tableLabel || null,
+    table_label: tableLabel ? (NS ? NS.sanitise(tableLabel, 50) : tableLabel) : null,
   });
 }
+// (order_source/had_valid_token vivem em orders_log/comandas; staff_calls não
+//  tem essas colunas — a presença é garantida pelo guardStaffCall acima.)
 
 // Regista pedido no orders_log (Sala / Modo Staff do Portal)
 function logOrderToSupabase(channel, tableValue) {
@@ -4163,13 +4146,14 @@ function logOrderToSupabase(channel, tableValue) {
       total: getCartTotal(),
       member_count: memberCount,
       channel,
+      ...(window.NexoAccess ? NexoAccess.getOrderMetadata() : {}), // TAT source
     });
   } catch (_) {}
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   12b. SHARED CART — Mesa em Grupo (Realtime Broadcast — no SQL tables needed)
+   15. SHARED CART — Mesa em Grupo (Realtime Broadcast — no SQL tables needed)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function generateCartCode() {
@@ -4768,150 +4752,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── Call Staff ───
   setupCallStaff();
-  setupNumericInputs();
-
-  // ─── WOW EFFECTS ───
-  setupHeroParallax();
-  setupScrollReveal();
-  setupBannerFish();
   // ─── Restore shared cart session (survives refresh, 2h TTL) ───
   restoreSharedSession();
 });
-
-/* ── Numbers-only inputs (table number fields) ── */
-function setupNumericInputs() {
-  ['confirm-table-input', 'nexo-call-table-input'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('input', () => {
-      const clean = el.value.replace(/\D/g, '');
-      if (el.value !== clean) {
-        el.value = clean;
-        el.classList.add('shake');
-        el.addEventListener('animationend', () => el.classList.remove('shake'), { once: true });
-        // Show/create hint
-        let hint = el.parentElement.querySelector('.numeric-hint');
-        if (!hint) {
-          hint = document.createElement('p');
-          hint.className = 'numeric-hint';
-          hint.textContent = 'Apenas números';
-          el.parentElement.appendChild(hint);
-        }
-        hint.classList.add('show');
-        clearTimeout(hint._t);
-        hint._t = setTimeout(() => hint.classList.remove('show'), 1800);
-      }
-    });
-    el.addEventListener('keydown', e => {
-      const allowed = ['Backspace','Delete','Tab','Enter','ArrowLeft','ArrowRight','Home','End'];
-      if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
-    });
-  });
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   WOW EFFECTS — mobile-first, GPU only (transform + opacity)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── 1. Hero parallax — image scrolls slower than content ── */
-function setupHeroParallax() {
-  const heroImg = document.getElementById('hero-image');
-  if (!heroImg) return;
-  let ticking = false;
-  window.addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      const y = window.scrollY;
-      if (y < 400) heroImg.style.transform = `translateY(${y * 0.35}px)`;
-      ticking = false;
-    });
-  }, { passive: true });
-}
-
-/* ── 2. Scroll reveal — menu items & cards stagger in ── */
-function setupScrollReveal() {
-  const targets = document.querySelectorAll(
-    '.menu-item, .most-ordered-card, .wine-card-item, .section-header-elite, .menu-section-title'
-  );
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      entry.target.classList.add('sr-visible');
-      obs.unobserve(entry.target);
-    });
-  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-
-  targets.forEach((el, i) => {
-    el.classList.add('sr-hidden');
-    el.style.transitionDelay = `${(i % 5) * 45}ms`;
-    obs.observe(el);
-  });
-
-  // Re-attach after renderAll() re-renders menu
-  const origRenderMenu = window.renderMenuOrig || renderMenu;
-  window.renderMenuOrig = origRenderMenu;
-  const _patchReveal = () => {
-    requestAnimationFrame(() => {
-      document.querySelectorAll('.menu-item:not(.sr-hidden):not(.sr-visible)').forEach((el, i) => {
-        el.classList.add('sr-hidden');
-        el.style.transitionDelay = `${(i % 5) * 45}ms`;
-        obs.observe(el);
-      });
-    });
-  };
-  document.getElementById('menu').addEventListener('DOMSubtreeModified', _patchReveal, { once: false });
-}
-
-/* ── 3. Banner fish — swims across on tap ── */
-function setupBannerFish() {
-  const banner = document.getElementById('special-banner');
-  if (!banner) return;
-  const fishG = banner.querySelector('.banner-art g');
-  if (!fishG) return;
-
-  let swimming = false;
-  banner.addEventListener('click', () => {
-    if (swimming) return;
-    swimming = true;
-    fishG.style.animation = 'fish-swim 1.4s cubic-bezier(0.45,0,0.55,1) forwards';
-    fishG.addEventListener('animationend', () => {
-      fishG.style.animation = '';
-      swimming = false;
-    }, { once: true });
-  });
-}
-
-/* ── 4. Confetti burst on WhatsApp order sent ── */
-function launchConfetti() {
-  const colors = ['#1A4FA0','#7DD4F0','#FFD700','#ffffff','#22C55E'];
-  const count  = 48;
-  const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden';
-  document.body.appendChild(container);
-
-  for (let i = 0; i < count; i++) {
-    const el = document.createElement('div');
-    const size = 6 + Math.random() * 8;
-    const x = 20 + Math.random() * 60; // % from left
-    const dur = 0.8 + Math.random() * 0.7;
-    const delay = Math.random() * 0.3;
-    const rot = Math.random() * 720 - 360;
-    el.style.cssText = `
-      position:absolute;
-      left:${x}%;top:60%;
-      width:${size}px;height:${size * 0.55}px;
-      background:${colors[i % colors.length]};
-      border-radius:2px;
-      opacity:1;
-      animation: confetti-fall ${dur}s ${delay}s ease-out forwards;
-      --rot:${rot}deg;
-      --tx:${(Math.random()-0.5)*200}px;
-    `;
-    container.appendChild(el);
-  }
-  setTimeout(() => container.remove(), 2000);
-}
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -4945,6 +4788,7 @@ function setupCallStaff() {
       sheet.classList.remove('hidden');
       requestAnimationFrame(() => {
         sheet.classList.add('open');
+        // Focus + select immediately so numeric keyboard appears and value is ready to replace
         if (tableInput) { tableInput.focus(); tableInput.select(); }
       });
     }
@@ -4965,51 +4809,7 @@ function setupCallStaff() {
       sendBtn.style.background = '';
       sendBtn.style.color = '';
     }
-    if (btnText) btnText.textContent = '🙋 Chamar Empregado';
-  }
-
-  function setSuccessState() {
-    if (callBtn) {
-      callBtn.classList.add('success');
-      const icon  = callBtn.querySelector('.nexo-call-icon');
-      const label = callBtn.querySelector('.nexo-call-label');
-      if (icon) { icon.setAttribute('width','20'); icon.setAttribute('height','20'); icon.innerHTML = '<polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>'; }
-      if (label) label.textContent = '';
-    }
-    cooldownActive = true;
-    setTimeout(() => {
-      cooldownActive = false;
-      if (callBtn) {
-        callBtn.classList.remove('success');
-        const icon  = callBtn.querySelector('.nexo-call-icon');
-        const label = callBtn.querySelector('.nexo-call-label');
-        if (icon)  icon.innerHTML  = '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>';
-        if (label) label.textContent = 'Chamar';
-      }
-    }, 30000);
-  }
-
-  async function sendNtfyNotification(mesa) {
-    const body = mesa
-      ? `🔔 Mesa ${mesa} precisa de atendimento`
-      : `🔔 Atendimento solicitado`;
-
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 8000);
-    try {
-      const r = await fetch(`https://ntfy.sh/${TOPIC}`, {
-        method: 'POST',
-        signal: ctrl.signal,
-        headers: { 'Content-Type': 'text/plain' },
-        body,
-      });
-      clearTimeout(t);
-      if (r.ok || r.status === 0) return true;
-      throw new Error(`HTTP ${r.status}`);
-    } catch (e) {
-      clearTimeout(t);
-      throw e;
-    }
+    if (btnText) btnText.textContent = '🙋 Chamar Atendente';
   }
 
   if (callBtn) callBtn.addEventListener('click', openSheet);
@@ -5018,20 +4818,16 @@ function setupCallStaff() {
 
   if (sendBtn) {
     sendBtn.addEventListener('click', async () => {
+      // TAT: só permite chamar empregado em modo FULL (token de mesa válido)
+      if (window.NexoAccess && !(await NexoAccess.guardStaffCall())) return;
       if (cooldownActive) return;
+      cooldownActive = true; // bloqueia reentrância imediata (evita spam/duplicados)
 
       const mesa = tableInput ? tableInput.value.trim() : '';
+      const msg  = mesa
+        ? 'Mesa ' + mesa + ' a pedir atendimento'
+        : 'A pedir atendimento (mesa não indicada)';
 
-      if (!mesa) {
-        if (tableInput) {
-          tableInput.classList.add('shake');
-          tableInput.focus();
-          tableInput.addEventListener('animationend', () => tableInput.classList.remove('shake'), { once: true });
-        }
-        return;
-      }
-
-      cooldownActive = true; // bloqueia reentrância imediata (evita spam/duplicados)
       sendBtn.classList.add('loading');
       if (btnText) btnText.textContent = 'A enviar...';
 
@@ -5039,33 +4835,47 @@ function setupCallStaff() {
       logStaffCallToSupabase(mesa ? 'Mesa ' + mesa : null);
 
       try {
-        await sendNtfyNotification(mesa);
+        const response = await fetch('https://ntfy.sh/' + TOPIC, {
+          method: 'POST',
+          headers: {
+            'Title': '🙋 Chamada de Mesa',
+            'Priority': 'high',
+            'Tags': 'bell',
+            'Content-Type': 'text/plain; charset=utf-8',
+          },
+          body: msg,
+        });
 
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        if (btnText) btnText.textContent = '✓ Empregado notificado!';
-        if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
-        track('staff_called', { table_label: mesa || null });
-        setTimeout(() => { closeSheet(); setSuccessState(); }, 1200);
+        if (response.ok) {
+          if (btnText) btnText.textContent = '✓ Atendente a caminho!';
+          if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
-      } catch (err) {
-        // ntfy blocked (restricted network) — fallback to WhatsApp
-        const waNumber = (CONFIG.orderWhatsapp || CONFIG.whatsappNumber || '').replace(/\D/g, '');
-        const mesa = tableInput ? tableInput.value.trim() : '';
-        const waMsg = mesa ? `🔔 Mesa ${mesa} precisa de atendimento` : `🔔 Atendimento solicitado`;
-        if (waNumber) {
-          if (btnText) btnText.textContent = '↗ A abrir WhatsApp...';
-          if (sendBtn) { sendBtn.style.background = '#25D366'; sendBtn.style.color = 'white'; }
           setTimeout(() => {
-            window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(waMsg)}`, '_blank');
             closeSheet();
-            setSuccessState();
-          }, 500);
+            if (callBtn) {
+              callBtn.classList.add('success');
+              callBtn.textContent = '✓';
+            }
+            cooldownActive = true;
+            setTimeout(() => {
+              cooldownActive = false;
+              if (callBtn) {
+                callBtn.classList.remove('success');
+                callBtn.textContent = '🙋';
+              }
+            }, 30000);
+          }, 1500);
+
+          track('staff_called', { table_label: mesa || null });
         } else {
-          if (btnText) btnText.textContent = '✕ Sem ligação';
-          if (sendBtn) sendBtn.style.background = 'rgba(239,68,68,0.18)';
-          cooldownActive = false; // falhou — permite tentar de novo
-          setTimeout(resetSendBtnState, 3000);
+          throw new Error('HTTP ' + response.status);
         }
+      } catch (err) {
+        if (btnText) btnText.textContent = '✕ Erro — tente novamente';
+        if (sendBtn) sendBtn.style.background = 'rgba(239,68,68,0.2)';
+        cooldownActive = false; // falhou — permite tentar de novo
+        setTimeout(resetSendBtnState, 2500);
       }
     });
   }
