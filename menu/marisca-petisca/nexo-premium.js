@@ -242,82 +242,60 @@
     hideSentSection();
     if (_comandaCh) { try { _sb.removeChannel(_comandaCh); } catch (_) {} _comandaCh = null; }
   }
-  function hideSentSection() {
-    const card = document.getElementById('nexo-comanda-card');
-    if (card) card.style.display = 'none';
-    // clear any legacy appended section
-    const old = document.getElementById('nexo-sent-section');
-    if (old) { old.style.display = 'none'; old.innerHTML = ''; }
-  }
+  function hideSentSection() { const s = document.getElementById('nexo-sent-section'); if (s) { s.style.display = 'none'; s.innerHTML = ''; } }
 
-  // SVG icon maps — no emoji (ui-ux-pro-max rule: no-emoji-icons)
-  const _ROUND_SVG = {
-    done:    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`,
-    _default:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-  };
-  const _ITEM_SVG = {
-    done:      `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`,
-    served:    `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`,
-    preparing: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
-    cancelled: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
-    _default:  `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-  };
-  const _ITEM_CLASS = { done: 'done', served: 'done', preparing: 'prep', cancelled: 'cancel' };
-
-  // Compact comanda card — renders into #nexo-comanda-card between tabs and panel.
+  // Secção "Já enviado" injectada no painel do carrinho (sobrevive aos
+  // re-renders do menu, que só tocam em #cart-list).
   function renderSentSection(data) {
-    const card = document.getElementById('nexo-comanda-card');
-    if (!card) return;
-
+    const panel = document.getElementById('panel-order');
+    if (!panel) return;
+    let sec = document.getElementById('nexo-sent-section');
+    if (!sec) {
+      sec = document.createElement('div');
+      sec.id = 'nexo-sent-section';
+      sec.className = 'nexo-sent-section';
+      const footer = panel.querySelector('.cart-footer');
+      if (footer) footer.insertAdjacentElement('afterend', sec);
+      else panel.appendChild(sec);
+    }
     const sent = (data.items || []).filter(i => i.round_id && i.status !== 'cancelled');
-    if (!sent.length) { card.style.display = 'none'; return; }
+    if (!sent.length) { sec.style.display = 'none'; sec.innerHTML = ''; return; }
+    sec.style.display = 'block';
 
     const roundById = {};
     (data.rounds || []).forEach(r => { roundById[r.id] = r; });
     const byRound = {};
     sent.forEach(i => { (byRound[i.round_id] = byRound[i.round_id] || []).push(i); });
-    const orderedIds = Object.keys(byRound).sort((a, b) =>
+    const orderedRoundIds = Object.keys(byRound).sort((a, b) =>
       ((roundById[a] && roundById[a].round_number) || 0) - ((roundById[b] && roundById[b].round_number) || 0));
 
-    const bill = (data.items || []).filter(i => i.status !== 'cancelled')
-      .reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
+    const SVG_CHECK  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const SVG_CLOCK  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+    const SVG_DOTS   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>`;
+    const SVG_BELL   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
 
-    let roundsHtml = '';
-    orderedIds.forEach(rid => {
+    let html = `<div class="nexo-sent-label"><span>Já enviado</span></div>`;
+    orderedRoundIds.forEach(rid => {
       const r = roundById[rid] || {};
-      const time = r.fired_at
-        ? new Date(r.fired_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
-      const rsvg  = _ROUND_SVG[r.status]  || _ROUND_SVG._default;
-      const rCls  = r.status === 'done' ? 'ncc-round-status--done' : 'ncc-round-status--pending';
-      const rlabel = (r.round_number === 1) ? '1.ª Ronda' : `${r.round_number}.ª Ronda`;
-      roundsHtml += `<div class="ncc-round-head">
-        <span class="ncc-round-label">${rlabel}</span>
-        <span class="ncc-round-time">${time}</span>
-        <span class="ncc-round-status ${rCls}">${rsvg}</span>
-      </div>`;
+      const time = r.fired_at ? new Date(r.fired_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
+      const rsvg = r.status === 'done' ? SVG_CHECK : r.status === 'acknowledged' ? SVG_DOTS : SVG_CLOCK;
+      const label = (r.round_number === 1) ? '1.ª ronda' : `${r.round_number}.ª ronda`;
+      html += `<div class="nexo-round-head"><span>${label}</span><span class="nexo-round-time">${time}</span><span class="nexo-round-svg">${rsvg}</span></div>`;
       byRound[rid].forEach(it => {
-        const isvg = _ITEM_SVG[it.status] || _ITEM_SVG._default;
-        const iCls = _ITEM_CLASS[it.status] || 'pending';
-        roundsHtml += `<div class="ncc-item">
-          <span class="ncc-item-name">${escapeHTML(it.item_name)}</span>
-          <span class="ncc-item-qty">×${it.quantity}</span>
-          <span class="ncc-item-status ncc-item-status--${iCls}" title="${ITEM_STATUS_PT[it.status] || ''}">${isvg}</span>
+        const isvg = (it.status === 'done' || it.status === 'served') ? SVG_CHECK :
+                     it.status === 'preparing' ? SVG_DOTS : SVG_CLOCK;
+        html += `<div class="nexo-sent-item">
+          <span class="nexo-sent-name">${escapeHTML(it.item_name)}</span>
+          <span class="nexo-sent-qty">×${it.quantity}</span>
+          <span class="nexo-sent-status" title="${ITEM_STATUS_PT[it.status] || ''}">${isvg}</span>
         </div>`;
       });
     });
-
-    const bellSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
-
-    card.innerHTML = `
-      <div class="ncc-header">
-        <span class="ncc-label">Já enviado</span>
-        <span class="ncc-total">${fmtEUR(bill)}</span>
-      </div>
-      <div class="ncc-divider"></div>
-      <div class="ncc-rounds">${roundsHtml}</div>
-      <div class="ncc-hint"><span class="ncc-hint-icon">${bellSvg}</span><span>Peça a conta ao empregado</span></div>
-    `;
-    card.style.display = '';
+    const bill = (data.items || []).filter(i => i.status !== 'cancelled')
+      .reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
+    html += `<div class="nexo-bill-row"><span>Total da mesa</span><span class="nexo-bill-amount">${fmtEUR(bill)}</span></div>
+      <p class="nexo-bill-hint">${SVG_BELL} Peça a conta ao empregado</p>`;
+    sec.innerHTML = html;
   }
 
   async function subscribeTab(comandaId) {

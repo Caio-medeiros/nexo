@@ -58,8 +58,6 @@
       }
     });
   </script>
-  <script src="/js/nexo-security.js"></script>
-  <script src="/js/nexo-access.js"></script>
   <script src="/nexo-analytics.js"></script>
   <link rel="stylesheet" href="style.css">
   <noscript>
@@ -542,9 +540,6 @@
         <button class="cart-tab" data-tab="split" id="tab-split">Dividir</button>
       </div>
 
-      <!-- Comanda summary card — populated by nexo-premium.js when a tab is active -->
-      <div id="nexo-comanda-card" style="display:none" role="status" aria-label="Resumo da comanda"></div>
-
       <!-- Panel: Pedido -->
       <div class="cart-panel" id="panel-order">
         <button id="nexo-shared-cart-trigger" class="nexo-shared-trigger" type="button">👥 Mesa em grupo? <span>Partilhar carrinho</span></button>
@@ -689,7 +684,7 @@
         <label class="confirm-field-label" id="confirm-table-label" for="confirm-table-input">Número da mesa <span class="confirm-table-required-mark">*</span> <span class="confirm-table-optional">(opcional para mostrar ao staff)</span></label>
         <div class="confirm-table-field" id="confirm-table-field">
           <span class="confirm-table-prefix" id="confirm-table-prefix">Mesa</span>
-          <input type="text" id="confirm-table-input" data-table-input class="confirm-table-input"
+          <input type="text" id="confirm-table-input" class="confirm-table-input"
             inputmode="numeric" pattern="[0-9]*" placeholder="4"
             autocomplete="off" autocorrect="off">
         </div>

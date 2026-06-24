@@ -43,106 +43,6 @@
   from { opacity: 0; transform: translateY(4px); }
 }
 
-/* ── Comanda summary card — between cart tabs and panel ── */
-#nexo-comanda-card {
-  margin: 0 16px 8px;
-  background: var(--surface);
-  border-radius: 14px;
-  border: 1.5px solid var(--border-soft);
-  box-shadow: 0 2px 12px rgba(9, 30, 56, 0.07);
-  overflow: hidden;
-  animation: npFadeIn 240ms var(--np-ease) both;
-}
-.ncc-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 10px 14px 9px;
-}
-.ncc-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-}
-.ncc-total {
-  font-family: var(--font-display, 'Cormorant Garamond', Georgia, serif);
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--accent);
-}
-.ncc-divider {
-  height: 1px;
-  background: var(--border-soft);
-}
-.ncc-rounds {
-  padding: 6px 14px 8px;
-}
-.ncc-round-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 0 3px;
-}
-.ncc-round-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  letter-spacing: 0.02em;
-}
-.ncc-round-time {
-  font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 10px;
-  color: var(--muted);
-}
-.ncc-round-status {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-}
-.ncc-round-status--done    { color: var(--sage); }
-.ncc-round-status--pending { color: var(--muted); }
-.ncc-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 0 3px 10px;
-  font-size: 12px;
-  color: var(--text);
-}
-.ncc-item-name {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-.ncc-item-qty {
-  font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 11px;
-  color: var(--muted);
-  flex-shrink: 0;
-}
-.ncc-item-status { flex-shrink: 0; display: flex; align-items: center; }
-.ncc-item-status--done    { color: var(--sage); }
-.ncc-item-status--pending { color: var(--muted); }
-.ncc-item-status--prep    { color: #E97316; }
-.ncc-item-status--cancel  { color: #EF4444; }
-.ncc-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: rgba(26, 79, 160, 0.04);
-  border-top: 1px solid var(--border-soft);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-.ncc-hint-icon { color: var(--accent); flex-shrink: 0; display: flex; align-items: center; }
-
 /* ── Cart pill — comanda mode (cart empty, active comanda) ── */
 .cart-pill--comanda {
   box-shadow:
@@ -303,7 +203,8 @@
 .nexo-sent-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
 .nexo-sent-name { flex: 1; color: var(--np-text-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nexo-sent-qty { font-family: 'Azeret Mono', ui-monospace, monospace; font-size: 12px; color: var(--np-text-muted); }
-.nexo-sent-status { font-size: 13px; flex-shrink: 0; }
+.nexo-sent-status { font-size: 13px; flex-shrink: 0; display: flex; align-items: center; }
+.nexo-round-svg { margin-left: auto; display: flex; align-items: center; }
 .nexo-bill-row { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--np-border-md); margin-top: 12px; padding-top: 12px; font-size: 14px; font-weight: 600; color: var(--np-text); }
 .nexo-bill-amount { font-family: 'Azeret Mono', ui-monospace, monospace; font-size: 20px; font-weight: 700; }
-.nexo-bill-hint { font-size: 11px; color: var(--np-text-muted); text-align: center; margin: 8px 0 0; }
+.nexo-bill-hint { font-size: 11px; color: var(--np-text-muted); text-align: center; margin: 8px 0 0; display: flex; align-items: center; justify-content: center; gap: 5px; }
