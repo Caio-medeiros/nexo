@@ -5067,20 +5067,3 @@ body.has-cart {
 .nexo-call-send-btn:active { transform: scale(0.98); }
 .nexo-call-send-btn.loading { opacity: 0.6; pointer-events: none; }
 
-
-/* ─────────────────────────────────────────────────────────────
-   TAT — Table Access Token: modo BROWSE vs FULL
-   (a aplicação real é via guardas JS; isto é só polish visual)
-   ───────────────────────────────────────────────────────────── */
-/* In browse mode hide only the confirm-modal action buttons (not the main CTA —
-   the JS guard in nexo-access.js handles the order-blocked message when tapped). */
-body[data-access-mode="browse"] #confirm-btn-kitchen,
-body[data-access-mode="browse"] #confirm-btn-staff { display: none !important; }
-body[data-access-mode="browse"] #confirm-footer::after {
-  content: "Para pedir, utilize o QR Code da mesa.";
-  display: block; text-align: center; font-size: 12px; color: #666;
-  padding: 12px 8px; line-height: 1.4;
-}
-.table-access-indicator { display: none; align-items: center; gap: 6px; font-size: 12px; color: #888; }
-body[data-access-mode="full"] .table-access-indicator { display: inline-flex; }
-.table-access-indicator .access-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; }

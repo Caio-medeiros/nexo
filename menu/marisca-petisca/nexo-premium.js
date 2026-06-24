@@ -269,32 +269,25 @@
     const orderedRoundIds = Object.keys(byRound).sort((a, b) =>
       ((roundById[a] && roundById[a].round_number) || 0) - ((roundById[b] && roundById[b].round_number) || 0));
 
-    const SVG_CHECK  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
-    const SVG_CLOCK  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-    const SVG_DOTS   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>`;
-    const SVG_BELL   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
-
     let html = `<div class="nexo-sent-label"><span>Já enviado</span></div>`;
     orderedRoundIds.forEach(rid => {
       const r = roundById[rid] || {};
       const time = r.fired_at ? new Date(r.fired_at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
-      const rsvg = r.status === 'done' ? SVG_CHECK : r.status === 'acknowledged' ? SVG_DOTS : SVG_CLOCK;
+      const rstatus = r.status === 'done' ? '✅' : r.status === 'acknowledged' ? '👨‍🍳' : '⏳';
       const label = (r.round_number === 1) ? '1.ª ronda' : `${r.round_number}.ª ronda`;
-      html += `<div class="nexo-round-head"><span>${label}</span><span class="nexo-round-time">${time}</span><span class="nexo-round-svg">${rsvg}</span></div>`;
+      html += `<div class="nexo-round-head"><span>${label}</span><span class="nexo-round-time">${time}</span><span>${rstatus}</span></div>`;
       byRound[rid].forEach(it => {
-        const isvg = (it.status === 'done' || it.status === 'served') ? SVG_CHECK :
-                     it.status === 'preparing' ? SVG_DOTS : SVG_CLOCK;
         html += `<div class="nexo-sent-item">
           <span class="nexo-sent-name">${escapeHTML(it.item_name)}</span>
           <span class="nexo-sent-qty">×${it.quantity}</span>
-          <span class="nexo-sent-status" title="${ITEM_STATUS_PT[it.status] || ''}">${isvg}</span>
+          <span class="nexo-sent-status" title="${ITEM_STATUS_PT[it.status] || ''}">${ITEM_ICON[it.status] || '⏳'}</span>
         </div>`;
       });
     });
     const bill = (data.items || []).filter(i => i.status !== 'cancelled')
       .reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
     html += `<div class="nexo-bill-row"><span>Total da mesa</span><span class="nexo-bill-amount">${fmtEUR(bill)}</span></div>
-      <p class="nexo-bill-hint">${SVG_BELL} Peça a conta ao empregado</p>`;
+      <p class="nexo-bill-hint">Peça a conta ao empregado</p>`;
     sec.innerHTML = html;
   }
 

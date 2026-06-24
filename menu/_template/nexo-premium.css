@@ -50,7 +50,6 @@
     0 2px 8px rgba(13, 46, 101, 0.25),
     0 0 0 1.5px rgba(245,158,11,0.35) !important;
 }
-.cart-pill--comanda .cart-pill-count { display: none; }
 
 /* ── Comanda bar — kept in CSS but never rendered (pill handles it now) ── */
 .comanda-bar {
@@ -203,8 +202,7 @@
 .nexo-sent-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
 .nexo-sent-name { flex: 1; color: var(--np-text-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nexo-sent-qty { font-family: 'Azeret Mono', ui-monospace, monospace; font-size: 12px; color: var(--np-text-muted); }
-.nexo-sent-status { font-size: 13px; flex-shrink: 0; display: flex; align-items: center; }
-.nexo-round-svg { margin-left: auto; display: flex; align-items: center; }
+.nexo-sent-status { font-size: 13px; flex-shrink: 0; }
 .nexo-bill-row { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--np-border-md); margin-top: 12px; padding-top: 12px; font-size: 14px; font-weight: 600; color: var(--np-text); }
 .nexo-bill-amount { font-family: 'Azeret Mono', ui-monospace, monospace; font-size: 20px; font-weight: 700; }
-.nexo-bill-hint { font-size: 11px; color: var(--np-text-muted); text-align: center; margin: 8px 0 0; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.nexo-bill-hint { font-size: 11px; color: var(--np-text-muted); text-align: center; margin: 8px 0 0; }
