@@ -50,6 +50,7 @@
     0 2px 8px rgba(13, 46, 101, 0.25),
     0 0 0 1.5px rgba(245,158,11,0.35) !important;
 }
+.cart-pill--comanda .cart-pill-count { display: none; }
 
 /* ── Comanda bar — kept in CSS but never rendered (pill handles it now) ── */
 .comanda-bar {

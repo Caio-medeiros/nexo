@@ -2356,24 +2356,26 @@ function renderCartPill() {
   const totalEl = document.getElementById('cart-pill-total');
   if (!pill || !textEl || !totalEl) return;
 
+  const countBadge = document.getElementById('cart-pill-count');
   const count = getCartItemCount();
   const comandaInfo = window._nexoComandaInfo || null;
 
   // ── Comanda mode: carrinho vazio mas comanda activa ──────────
-  // O pill central transforma-se em "Ver comanda" com estado e total da mesa.
   if (count === 0 && comandaInfo) {
-    const statusIcon = { open: '🛒', submitted: '⏳', preparing: '🔥', ready: '✅' }[comandaInfo.status] || '⏳';
-    textEl.textContent = `${statusIcon} ${comandaInfo.table_label || 'Mesa'} · Ver comanda`;
+    const statusLabel = { open: 'Aberta', submitted: 'Enviada', preparing: 'Em prep.', ready: 'Pronta' }[comandaInfo.status] || 'Enviada';
+    textEl.textContent = `${comandaInfo.table_label || 'Mesa'} · ${statusLabel}`;
     totalEl.textContent = formatPrice(comandaInfo.total || 0);
     totalEl.classList.remove('hidden');
     pill.classList.add('show', 'cart-pill--comanda');
     document.body.classList.add('has-cart');
     pill.setAttribute('aria-label', 'Ver comanda da mesa');
+    if (countBadge) { countBadge.textContent = ''; countBadge.style.display = 'none'; }
     return;
   }
 
   // ── Normal mode ───────────────────────────────────────────────
   pill.classList.remove('cart-pill--comanda');
+  if (countBadge) countBadge.style.display = '';
 
   if (count === 0) {
     pill.classList.remove('show');
