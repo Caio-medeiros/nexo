@@ -130,8 +130,6 @@
         document.querySelectorAll('[data-current-table]').forEach((el) => {
           el.textContent = this.tableLabel || '';
         });
-      } else {
-        this.showBrowseBanner();
       }
       return mode;
     },
