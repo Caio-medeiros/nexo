@@ -2586,7 +2586,8 @@ body.has-cart {
   background: var(--bg-alt);
   padding: var(--s3) 0 0;
   max-height: 85vh;
-  max-height: 85dvh; /* viewport dinâmico — o rodapé (Confirmar) não fica sob a barra do browser no telemóvel */
+  max-height: 88dvh; /* viewport dinâmico — o rodapé (Confirmar) não fica sob a barra do browser no telemóvel */
+  width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2596,6 +2597,17 @@ body.has-cart {
 }
 .cart-sheet-overlay.show .cart-sheet {
   transform: translateY(0);
+}
+
+/* Em ecrãs com rato (desktop), o sheet "flutua" acima do fundo para o botão
+   nunca ficar tapado pela dock/barra do SO. No telemóvel (pointer coarse)
+   mantém-se colado ao fundo, com o safe-area a tratar do home-indicator. */
+@media (pointer: fine) {
+  .cart-sheet-overlay { padding-bottom: 24px; }
+  .cart-sheet {
+    max-height: 82dvh;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+  }
 }
 
 .cart-sheet-header {

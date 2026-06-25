@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="manifest" href="/portal/manifest.json">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,7 +30,8 @@
       <div class="field">
         <label class="field-label" for="email">Email</label>
         <input class="input" type="email" id="email" name="email"
-               placeholder="email@restaurante.pt" autocomplete="email" required>
+               placeholder="email@restaurante.pt" autocomplete="email"
+               autocapitalize="none" spellcheck="false" inputmode="email" required>
       </div>
 
       <div class="field">
@@ -56,25 +57,57 @@
     Não tem acesso? <a href="mailto:hello@nexosolutions.pt">Contacte-nos</a>
   </p>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/portal/_assets/icons.js"></script>
+  <!-- SDK Supabase auto-alojado (mesma origem) — sem dependência de CDN externo -->
+  <script src="/portal/_assets/supabase.min.js"></script>
+  <!-- portal.js: apenas para o tema (light/dark). O login é independente dele. -->
   <script src="/portal/_assets/portal.js"></script>
-  <script>
-  (function () {
-    const form = document.getElementById('login-form');
-    const emailEl = document.getElementById('email');
-    const pwEl = document.getElementById('password');
-    const btn = document.getElementById('login-btn');
-    const errEl = document.getElementById('login-error');
-    const infoEl = document.getElementById('login-info');
-    const togglePw = document.getElementById('toggle-pw');
 
-    // show/hide password
+  <script>
+  /* ════════════════════════════════════════════════════════════════════
+     LOGIN — Área de Cliente NEXO  (reconstruído de raiz, auto-suficiente)
+
+     Princípios:
+     • Cliente Supabase criado AQUI, sem depender da ordem de carregamento
+       de outros ficheiros. Usa o mesmo URL/KEY + storage default do resto
+       do portal, por isso a sessão é partilhada com o dashboard.
+     • O SDK é auto-alojado (/portal/_assets/supabase.min.js). Se por algum
+       motivo não carregar, tenta CDNs de recurso. Nunca depende de um só.
+     • Mensagens de erro honestas: só fala em "internet" quando o dispositivo
+       está mesmo offline.
+     ════════════════════════════════════════════════════════════════════ */
+  (function () {
+    'use strict';
+
+    const SUPABASE_URL = 'https://kgbrtbpeekhkroibsgqq.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYnJ0YnBlZWtoa3JvaWJzZ3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDAwMTMsImV4cCI6MjA5NjYxNjAxM30.vFvSLysnS3456WWKa2a659YuIVuOceYHG4NMd79Jerc';
+
+    // Fontes do SDK por ordem de preferência (mesma origem primeiro).
+    const SDK_SOURCES = [
+      '/portal/_assets/supabase.min.js',
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+      'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.7/supabase.min.js',
+    ];
+
+    // ── elementos ──
+    const form     = document.getElementById('login-form');
+    const emailEl  = document.getElementById('email');
+    const pwEl     = document.getElementById('password');
+    const btn      = document.getElementById('login-btn');
+    const errEl    = document.getElementById('login-error');
+    const infoEl   = document.getElementById('login-info');
+    const togglePw = document.getElementById('toggle-pw');
+    const forgotEl = document.getElementById('forgot-link');
+
+    // ── ícones inline (independentes de icons.js) ──
+    const EYE     = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-6.5 0-10-7-10-7a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    const ALERT   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+
+    // ── mostrar/esconder palavra-passe ──
     let pwVisible = false;
     function renderPwIcon() {
-      togglePw.innerHTML = getIcon(pwVisible ? 'eye-off' : 'eye');
-      togglePw.setAttribute('aria-label',
-        pwVisible ? 'Esconder palavra-passe' : 'Mostrar palavra-passe');
+      togglePw.innerHTML = pwVisible ? EYE_OFF : EYE;
+      togglePw.setAttribute('aria-label', pwVisible ? 'Esconder palavra-passe' : 'Mostrar palavra-passe');
     }
     renderPwIcon();
     togglePw.addEventListener('click', () => {
@@ -84,10 +117,11 @@
       pwEl.focus();
     });
 
+    // ── mensagens ──
     function showError(msg) {
       infoEl.style.display = 'none';
       errEl.style.display = 'flex';
-      errEl.innerHTML = getIcon('alert-triangle', 14) + '<span>' + msg + '</span>';
+      errEl.innerHTML = ALERT + '<span>' + msg + '</span>';
     }
     function showInfo(msg) {
       errEl.style.display = 'none';
@@ -100,42 +134,78 @@
       emailEl.classList.remove('input-error');
       pwEl.classList.remove('input-error');
     }
-
-    function isNetworkError(error) {
-      const msg = (error?.message || '').toLowerCase();
-      return msg.includes('fetch') || msg.includes('network') || msg.includes('load failed');
+    function setBusy(busy, label) {
+      btn.disabled = busy;
+      btn.textContent = busy ? (label || 'A autenticar…') : 'Entrar';
+      btn.style.opacity = busy ? '0.7' : '';
     }
 
-    function mapAuthError(error) {
-      const msg = (error?.message || '').toLowerCase();
-      if (msg.includes('invalid login credentials') || msg.includes('invalid email or password') || error?.status === 400)
+    // ── garantir o cliente Supabase (carrega o SDK se necessário) ──
+    let _client = null;
+    function loadScript(src) {
+      return new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = false;
+        s.onload = () => resolve(true);
+        s.onerror = () => resolve(false);
+        document.head.appendChild(s);
+      });
+    }
+    async function getClient() {
+      if (_client) return _client;
+      if (typeof supabase === 'undefined') {
+        for (const src of SDK_SOURCES) {
+          await loadScript(src);
+          if (typeof supabase !== 'undefined') break;
+        }
+      }
+      if (typeof supabase === 'undefined' || !supabase.createClient) return null;
+      _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+      });
+      window.db = window.db || _client; // partilha a sessão com o resto do portal
+      return _client;
+    }
+
+    function isNetworkError(error) {
+      const m = (error && error.message ? error.message : '').toLowerCase();
+      return m.includes('fetch') || m.includes('network') || m.includes('load failed') || m.includes('failed to send');
+    }
+    function mapError(error) {
+      const m = (error && error.message ? error.message : '').toLowerCase();
+      const st = error && error.status;
+      if (m.includes('invalid login credentials') || st === 400)
         return 'Email ou palavra-passe incorretos.';
-      if (msg.includes('email not confirmed'))
-        return 'Confirme o email antes de entrar.';
-      if (msg.includes('too many') || error?.status === 429)
-        return 'Demasiadas tentativas. Aguarde alguns minutos.';
-      if (isNetworkError(error))
-        return 'Servidor indisponível. Tente novamente em instantes.';
+      if (m.includes('email not confirmed'))
+        return 'Confirme o seu email antes de entrar.';
+      if (m.includes('too many') || st === 429)
+        return 'Demasiadas tentativas. Aguarde um minuto.';
+      if (isNetworkError(error)) {
+        return (navigator.onLine === false)
+          ? 'Sem ligação. Verifique a internet.'
+          : 'Servidor indisponível. Tente novamente em instantes.';
+      }
       return 'Não foi possível entrar. Tente novamente.';
     }
 
     function redirectTarget() {
-      const params = new URLSearchParams(window.location.search);
-      const r = params.get('redirect');
-      // only allow internal portal paths
+      const r = new URLSearchParams(window.location.search).get('redirect');
       return (r && r.startsWith('/portal/')) ? r : '/portal/dashboard/';
     }
 
-    // already authenticated? → dashboard
+    // ── já autenticado? → dashboard ──
     (async () => {
-      const client = (typeof ensureDb === 'function') ? await ensureDb() : db;
+      const client = await getClient();
       if (!client) return;
-      const { data: { session } } = await client.auth.getSession();
-      if (session) window.location.href = redirectTarget();
+      try {
+        const { data } = await client.auth.getSession();
+        if (data && data.session) window.location.replace(redirectTarget());
+      } catch (_) { /* ignora — mostra o formulário */ }
     })();
 
-    // forgot password
-    document.getElementById('forgot-link').addEventListener('click', async () => {
+    // ── recuperar palavra-passe ──
+    forgotEl.addEventListener('click', async () => {
       clearMessages();
       const email = emailEl.value.trim();
       if (!email) {
@@ -144,20 +214,20 @@
         emailEl.focus();
         return;
       }
+      const client = await getClient();
+      if (!client) { showError(navigator.onLine === false ? 'Sem ligação. Verifique a internet.' : 'Servidor indisponível. Recarregue a página.'); return; }
       try {
-        const client = (typeof ensureDb === 'function') ? await ensureDb() : db;
-        if (!client) throw new Error('Servidor indisponível');
         const { error } = await client.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + '/portal/',
         });
         if (error) throw error;
         showInfo('Email de recuperação enviado.');
       } catch (error) {
-        showError(mapAuthError(error));
+        showError(mapError(error));
       }
     });
 
-    // submit
+    // ── submeter ──
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       clearMessages();
@@ -165,36 +235,33 @@
       const email = emailEl.value.trim();
       const password = pwEl.value;
       let valid = true;
-      if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-        emailEl.classList.add('input-error'); valid = false;
-      }
-      if (!password) {
-        pwEl.classList.add('input-error'); valid = false;
-      }
+      if (!email || !/^\S+@\S+\.\S+$/.test(email)) { emailEl.classList.add('input-error'); valid = false; }
+      if (!password) { pwEl.classList.add('input-error'); valid = false; }
       if (!valid) { showError('Preencha email e palavra-passe.'); return; }
 
-      setLoading(btn, true, 'A autenticar...');
+      setBusy(true);
 
-      // Garante o cliente Supabase (recarrega o CDN se necessário).
-      const client = (typeof ensureDb === 'function') ? await ensureDb() : db;
+      const client = await getClient();
       if (!client) {
-        setLoading(btn, false);
-        showError('Não foi possível ligar ao servidor. Recarregue a página.');
+        setBusy(false);
+        showError(navigator.onLine === false
+          ? 'Sem ligação. Verifique a internet.'
+          : 'Não foi possível ligar ao servidor. Recarregue a página.');
         return;
       }
 
       try {
         let { error } = await client.auth.signInWithPassword({ email, password });
-        // Falha de rede transitória → uma nova tentativa antes de desistir.
+        // Uma nova tentativa em falhas de rede transitórias.
         if (error && isNetworkError(error)) {
           await new Promise(r => setTimeout(r, 700));
           ({ error } = await client.auth.signInWithPassword({ email, password }));
         }
         if (error) throw error;
-        window.location.href = redirectTarget();
+        window.location.replace(redirectTarget());
       } catch (error) {
-        setLoading(btn, false);
-        showError(mapAuthError(error));
+        setBusy(false);
+        showError(mapError(error));
       }
     });
   })();
