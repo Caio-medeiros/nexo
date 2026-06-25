@@ -498,15 +498,16 @@
         <button class="modal-close" data-close="cart-sheet" aria-label="Fechar">✕</button>
       </div>
 
-      <!-- Tabs: Pedido / Dividir -->
+      <!-- Tabs: Pedido / Comanda / Dividir -->
       <div class="cart-tabs" id="cart-tabs">
         <button class="cart-tab active" data-tab="order" id="tab-order">Pedido</button>
+        <button class="cart-tab cart-tab--comanda" data-tab="comanda" id="tab-comanda" style="display:none">Comanda</button>
         <button class="cart-tab" data-tab="split" id="tab-split">Dividir</button>
       </div>
 
       <!-- Panel: Pedido -->
       <div class="cart-panel" id="panel-order">
-        <button id="nexo-shared-cart-trigger" class="nexo-shared-trigger" type="button">👥 Mesa em grupo? <span>Partilhar carrinho</span></button>
+        <button id="nexo-shared-cart-trigger" class="nexo-shared-trigger" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Mesa em grupo? <span>Partilhar carrinho</span></button>
         <div id="nexo-shared-cart-header" class="nexo-shared-header" style="display:none"></div>
         <div class="cart-notes-badge" id="cart-notes-badge" style="display:none">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
@@ -523,6 +524,11 @@
           </button>
           <button class="cart-clear-btn" id="cart-clear-btn"></button>
         </div>
+      </div>
+
+      <!-- Panel: Comanda (já enviado para a cozinha) -->
+      <div class="cart-panel" id="panel-comanda" style="display:none">
+        <div id="nexo-sent-section" class="nexo-sent-section"></div>
       </div>
 
       <!-- Panel: Dividir -->
@@ -555,7 +561,7 @@
           <div class="split-people-tabs" id="split-people-tabs"></div>
           <div class="split-rename-hint">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            <span id="split-rename-hint-label">Toque em ✎ para renomear</span>
+            <span id="split-rename-hint-label">Toque para renomear</span>
           </div>
           <div class="split-assign-list" id="split-assign-list"></div>
           <div class="split-person-summary" id="split-person-summary"></div>
@@ -711,7 +717,7 @@
       </div>
       <div class="nexo-sheet-footer">
         <button id="nexo-call-send-btn" class="nexo-call-send-btn" type="button">
-          <span id="nexo-call-btn-text">🙋 Chamar Empregado</span>
+          <span id="nexo-call-btn-text"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Chamar Empregado</span></span>
         </button>
       </div>
     </div>
@@ -723,7 +729,7 @@
     <div class="nexo-sheet-card">
       <div class="nexo-sheet-handle"></div>
       <div class="nexo-sheet-header">
-        <span class="nexo-sheet-title">👥 Carrinho de Mesa</span>
+        <span class="nexo-sheet-title">Carrinho de Mesa</span>
         <button class="nexo-sheet-close" id="nexo-shared-close" aria-label="Fechar">✕</button>
       </div>
       <div id="nexo-shared-view-initial" class="nexo-sheet-body">

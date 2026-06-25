@@ -31,21 +31,47 @@ const SUPABASE_URL = 'https://kgbrtbpeekhkroibsgqq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYnJ0YnBlZWtoa3JvaWJzZ3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDAwMTMsImV4cCI6MjA5NjYxNjAxM30.vFvSLysnS3456WWKa2a659YuIVuOceYHG4NMd79Jerc';
 
 let db = null;
-if (typeof supabase === 'undefined') {
-  console.error('NEXO Portal: Supabase CDN não carregou.');
-} else {
-  // persistSession + autoRefreshToken: the portal lives open 24/7 on the
-  // kitchen/counter tablet — the token must refresh silently, never expire
-  // the staff mid-service.
-  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+function _createDb() {
+  return supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: {
+      // persistSession + autoRefreshToken: the portal lives open 24/7 on the
+      // kitchen/counter tablet — the token must refresh silently, never expire
+      // the staff mid-service.
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },
   });
+}
+if (typeof supabase === 'undefined') {
+  console.error('NEXO Portal: Supabase CDN não carregou.');
+} else {
+  db = _createDb();
   window.db = db;
 }
+
+// Garante que o cliente Supabase existe, mesmo que o CDN primário (jsDelivr)
+// tenha falhado ou chegado tarde. Carrega um fallback (cdnjs) sob demanda.
+// Resolve para o cliente, ou null se nem assim for possível ligar.
+let _supabaseLoadPromise = null;
+function ensureDb() {
+  if (db) return Promise.resolve(db);
+  if (typeof supabase !== 'undefined') { db = _createDb(); window.db = db; return Promise.resolve(db); }
+  if (!_supabaseLoadPromise) {
+    _supabaseLoadPromise = new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.7/supabase.min.js';
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);
+      document.head.appendChild(s);
+    });
+  }
+  return _supabaseLoadPromise.then(() => {
+    if (typeof supabase !== 'undefined') { db = _createDb(); window.db = db; return db; }
+    return null;
+  });
+}
+window.ensureDb = ensureDb;
 
 // ─── AUTH ─────────────────────────────────
 async function requireAuth() {

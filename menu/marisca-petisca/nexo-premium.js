@@ -198,9 +198,7 @@
   let _activeComandaId = null;
   let _barMiniTimer = null;
 
-  const ITEM_ICON = { pending: '🛒', sent: '⏳', preparing: '🔥', ready: '✅', served: '✓', delivered: '✓', cancelled: '✗' };
   const ITEM_STATUS_PT = { pending: 'No carrinho', sent: 'Enviado', preparing: 'A preparar', ready: 'Pronto', served: 'Servido', delivered: 'Servido' };
-  const TAB_STATUS = { open: '🛒 Em aberto', submitted: '⏳ Na cozinha', preparing: '🔥 Em preparação', ready: '✅ Pronto' };
 
   function renderTabBar(info) {
     clearTimeout(_barMiniTimer);
@@ -242,25 +240,30 @@
     hideSentSection();
     if (_comandaCh) { try { _sb.removeChannel(_comandaCh); } catch (_) {} _comandaCh = null; }
   }
-  function hideSentSection() { const s = document.getElementById('nexo-sent-section'); if (s) { s.style.display = 'none'; s.innerHTML = ''; } }
-
-  // Secção "Já enviado" injectada no topo do painel (abaixo das tabs, antes
-  // dos novos itens) — sobrevive aos re-renders do menu (só tocam em #cart-list).
-  function renderSentSection(data) {
-    const panel = document.getElementById('panel-order');
-    if (!panel) return;
-    let sec = document.getElementById('nexo-sent-section');
-    if (!sec) {
-      sec = document.createElement('div');
-      sec.id = 'nexo-sent-section';
-      sec.className = 'nexo-sent-section';
-      // Injecta antes da lista de novos itens (topo do painel)
-      const cartList = panel.querySelector('.cart-list');
-      if (cartList) cartList.insertAdjacentElement('beforebegin', sec);
-      else panel.insertBefore(sec, panel.firstChild);
+  // Esconde a secção "Já enviado" e a tab Comanda. Se a tab Comanda estava
+  // activa, volta automaticamente para a tab Pedido.
+  function hideSentSection() {
+    const s = document.getElementById('nexo-sent-section');
+    if (s) { s.innerHTML = ''; }
+    const tab = document.getElementById('tab-comanda');
+    if (tab) {
+      tab.style.display = 'none';
+      if (tab.classList.contains('active')) {
+        const orderTab = document.getElementById('tab-order');
+        if (orderTab) orderTab.click();
+      }
     }
+  }
+
+  // Secção "Já enviado": vive na sua própria tab "Comanda" (#panel-comanda),
+  // separada da tab "Pedido" (itens novos a adicionar).
+  function renderSentSection(data) {
+    const sec = document.getElementById('nexo-sent-section');
+    if (!sec) return;
+    const tab = document.getElementById('tab-comanda');
     const sent = (data.items || []).filter(i => i.round_id && i.status !== 'cancelled');
-    if (!sent.length) { sec.style.display = 'none'; sec.innerHTML = ''; return; }
+    if (!sent.length) { hideSentSection(); return; }
+    if (tab) tab.style.display = '';
     sec.style.display = 'block';
 
     const roundById = {};

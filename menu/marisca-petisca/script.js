@@ -500,7 +500,7 @@ const PERSON_NAMES = {
 
 const SPLIT_UI = {
   pt: {
-    tabOrder: '🧾 Pedido', tabSplit: '➗ Dividir',
+    tabOrder: 'Pedido', tabSplit: 'Dividir', tabComanda: 'Comanda',
     people: 'Pessoas',
     modeEqual: 'Partes iguais', modeCustom: 'Por item',
     perPerson: 'por pessoa',
@@ -508,10 +508,10 @@ const SPLIT_UI = {
     totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} pessoas`,
     myItems: 'Os meus itens',
     subtotal: 'Subtotal',
-    renameHint: 'Toque em ✎ para renomear',
+    renameHint: 'Toque para renomear',
   },
   en: {
-    tabOrder: '🧾 Order', tabSplit: '➗ Split',
+    tabOrder: 'Order', tabSplit: 'Split', tabComanda: 'Tab',
     people: 'People',
     modeEqual: 'Equal split', modeCustom: 'By item',
     perPerson: 'per person',
@@ -519,10 +519,10 @@ const SPLIT_UI = {
     totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} people`,
     myItems: 'My items',
     subtotal: 'Subtotal',
-    renameHint: 'Tap ✎ to rename',
+    renameHint: 'Tap to rename',
   },
   es: {
-    tabOrder: '🧾 Pedido', tabSplit: '➗ Dividir',
+    tabOrder: 'Pedido', tabSplit: 'Dividir', tabComanda: 'Comanda',
     people: 'Personas',
     modeEqual: 'A partes iguales', modeCustom: 'Por ítem',
     perPerson: 'por persona',
@@ -530,10 +530,10 @@ const SPLIT_UI = {
     totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} personas`,
     myItems: 'Mis ítems',
     subtotal: 'Subtotal',
-    renameHint: 'Toca ✎ para renombrar',
+    renameHint: 'Toca para renombrar',
   },
   fr: {
-    tabOrder: '🧾 Commande', tabSplit: '➗ Partager',
+    tabOrder: 'Commande', tabSplit: 'Partager', tabComanda: 'Addition',
     people: 'Personnes',
     modeEqual: 'Parts égales', modeCustom: 'Par article',
     perPerson: 'par personne',
@@ -541,8 +541,15 @@ const SPLIT_UI = {
     totalNote: (n) => `Total ${formatPrice(getCartTotal())} ÷ ${n} personnes`,
     myItems: 'Mes articles',
     subtotal: 'Sous-total',
-    renameHint: 'Touchez ✎ pour renommer',
+    renameHint: 'Touchez pour renommer',
   }
+};
+
+/* Ícones minimalistas para as tabs do carrinho (sem emojis) */
+const CART_TAB_ICONS = {
+  order:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6a2 2 0 0 1 2 2v0H7v0a2 2 0 0 1 2-2z"/><path d="M7 4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="13" y2="14"/></svg>',
+  split:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.4"/><line x1="5" y1="12" x2="19" y2="12"/><circle cx="12" cy="19" r="1.4"/></svg>',
+  comanda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3v18l2-1.2L9 21l2-1.2L13 21l2-1.2L17 21l2-1.2V3l-2 1.2L15 3l-2 1.2L11 3 9 4.2 7 3 5 4.2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/></svg>',
 };
 
 const ts = () => SPLIT_UI[currentLang] || SPLIT_UI.pt;
@@ -2389,8 +2396,7 @@ function renderCartPill() {
 
   // ── Comanda mode: carrinho vazio mas comanda activa ──────────
   if (count === 0 && comandaInfo) {
-    const statusIcon = { open: '🛒', submitted: '⏳', preparing: '🔥', ready: '✅' }[comandaInfo.status] || '⏳';
-    textEl.textContent = `${statusIcon} ${comandaInfo.table_label || 'Mesa'} · Ver comanda`;
+    textEl.textContent = `${comandaInfo.table_label || 'Mesa'} · Ver comanda`;
     totalEl.textContent = formatPrice(comandaInfo.total || 0);
     totalEl.classList.remove('hidden');
     pill.classList.add('show', 'cart-pill--comanda');
@@ -2411,7 +2417,7 @@ function renderCartPill() {
   }
 
   // Badge shows count; text shows label only (no redundant count in text)
-  textEl.textContent = sharedCart ? `👥 ${t().viewOrder}` : t().viewOrder;
+  textEl.textContent = t().viewOrder;
   pill.setAttribute('aria-label', `${t().viewOrder}: ${count} ${count === 1 ? t().cartItem : t().cartItems}`);
 
   const total = getCartTotal();
@@ -2451,11 +2457,13 @@ function renderCartSheet() {
   if (clearBtn) clearBtn.textContent = t().cartClear;
   if (confirmLabel) confirmLabel.textContent = t().confirmOrder;
 
-  // Always set tab labels
+  // Always set tab labels (ícone SVG + texto, sem emojis)
   const tabOrderEl = document.getElementById('tab-order');
   const tabSplitEl = document.getElementById('tab-split');
-  if (tabOrderEl) tabOrderEl.textContent = ts().tabOrder;
-  if (tabSplitEl) tabSplitEl.textContent = ts().tabSplit;
+  const tabComandaEl = document.getElementById('tab-comanda');
+  if (tabOrderEl) tabOrderEl.innerHTML = CART_TAB_ICONS.order + '<span>' + ts().tabOrder + '</span>';
+  if (tabSplitEl) tabSplitEl.innerHTML = CART_TAB_ICONS.split + '<span>' + ts().tabSplit + '</span>';
+  if (tabComandaEl) tabComandaEl.innerHTML = CART_TAB_ICONS.comanda + '<span>' + ts().tabComanda + '</span>';
 
   // Notes badge
   const hasNotes = hasAnyNotes();
@@ -3104,6 +3112,12 @@ function setupCartPill() {
   pill.addEventListener('click', () => {
     haptic();
     openModal('cart-sheet');
+    // Carrinho vazio mas comanda a correr → abre directamente na tab Comanda.
+    const comandaTab = document.getElementById('tab-comanda');
+    if (getCartItemCount() === 0 && window._nexoComandaInfo &&
+        comandaTab && comandaTab.style.display !== 'none') {
+      comandaTab.click();
+    }
   });
 }
 
@@ -3438,6 +3452,8 @@ function setupSplitBill() {
       document.querySelectorAll('.cart-tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('panel-order').style.display = tabName === 'order' ? 'block' : 'none';
+      const panelComanda = document.getElementById('panel-comanda');
+      if (panelComanda) panelComanda.style.display = tabName === 'comanda' ? 'block' : 'none';
       document.getElementById('panel-split').style.display = tabName === 'split' ? 'block' : 'none';
       if (tabName === 'split') {
         track('split_bill_opened', { split_mode: splitMode });
@@ -4790,6 +4806,12 @@ function setupCallStaff() {
   const sendBtn    = document.getElementById('nexo-call-send-btn');
   const tableInput = document.getElementById('nexo-call-table-input');
   const btnText    = document.getElementById('nexo-call-btn-text');
+  const callBtnHTML = callBtn ? callBtn.innerHTML : '';
+
+  // Ícones minimalistas (sem emojis) para os estados do botão.
+  const SVG_BELL  = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+  const SVG_CHECK = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+  const SVG_X     = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
   if (!FEATURE_ON || !TOPIC) {
     if (callBtn) callBtn.classList.add('hidden');
@@ -4827,7 +4849,7 @@ function setupCallStaff() {
       sendBtn.style.background = '';
       sendBtn.style.color = '';
     }
-    if (btnText) btnText.textContent = '🙋 Chamar Atendente';
+    if (btnText) btnText.innerHTML = SVG_BELL + '<span>Chamar Empregado</span>';
   }
 
   if (callBtn) callBtn.addEventListener('click', openSheet);
@@ -4846,16 +4868,19 @@ function setupCallStaff() {
         : 'A pedir atendimento (mesa não indicada)';
 
       sendBtn.classList.add('loading');
-      if (btnText) btnText.textContent = 'A enviar...';
+      if (btnText) btnText.innerHTML = '<span>A enviar…</span>';
 
       // Regista no Portal NEXO (Modo Staff) em paralelo com o ntfy
       logStaffCallToSupabase(mesa ? 'Mesa ' + mesa : null);
 
       try {
+        // Nota: os valores dos headers HTTP têm de ser ASCII/ISO-8859-1.
+        // Um emoji no header 'Title' faz o fetch lançar TypeError (causava
+        // o "Erro — tente novamente"). O ícone vem da tag 'bell'.
         const response = await fetch('https://ntfy.sh/' + TOPIC, {
           method: 'POST',
           headers: {
-            'Title': '🙋 Chamada de Mesa',
+            'Title': 'Chamada de Mesa',
             'Priority': 'high',
             'Tags': 'bell',
             'Content-Type': 'text/plain; charset=utf-8',
@@ -4864,7 +4889,7 @@ function setupCallStaff() {
         });
 
         if (response.ok) {
-          if (btnText) btnText.textContent = '✓ Atendente a caminho!';
+          if (btnText) btnText.innerHTML = SVG_CHECK + '<span>Atendente a caminho!</span>';
           if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
           if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
@@ -4872,14 +4897,14 @@ function setupCallStaff() {
             closeSheet();
             if (callBtn) {
               callBtn.classList.add('success');
-              callBtn.textContent = '✓';
+              callBtn.innerHTML = SVG_CHECK + '<span class="nexo-call-label">Enviado</span>';
             }
             cooldownActive = true;
             setTimeout(() => {
               cooldownActive = false;
               if (callBtn) {
                 callBtn.classList.remove('success');
-                callBtn.textContent = '🙋';
+                callBtn.innerHTML = callBtnHTML;
               }
             }, 30000);
           }, 1500);
@@ -4889,7 +4914,7 @@ function setupCallStaff() {
           throw new Error('HTTP ' + response.status);
         }
       } catch (err) {
-        if (btnText) btnText.textContent = '✕ Erro — tente novamente';
+        if (btnText) btnText.innerHTML = SVG_X + '<span>Erro — tente novamente</span>';
         if (sendBtn) sendBtn.style.background = 'rgba(239,68,68,0.2)';
         cooldownActive = false; // falhou — permite tentar de novo
         setTimeout(resetSendBtnState, 2500);

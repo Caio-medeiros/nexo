@@ -193,9 +193,10 @@
   to   { transform: scaleX(0); }
 }
 
-/* ── "Já enviado" — topo do painel, UI clara a condizer com o menu ── */
+/* ── "Já enviado" — tab própria "Comanda", UI clara a condizer com o menu ── */
+#panel-comanda { padding-bottom: 16px; }
 .nexo-sent-section {
-  margin: 10px 12px 0;
+  margin: 12px 12px 0;
   border-radius: 12px;
   background: var(--bg-alt, #DAE8F2);
   border: 1px solid var(--border, #C0D5E8);

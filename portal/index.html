@@ -101,14 +101,23 @@
       pwEl.classList.remove('input-error');
     }
 
+    function isNetworkError(error) {
+      const msg = (error?.message || '').toLowerCase();
+      return msg.includes('fetch') || msg.includes('network') || msg.includes('load failed');
+    }
+
     function mapAuthError(error) {
       const msg = (error?.message || '').toLowerCase();
       if (msg.includes('invalid login credentials') || error?.status === 400)
         return 'Email ou palavra-passe incorretos.';
       if (msg.includes('too many') || error?.status === 429)
         return 'Demasiadas tentativas. Aguarde alguns minutos.';
-      if (msg.includes('fetch') || msg.includes('network'))
-        return 'Sem ligação. Verifique a internet.';
+      if (isNetworkError(error)) {
+        // online mas o pedido falhou → servidor/CDN, não a internet do utilizador
+        return (navigator.onLine === false)
+          ? 'Sem ligação. Verifique a internet.'
+          : 'Servidor indisponível. Tente novamente em instantes.';
+      }
       return 'Não foi possível entrar. Tente novamente.';
     }
 
@@ -121,8 +130,9 @@
 
     // already authenticated? → dashboard
     (async () => {
-      if (!db) return;
-      const { data: { session } } = await db.auth.getSession();
+      const client = (typeof ensureDb === 'function') ? await ensureDb() : db;
+      if (!client) return;
+      const { data: { session } } = await client.auth.getSession();
       if (session) window.location.href = redirectTarget();
     })();
 
@@ -137,7 +147,9 @@
         return;
       }
       try {
-        const { error } = await db.auth.resetPasswordForEmail(email, {
+        const client = (typeof ensureDb === 'function') ? await ensureDb() : db;
+        if (!client) throw new Error('network');
+        const { error } = await client.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + '/portal/',
         });
         if (error) throw error;
@@ -162,11 +174,26 @@
         pwEl.classList.add('input-error'); valid = false;
       }
       if (!valid) { showError('Preencha email e palavra-passe.'); return; }
-      if (!db) { showError('Sem ligação. Verifique a internet.'); return; }
 
       setLoading(btn, true, 'A autenticar...');
+
+      // Garante o cliente Supabase (recarrega o CDN se necessário).
+      const client = (typeof ensureDb === 'function') ? await ensureDb() : db;
+      if (!client) {
+        setLoading(btn, false);
+        showError(navigator.onLine === false
+          ? 'Sem ligação. Verifique a internet.'
+          : 'Não foi possível ligar ao servidor. Recarregue a página.');
+        return;
+      }
+
       try {
-        const { error } = await db.auth.signInWithPassword({ email, password });
+        let { error } = await client.auth.signInWithPassword({ email, password });
+        // Falha de rede transitória → uma nova tentativa antes de desistir.
+        if (error && isNetworkError(error)) {
+          await new Promise(r => setTimeout(r, 700));
+          ({ error } = await client.auth.signInWithPassword({ email, password }));
+        }
         if (error) throw error;
         window.location.href = redirectTarget();
       } catch (error) {
