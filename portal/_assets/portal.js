@@ -58,13 +58,26 @@ function ensureDb() {
   if (db) return Promise.resolve(db);
   if (typeof supabase !== 'undefined') { db = _createDb(); window.db = db; return Promise.resolve(db); }
   if (!_supabaseLoadPromise) {
-    _supabaseLoadPromise = new Promise((resolve) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.7/supabase.min.js';
-      s.onload = () => resolve(true);
-      s.onerror = () => resolve(false);
-      document.head.appendChild(s);
-    });
+    // Tenta, por ordem: cópia self-hosted (mesma origem, sem CDN externo) →
+    // jsDelivr → cdnjs. Resolve assim que o global `supabase` aparecer.
+    const sources = [
+      '/portal/_assets/supabase.min.js',
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+      'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.7/supabase.min.js',
+    ];
+    _supabaseLoadPromise = (async () => {
+      for (const src of sources) {
+        const ok = await new Promise((resolve) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.onload = () => resolve(true);
+          s.onerror = () => resolve(false);
+          document.head.appendChild(s);
+        });
+        if (ok && typeof supabase !== 'undefined') return true;
+      }
+      return typeof supabase !== 'undefined';
+    })();
   }
   return _supabaseLoadPromise.then(() => {
     if (typeof supabase !== 'undefined') { db = _createDb(); window.db = db; return db; }
