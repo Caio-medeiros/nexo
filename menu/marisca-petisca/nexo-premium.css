@@ -193,11 +193,14 @@
   to   { transform: scaleX(0); }
 }
 
-/* ── "Já enviado" — card redesign ── */
+/* ── "Já enviado" — topo do painel, UI clara a condizer com o menu ── */
 .nexo-sent-section {
-  margin-top: 20px;
-  border-top: 1px dashed var(--np-border-md);
-  padding-top: 16px;
+  margin: 10px 12px 0;
+  border-radius: 12px;
+  background: var(--bg-alt, #DAE8F2);
+  border: 1px solid var(--border, #C0D5E8);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 /* header row: label + total */
@@ -205,27 +208,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding: 7px 12px 6px;
+  border-bottom: 1px solid var(--border-soft, #D6E8F2);
 }
 .ns-label {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--np-text-muted);
+  color: var(--text-muted, #4A6880);
 }
 .ns-total {
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--np-text-2);
+  color: var(--text, #0F2233);
 }
 
 /* rounds container */
 .ns-rounds {
-  background: var(--np-bg-elevated);
-  border: 1px solid var(--np-border);
-  border-radius: 12px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -234,23 +238,24 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px 6px;
-  border-bottom: 1px solid var(--np-border);
+  padding: 5px 12px 4px;
+  background: rgba(26,79,160,0.05);
+  border-bottom: 1px solid var(--border-soft, #D6E8F2);
 }
 .nexo-round-head + .nexo-round-head {
-  border-top: 1px solid var(--np-border-md);
+  border-top: 1px solid var(--border-soft, #D6E8F2);
 }
 .nexo-round-label {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--np-text-muted);
+  color: var(--text-muted, #4A6880);
 }
 .nexo-round-time {
   font-family: 'Azeret Mono', ui-monospace, monospace;
   font-size: 10px;
-  color: var(--np-text-muted);
+  color: var(--text-muted, #4A6880);
   margin-left: 2px;
 }
 .nexo-round-svg {
@@ -265,14 +270,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 12px;
-  border-bottom: 1px solid var(--np-border);
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border-soft, #D6E8F2);
 }
 .nexo-sent-item:last-child { border-bottom: none; }
 .nexo-sent-name {
   flex: 1;
-  font-size: 13px;
-  color: var(--np-text-2);
+  font-size: 12px;
+  color: var(--text, #0F2233);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -280,8 +285,8 @@
 }
 .nexo-sent-qty {
   font-family: 'Azeret Mono', ui-monospace, monospace;
-  font-size: 12px;
-  color: var(--np-text-muted);
+  font-size: 11px;
+  color: var(--text-muted, #4A6880);
   flex-shrink: 0;
 }
 .nexo-sent-status {
@@ -291,9 +296,9 @@
 }
 
 /* status colours */
-.ns-status--done   { color: var(--np-success); }
-.ns-status--prep   { color: var(--np-warning); }
-.ns-status--pending{ color: var(--np-text-muted); }
+.ns-status--done   { color: #16a34a; }
+.ns-status--prep   { color: #b45309; }
+.ns-status--pending{ color: var(--text-muted, #4A6880); }
 
 /* hint row */
 .ns-hint {
@@ -301,12 +306,10 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 12px;
-  padding: 9px 12px;
-  background: var(--np-bg-elevated);
-  border: 1px solid var(--np-border);
-  border-radius: 10px;
-  font-size: 12px;
-  color: var(--np-text-muted);
+  padding: 6px 12px;
+  border-top: 1px solid var(--border-soft, #D6E8F2);
+  font-size: 11px;
+  color: var(--text-muted, #4A6880);
+  background: rgba(26,79,160,0.03);
 }
 .ns-hint svg { flex-shrink: 0; }

@@ -32,12 +32,14 @@ async function initSala() {
   const slug = window.ESPACO_SLUG;
   document.getElementById('sala-venue-name').textContent = window.ESPACO_NAME || slug;
 
-  const { data: venue } = await db.from('venue_settings')
-    .select('*').eq('espaco_slug', slug).maybeSingle();
-  // A configuração (Definições) é a base DIÁRIA. Ajustes feitos aqui no Salão
-  // (dividir/juntar mesas durante o serviço) valem só para hoje e repõem-se no
-  // dia seguinte — nunca alteram a configuração base.
-  if (venue) state.configCount = venue.table_count;
+  try {
+    const { data: venue } = await db.from('venue_settings')
+      .select('*').eq('espaco_slug', slug).maybeSingle();
+    // A configuração (Definições) é a base DIÁRIA. Ajustes feitos aqui no Salão
+    // (dividir/juntar mesas durante o serviço) valem só para hoje e repõem-se no
+    // dia seguinte — nunca alteram a configuração base.
+    if (venue && venue.table_count >= 1) state.configCount = venue.table_count;
+  } catch (e) { console.warn('[Sala] venue_settings inacessível:', e); }
   state.tableCount = readDailyTableCount(slug, state.configCount);
 
   for (let i = 1; i <= state.tableCount; i++) {

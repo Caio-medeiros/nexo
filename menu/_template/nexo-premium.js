@@ -244,8 +244,8 @@
   }
   function hideSentSection() { const s = document.getElementById('nexo-sent-section'); if (s) { s.style.display = 'none'; s.innerHTML = ''; } }
 
-  // Secção "Já enviado" injectada no painel do carrinho (sobrevive aos
-  // re-renders do menu, que só tocam em #cart-list).
+  // Secção "Já enviado" injectada no topo do painel (abaixo das tabs, antes
+  // dos novos itens) — sobrevive aos re-renders do menu (só tocam em #cart-list).
   function renderSentSection(data) {
     const panel = document.getElementById('panel-order');
     if (!panel) return;
@@ -254,9 +254,9 @@
       sec = document.createElement('div');
       sec.id = 'nexo-sent-section';
       sec.className = 'nexo-sent-section';
-      const footer = panel.querySelector('.cart-footer');
-      if (footer) footer.insertAdjacentElement('afterend', sec);
-      else panel.appendChild(sec);
+      const cartList = panel.querySelector('.cart-list');
+      if (cartList) cartList.insertAdjacentElement('beforebegin', sec);
+      else panel.insertBefore(sec, panel.firstChild);
     }
     const sent = (data.items || []).filter(i => i.round_id && i.status !== 'cancelled');
     if (!sent.length) { sec.style.display = 'none'; sec.innerHTML = ''; return; }

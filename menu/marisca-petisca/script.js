@@ -1219,7 +1219,7 @@ function renderReviewModal() {
 let currentRating = 0;
 
 function resetReviewModal() {
-  currentRating = 0;
+  currentRating = 5; // Pr\u00E9-selecciona 5 estrelas \u2014 o caminho mais prov\u00E1vel
   // Clear auto-triggered flag (manual open resets it)
   const modal = document.getElementById('review-modal');
   if (modal) {
@@ -1236,10 +1236,16 @@ function resetReviewModal() {
   hideReviewStep(s2h);
   hideReviewStep(s2u);
   hideReviewStep(s3);
-  // Reset stars
-  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('lit'));
+  // Pr\u00E9-acende as 5 estrelas
+  document.querySelectorAll('.star-btn').forEach((b, i) => {
+    b.style.setProperty('--star-d', `${i * 30}ms`);
+    b.classList.add('lit');
+  });
   const label = document.getElementById('star-label');
-  if (label) { label.textContent = '\u200B'; label.className = 'star-label'; }
+  if (label) { label.textContent = t().starLabels[5] || 'Excelente!'; label.className = 'star-label pop positive'; }
+  // Mostra o CTA directo do Google
+  const quickCta = document.getElementById('review-quick-cta');
+  if (quickCta) quickCta.classList.add('visible');
   // Clear textarea
   const ta = document.getElementById('review-textarea');
   if (ta) ta.value = '';
@@ -1279,48 +1285,58 @@ function setupRatingGate() {
   });
 
   picker.addEventListener('mouseleave', () => {
-    // Restore to currentRating state (instant)
+    // Restore stars to committed rating
     document.querySelectorAll('.star-btn').forEach((b, i) => {
       b.style.setProperty('--star-d', '0ms');
       b.classList.toggle('lit', i < currentRating);
     });
+    // Restore label text to match committed rating
     const label = document.getElementById('star-label');
-    if (label && currentRating === 0) {
-      label.textContent = '\u200B';
-      label.className = 'star-label';
+    if (label) {
+      if (currentRating === 0) {
+        label.textContent = '\u200B';
+        label.className = 'star-label';
+      } else {
+        label.textContent = t().starLabels[currentRating] || '';
+        label.className = 'star-label pop ' + (currentRating >= 4 ? 'positive' : 'negative');
+      }
     }
   });
 
-  // Click: commit rating and advance
+  // Click: actualiza estrelas; positivo → mantém step 1 c/ CTA; negativo → passa p/ unhappy
   picker.addEventListener('click', e => {
     const btn = e.target.closest('.star-btn');
     if (!btn) return;
     haptic();
     currentRating = parseInt(btn.dataset.star);
-    if (currentRating >= 4) {
-      track('review_positive', { rating: currentRating });
-    } else {
-      track('review_negative', { rating: currentRating });
-    }
 
-    // Light up stars permanently with stagger
+    // Acende estrelas com stagger
     document.querySelectorAll('.star-btn').forEach((b, i) => {
       b.style.setProperty('--star-d', `${i * 45}ms`);
       b.classList.toggle('lit', i < currentRating);
     });
+    const label = document.getElementById('star-label');
+    if (label) {
+      label.textContent = t().starLabels[currentRating] || '';
+      label.className = 'star-label pop ' + (currentRating >= 4 ? 'positive' : 'negative');
+    }
 
-    // Brief pause then advance to step 2
-    setTimeout(() => {
-      hideReviewStep(document.getElementById('review-step-1'));
-
-      if (currentRating >= 4) {
-        showReviewStep(document.getElementById('review-step-2-happy'));
-      } else {
+    const quickCta = document.getElementById('review-quick-cta');
+    if (currentRating >= 4) {
+      track('review_positive', { rating: currentRating });
+      // Mantém step 1 com CTA visível; o utilizador clica no Google quando quiser
+      if (quickCta) quickCta.classList.add('visible');
+    } else {
+      track('review_negative', { rating: currentRating });
+      if (quickCta) quickCta.classList.remove('visible');
+      // Avança para o caminho negativo após breve pausa
+      setTimeout(() => {
+        hideReviewStep(document.getElementById('review-step-1'));
         showReviewStep(document.getElementById('review-step-2-unhappy'));
         const ta = document.getElementById('review-textarea');
         if (ta) setTimeout(() => ta.focus(), 50);
-      }
-    }, 380);
+      }, 380);
+    }
   });
 
   // Send private feedback via WhatsApp
@@ -1355,6 +1371,18 @@ function setupRatingGate() {
     updateCharCounter();
   }
 
+  // Quick CTA directo (Google) no step 1 (pré-selecção 5 estrelas)
+  const quickCta = document.getElementById('review-quick-cta');
+  if (quickCta) {
+    if (typeof CONFIG !== 'undefined' && CONFIG.googleReviewUrl) {
+      quickCta.href = CONFIG.googleReviewUrl;
+    }
+    quickCta.addEventListener('click', () => {
+      track('review_google_clicked', { rating: currentRating, quick: true });
+      setTimeout(() => showThanks(true), 300);
+    });
+  }
+
   // When user clicks a platform link on happy path → show thanks after
   ['review-google', 'review-thefork'].forEach(id => {
     const el = document.getElementById(id);
@@ -1372,11 +1400,10 @@ function setupRatingGate() {
 }
 
 function showThanks(happy) {
-  const s2h = document.getElementById('review-step-2-happy');
-  const s2u = document.getElementById('review-step-2-unhappy');
+  hideReviewStep(document.getElementById('review-step-1'));
+  hideReviewStep(document.getElementById('review-step-2-happy'));
+  hideReviewStep(document.getElementById('review-step-2-unhappy'));
   const s3 = document.getElementById('review-step-3');
-  hideReviewStep(s2h);
-  hideReviewStep(s2u);
   showReviewStep(s3);
 
   const icon = document.getElementById('review-thankyou-icon');
@@ -3798,15 +3825,6 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   ctx.fillText(line.trim(), x, y);
 }
 
-// Darken/lighten hex color
-function shadeColor(hex, percent) {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const r = Math.min(255, Math.max(0, (num >> 16) + percent));
-  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + percent));
-  const b = Math.min(255, Math.max(0, (num & 0xff) + percent));
-  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-}
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
    12G. ORDER HISTORY — Track pedidos enviados ao staff na sessão
@@ -4818,7 +4836,6 @@ function setupCallStaff() {
 
   if (sendBtn) {
     sendBtn.addEventListener('click', async () => {
-      // TAT: só permite chamar empregado em modo FULL (token de mesa válido)
       if (window.NexoAccess && !(await NexoAccess.guardStaffCall())) return;
       if (cooldownActive) return;
       cooldownActive = true; // bloqueia reentrância imediata (evita spam/duplicados)

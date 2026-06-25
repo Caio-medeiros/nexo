@@ -149,14 +149,17 @@
     },
 
     async guardStaffCall() {
-      if (this.mode === 'full' && this.tokenValidated) return true;
-      this.showOrderBlockedMessage('call');
-      this.flagActivity({
-        flag_type: 'no_token',
-        table_label: null,
-        details: { attempted_action: 'staff_call', session: this._sid() },
-      });
-      return false;
+      // Chamar empregado é permitido em ambos os modos (full e browse).
+      // Sem token de mesa: a chamada entra sem número de mesa — o empregado
+      // dirige-se à sala e verifica. Logging de flags apenas para auditoria.
+      if (!this.tokenValidated) {
+        this.flagActivity({
+          flag_type: 'browse_staff_call',
+          table_label: null,
+          details: { attempted_action: 'staff_call', session: this._sid() },
+        });
+      }
+      return true;
     },
 
     // ── OPENING HOURS (disabled — see file header) ────────
