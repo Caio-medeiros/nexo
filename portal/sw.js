@@ -1,27 +1,32 @@
 /**
  * NEXO Portal — Service Worker.
  * Strategy:
- *   • Supabase / analytics  → network-first (never serve stale data)
- *   • CDN fonts & libraries  → cache-first
- *   • Portal pages & assets  → stale-while-revalidate
- *   • Navigation offline     → /portal/offline.html
+ *   • HTML pages / navigations → NETWORK-FIRST (never shadow a deploy with
+ *     stale HTML; fall back to cache only when offline → offline.html)
+ *   • Supabase / analytics      → network-first (never serve stale data)
+ *   • Fonts (Google)            → cache-first
+ *   • Same-origin static assets → stale-while-revalidate (one cache)
  *
- * Bump CACHE_NAME / STATIC_CACHE to invalidate old caches on deploy.
+ * IMPORTANT: HTML must be network-first. A previous version precached the
+ * portal pages and served them stale-while-revalidate from a versioned cache
+ * that was never purged — so a deployed fix (e.g. self-hosting Supabase)
+ * never reached users; the SW kept serving the old HTML that loaded a
+ * third-party CDN, which failed on some networks → "Sem ligação".
+ *
+ * Bump VERSION on every deploy that changes caching behaviour to purge old
+ * caches on activate.
  */
-const CACHE_NAME = 'nexo-portal-v1';
-const STATIC_CACHE = 'nexo-static-v1';
+const VERSION = 'v3';
+const CACHE_NAME = 'nexo-portal-' + VERSION;
+const STATIC_CACHE = 'nexo-static-' + VERSION;
 
-// Real asset paths in this repo (assets live under /portal/_assets/, and the
-// shared libs under /js/). Missing files are tolerated (cached individually).
+// Precache ONLY true static assets — never the HTML pages (those are
+// network-first so they always reflect the latest deploy).
 const STATIC_ASSETS = [
-  '/portal/',
-  '/portal/dashboard/',
-  '/portal/sala/',
-  '/portal/cozinha/',
-  '/portal/restaurante/',
   '/portal/_assets/portal.css',
   '/portal/_assets/portal.js',
   '/portal/_assets/icons.js',
+  '/portal/_assets/supabase.min.js',
   '/js/nexo-security.js',
   '/js/comanda.js',
   '/portal/sala/sala.css',
@@ -41,9 +46,13 @@ const NETWORK_FIRST_PATTERNS = [
 const CACHE_FIRST_PATTERNS = [
   /fonts\.googleapis\.com/,
   /fonts\.gstatic\.com/,
-  /cdnjs\.cloudflare\.com/,
-  /cdn\.jsdelivr\.net/,
 ];
+
+function isHtmlRequest(req) {
+  if (req.mode === 'navigate') return true;
+  const accept = req.headers.get('accept') || '';
+  return accept.includes('text/html');
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -72,6 +81,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Permite forçar a actualização imediata a partir da página, se necessário.
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
@@ -80,7 +94,27 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
 
-  // 1) Supabase / analytics — always network, offline fallback for navigations.
+  // 1) HTML pages / navigations — NETWORK-FIRST.
+  //    Garante que um deploy novo aparece sempre; cache só como rede de
+  //    segurança offline.
+  if (isHtmlRequest(req) && url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(req)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+          return response;
+        })
+        .catch(() =>
+          caches.match(req).then((cached) =>
+            cached || caches.match('/portal/offline.html')
+          )
+        )
+    );
+    return;
+  }
+
+  // 2) Supabase / analytics — always network, offline fallback for navigations.
   if (NETWORK_FIRST_PATTERNS.some((p) => p.test(req.url))) {
     event.respondWith(
       fetch(req).catch(() => {
@@ -91,7 +125,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) CDN fonts / libraries — cache-first.
+  // 3) Google fonts — cache-first.
   if (CACHE_FIRST_PATTERNS.some((p) => p.test(req.url))) {
     event.respondWith(
       caches.match(req).then((cached) => {
@@ -106,25 +140,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3) Portal pages & assets (same-origin) — stale-while-revalidate.
+  // 4) Same-origin static assets (css/js/img) — stale-while-revalidate.
+  //    Lê e escreve no MESMO cache (CACHE_NAME) para não ficar preso a uma
+  //    cópia antiga noutro cache.
   if (url.origin === self.location.origin && url.pathname.startsWith('/portal/')) {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        const fetchPromise = fetch(req)
-          .then((response) => {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
-            return response;
-          })
-          .catch(() => {
-            if (req.mode === 'navigate') return caches.match('/portal/offline.html');
-          });
-        return cached || fetchPromise;
-      })
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(req).then((cached) => {
+          const fetchPromise = fetch(req)
+            .then((response) => {
+              cache.put(req, response.clone());
+              return response;
+            })
+            .catch(() => cached);
+          return cached || fetchPromise;
+        })
+      )
     );
     return;
   }
 
-  // 4) Default — network with cache fallback.
+  // 5) Default — network with cache fallback.
   event.respondWith(fetch(req).catch(() => caches.match(req)));
 });
