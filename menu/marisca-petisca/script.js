@@ -75,7 +75,9 @@ const UI = {
     inOrder: "No pedido", viewOrder: "Ver pedido", reduceQty: "Diminuir quantidade", increaseQty: "Aumentar quantidade",
     cartItem: "item", cartItems: "itens",
     cartTitle: "O meu pedido", cartEmpty: "Ainda não adicionou nada.",
-    cartTotal: "Total", cartShowStaff: "Mostrar ao staff", cartClear: "Limpar pedido",
+    cartTotal: "Total", cartShowStaff: "Mostrar ao staff", cartClear: "Remover tudo do pedido",
+    kitchenSentTitle: "Pedido enviado para a cozinha", kitchenSentSub: "A cozinha já o recebeu. Bom apetite!",
+    kitchenErrTitle: "Não foi possível enviar", kitchenErrSub: "Tente novamente ou chame o empregado.",
     staffHelper: "Mostre este ecrã ao staff para pedir",
     // Confirm order
     confirmOrder: "Confirmar Pedido →",
@@ -171,7 +173,9 @@ const UI = {
     inOrder: "In order", viewOrder: "View order", reduceQty: "Decrease quantity", increaseQty: "Increase quantity",
     cartItem: "item", cartItems: "items",
     cartTitle: "My order", cartEmpty: "Nothing added yet.",
-    cartTotal: "Total", cartShowStaff: "Show to staff", cartClear: "Clear order",
+    cartTotal: "Total", cartShowStaff: "Show to staff", cartClear: "Remove all from order",
+    kitchenSentTitle: "Order sent to the kitchen", kitchenSentSub: "The kitchen has received it. Enjoy!",
+    kitchenErrTitle: "Couldn't send", kitchenErrSub: "Please try again or call staff.",
     staffHelper: "Show this screen to staff to order",
     confirmOrder: "Confirm Order →",
     confirmTitle: "Review Order",
@@ -2954,11 +2958,62 @@ async function sendToKitchen() {
   }
 
   if (res && res.ok) {
-    closeConfirmScreen();          // comanda criou a ronda (mostra toast próprio)
-  } else {
-    whatsappFallback(tableValue);  // recurso: garante que o pedido chega na mesma
     closeConfirmScreen();
+    showKitchenSentNotification();   // notificação grande de confirmação
+  } else {
+    // A cozinha não capturou o pedido. NUNCA abrimos o WhatsApp — o canal é
+    // 100% digital. Registamos para não perder o pedido e mostramos um aviso
+    // claro para o cliente voltar a tentar.
+    logOrderToSupabase(sharedCart ? 'shared' : 'kitchen', tableValue);
+    showKitchenErrorNotification();
   }
+}
+
+// Notificação grande, em ecrã inteiro, de "pedido enviado para a cozinha".
+// Auto-dispensa; substitui qualquer WhatsApp.
+function showKitchenSentNotification() {
+  let el = document.getElementById('nexo-kitchen-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'nexo-kitchen-toast';
+    el.className = 'nexo-kitchen-toast';
+    document.body.appendChild(el);
+  }
+  el.classList.remove('error');
+  el.innerHTML = `
+    <div class="nexo-kt-card">
+      <div class="nexo-kt-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="nexo-kt-title">${t().kitchenSentTitle || 'Pedido enviado para a cozinha'}</div>
+      <div class="nexo-kt-sub">${t().kitchenSentSub || 'A cozinha já o recebeu. Bom apetite!'}</div>
+    </div>`;
+  if (navigator.vibrate) { try { navigator.vibrate([60, 40, 60]); } catch (_) {} }
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function showKitchenErrorNotification() {
+  let el = document.getElementById('nexo-kitchen-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'nexo-kitchen-toast';
+    el.className = 'nexo-kitchen-toast';
+    document.body.appendChild(el);
+  }
+  el.classList.add('error');
+  el.innerHTML = `
+    <div class="nexo-kt-card">
+      <div class="nexo-kt-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div class="nexo-kt-title">${t().kitchenErrTitle || 'Não foi possível enviar'}</div>
+      <div class="nexo-kt-sub">${t().kitchenErrSub || 'Tente novamente ou chame o empregado.'}</div>
+    </div>`;
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
 // Canal de recurso (fallback) silencioso: regista o pedido e, se houver número
@@ -3007,10 +3062,10 @@ function setupConfirmScreen() {
       const tableVal = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
       confirmTableValue = tableVal;
       closeConfirmScreen();
-      if (!(window.NEXOPremium && window.NEXOPremium.comandaRouting))
-        logOrderToSupabase(sharedCart ? 'shared' : 'staff', tableVal);
-      // NEXO Premium: route the order into Cozinha/Caixa (comanda).
-      if (window.NEXOPremium && window.NEXOPremium.onOrderConfirmed) window.NEXOPremium.onOrderConfirmed();
+      // "Mostrar ao Staff" NÃO dispara a comanda: o empregado lê o pedido no
+      // ecrã e regista-o ele próprio (depois aparece na comanda). Por isso não
+      // há "enviado para a cozinha" aqui — só o registo leve para estatística.
+      logOrderToSupabase(sharedCart ? 'shared' : 'staff', tableVal);
       setTimeout(() => openStaffView(tableVal), 270);
     });
   }
