@@ -77,7 +77,10 @@ const UI = {
     cartTitle: "O meu pedido", cartEmpty: "Ainda não adicionou nada.",
     cartTotal: "Total", cartShowStaff: "Mostrar ao staff", cartClear: "Remover tudo do pedido",
     kitchenSentTitle: "Pedido enviado para a cozinha", kitchenSentSub: "A cozinha já o recebeu. Bom apetite!",
-    kitchenErrTitle: "Não foi possível enviar", kitchenErrSub: "Tente novamente ou chame o empregado.",
+    kitchenErrTitle: "Não foi possível enviar o pedido", kitchenErrSub: "Tente novamente ou chame o empregado.",
+    kitchenErrMsg: "Não conseguimos enviar o seu pedido neste momento. Tente novamente ou chame um empregado — ele regista o seu pedido.",
+    staffHelpTitle: "Estamos com um problema técnico", staffHelpCallMsg: "Pedimos desculpa. Por favor, chame um empregado — ele trata do seu pedido de imediato.",
+    staffHelpRetry: "Tentar novamente", staffHelpClose: "Entendido",
     staffHelper: "Mostre este ecrã ao staff para pedir",
     // Confirm order
     confirmOrder: "Confirmar Pedido →",
@@ -175,7 +178,10 @@ const UI = {
     cartTitle: "My order", cartEmpty: "Nothing added yet.",
     cartTotal: "Total", cartShowStaff: "Show to staff", cartClear: "Remove all from order",
     kitchenSentTitle: "Order sent to the kitchen", kitchenSentSub: "The kitchen has received it. Enjoy!",
-    kitchenErrTitle: "Couldn't send", kitchenErrSub: "Please try again or call staff.",
+    kitchenErrTitle: "Couldn't send the order", kitchenErrSub: "Please try again or call staff.",
+    kitchenErrMsg: "We couldn't send your order right now. Please try again or call a staff member — they'll take your order.",
+    staffHelpTitle: "We're having a technical issue", staffHelpCallMsg: "We're sorry. Please call a staff member — they'll take care of your order right away.",
+    staffHelpRetry: "Try again", staffHelpClose: "Got it",
     staffHelper: "Show this screen to staff to order",
     confirmOrder: "Confirm Order →",
     confirmTitle: "Review Order",
@@ -2994,26 +3000,52 @@ function showKitchenSentNotification() {
   el._t = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
+// Falha ao enviar o pedido → fallback de boa UX (nunca um erro cru): explica
+// e oferece tentar de novo ou chamar o empregado, que regista o pedido.
 function showKitchenErrorNotification() {
-  let el = document.getElementById('nexo-kitchen-toast');
+  showStaffHelpPopup({
+    title: t().kitchenErrTitle,
+    message: t().kitchenErrMsg || t().staffHelpCallMsg,
+    retryLabel: t().staffHelpRetry,
+    onRetry: () => { try { openConfirmScreen(); } catch (_) {} },
+  });
+}
+
+// ── Pop-up de ajuda: fallback universal e amigável ─────────────────────
+// "Estamos com um problema técnico — chame um empregado." Nunca mostra um
+// erro técnico cru ao cliente. Usado quando algo crítico falha (chamar
+// empregado, enviar pedido) e os canais automáticos não funcionaram.
+function showStaffHelpPopup(opts) {
+  opts = opts || {};
+  let el = document.getElementById('nexo-staffhelp');
   if (!el) {
     el = document.createElement('div');
-    el.id = 'nexo-kitchen-toast';
-    el.className = 'nexo-kitchen-toast';
+    el.id = 'nexo-staffhelp';
+    el.className = 'nexo-staffhelp';
     document.body.appendChild(el);
   }
-  el.classList.add('error');
+  const title = opts.title || t().staffHelpTitle || 'Estamos com um problema técnico';
+  const message = opts.message || t().staffHelpCallMsg || 'Por favor, chame um empregado — ele trata do seu pedido de imediato.';
+  const retryLabel = opts.retryLabel || t().staffHelpRetry || 'Tentar novamente';
+  const closeLabel = t().staffHelpClose || 'Entendido';
+  const BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
   el.innerHTML = `
-    <div class="nexo-kt-card">
-      <div class="nexo-kt-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <div class="nexo-sh-card">
+      <div class="nexo-sh-icon">${BELL}</div>
+      <div class="nexo-sh-title">${title}</div>
+      <div class="nexo-sh-msg">${message}</div>
+      <div class="nexo-sh-actions">
+        ${opts.onRetry ? `<button class="nexo-sh-btn nexo-sh-retry" id="nexo-sh-retry">${retryLabel}</button>` : ''}
+        <button class="nexo-sh-btn nexo-sh-close" id="nexo-sh-close">${closeLabel}</button>
       </div>
-      <div class="nexo-kt-title">${t().kitchenErrTitle || 'Não foi possível enviar'}</div>
-      <div class="nexo-kt-sub">${t().kitchenErrSub || 'Tente novamente ou chame o empregado.'}</div>
     </div>`;
+  if (navigator.vibrate) { try { navigator.vibrate(80); } catch (_) {} }
   requestAnimationFrame(() => el.classList.add('show'));
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), 3200);
+  const close = () => el.classList.remove('show');
+  const closeBtn = document.getElementById('nexo-sh-close');
+  if (closeBtn) closeBtn.onclick = close;
+  const retryBtn = document.getElementById('nexo-sh-retry');
+  if (retryBtn) retryBtn.onclick = () => { close(); try { opts.onRetry(); } catch (_) {} };
 }
 
 // Canal de recurso (fallback) silencioso: regista o pedido e, se houver número
@@ -4164,27 +4196,33 @@ async function initMenuOverrides() {
 // Insert fiável via REST com keepalive — completa mesmo que a página navegue
 // (ex.: abrir o WhatsApp). Não depende do CDN supabase-js (mais rápido e robusto).
 function nexoInsert(table, row) {
+  // Fire-and-forget (não bloqueia a UI). Para saber o resultado, usar
+  // nexoInsertAsync.
+  nexoInsertAsync(table, row);
+}
+
+// Versão que devolve { ok } — usada quando o sucesso da operação importa
+// (ex.: chamar empregado: a chamada vale se o portal OU o ntfy receberem).
+function nexoInsertAsync(table, row) {
   const { supabaseUrl, supabaseAnonKey } = (typeof CONFIG !== 'undefined' ? CONFIG : {});
-  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.indexOf('{{') !== -1) return;
-  try {
-    fetch(supabaseUrl + '/rest/v1/' + table, {
-      method: 'POST',
-      keepalive: true,
-      headers: {
-        apikey: supabaseAnonKey,
-        Authorization: 'Bearer ' + supabaseAnonKey,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal',
-      },
-      body: JSON.stringify(row),
-    }).catch(() => {});
-  } catch (_) {}
+  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.indexOf('{{') !== -1) return Promise.resolve({ ok: false });
+  return fetch(supabaseUrl + '/rest/v1/' + table, {
+    method: 'POST',
+    keepalive: true,
+    headers: {
+      apikey: supabaseAnonKey,
+      Authorization: 'Bearer ' + supabaseAnonKey,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify(row),
+  }).then((r) => ({ ok: r.ok })).catch(() => ({ ok: false }));
 }
 
 // Regista chamada de mesa (Sala / Modo Staff do Portal)
 function logStaffCallToSupabase(tableLabel) {
   var NS = window.NexoSecurity || null;
-  nexoInsert('staff_calls', {
+  return nexoInsertAsync('staff_calls', {
     espaco_slug: CONFIG.slug,
     table_label: tableLabel ? (NS ? NS.sanitise(tableLabel, 50) : tableLabel) : null,
   });
@@ -4961,54 +4999,50 @@ function setupCallStaff() {
       sendBtn.classList.add('loading');
       if (btnText) btnText.innerHTML = '<span>A enviar…</span>';
 
-      // Regista no Portal NEXO (Modo Staff) em paralelo com o ntfy
-      logStaffCallToSupabase(mesa ? 'Mesa ' + mesa : null);
+      // DOIS canais: o Portal NEXO (tabela staff_calls — o que a Sala mostra
+      // como "a chamar") e o ntfy (push). A chamada VALE se QUALQUER um receber.
+      // Só falha de verdade se ambos falharem.
+      const supaPromise = logStaffCallToSupabase(mesa ? 'Mesa ' + mesa : null);
+      // Nota: valores de headers HTTP têm de ser ASCII (emoji faz o fetch
+      // lançar TypeError). O ícone vem da tag 'bell'.
+      const ntfyPromise = fetch('https://ntfy.sh/' + TOPIC, {
+        method: 'POST',
+        headers: { 'Title': 'Chamada de Mesa', 'Priority': 'high', 'Tags': 'bell', 'Content-Type': 'text/plain; charset=utf-8' },
+        body: msg,
+      }).then((r) => ({ ok: r.ok })).catch(() => ({ ok: false }));
 
-      try {
-        // Nota: os valores dos headers HTTP têm de ser ASCII/ISO-8859-1.
-        // Um emoji no header 'Title' faz o fetch lançar TypeError (causava
-        // o "Erro — tente novamente"). O ícone vem da tag 'bell'.
-        const response = await fetch('https://ntfy.sh/' + TOPIC, {
-          method: 'POST',
-          headers: {
-            'Title': 'Chamada de Mesa',
-            'Priority': 'high',
-            'Tags': 'bell',
-            'Content-Type': 'text/plain; charset=utf-8',
-          },
-          body: msg,
-        });
+      let supaRes = { ok: false }, ntfyRes = { ok: false };
+      try { [supaRes, ntfyRes] = await Promise.all([supaPromise, ntfyPromise]); } catch (_) {}
 
-        if (response.ok) {
-          if (btnText) btnText.innerHTML = SVG_CHECK + '<span>Atendente a caminho!</span>';
-          if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
-          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-
+      if (supaRes.ok || ntfyRes.ok) {
+        if (btnText) btnText.innerHTML = SVG_CHECK + '<span>Atendente a caminho!</span>';
+        if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        setTimeout(() => {
+          closeSheet();
+          if (callBtn) {
+            callBtn.classList.add('success');
+            callBtn.innerHTML = SVG_CHECK + '<span class="nexo-call-label">Enviado</span>';
+          }
+          cooldownActive = true;
           setTimeout(() => {
-            closeSheet();
-            if (callBtn) {
-              callBtn.classList.add('success');
-              callBtn.innerHTML = SVG_CHECK + '<span class="nexo-call-label">Enviado</span>';
-            }
-            cooldownActive = true;
-            setTimeout(() => {
-              cooldownActive = false;
-              if (callBtn) {
-                callBtn.classList.remove('success');
-                callBtn.innerHTML = callBtnHTML;
-              }
-            }, 30000);
-          }, 1500);
-
-          track('staff_called', { table_label: mesa || null });
-        } else {
-          throw new Error('HTTP ' + response.status);
-        }
-      } catch (err) {
-        if (btnText) btnText.innerHTML = SVG_X + '<span>Erro — tente novamente</span>';
-        if (sendBtn) sendBtn.style.background = 'rgba(239,68,68,0.2)';
-        cooldownActive = false; // falhou — permite tentar de novo
-        setTimeout(resetSendBtnState, 2500);
+            cooldownActive = false;
+            if (callBtn) { callBtn.classList.remove('success'); callBtn.innerHTML = callBtnHTML; }
+          }, 30000);
+        }, 1500);
+        track('staff_called', { table_label: mesa || null });
+      } else {
+        // Ambos os canais falharam → fallback de boa UX: explica e pede para
+        // chamar o empregado fisicamente. Nunca um "Erro" cru.
+        closeSheet();
+        cooldownActive = false; // permite tentar de novo
+        resetSendBtnState();
+        showStaffHelpPopup({
+          title: t().staffHelpTitle,
+          message: t().staffHelpCallMsg,
+          retryLabel: t().staffHelpRetry,
+          onRetry: () => { if (sendBtn) { openSheet(); } },
+        });
       }
     });
   }
