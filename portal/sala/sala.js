@@ -49,6 +49,7 @@ async function initSala() {
   renderFloorPlan(state.tableCount, false);
   updateTableCountLabel();
   await loadActiveComandas();
+  await loadPendingCalls();
   await loadTodayStats();
   subscribeToRealtime();
   subscribeToVenueChanges();
@@ -211,6 +212,7 @@ function subscribeToRealtime() {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comandas', filter: `espaco_slug=eq.${slug}` }, p => handleNewComanda(p.new))
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'comandas', filter: `espaco_slug=eq.${slug}` }, p => handleComandaUpdate(p.new))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'staff_calls', filter: `espaco_slug=eq.${slug}` }, p => handleStaffCall(p.new))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'staff_calls', filter: `espaco_slug=eq.${slug}` }, () => loadPendingCalls())
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders_log', filter: `espaco_slug=eq.${slug}` }, p => handleNewOrder(p.new))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_notifications', filter: `espaco_slug=eq.${slug}` }, p => addToActivityFeed(p.new))
     .subscribe(s => {
@@ -233,6 +235,7 @@ async function reloadSalaLive() {
   _salaReloadBusy = true;
   try {
     await loadActiveComandas();
+    await loadPendingCalls();
     await loadTodayStats();
   } catch (e) { console.warn('[Sala] reload', e); }
   _salaReloadBusy = false;
@@ -314,6 +317,31 @@ function setCalling(tableNum, on) {
   state.tables[tableNum].calling = on;
   const card = document.querySelector(`[data-table-num="${tableNum}"]`);
   if (card) { if (on) card.dataset.calling = 'true'; else card.removeAttribute('data-calling'); }
+}
+
+// Reconcilia a camada "A chamar" com a base de dados — silenciosa (sem som).
+// Garante que NENHUMA chamada de empregado se perde: mostra chamadas feitas
+// antes da página abrir, recupera chamadas perdidas se o realtime caiu, e
+// limpa as que já foram atendidas noutro dispositivo. Corre no arranque e em
+// cada ressincronização (reconexão / visível / poll).
+async function loadPendingCalls() {
+  const since = new Date(Date.now() - 30 * 60000).toISOString(); // últimos 30 min
+  const { data } = await db.from('staff_calls')
+    .select('table_label, delivered_count, created_at')
+    .eq('espaco_slug', window.ESPACO_SLUG)
+    .gte('created_at', since);
+  const callingNums = new Set();
+  (data || []).forEach((c) => {
+    if (c.delivered_count) return; // já atendida
+    const n = extractTableNumber(c.table_label);
+    if (n && state.tables[n]) callingNums.add(n);
+  });
+  Object.keys(state.tables).forEach((numStr) => {
+    const num = +numStr;
+    const should = callingNums.has(num);
+    if (should && !state.tables[num].calling) setCalling(num, true);
+    else if (!should && state.tables[num].calling) setCalling(num, false);
+  });
 }
 
 function handleNewOrder(order) {
