@@ -17,23 +17,26 @@
 -- (SELECTs that ALSO have a public-read policy still work, which is why the
 --  pages load but show nothing / fail only on write — it masked the bug.)
 --
--- Fix: rename the parameter to `p_slug` so there is no name collision. The
--- RLS policies call it positionally — owns_espaco(espaco_slug) — so renaming
--- the parameter does NOT require touching any policy.
--- Idempotent: safe to run multiple times.
+-- Fix: KEEP the parameter name `slug` (renaming it is impossible via CREATE OR
+-- REPLACE — "cannot change name of input parameter" — and DROP would cascade
+-- into every RLS policy that depends on the function). Instead, qualify the
+-- ambiguous reference with the function name: `owns_espaco.slug`. The
+-- `#variable_conflict use_variable` directive is added as belt-and-suspenders.
+-- Idempotent: safe to run multiple times. No policy changes required.
 -- ────────────────────────────────────────────────────────────────────────
 
-create or replace function owns_espaco(p_slug text)
+create or replace function owns_espaco(slug text)
 returns boolean as $$
+#variable_conflict use_variable
 begin
   -- Reject null / empty slugs
-  if p_slug is null or trim(p_slug) = '' then
+  if slug is null or trim(slug) = '' then
     return false;
   end if;
 
   -- Valid slugs are lowercase letters, numbers and hyphens only.
   -- Rejects any injection-shaped input before it reaches the join.
-  if p_slug !~ '^[a-z0-9\-]+$' then
+  if slug !~ '^[a-z0-9\-]+$' then
     return false;
   end if;
 
@@ -46,15 +49,9 @@ begin
     select 1
     from menus m
     join clients c on c.id = m.client_id
-    where m.slug = p_slug
+    where m.slug = owns_espaco.slug   -- qualified → never ambiguous
       and c.auth_user_id = auth.uid()
   );
 end;
 $$ language plpgsql security definer stable
    set search_path = public;
-
--- Extra belt-and-suspenders: tell PL/pgSQL to prefer the variable on any
--- future name collision instead of erroring (defensive; the rename above is
--- already sufficient).
--- (Applied via the function body option below is not portable, so we rely on
---  the explicit parameter rename, which fully resolves the ambiguity.)
