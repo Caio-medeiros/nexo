@@ -37,6 +37,9 @@
     .k-live .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse-dot 1.6s ease infinite; }
     .k-live.reconnecting { color: var(--warning); }
     .k-live.reconnecting .live-dot { background: var(--warning); }
+    .k-live.new-order-flash { color: #fff; font-weight: 700; animation: k-neworder 0.7s ease infinite; }
+    .k-live.new-order-flash .live-dot { background: #fff; }
+    @keyframes k-neworder { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
     .k-back { font-size: 12px; color: var(--text-muted); text-decoration: none; }
     .k-back:hover { color: var(--text-secondary); }
     .k-fullscreen { background: transparent; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
@@ -303,8 +306,31 @@
         else unmarkReady(r.id);
         state[r.id] = entry;
       });
+
+      // ALERTA FIÁVEL de ronda nova: deteta por DIFF de IDs, por isso toca o
+      // som quer o evento tenha chegado por realtime, por poll de segurança ou
+      // por reconexão. Nenhuma ronda nova entra em silêncio na cozinha.
+      const currentIds = Object.keys(state);
+      if (_knownRoundIds !== null) {
+        const isNew = currentIds.some(id => !_knownRoundIds.has(id));
+        if (isNew) { playNewOrderSound(); flashNewOrder(); }
+      }
+      _knownRoundIds = new Set(currentIds);
+
       sweepReady();   // retira rondas prontas já fora do prazo
       renderAll();
+    }
+    let _knownRoundIds = null; // null = 1ª carga (não alarma no arranque)
+
+    // Realce visual breve no título quando entra ronda nova (reforça o som —
+    // útil em cozinha barulhenta / som silenciado).
+    function flashNewOrder() {
+      try {
+        document.title = '🔔 Novo pedido — Cozinha';
+        const live = document.querySelector('.k-live');
+        if (live) { live.classList.add('new-order-flash'); setTimeout(() => live.classList.remove('new-order-flash'), 4000); }
+        setTimeout(() => { document.title = 'Modo Cozinha — NEXO Portal'; }, 4000);
+      } catch (_) {}
     }
 
     // "Cozinha em ordem" só quando não há rondas NEM anulações por ver —
@@ -518,22 +544,26 @@
     });
 
     // ── realtime (alto tráfego: rajadas são COALESCIDAS) ───────
-    let _pendingNewOrder = false;
+    // O som de "ronda nova" é decidido dentro de loadAll (diff de IDs), por
+    // isso vale para realtime, poll e reconexão — sem depender deste evento.
     const scheduleHistory = debounce(loadHistory, 500);
     const scheduleReload = debounce(async () => {
       await loadAll();
-      if (_pendingNewOrder) { playNewOrderSound(); _pendingNewOrder = false; }
       scheduleHistory();
     }, 180);
 
     const ch = db.channel('cozinha_' + slug);
-    // Nova ronda → som + recarrega
+    // Nova ronda → recarrega (loadAll trata do som)
     ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comanda_rounds', filter: `espaco_slug=eq.${slug}` },
-      () => { _pendingNewOrder = true; scheduleReload(); });
+      () => scheduleReload());
     ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'comanda_rounds', filter: `espaco_slug=eq.${slug}` },
       () => scheduleReload());
     // Itens mudam de estado (salão adiciona/anula; outro ecrã marca pronto)
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items', filter: `espaco_slug=eq.${slug}` },
+      () => scheduleReload());
+    // Mesa fechada/paga/cancelada → retira já os bilhetes dessa mesa do ecrã
+    // (sem isto, ficavam até ao próximo poll — confuso em serviço movimentado).
+    ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'comandas', filter: `espaco_slug=eq.${slug}` },
       () => scheduleReload());
     // Anulações chegam ao instante
     ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comanda_voids', filter: `espaco_slug=eq.${slug}` },
