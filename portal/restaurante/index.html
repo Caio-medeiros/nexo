@@ -133,7 +133,7 @@
             <div class="floor-title">Salão</div>
             <div class="floor-sub"><span id="active-count">0</span> mesas activas</div>
           </div>
-          <button class="new-table-btn" id="new-table-btn">Nova mesa +</button>
+          <button class="new-table-btn" id="new-table-btn">Abrir mesa +</button>
         </div>
         <div class="table-grid" id="table-grid"></div>
       </section>
@@ -143,6 +143,19 @@
       </section>
     </div>
   </main>
+
+  <!-- Open table overlay -->
+  <div class="ai-overlay" id="open-table-overlay">
+    <div class="ai-sheet" style="max-width:420px">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:6px">Abrir mesa</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Indique o número da mesa. Se já estiver aberta (pelo cliente ou no Salão), abre a comanda que já existe — nunca duplica.</p>
+      <input class="ai-search" id="open-table-num" inputmode="numeric" placeholder="Nº da mesa (ex.: 5)" autocomplete="off" style="margin-bottom:14px">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" id="open-table-cancel" style="flex:1">Cancelar</button>
+        <button class="btn btn-primary" id="open-table-confirm" style="flex:1">Abrir mesa</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Add item overlay -->
   <div class="ai-overlay" id="ai-overlay">
@@ -400,16 +413,48 @@
     }
 
     // ── new table ──────────────────────────────────
-    document.getElementById('new-table-btn').addEventListener('click', async () => {
-      const label = prompt('Etiqueta da mesa (ex: Mesa 5):', 'Mesa');
-      if (!label) return;
+    // ── Abrir mesa (modal + dedupe + etiqueta normalizada) ──────────
+    // UMA comanda por mesa. A etiqueta é sempre "Mesa N" para que o pedido
+    // que o cliente faz pelo QR (?mesa=N) entre na MESMA comanda — conta
+    // unificada, sem mesas duplicadas entre Caixa / Salão / menu do cliente.
+    function normalizeTableLabel(input) {
+      const s = String(input || '').trim();
+      if (!s) return null;
+      const digits = s.replace(/\D/g, '');
+      return digits ? ('Mesa ' + digits) : s;
+    }
+    async function openOrSelectTable(rawInput) {
+      const label = normalizeTableLabel(rawInput);
+      if (!label) { showToast('Indique o número da mesa', 'warning'); return; }
+      // Já aberta? Reutiliza — nunca duplica.
+      const { data: existing } = await db.from('comandas').select('id')
+        .eq('espaco_slug', slug).eq('table_label', label).in('status', ACTIVE)
+        .order('created_at', { ascending: false }).limit(1);
+      if (existing && existing.length) {
+        await loadTables(); selectTable(existing[0].id);
+        showToast(`${label} já está aberta — a mostrar a comanda`, 'info');
+        return;
+      }
       const { data, error } = await db.from('comandas').insert({
         espaco_slug: slug, table_label: label, guest_count: 1, mode: 'dine_in', status: 'open',
       }).select('id').single();
-      if (error) { showToast('Erro ao criar mesa', 'error'); return; }
-      await loadTables();
-      selectTable(data.id);
+      if (error) { showToast('Erro ao abrir mesa', 'error'); return; }
+      await loadTables(); selectTable(data.id);
+      showToast(`${label} aberta ✓`, 'success');
+    }
+
+    const otOverlay = document.getElementById('open-table-overlay');
+    const otNum = document.getElementById('open-table-num');
+    document.getElementById('new-table-btn').addEventListener('click', () => {
+      otNum.value = ''; otOverlay.classList.add('show'); setTimeout(() => otNum.focus(), 60);
     });
+    document.getElementById('open-table-cancel').addEventListener('click', () => otOverlay.classList.remove('show'));
+    otOverlay.addEventListener('click', (e) => { if (e.target === otOverlay) otOverlay.classList.remove('show'); });
+    document.getElementById('open-table-confirm').addEventListener('click', async () => {
+      otOverlay.classList.remove('show');
+      await openOrSelectTable(otNum.value);
+    });
+    otNum.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('open-table-confirm').click(); });
 
     // ── ?comanda= preload (from "Mostrar ao Staff" QR) ──
     async function loadComandaByCode(code) {
@@ -426,8 +471,20 @@
       if (cid === selectedId) selectTable(selectedId);
       loadTables();
     });
-    ch.subscribe((s) => setLiveState(s === 'SUBSCRIBED' ? 'connected' : 'reconnecting'));
+    // Ressincronização completa e idempotente (grelha + detalhe aberto).
+    async function reloadCaixa() {
+      await loadTables();
+      if (selectedId && tables.some(t => String(t.id) === String(selectedId))) selectTable(selectedId);
+    }
+    ch.subscribe((s) => {
+      setLiveState(s === 'SUBSCRIBED' ? 'connected' : 'reconnecting');
+      // Ao (re)ligar, ressincroniza já — apanha mesas/itens perdidos enquanto
+      // o realtime esteve em baixo.
+      if (s === 'SUBSCRIBED') reloadCaixa();
+    });
     trackChannel(ch);
+    // Rede de segurança: recarrega ao voltar online / ficar visível / poll.
+    if (window.NexoLiveSync) NexoLiveSync.register(() => reloadCaixa(), { pollMs: 18000 });
 
     await loadTables();
     const preload = new URLSearchParams(location.search).get('comanda');

@@ -565,10 +565,25 @@ async function addItemToActiveTable() {
 }
 
 // Garante uma comanda aberta na mesa (auto-criada, sem passo manual).
+// UMA comanda por mesa: antes de criar, reaproveita uma comanda activa já
+// existente (aberta pelo cliente via QR, ou na Caixa) — conta unificada,
+// nunca duplica mesas entre modos.
 async function ensureComanda(tableNum) {
   if (state.tables[tableNum]?.comanda?.id) return state.tables[tableNum].comanda;
+  const label = `Mesa ${tableNum}`;
+  const { data: existing } = await db.from('comandas')
+    .select('id, session_code, total')
+    .eq('espaco_slug', window.ESPACO_SLUG).eq('table_label', label)
+    .in('status', ['open', 'submitted', 'preparing', 'ready'])
+    .order('created_at', { ascending: false }).limit(1);
+  if (existing && existing.length) {
+    const c = existing[0];
+    state.tables[tableNum] = { status: 'active', comanda: { id: c.id, code: c.session_code, total: c.total || 0 } };
+    updateTableStatus(tableNum, 'active', { comanda: state.tables[tableNum].comanda });
+    return state.tables[tableNum].comanda;
+  }
   const { data, error } = await db.from('comandas').insert({
-    espaco_slug: window.ESPACO_SLUG, table_label: `Mesa ${tableNum}`,
+    espaco_slug: window.ESPACO_SLUG, table_label: label,
     status: 'open', mode: 'dine_in', guest_count: 1 }).select('id, session_code').single();
   if (error) { salaToast('Erro ao abrir comanda'); return null; }
   state.tables[tableNum] = { status: 'active', comanda: { id: data.id, code: data.session_code, total: 0 } };
