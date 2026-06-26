@@ -4278,7 +4278,43 @@ function _setupChannelListeners(channel) {
       if (!payload?.memberKey) return;
       delete _memberStates[payload.memberKey];
       syncSharedCartItems();
+    })
+    .on('broadcast', { event: 'order_fired' }, ({ payload }) => {
+      // O pedido da MESA inteira foi disparado para a cozinha. Todos os
+      // membros limpam o carrinho (os itens passam a viver em "Já enviado")
+      // e começam a acompanhar a comanda, mesmo quem não confirmou.
+      _applySharedOrderFired(payload);
     });
+}
+
+// Limpa o carrinho partilhado de TODOS os membros (local) e, se houver
+// comanda, activa o separador "Comanda" para este dispositivo acompanhar.
+function _applySharedOrderFired(payload) {
+  _myCartItems = [];
+  _memberStates = {};
+  if (_myPresenceKey) _memberStates[_myPresenceKey] = { name: sharedMemberName, items: [] };
+  try { _saveSharedSession(); } catch (_) {}
+  syncSharedCartItems();
+  const comandaId = payload && payload.comandaId;
+  if (comandaId && window.NEXOPremium && typeof window.NEXOPremium.renderComandaBar === 'function') {
+    try {
+      window.NEXOPremium.renderComandaBar({
+        id: comandaId,
+        table_label: (payload && payload.tableLabel) || null,
+        status: 'submitted',
+      });
+    } catch (_) {}
+  }
+}
+
+// Chamado após disparar uma ronda a partir de um carrinho PARTILHADO: limpa
+// o carrinho de toda a mesa neste dispositivo e avisa os restantes.
+function notifySharedOrderFired(comandaId, tableLabel) {
+  const payload = { by: _myPresenceKey, comandaId: comandaId || null, tableLabel: tableLabel || null };
+  _applySharedOrderFired(payload); // o emissor não recebe o próprio broadcast
+  if (_sharedCartChannel) {
+    try { _sharedCartChannel.send({ type: 'broadcast', event: 'order_fired', payload }); } catch (_) {}
+  }
 }
 
 /* ─── Cart mutation helpers ─── */

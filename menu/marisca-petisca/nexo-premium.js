@@ -581,7 +581,19 @@
       // Esvazia o carrinho pendente após disparar — os itens passam a viver na
       // secção "Já enviado". Atrasado para não apanhar a vista "Mostrar ao
       // Staff" (que renderiza a partir do carrinho a ~270ms).
-      setTimeout(() => { try { if (typeof clearCart === 'function') clearCart(); } catch (_) {} }, 1200);
+      const isShared = (typeof sharedCart !== 'undefined' && sharedCart);
+      const firedComandaId = _activeComandaId; // definido por pushOrder→activateTab
+      setTimeout(() => {
+        try {
+          if (isShared && typeof notifySharedOrderFired === 'function') {
+            // Carrinho partilhado: limpa a MESA inteira (todos os membros) e
+            // faz todos acompanharem a comanda — não só quem confirmou.
+            notifySharedOrderFired(firedComandaId, tableLabel);
+          } else if (typeof clearCart === 'function') {
+            clearCart();
+          }
+        } catch (_) {}
+      }, 1200);
       return { ok: true, result: res };
     } catch (e) { console.warn('[NEXO Premium] onOrderConfirmed', e); return { ok: false, reason: 'error' }; }
   }
