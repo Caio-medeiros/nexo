@@ -578,6 +578,80 @@ async function sendToKitchenFromPanel() {
   closeTableDetail();
 }
 
+// ── Novo pedido rápido ────────────────────────────────────────
+// O empregado regista um pedido para uma mesa (ex.: o cliente mostrou o
+// pedido no telemóvel) e envia-o directamente para a cozinha — sem ter de
+// abrir a mesa no plano de sala primeiro.
+function openNewOrder(prefillTable) {
+  const ov = document.getElementById('new-order-overlay');
+  const panel = document.getElementById('new-order-panel');
+  if (!ov || !panel) return;
+  const tableEl = document.getElementById('no-table');
+  tableEl.value = (prefillTable != null ? prefillTable : (state.selectedTable || ''));
+  document.getElementById('no-items').innerHTML = '';
+  addNewOrderRow();
+  ov.classList.add('show');
+  panel.classList.add('show');
+  (tableEl.value ? document.querySelector('#no-items .no-name') : tableEl).focus();
+}
+
+function closeNewOrder(e) {
+  if (e && e.currentTarget && e.target !== e.currentTarget) return; // só fecha no backdrop
+  document.getElementById('new-order-overlay')?.classList.remove('show');
+  document.getElementById('new-order-panel')?.classList.remove('show');
+}
+
+function addNewOrderRow() {
+  const list = document.getElementById('no-items');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'no-row';
+  row.innerHTML =
+    '<input class="no-input no-name" placeholder="Item (ex.: Polvo à Lagareiro)" autocomplete="off">' +
+    '<input class="no-input no-price" inputmode="decimal" placeholder="€">' +
+    '<input class="no-input no-qty" inputmode="numeric" value="1" aria-label="Quantidade">' +
+    '<button type="button" class="no-row-del" onclick="this.closest(\'.no-row\').remove()" aria-label="Remover linha">✕</button>';
+  list.appendChild(row);
+  row.querySelector('.no-name').focus();
+}
+
+async function submitNewOrder() {
+  const tableNum = parseInt((document.getElementById('no-table').value || '').trim(), 10);
+  if (!tableNum) { salaToast('Indique o número da mesa'); return; }
+  const rows = [...document.querySelectorAll('#no-items .no-row')].map(r => ({
+    name: r.querySelector('.no-name').value.trim(),
+    price: parseFloat((r.querySelector('.no-price').value || '0').replace(',', '.')) || 0,
+    qty: Math.max(1, parseInt(r.querySelector('.no-qty').value, 10) || 1),
+  })).filter(r => r.name);
+  if (!rows.length) { salaToast('Adicione pelo menos um item'); return; }
+
+  const btn = document.getElementById('no-submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'A enviar…'; }
+  try {
+    const comanda = await ensureComanda(tableNum);
+    if (!comanda) throw new Error('comanda');
+    const { data: last } = await db.from('comanda_rounds').select('round_number')
+      .eq('comanda_id', comanda.id).order('round_number', { ascending: false }).limit(1).maybeSingle();
+    const rn = ((last && last.round_number) || 0) + 1;
+    const { data: round, error: rErr } = await db.from('comanda_rounds').insert({
+      comanda_id: comanda.id, espaco_slug: window.ESPACO_SLUG, round_number: rn,
+      fired_by: 'staff', item_count: rows.length }).select('id').single();
+    if (rErr) throw rErr;
+    const { error: iErr } = await db.from('comanda_items').insert(rows.map(r => ({
+      comanda_id: comanda.id, espaco_slug: window.ESPACO_SLUG, item_name: r.name,
+      item_price: r.price, quantity: r.qty, added_by: 'staff', status: 'sent',
+      course: 'principal', round_id: round.id, round_number: rn })));
+    if (iErr) throw iErr;
+    await db.from('comandas').update({ status: 'submitted', submitted_at: new Date().toISOString() }).eq('id', comanda.id);
+    salaToast(`Pedido enviado para a cozinha — Mesa ${tableNum} ✓`);
+    closeNewOrder();
+  } catch (err) {
+    console.error('[Sala] novo pedido', err);
+    salaToast('Erro ao enviar. Tente novamente.');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Enviar para a cozinha'; }
+}
+
 // ── Inline payment (Caixa, merged into Sala) ──────────────────
 function processPaymentFromPanel() {
   const c = state.tables[state.selectedTable]?.comanda;

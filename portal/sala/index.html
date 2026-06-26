@@ -34,6 +34,10 @@
       <span class="sala-venue" id="sala-venue-name">—</span>
     </div>
     <div class="sala-header-right">
+      <button class="sala-neworder-btn" onclick="openNewOrder()" title="Registar um pedido para uma mesa">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Novo pedido</span>
+      </button>
       <div class="live-indicator" id="live-indicator">
         <span class="live-dot"></span>
         <span class="live-text">Em directo</span>
@@ -83,6 +87,29 @@
     <div class="table-grid" id="table-grid"></div>
   </main>
   </div><!-- /sala-stage -->
+
+  <!-- NOVO PEDIDO (quick-add → cozinha) -->
+  <div class="new-order-overlay" id="new-order-overlay" onclick="closeNewOrder(event)"></div>
+  <div class="new-order-panel" id="new-order-panel" role="dialog" aria-modal="true" aria-labelledby="no-title">
+    <div class="no-head">
+      <h2 id="no-title">Novo pedido</h2>
+      <button class="no-close" onclick="closeNewOrder()" aria-label="Fechar">✕</button>
+    </div>
+    <div class="no-body">
+      <label class="no-label" for="no-table">Mesa</label>
+      <input class="no-input no-table-input" id="no-table" inputmode="numeric" placeholder="Nº da mesa (ex.: 4)" autocomplete="off">
+
+      <div class="no-items-head">
+        <span class="no-label">Itens</span>
+        <span class="no-col-hint">preço · qtd</span>
+      </div>
+      <div id="no-items"></div>
+      <button class="no-add-row" onclick="addNewOrderRow()">+ Adicionar item</button>
+    </div>
+    <div class="no-foot">
+      <button class="no-submit-btn" id="no-submit" onclick="submitNewOrder()">Enviar para a cozinha</button>
+    </div>
+  </div>
 
   <!-- TABLE DETAIL -->
   <div class="table-detail-overlay" id="table-detail-overlay" onclick="closeTableDetail(event)"></div>

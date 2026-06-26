@@ -242,3 +242,64 @@
 .void-reason-btn:hover { border-color: rgba(239,68,68,0.4); color: var(--danger); background: rgba(239,68,68,0.06); }
 .void-cancel-btn { width: 100%; margin-top: 14px; padding: 12px; min-height: 46px; border-radius: 10px; border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
 .void-cancel-btn:hover { color: var(--text-secondary); }
+
+/* ── Novo pedido rápido (staff → cozinha) ───────────────────────────── */
+.sala-neworder-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 14px; border-radius: 8px;
+  background: #16a34a; border: 1px solid #16a34a; color: #fff;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 150ms ease, transform 100ms ease;
+}
+.sala-neworder-btn:hover { background: #15903f; }
+.sala-neworder-btn:active { transform: scale(0.97); }
+.sala-neworder-btn svg { flex: none; }
+
+.new-order-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 300; opacity: 0; pointer-events: none; transition: opacity 220ms ease;
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.new-order-overlay.show { opacity: 1; pointer-events: auto; }
+
+.new-order-panel {
+  position: fixed; left: 50%; top: 50%; z-index: 301;
+  width: min(440px, calc(100vw - 32px)); max-height: 88dvh;
+  transform: translate(-50%, -46%) scale(0.97); opacity: 0; pointer-events: none;
+  background: var(--bg-surface); border: 1px solid var(--border-md);
+  border-radius: 16px; display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.45);
+  transition: opacity 220ms ease, transform 260ms cubic-bezier(0.16,1,0.3,1);
+}
+.new-order-panel.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+
+.no-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+.no-head h2 { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+.no-close { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 4px 8px; line-height: 1; }
+.no-close:hover { color: var(--text-primary); }
+
+.no-body { padding: 16px 18px; overflow-y: auto; }
+.no-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+.no-input {
+  width: 100%; height: 40px; padding: 0 12px; border-radius: 9px;
+  background: var(--bg-base); border: 1px solid var(--border-md);
+  color: var(--text-primary); font-size: 14px; outline: none;
+}
+.no-input:focus { border-color: #16a34a; }
+.no-table-input { margin-bottom: 16px; }
+
+.no-items-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.no-col-hint { font-size: 11px; color: var(--text-muted); }
+.no-row { display: grid; grid-template-columns: 1fr 64px 48px 30px; gap: 6px; margin-bottom: 8px; }
+.no-row .no-input { height: 38px; padding: 0 8px; }
+.no-row .no-price, .no-row .no-qty { text-align: center; padding: 0 4px; }
+.no-row-del { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; }
+.no-row-del:hover { color: var(--danger, #ef4444); }
+
+.no-add-row { width: 100%; margin-top: 4px; padding: 9px; border-radius: 9px; background: transparent; border: 1px dashed var(--border-md); color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; }
+.no-add-row:hover { border-color: #16a34a; color: #16a34a; }
+
+.no-foot { padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
+.no-submit-btn { width: 100%; height: 48px; border-radius: 11px; background: #16a34a; border: none; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 150ms ease; }
+.no-submit-btn:hover { background: #15903f; }
+.no-submit-btn:disabled { opacity: 0.6; cursor: default; }
