@@ -213,8 +213,29 @@ function subscribeToRealtime() {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'staff_calls', filter: `espaco_slug=eq.${slug}` }, p => handleStaffCall(p.new))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders_log', filter: `espaco_slug=eq.${slug}` }, p => handleNewOrder(p.new))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_notifications', filter: `espaco_slug=eq.${slug}` }, p => addToActivityFeed(p.new))
-    .subscribe(s => { if (typeof setLiveState === 'function') setLiveState(s === 'SUBSCRIBED' ? 'connected' : 'reconnecting'); });
+    .subscribe(s => {
+      if (typeof setLiveState === 'function') setLiveState(s === 'SUBSCRIBED' ? 'connected' : 'reconnecting');
+      // Ao (re)ligar, ressincroniza já — apanha mesas/pedidos perdidos enquanto
+      // o realtime esteve em baixo.
+      if (s === 'SUBSCRIBED') reloadSalaLive();
+    });
   if (typeof trackChannel === 'function') trackChannel(ch);
+
+  // Rede de segurança: recarrega ao voltar online / ficar visível / poll
+  // periódico, mesmo que o realtime morra em silêncio.
+  if (window.NexoLiveSync) NexoLiveSync.register(() => reloadSalaLive(), { pollMs: 18000 });
+}
+
+// Ressincronização completa e idempotente do estado da sala.
+let _salaReloadBusy = false;
+async function reloadSalaLive() {
+  if (_salaReloadBusy) return;
+  _salaReloadBusy = true;
+  try {
+    await loadActiveComandas();
+    await loadTodayStats();
+  } catch (e) { console.warn('[Sala] reload', e); }
+  _salaReloadBusy = false;
 }
 
 function handleNewComanda(comanda) {
@@ -891,6 +912,7 @@ async function loadActiveComandas() {
     .eq('espaco_slug', window.ESPACO_SLUG).in('status', ['open', 'submitted', 'preparing', 'ready']);
   const statusMap = { open: 'active', submitted: 'order_new', preparing: 'active', ready: 'ready' };
   const now = Date.now();
+  const activeNums = new Set();
   (data || []).forEach(c => {
     const num = extractTableNumber(c.table_label);
     if (!num || !state.tables[num]) return;
@@ -899,9 +921,22 @@ async function loadActiveComandas() {
       autoCloseComanda(c.id, c.table_label);
       return;
     }
+    activeNums.add(num);
     const itemCount = (c.comanda_items || []).filter(i => i.status !== 'cancelled').length;
     updateTableStatus(num, statusMap[c.status] || 'active', { comanda: {
       id: c.id, total: c.total, itemCount, guestCount: c.guest_count, code: c.session_code, mode: c.mode } });
+  });
+  // Idempotência (importante p/ poll/reconexão): mesas que JÁ NÃO têm comanda
+  // activa (pagas/fechadas enquanto offline) voltam a "livre". Preserva-se o
+  // estado "a chamar" (chamada sem comanda é válida).
+  const COMANDA_STATES = ['active', 'order_new', 'ready', 'preparing'];
+  Object.keys(state.tables).forEach((numStr) => {
+    const num = +numStr;
+    const st = state.tables[num];
+    if (!st || activeNums.has(num)) return;
+    if (COMANDA_STATES.includes(st.status) && !(st.calls && st.calls.length)) {
+      updateTableStatus(num, 'empty', { comanda: null });
+    }
   });
 }
 

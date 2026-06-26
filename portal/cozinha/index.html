@@ -540,8 +540,17 @@
       () => { playVoidSound(); loadVoids(); });
     ch.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'comanda_voids', filter: `espaco_slug=eq.${slug}` },
       () => loadVoids());
-    ch.subscribe((status) => setLiveState(status === 'SUBSCRIBED' ? 'connected' : 'reconnecting'));
+    ch.subscribe((status) => {
+      setLiveState(status === 'SUBSCRIBED' ? 'connected' : 'reconnecting');
+      // Ao (re)ligar, recarrega já para apanhar rondas/itens perdidos enquanto
+      // o realtime esteve em baixo — nenhum pedido fica por mostrar.
+      if (status === 'SUBSCRIBED') scheduleReload();
+    });
     trackChannel(ch);
+
+    // Rede de segurança: recarrega ao voltar online / ficar visível / poll
+    // periódico — mesmo que o realtime morra em silêncio, a cozinha actualiza.
+    if (window.NexoLiveSync) NexoLiveSync.register(() => loadAll(), { pollMs: 15000 });
 
     // ── Histórico de hoje (rondas) + repor ("anular feito" por engano) ──
     const STATUS_PT = { fired: 'Na cozinha', acknowledged: 'Na cozinha', done: 'Pronto' };

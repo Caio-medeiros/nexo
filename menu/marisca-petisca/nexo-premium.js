@@ -323,7 +323,31 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items', filter: `comanda_id=eq.${comandaId}` }, () => refreshTab())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_rounds', filter: `comanda_id=eq.${comandaId}` }, () => refreshTab())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `id=eq.${comandaId}` }, () => refreshTab())
-      .subscribe();
+      .subscribe((status) => {
+        // Ao (re)ligar, ressincroniza já — o "Já enviado" do cliente nunca fica
+        // desatualizado se o realtime cair e voltar.
+        if (status === 'SUBSCRIBED') refreshTab();
+      });
+    _ensureTabResilience();
+  }
+
+  // Rede de segurança p/ o separador do cliente (o menu não tem portal.js):
+  // recarrega ao voltar online, ao ficar visível e por poll periódico, para
+  // nenhum evento de realtime perdido deixar a comanda do cliente desatualizada.
+  let _tabResilienceWired = false;
+  let _tabPollTimer = null;
+  function _ensureTabResilience() {
+    if (_tabPollTimer == null) {
+      _tabPollTimer = setInterval(() => {
+        if (_activeComandaId && document.visibilityState === 'visible' && navigator.onLine) refreshTab();
+      }, 20000);
+    }
+    if (_tabResilienceWired) return;
+    _tabResilienceWired = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && _activeComandaId) refreshTab();
+    });
+    window.addEventListener('online', () => { if (_activeComandaId) refreshTab(); });
   }
 
   async function activateTab(comandaId) {

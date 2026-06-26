@@ -335,6 +335,48 @@ const ConnectionMonitor = {
 };
 ConnectionMonitor.init();
 
+// ─── LIVE SYNC GUARD ──────────────────────
+// Realtime pode falhar em silêncio (tablets 24/7, redes instáveis). Para que
+// a Cozinha/Salão NUNCA mostrem dados desatualizados, cada vista regista a sua
+// função de recarga e o NexoLiveSync força um recarregamento:
+//   • quando a ligação volta (online)
+//   • quando o separador volta a ficar visível
+//   • periodicamente (poll de segurança) — apanha eventos perdidos pelo realtime
+// Tudo idempotente: recarregar a mais nunca causa problemas.
+const NexoLiveSync = {
+  _reloaders: [],
+  _pollTimer: null,
+  _wired: false,
+  register(fn, opts) {
+    if (typeof fn !== 'function') return;
+    const pollMs = (opts && opts.pollMs) || 18000;
+    this._reloaders.push(fn);
+    if (!this._wired) {
+      this._wired = true;
+      window.addEventListener('online', () => this.runAll('online'));
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') this.runAll('visible');
+      });
+    }
+    if (!this._pollTimer) {
+      this._pollTimer = setInterval(() => {
+        if (document.visibilityState === 'visible' && navigator.onLine) this.runAll('poll');
+      }, pollMs);
+    }
+  },
+  runAll(reason) {
+    this._reloaders.forEach((fn) => { try { fn(reason); } catch (_) {} });
+  },
+};
+window.NexoLiveSync = NexoLiveSync;
+
+// Quando a ligação recupera, além de re-subscrever, recarrega já os dados.
+const _origResync = ConnectionMonitor.resync.bind(ConnectionMonitor);
+ConnectionMonitor.resync = async function () {
+  await _origResync();
+  try { NexoLiveSync.runAll('reconnect'); } catch (_) {}
+};
+
 // ─── SUBMIT GUARD (prevent double-submit) ──
 const SubmitGuard = {
   pending: new Set(),
