@@ -1,6 +1,5 @@
-# Node deps (test harness)
+# Node deps (test harness) — lockfile IS committed (CI uses `npm ci`)
 node_modules/
-package-lock.json
 
 # Supabase CLI local temp
 supabase/.temp/
