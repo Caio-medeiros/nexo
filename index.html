@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NEXO. — O menu que vende por si</title>
-<meta name="description" content="Menu digital NFC + QR para restaurantes. Mais valor por mesa. Menos fricção no serviço.">
+<meta name="description" content="Menu digital NFC + QR para restaurantes. Sem app, sem instalação — abre no browser. Mais valor por mesa, menos fricção no serviço e reviews automáticas.">
 <link rel="canonical" href="https://nexosolutions.pt/">
 <meta name="theme-color" content="#181818">
 
@@ -15,21 +15,24 @@
 <meta property="og:locale" content="pt_PT">
 <meta property="og:title" content="NEXO. — O menu que vende por si">
 <meta property="og:description" content="Menu digital NFC + QR para restaurantes. Sem app, sem instalação. Mais valor por mesa e menos fricção no serviço.">
-<meta property="og:image" content="https://nexosolutions.pt/img/hero.png">
+<meta property="og:image" content="https://nexosolutions.pt/img/og-card.jpg">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="NEXO. — Menu digital NFC + QR para restaurantes">
 
 <!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="NEXO. — O menu que vende por si">
 <meta name="twitter:description" content="Menu digital NFC + QR para restaurantes. Sem app, sem instalação. Mais valor por mesa.">
-<meta name="twitter:image" content="https://nexosolutions.pt/img/hero.png">
+<meta name="twitter:image" content="https://nexosolutions.pt/img/og-card.jpg">
+<meta name="twitter:image:alt" content="NEXO. — Menu digital NFC + QR para restaurantes">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"></noscript>
-<script src="/nexo-analytics.js"></script>
+<script src="/nexo-analytics.js" defer></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -138,7 +141,7 @@
         <div class="phone" id="phone">
           <div class="phone-notch"></div>
           <div class="phone-screen">
-            <img src="./img/demo-preview.png" alt="NEXO — Demo do menu digital" class="phone-img" width="1290" height="2796" fetchpriority="high" draggable="false">
+            <img src="./img/demo-preview.webp" alt="NEXO — Demo do menu digital" class="phone-img" width="1290" height="2796" fetchpriority="high" draggable="false">
           </div>
         </div>
 
@@ -937,75 +940,71 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
 <script src="script.js" defer></script>
-<script src="/nexo-cookies.js"></script>
+<script src="/nexo-cookies.js" defer></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
+  "@graph": [
     {
-      "@type": "Question",
-      "name": "Preciso de instalar alguma app?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Não. O menu NEXO abre directamente no browser do telemóvel — por NFC ou QR Code. O cliente não precisa de descarregar nada, criar conta ou fazer login. Funciona em qualquer smartphone."
+      "@type": "Organization",
+      "@id": "https://nexosolutions.pt/#organization",
+      "name": "NEXO",
+      "url": "https://nexosolutions.pt/",
+      "logo": "https://nexosolutions.pt/img/nexo.png",
+      "email": "hello@nexosolutions.pt",
+      "slogan": "Mais valor por mesa. Menos fricção no serviço.",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Portugal"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Lisboa",
+        "addressCountry": "PT"
       }
     },
     {
-      "@type": "Question",
-      "name": "O que é NFC e como funciona na prática?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "NFC é uma tecnologia de comunicação sem contacto. O cliente aproxima o telemóvel do display NEXO a menos de 4 cm e o menu abre automaticamente no browser — em menos de 3 segundos. Sem PIN, password ou configuração."
-      }
+      "@type": "WebSite",
+      "@id": "https://nexosolutions.pt/#website",
+      "url": "https://nexosolutions.pt/",
+      "name": "NEXO.",
+      "inLanguage": "pt-PT",
+      "publisher": { "@id": "https://nexosolutions.pt/#organization" }
     },
     {
-      "@type": "Question",
-      "name": "E se o telemóvel do cliente não tiver NFC?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Cada display NEXO inclui também um QR Code impresso. O cliente fotografa com a câmara e o menu abre igualmente. Os dois métodos funcionam em simultâneo — NFC para rapidez, QR como alternativa universal."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Quanto tempo demora a implementação?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Entre 3 a 7 dias úteis após confirmação e entrega do conteúdo da carta. O processo inclui criação do menu digital, personalização visual e programação dos displays NFC. No dia de entrega, o menu já está activo."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Posso alterar o menu sozinho?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Sim. Preços, fotos e esgotados altera você mesmo pelo portal, em segundos. Para mudanças maiores envia por email ou WhatsApp e tratamos nós, sem custo adicional. Actualizações ilimitadas."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "O preço de lançamento mantém-se para sempre?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Sim. Quem assinar durante o período de lançamento fica com o preço actual garantido — mesmo que os planos subam no futuro."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "E se houver algum problema técnico?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "O hosting e a manutenção estão incluídos em todos os planos. Em caso de problema, respondemos em menos de 24 horas por email. O plano Enterprise inclui SLA e suporte dedicado com resposta prioritária."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Funciona para qualquer tipo de restauração?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Sim. O NEXO adapta-se a restaurantes, beach clubs, hotéis, cafés e espaços de eventos. A carta, o design e as funcionalidades activas são personalizados para cada espaço e tipo de serviço."
-      }
+      "@type": "Product",
+      "name": "NEXO — Menu Digital NFC + QR",
+      "url": "https://nexosolutions.pt/#planos",
+      "brand": { "@id": "https://nexosolutions.pt/#organization" },
+      "description": "Menu digital NFC + QR para restaurantes. Abre no browser sem app, faz upsell automático, pedidos e chamada de empregado em tempo real, reviews automáticas e analytics.",
+      "category": "Restaurant menu software",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Eventos",
+          "price": "149",
+          "priceCurrency": "EUR",
+          "url": "https://nexosolutions.pt/#planos",
+          "availability": "https://schema.org/InStock",
+          "description": "Menu digital para eventos, pagamento único. Pequenos eventos desde €99."
+        },
+        {
+          "@type": "Offer",
+          "name": "Growth",
+          "price": "89",
+          "priceCurrency": "EUR",
+          "url": "https://nexosolutions.pt/#planos",
+          "availability": "https://schema.org/InStock",
+          "description": "Plano mensal completo: menu multilingue NFC + QR, pedidos e chamar empregado em tempo real, reviews automáticas, upsell, analytics e actualizações ilimitadas.",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "89",
+            "priceCurrency": "EUR",
+            "billingDuration": 1,
+            "unitCode": "MON"
+          }
+        }
+      ]
     }
   ]
 }

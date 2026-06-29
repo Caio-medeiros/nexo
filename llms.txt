@@ -1,14 +1,28 @@
 # NEXO
 
-NEXO provides NFC digital menu software for restaurants. The primary public page is the homepage below.
+> NEXO is NFC + QR digital menu software for restaurants. The menu opens in the browser without an app, helping restaurants increase average order value, reduce ordering mistakes, speed up service, and collect more reviews. Based in Lisbon, Portugal.
 
-Primary URL: https://nexosolutions.pt/
-Privacy Policy: https://nexosolutions.pt/privacidade.html
-Terms of Service: https://nexosolutions.pt/termos.html
+NEXO provides a frictionless digital menu: a customer taps an NFC display (or scans a QR code) and the menu opens instantly in any smartphone browser — no app, no install, no login. It adds automatic upsell, real-time orders and waiter-call, automatic Google reviews, four languages, and real-time analytics via Google Analytics 4.
 
-Preferred summary:
-NEXO helps restaurants increase average order value, reduce ordering mistakes, and speed up service with a frictionless digital menu that opens without an app.
+## Main pages
 
-Notes:
-- The `/apps/` paths are demo or sample experiences and are not intended as primary marketing pages.
-- The homepage is the canonical source for the product positioning and contact CTA.
+- [Homepage](https://nexosolutions.pt/): Product positioning, features, pricing, and contact form (canonical source).
+- [Live demo menu](https://nexosolutions.pt/menu/marisca-petisca/index.html): A real NEXO digital menu in production.
+- [Client area / portal](https://nexosolutions.pt/portal/): Login for restaurant operators.
+
+## Pricing
+
+- Eventos: €149 one-time (small events from €99) — digital menu for events, QR included.
+- Growth: €89/month — full plan, all features included (NFC + QR multilingual menu, real-time orders & waiter-call, automatic reviews, upsell, analytics, unlimited updates).
+- Enterprise: custom pricing — multi-venue / franchising, SLA, institutional website, custom integrations.
+- Hardware: NFC display stand €5/unit, one-time.
+
+## Legal
+
+- [Privacy Policy](https://nexosolutions.pt/privacidade/)
+- [Terms of Service](https://nexosolutions.pt/termos/)
+
+## Contact
+
+- Email: hello@nexosolutions.pt
+- Location: Lisbon, Portugal
