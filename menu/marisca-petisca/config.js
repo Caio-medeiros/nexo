@@ -22,7 +22,10 @@ const CONFIG = {
   ga4MeasurementId: "",
 
   /* Tópico ntfy.sh — staff instala app ntfy.sh (ntfy.sh público, NÃO "outro servidor")
-     e subscreve este tópico. Usar nome difícil de adivinhar. */
+     e subscreve este tópico. Usar nome difícil de adivinhar.
+     Recebe DOIS tipos de alerta:
+       • "Chamada de Mesa"        — cliente pediu atendimento (Chamar Empregado)
+       • "Mesa precisa de ajuda"  — pedido falhou e o cliente aguarda (FIX 4C) */
   callStaffTopic: 'marisca-petisca-staff-2026',
 
   /* Supabase — necessário para Carrinho de Mesa (Shared Cart) */

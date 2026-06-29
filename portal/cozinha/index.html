@@ -158,6 +158,13 @@
     .hist-chip.pronto { background: rgba(34,197,94,0.15); color: var(--success); }
     .hist-repor { background: transparent; border: 1px solid var(--border-md); color: var(--text-secondary); font-size: 11px; font-weight: 700; padding: 7px 10px; min-height: 38px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
     .hist-repor:hover { border-color: var(--warning); color: var(--warning); background: rgba(245,158,11,0.08); }
+    /* Arquivo (só leitura) */
+    .hist-row--archived { opacity: 0.85; }
+    .hist-chip.arquivado { background: rgba(120,120,120,0.18); color: var(--text-muted); }
+    .hist-row-date { font-family: 'Azeret Mono', monospace; font-size: 10px; color: var(--text-muted); }
+    /* Banner de pedidos arquivados automaticamente */
+    .kitchen-arch-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); z-index: 60; background: var(--bg-elevated, #1c2230); color: var(--text-primary, #fff); border: 1px solid var(--border-md, rgba(255,255,255,0.14)); border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 600; box-shadow: 0 12px 32px rgba(0,0,0,0.35); opacity: 0; visibility: hidden; transition: opacity 260ms ease, transform 260ms ease, visibility 260ms; max-width: 88vw; }
+    .kitchen-arch-toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body class="kitchen-takeover">
@@ -177,6 +184,7 @@
         <a class="k-back" href="/portal/dashboard/">← Voltar ao portal</a>
         <span class="k-live" id="live-indicator"><span class="live-dot"></span><span class="live-text">Em directo</span></span>
         <button class="k-hist-btn" id="hist-btn" type="button">📋 Hoje <span class="k-hist-count" id="hist-count">0</span></button>
+        <button class="k-hist-btn" id="arch-btn" type="button" title="Pedidos arquivados (últimos 7 dias)">🗄 Arquivo</button>
         <button class="k-fullscreen" id="fullscreen-btn">⛶ Ecrã completo</button>
       </div>
     </header>
@@ -201,6 +209,18 @@
     </div>
     <div class="hist-list" id="hist-list"></div>
   </aside>
+
+  <!-- Side tab: ARQUIVO — pedidos arquivados (presos > 18h), só leitura -->
+  <aside class="hist-panel" id="arch-panel" aria-hidden="true">
+    <div class="hist-head">
+      <span class="hist-title">Arquivo · últimos 7 dias</span>
+      <button class="hist-close" id="arch-close" type="button" aria-label="Fechar">✕</button>
+    </div>
+    <div class="hist-list" id="arch-list"></div>
+  </aside>
+
+  <!-- Banner: aviso de pedidos arquivados automaticamente -->
+  <div class="kitchen-arch-toast" id="arch-toast" role="status" aria-live="polite"></div>
 
   <script src="/portal/_assets/supabase.min.js"></script>
   <script src="/portal/_assets/icons.js"></script>
@@ -285,11 +305,12 @@
     async function loadAll() {
       const { data: rounds } = await db.from('comanda_rounds')
         .select('id, comanda_id, round_number, fired_at, status, ' +
-                'comandas!inner(table_label, status, mode, session_code), ' +
+                'comandas!inner(table_label, status, mode, session_code, archived_at), ' +
                 'comanda_items(id, item_name, quantity, status, notes, course, added_by)')
         .eq('espaco_slug', slug)
         .in('status', ROUND_VISIBLE)
         .in('comandas.status', ACTIVE_COMANDA)
+        .is('comandas.archived_at', null)   // comandas arquivadas saem do ecrã
         .order('fired_at', { ascending: true });
 
       Object.keys(state).forEach(k => delete state[k]);
@@ -634,12 +655,82 @@
       await loadHistory();
     }
 
-    function openHist() { histOverlay.classList.add('visible'); histPanel.classList.add('visible'); histPanel.setAttribute('aria-hidden', 'false'); loadHistory(); }
-    function closeHist() { histOverlay.classList.remove('visible'); histPanel.classList.remove('visible'); histPanel.setAttribute('aria-hidden', 'true'); }
+    function openHist() { closeArch(); histOverlay.classList.add('visible'); histPanel.classList.add('visible'); histPanel.setAttribute('aria-hidden', 'false'); loadHistory(); }
+    function closeHist() { histPanel.classList.remove('visible'); histPanel.setAttribute('aria-hidden', 'true'); syncOverlay(); }
     document.getElementById('hist-btn').addEventListener('click', openHist);
     document.getElementById('hist-close').addEventListener('click', closeHist);
-    histOverlay.addEventListener('click', closeHist);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHist(); });
+    histOverlay.addEventListener('click', () => { closeHist(); closeArch(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeHist(); closeArch(); } });
+
+    // ── ARQUIVO — pedidos arquivados (presos > 18h), só leitura ──
+    const archPanel = document.getElementById('arch-panel');
+    const archList = document.getElementById('arch-list');
+    function syncOverlay() {
+      const any = histPanel.classList.contains('visible') || archPanel.classList.contains('visible');
+      histOverlay.classList.toggle('visible', any);
+    }
+    async function loadArchive() {
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+      const { data } = await db.from('comandas')
+        .select('id, table_label, status, created_at, archived_at, total, ' +
+                'comanda_items(id, item_name, quantity, status)')
+        .eq('espaco_slug', slug)
+        .not('archived_at', 'is', null)
+        .gte('archived_at', weekAgo)
+        .order('archived_at', { ascending: false })
+        .limit(100);
+      renderArchive(data || []);
+    }
+    function renderArchive(rows) {
+      if (!rows.length) { archList.innerHTML = '<div class="hist-empty">Sem pedidos arquivados nos últimos 7 dias.</div>'; return; }
+      archList.innerHTML = rows.map(c => {
+        const items = (c.comanda_items || []).filter(i => i.status !== 'cancelled');
+        const n = items.reduce((s, i) => s + (i.quantity || 1), 0);
+        const when = new Date(c.archived_at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const names = items.slice(0, 3).map(i => `${i.quantity || 1}× ${escapeHtml(i.item_name)}`).join(', ');
+        const more = items.length > 3 ? ` +${items.length - 3}` : '';
+        return `<div class="hist-row hist-row--archived">
+          <div class="hist-row-main">
+            <div class="hist-row-top"><span class="hist-row-table">${escapeHtml(c.table_label || 'Mesa')}</span><span class="hist-row-date">${when}</span></div>
+            <div class="hist-row-sub">${n} ${n === 1 ? 'item' : 'itens'}${names ? ' · ' + names + more : ''}</div>
+          </div>
+          <span class="hist-chip arquivado">Arquivado</span>
+        </div>`;
+      }).join('');
+    }
+    function openArch() { closeHist(); archPanel.classList.add('visible'); archPanel.setAttribute('aria-hidden', 'false'); syncOverlay(); loadArchive(); }
+    function closeArch() { archPanel.classList.remove('visible'); archPanel.setAttribute('aria-hidden', 'true'); syncOverlay(); }
+    document.getElementById('arch-btn').addEventListener('click', openArch);
+    document.getElementById('arch-close').addEventListener('click', closeArch);
+
+    // ── Aviso ao abrir: "X pedidos de ontem foram arquivados" ──
+    // Mostra uma vez por dia (comandas arquivadas hoje pelo cron das 05:00 UTC,
+    // criadas antes de hoje = pedidos presos de ontem).
+    async function checkArchivedNotice() {
+      try {
+        const todayKey = 'nexo_archNotice_' + slug + '_' + new Date().toISOString().slice(0, 10);
+        if (localStorage.getItem(todayKey)) return;
+        const { count } = await db.from('comandas')
+          .select('id', { count: 'exact', head: true })
+          .eq('espaco_slug', slug)
+          .not('archived_at', 'is', null)
+          .gte('archived_at', startOfTodayISO())
+          .lt('created_at', startOfTodayISO());
+        localStorage.setItem(todayKey, '1');
+        if (count && count > 0) {
+          showArchToast(`${count} ${count === 1 ? 'pedido de ontem foi arquivado' : 'pedidos de ontem foram arquivados'} automaticamente.`);
+        }
+      } catch (_) {}
+    }
+    let _archToastTimer = null;
+    function showArchToast(msg) {
+      const el = document.getElementById('arch-toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(_archToastTimer);
+      _archToastTimer = setTimeout(() => el.classList.remove('show'), 7000);
+    }
 
     // ── fullscreen ─────────────────────────────────
     const fsBtn = document.getElementById('fullscreen-btn');
@@ -663,6 +754,7 @@
     await loadAll();
     await loadVoids();
     loadHistory(); // contador do botão "Hoje"
+    checkArchivedNotice(); // aviso "X pedidos de ontem foram arquivados"
     setInterval(tickAll, 1000);    // UM loop p/ todos os contadores
     setInterval(sweepReady, 5000); // retira rondas prontas passados 30s
   })();

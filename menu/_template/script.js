@@ -2912,8 +2912,15 @@ async function sendToKitchen() {
   const routing = !!(window.NEXOPremium && window.NEXOPremium.comandaRouting && window.NEXOPremium.onOrderConfirmed);
   let res = null;
   if (routing) {
-    try { res = await window.NEXOPremium.onOrderConfirmed(); }
-    catch (_) { res = { ok: false, reason: 'error' }; }
+    setKitchenBtnLoading('A enviar…');
+    // 1ª tentativa (timeout 15s). Falha → 1 retry automático após 3s.
+    res = await submitOrderWithTimeout(false);
+    if (res && !res.ok && res.reason !== 'duplicate' && res.reason !== 'locked') {
+      setKitchenBtnLoading('A tentar novamente…');
+      await new Promise(r => setTimeout(r, 3000));
+      res = await submitOrderWithTimeout(true); // force: ignora o lock anti-duplo
+    }
+    resetKitchenBtn();
     // Duplicado/lock: intencional — não reenviar nem cair para o recurso.
     if (res && (res.reason === 'duplicate' || res.reason === 'locked')) { closeConfirmScreen(); return; }
   }
@@ -2924,6 +2931,41 @@ async function sendToKitchen() {
     whatsappFallback(tableValue);  // recurso: garante que o pedido chega na mesma
     closeConfirmScreen();
   }
+}
+
+// Envia a comanda com timeout de 15s. Se o onOrderConfirmed pendurar (rede
+// lenta), devolve {ok:false,reason:'timeout'} para o retry/recurso entrarem.
+// O retry passa force=true para contornar o lock anti-duplo do premium — a
+// deduplicação por assinatura (mesmo pedido/mesa) evita rondas duplicadas.
+function submitOrderWithTimeout(force) {
+  const ORDER_TIMEOUT_MS = 15000;
+  return new Promise(resolve => {
+    let settled = false;
+    const done = (r) => { if (!settled) { settled = true; resolve(r); } };
+    const timer = setTimeout(() => done({ ok: false, reason: 'timeout' }), ORDER_TIMEOUT_MS);
+    Promise.resolve()
+      .then(() => window.NEXOPremium.onOrderConfirmed(force ? { force: true } : undefined))
+      .then(r => { clearTimeout(timer); done(r || { ok: false, reason: 'error' }); })
+      .catch(() => { clearTimeout(timer); done({ ok: false, reason: 'error' }); });
+  });
+}
+
+// Estado de loading do botão primário "Enviar para a cozinha".
+let _kitchenBtnOrigHTML = null;
+function setKitchenBtnLoading(label) {
+  const btn = document.getElementById('confirm-btn-kitchen');
+  if (!btn) return;
+  if (_kitchenBtnOrigHTML === null) _kitchenBtnOrigHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.classList.add('is-loading');
+  btn.innerHTML = '<span class="nexo-btn-spinner" aria-hidden="true"></span><span>' + label + '</span>';
+}
+function resetKitchenBtn() {
+  const btn = document.getElementById('confirm-btn-kitchen');
+  if (!btn) return;
+  btn.disabled = false;
+  btn.classList.remove('is-loading');
+  if (_kitchenBtnOrigHTML !== null) { btn.innerHTML = _kitchenBtnOrigHTML; _kitchenBtnOrigHTML = null; }
 }
 
 // Canal de recurso (fallback) silencioso: regista o pedido e, se houver número
@@ -2966,16 +3008,15 @@ function setupConfirmScreen() {
   if (staffBtn) {
     staffBtn.addEventListener('click', () => {
       haptic();
-      if (orderLocked()) return;
-      lockOrder();
       const tableInput = document.getElementById('confirm-table-input');
       const tableVal = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
       confirmTableValue = tableVal;
       closeConfirmScreen();
-      if (!(window.NEXOPremium && window.NEXOPremium.comandaRouting))
-        logOrderToSupabase(sharedCart ? 'shared' : 'staff', tableVal);
-      // NEXO Premium: route the order into Cozinha/Caixa (comanda).
-      if (window.NEXOPremium && window.NEXOPremium.onOrderConfirmed) window.NEXOPremium.onOrderConfirmed();
+      // "Mostrar ao Staff" é 100% LOCAL: mostra o pedido no ecrã para o empregado
+      // ler e registar à mão. NÃO insere nada no Supabase, NÃO dispara a comanda
+      // (não chama onOrderConfirmed), NÃO notifica a cozinha e NÃO muda o estado
+      // do pedido. O carrinho fica intacto — o cliente pode ainda "Enviar para a
+      // cozinha" depois de fechar.
       setTimeout(() => openStaffView(tableVal), 270);
     });
   }

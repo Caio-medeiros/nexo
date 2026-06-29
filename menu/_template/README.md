@@ -114,6 +114,25 @@ Check:
 - [ ] Staff call sheet opens, sends, and closes correctly
 - [ ] 30s cooldown prevents double-tap spam
 
+### ntfy — staff alerts (REQUIRED for live venues)
+
+The `callStaffTopic` in `config.js` powers **two** push alerts to the staff's phone:
+
+1. **"Chamada de Mesa"** — customer tapped *Chamar Empregado*.
+2. **"Mesa precisa de ajuda"** — an order failed to send and the customer is
+   waiting (fired from the error modal's *Mostrar ao Staff* button — see FIX 4C).
+
+**The operator MUST, on at least one staff phone:**
+
+1. Install the free **ntfy** app (iOS App Store / Google Play).
+2. Open it → **Subscribe to topic**.
+3. Server: keep the default **ntfy.sh** (public — do *not* pick "Use another server").
+4. Topic: paste the exact `callStaffTopic` value (e.g. `nexo-marisca-petisca-staff`).
+5. Send a test from the menu's *Chamar Empregado* button and confirm the push arrives.
+
+> The same alerts also surface in the NEXO portal **Sala** in real time
+> (the table shows as "a chamar"), so the staff sees them even without the app.
+
 ---
 
 ## Step 8 — Register in NEXO OS

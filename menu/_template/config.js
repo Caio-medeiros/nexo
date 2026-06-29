@@ -54,9 +54,13 @@ const CONFIG = {
      Deixar vazio ("") para desactivar. */
   ga4MeasurementId: "G-PG76WZVLNB",
 
-  /* Tópico ntfy.sh para notificações "Chamar Atendente"
-     Garçons instalam app ntfy (iOS/Android) e subscrevem este tópico.
-     Deixar vazio '' para desativar o botão. */
+  /* Tópico ntfy.sh para alertas ao staff. O staff instala a app ntfy
+     (iOS/Android, gratuita), escolhe ntfy.sh (público — NÃO "outro servidor")
+     e subscreve este tópico. Sugestão de nome: "nexo-{slug}-staff" (difícil
+     de adivinhar). Recebe DOIS tipos de alerta:
+       • "Chamada de Mesa"        — cliente pediu atendimento (Chamar Empregado)
+       • "Mesa precisa de ajuda"  — pedido falhou e o cliente aguarda (FIX 4C)
+     Deixar vazio '' para desativar. */
   callStaffTopic: '{{CALL_STAFF_TOPIC}}',
 
   /* Supabase — necessário para Carrinho de Mesa (Shared Cart)

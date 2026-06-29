@@ -603,6 +603,7 @@ async function ensureComanda(tableNum) {
     .select('id, session_code, total')
     .eq('espaco_slug', window.ESPACO_SLUG).eq('table_label', label)
     .in('status', ['open', 'submitted', 'preparing', 'ready'])
+    .is('archived_at', null)
     .order('created_at', { ascending: false }).limit(1);
   if (existing && existing.length) {
     const c = existing[0];
@@ -952,7 +953,8 @@ const STALE_MS = 3 * 60 * 60 * 1000; // 3h — mesa "esquecida" fecha sozinha
 async function loadActiveComandas() {
   const { data } = await db.from('comandas')
     .select('*, comanda_items(id, status)')
-    .eq('espaco_slug', window.ESPACO_SLUG).in('status', ['open', 'submitted', 'preparing', 'ready']);
+    .eq('espaco_slug', window.ESPACO_SLUG).in('status', ['open', 'submitted', 'preparing', 'ready'])
+    .is('archived_at', null); // comandas arquivadas (presas > 18h) saem da Sala
   const statusMap = { open: 'active', submitted: 'order_new', preparing: 'active', ready: 'ready' };
   const now = Date.now();
   const activeNums = new Set();
@@ -999,6 +1001,7 @@ function startStaleSweep() {
     const { data } = await db.from('comandas').select('id, table_label')
       .eq('espaco_slug', window.ESPACO_SLUG)
       .in('status', ['open', 'submitted', 'preparing', 'ready'])
+      .is('archived_at', null)
       .lt('created_at', since);
     (data || []).forEach(c => autoCloseComanda(c.id, c.table_label));
   }, 5 * 60 * 1000);

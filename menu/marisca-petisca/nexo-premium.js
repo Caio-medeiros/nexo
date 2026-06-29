@@ -489,6 +489,7 @@
       .select('id, session_code, table_label, status')
       .eq('espaco_slug', SLUG).eq('table_label', tableLabel)
       .in('status', ['open', 'submitted', 'preparing', 'ready'])
+      .is('archived_at', null) // comanda arquivada não se reutiliza — abre nova
       .order('created_at', { ascending: false }).limit(1).maybeSingle();
     if (existing) { storeComanda(existing); return existing; }
     return createComanda(tableLabel, sharedGuestCount());
@@ -567,6 +568,7 @@
         .select('id')
         .eq('espaco_slug', SLUG).eq('table_label', tableLabel)
         .in('status', ['open', 'submitted', 'preparing', 'ready'])
+        .is('archived_at', null)
         .limit(4);
       if (!comandas || !comandas.length) return false;
       const { data: rounds } = await client.from('comanda_rounds')
@@ -587,9 +589,13 @@
   //   { ok:true }                → a comanda criou a ronda (sem WhatsApp)
   //   { ok:false, reason:'...' } → não criou (o menu cai p/ o recurso, excepto
   //                                'duplicate'/'locked', que são intencionais)
-  async function onOrderConfirmed() {
+  async function onOrderConfirmed(opts) {
     if (!HAS_COMANDA || !SLUG) return { ok: false, reason: 'disabled' }; // routing desligado
-    if (Date.now() < _confirmLock) return { ok: false, reason: 'locked' }; // anti double-submit
+    // force=true: usado pelo retry automático do menu após uma falha. Contorna o
+    // lock anti-duplo-toque — a deduplicação por assinatura (isDuplicateRecentOrder)
+    // garante que um retry nunca cria uma ronda duplicada.
+    const force = !!(opts && opts.force);
+    if (!force && Date.now() < _confirmLock) return { ok: false, reason: 'locked' }; // anti double-submit
     _confirmLock = Date.now() + 6000;
     try {
       const items = readMenuCart();

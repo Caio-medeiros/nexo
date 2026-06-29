@@ -79,6 +79,8 @@ const UI = {
     kitchenSentTitle: "Pedido enviado para a cozinha", kitchenSentSub: "A cozinha já o recebeu. Bom apetite!",
     kitchenErrTitle: "Não foi possível enviar o pedido", kitchenErrSub: "Tente novamente ou chame o empregado.",
     kitchenErrMsg: "Não conseguimos enviar o seu pedido neste momento. Tente novamente ou chame um empregado — ele regista o seu pedido.",
+    kitchenErrFallbackMsg: "Sem problema — o staff pode registar o seu pedido.",
+    confirmSending: "A enviar…", confirmRetrying: "A tentar novamente…",
     staffHelpTitle: "Estamos com um problema técnico", staffHelpCallMsg: "Pedimos desculpa. Por favor, chame um empregado — ele trata do seu pedido de imediato.",
     staffHelpRetry: "Tentar novamente", staffHelpClose: "Entendido",
     staffHelper: "Mostre este ecrã ao staff para pedir",
@@ -180,6 +182,8 @@ const UI = {
     kitchenSentTitle: "Order sent to the kitchen", kitchenSentSub: "The kitchen has received it. Enjoy!",
     kitchenErrTitle: "Couldn't send the order", kitchenErrSub: "Please try again or call staff.",
     kitchenErrMsg: "We couldn't send your order right now. Please try again or call a staff member — they'll take your order.",
+    kitchenErrFallbackMsg: "No problem — the staff can take your order.",
+    confirmSending: "Sending…", confirmRetrying: "Trying again…",
     staffHelpTitle: "We're having a technical issue", staffHelpCallMsg: "We're sorry. Please call a staff member — they'll take care of your order right away.",
     staffHelpRetry: "Try again", staffHelpClose: "Got it",
     staffHelper: "Show this screen to staff to order",
@@ -2957,8 +2961,15 @@ async function sendToKitchen() {
   const routing = !!(window.NEXOPremium && window.NEXOPremium.comandaRouting && window.NEXOPremium.onOrderConfirmed);
   let res = null;
   if (routing) {
-    try { res = await window.NEXOPremium.onOrderConfirmed(); }
-    catch (_) { res = { ok: false, reason: 'error' }; }
+    setKitchenBtnLoading(t().confirmSending || 'A enviar…');
+    // 1ª tentativa (timeout 15s). Falha → 1 retry automático após 3s.
+    res = await submitOrderWithTimeout(false);
+    if (res && !res.ok && res.reason !== 'duplicate' && res.reason !== 'locked') {
+      setKitchenBtnLoading(t().confirmRetrying || 'A tentar novamente…');
+      await new Promise(r => setTimeout(r, 3000));
+      res = await submitOrderWithTimeout(true); // force: ignora o lock anti-duplo
+    }
+    resetKitchenBtn();
     // Duplicado/lock: intencional — não reenviar nem cair para o recurso.
     if (res && (res.reason === 'duplicate' || res.reason === 'locked')) { closeConfirmScreen(); return; }
   }
@@ -2969,10 +2980,90 @@ async function sendToKitchen() {
   } else {
     // A cozinha não capturou o pedido. NUNCA abrimos o WhatsApp — o canal é
     // 100% digital. Registamos para não perder o pedido e mostramos um aviso
-    // claro para o cliente voltar a tentar.
+    // claro com o recurso "Mostrar ao Staff" (que também avisa o staff via ntfy).
     logOrderToSupabase(sharedCart ? 'shared' : 'kitchen', tableValue);
-    showKitchenErrorNotification();
+    showKitchenErrorNotification(tableValue);
   }
+}
+
+// Envia a comanda com timeout de 15s. Se o onOrderConfirmed pendurar (rede
+// lenta), devolvemos {ok:false,reason:'timeout'} para o retry/recurso entrarem.
+// O retry passa force=true para contornar o lock anti-duplo do premium — a
+// deduplicação por assinatura (mesmo pedido/mesa) evita rondas duplicadas.
+function submitOrderWithTimeout(force) {
+  const ORDER_TIMEOUT_MS = 15000;
+  return new Promise(resolve => {
+    let settled = false;
+    const done = (r) => { if (!settled) { settled = true; resolve(r); } };
+    const timer = setTimeout(() => done({ ok: false, reason: 'timeout' }), ORDER_TIMEOUT_MS);
+    Promise.resolve()
+      .then(() => window.NEXOPremium.onOrderConfirmed(force ? { force: true } : undefined))
+      .then(r => { clearTimeout(timer); done(r || { ok: false, reason: 'error' }); })
+      .catch(() => { clearTimeout(timer); done({ ok: false, reason: 'error' }); });
+  });
+}
+
+// Retry a partir do modal de erro: limpa o lock local e reenvia.
+function retryKitchenSend() {
+  _orderLockUntil = 0;
+  sendToKitchen();
+}
+
+// Estado de loading do botão primário "Enviar para a cozinha".
+let _kitchenBtnOrigHTML = null;
+function setKitchenBtnLoading(label) {
+  const btn = document.getElementById('confirm-btn-kitchen');
+  if (!btn) return;
+  if (_kitchenBtnOrigHTML === null) _kitchenBtnOrigHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.classList.add('is-loading');
+  btn.innerHTML = '<span class="nexo-btn-spinner" aria-hidden="true"></span>' +
+    '<span>' + label + '</span>';
+}
+function resetKitchenBtn() {
+  const btn = document.getElementById('confirm-btn-kitchen');
+  if (!btn) return;
+  btn.disabled = false;
+  btn.classList.remove('is-loading');
+  if (_kitchenBtnOrigHTML !== null) { btn.innerHTML = _kitchenBtnOrigHTML; _kitchenBtnOrigHTML = null; }
+}
+
+// "Mostrar ao Staff" a partir do modal de ERRO: além de abrir a vista limpa do
+// pedido, avisa o staff via ntfy (telemóvel) e regista um pedido de ajuda no
+// portal (a Sala mostra a mesa "a chamar"). Assim, mesmo offline, o staff sabe.
+function openStaffViewFromError(tableValue) {
+  fireStaffHelpNtfy(tableValue);
+  setTimeout(() => openStaffView(tableValue), 60);
+}
+
+// Dispara a notificação ntfy "Mesa precisa de ajuda" no tópico do staff
+// (CONFIG.callStaffTopic — o mesmo que o staff já subscreve p/ "Chamar
+// Empregado"). Best-effort: nunca bloqueia nem lança.
+function fireStaffHelpNtfy(tableValue) {
+  try {
+    const TOPIC = (typeof CONFIG !== 'undefined' && CONFIG.callStaffTopic) || '';
+    const mesa = (tableValue && String(tableValue).trim()) ||
+                 (typeof tableNumber !== 'undefined' && tableNumber) || '';
+    const body = mesa
+      ? 'Mesa ' + mesa + ' tentou fazer pedido mas houve erro. O cliente está a aguardar. Vá à mesa.'
+      : 'Uma mesa tentou fazer pedido mas houve erro. O cliente está a aguardar.';
+    if (TOPIC) {
+      // Headers HTTP têm de ser ASCII — daí o título sem acentos e as tags.
+      fetch('https://ntfy.sh/' + TOPIC, {
+        method: 'POST',
+        headers: {
+          'Title': 'Mesa precisa de ajuda',
+          'Priority': 'high',
+          'Tags': 'warning,fork_and_knife',
+          'Content-Type': 'text/plain; charset=utf-8',
+        },
+        body,
+        keepalive: true,
+      }).catch(() => {});
+    }
+    // Canal secundário: a Sala do portal mostra a mesa "a chamar" em tempo real.
+    logStaffCallToSupabase(mesa ? 'Mesa ' + mesa : null);
+  } catch (_) {}
 }
 
 // Notificação grande, em ecrã inteiro, de "pedido enviado para a cozinha".
@@ -3002,12 +3093,18 @@ function showKitchenSentNotification() {
 
 // Falha ao enviar o pedido → fallback de boa UX (nunca um erro cru): explica
 // e oferece tentar de novo ou chamar o empregado, que regista o pedido.
-function showKitchenErrorNotification() {
+function showKitchenErrorNotification(tableValue) {
   showStaffHelpPopup({
     title: t().kitchenErrTitle,
-    message: t().kitchenErrMsg || t().staffHelpCallMsg,
+    message: t().kitchenErrFallbackMsg || 'Sem problema — o staff pode registar o seu pedido.',
+    // Botão primário azul: abre a vista "Mostrar ao Staff" + avisa o staff (ntfy).
+    primary: {
+      label: (t().confirmStaff || 'Mostrar ao Staff') + ' →',
+      onClick: () => openStaffViewFromError(tableValue),
+    },
+    // Botão secundário outline: reenvia para o Supabase.
     retryLabel: t().staffHelpRetry,
-    onRetry: () => { try { openConfirmScreen(); } catch (_) {} },
+    onRetry: () => { try { retryKitchenSend(); } catch (_) {} },
   });
 }
 
@@ -3029,14 +3126,19 @@ function showStaffHelpPopup(opts) {
   const retryLabel = opts.retryLabel || t().staffHelpRetry || 'Tentar novamente';
   const closeLabel = t().staffHelpClose || 'Entendido';
   const BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+  // Acção primária opcional (ex.: "Mostrar ao Staff →") — botão azul cheio.
+  const primaryHtml = opts.primary
+    ? `<button class="nexo-sh-btn nexo-sh-primary" id="nexo-sh-primary">${opts.primary.label}</button>`
+    : '';
   el.innerHTML = `
     <div class="nexo-sh-card">
       <div class="nexo-sh-icon">${BELL}</div>
       <div class="nexo-sh-title">${title}</div>
       <div class="nexo-sh-msg">${message}</div>
       <div class="nexo-sh-actions">
+        ${primaryHtml}
         ${opts.onRetry ? `<button class="nexo-sh-btn nexo-sh-retry" id="nexo-sh-retry">${retryLabel}</button>` : ''}
-        <button class="nexo-sh-btn nexo-sh-close" id="nexo-sh-close">${closeLabel}</button>
+        <button class="nexo-sh-btn nexo-sh-close nexo-sh-link" id="nexo-sh-close">${closeLabel}</button>
       </div>
     </div>`;
   if (navigator.vibrate) { try { navigator.vibrate(80); } catch (_) {} }
@@ -3044,6 +3146,8 @@ function showStaffHelpPopup(opts) {
   const close = () => el.classList.remove('show');
   const closeBtn = document.getElementById('nexo-sh-close');
   if (closeBtn) closeBtn.onclick = close;
+  const primaryBtn = document.getElementById('nexo-sh-primary');
+  if (primaryBtn && opts.primary) primaryBtn.onclick = () => { close(); try { opts.primary.onClick(); } catch (_) {} };
   const retryBtn = document.getElementById('nexo-sh-retry');
   if (retryBtn) retryBtn.onclick = () => { close(); try { opts.onRetry(); } catch (_) {} };
 }
@@ -3088,16 +3192,14 @@ function setupConfirmScreen() {
   if (staffBtn) {
     staffBtn.addEventListener('click', () => {
       haptic();
-      if (orderLocked()) return;
-      lockOrder();
       const tableInput = document.getElementById('confirm-table-input');
       const tableVal = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
       confirmTableValue = tableVal;
       closeConfirmScreen();
-      // "Mostrar ao Staff" NÃO dispara a comanda: o empregado lê o pedido no
-      // ecrã e regista-o ele próprio (depois aparece na comanda). Por isso não
-      // há "enviado para a cozinha" aqui — só o registo leve para estatística.
-      logOrderToSupabase(sharedCart ? 'shared' : 'staff', tableVal);
+      // "Mostrar ao Staff" é 100% LOCAL: mostra o pedido no ecrã para o empregado
+      // ler e registar à mão. NÃO insere nada no Supabase, NÃO dispara a comanda,
+      // NÃO notifica a cozinha e NÃO muda o estado do pedido. O carrinho fica
+      // intacto — o cliente pode ainda "Enviar para a cozinha" depois de fechar.
       setTimeout(() => openStaffView(tableVal), 270);
     });
   }
