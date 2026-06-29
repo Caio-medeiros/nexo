@@ -1,3 +1,7 @@
+# Node deps (test harness)
+node_modules/
+package-lock.json
+
 # Supabase CLI local temp
 supabase/.temp/
 

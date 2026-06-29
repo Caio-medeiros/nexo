@@ -96,7 +96,7 @@
     // ════════════════════════════════════════════════
     // FREE FEATURES — Briefing · Previsão
     // ════════════════════════════════════════════════
-    let briefingHtml = '', forecastHtml = '';
+    let briefingHtml = '';
     if (slug) {
       const ninetyAgo = new Date(Date.now() - 90 * 86400000).toISOString();
       const sevenAgo = new Date(Date.now() - 7 * 86400000).toISOString();
@@ -167,51 +167,6 @@
         </div>`;
       }
 
-      // ── Previsão de receita (próximos 7 dias) ──
-      const byWd = Array(7).fill(0);
-      opens.forEach(d => byWd[d.getDay()]++);
-      const weeks = Math.ceil(90 / 7);
-      const avgByWd = byWd.map(t => Math.round(t / weeks));
-      const recent14 = opens.filter(d => d >= new Date(Date.now() - 14 * 86400000));
-      const recentByWd = Array(7).fill(0); recent14.forEach(d => recentByWd[d.getDay()]++);
-      const recentAvgByWd = recentByWd.map(c => Math.round(c / 2));
-
-      const fc = [];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(); d.setDate(d.getDate() + i);
-        const wd = d.getDay();
-        const avg = avgByWd[wd];
-        const recentAvg = recentAvgByWd[wd];
-        const trendFactor = (recentAvg > 0 && avg > 0) ? recentAvg / avg : 1;
-        const predicted = Math.round(avg * trendFactor);
-        fc.push({ d, predicted, level: avg === 0 ? 'no-data' : predicted > 50 ? 'high' : predicted > 25 ? 'medium' : 'low' });
-      }
-      const maxPred = Math.max(1, ...fc.map(f => f.predicted));
-      const earliest = opens.length ? Math.min(...opens.map(d => d.getTime())) : Date.now();
-      const daysCovered = (Date.now() - earliest) / 86400000;
-      const fcColor = { high: 'var(--success)', medium: 'var(--warning)', low: 'var(--info)', 'no-data': 'var(--text-muted)' };
-      const fcBadge = { high: '<span class="fc-lvl fc-lvl--high">Pico 🔥</span>', medium: '<span class="fc-lvl fc-lvl--medium">Normal</span>', low: '<span class="fc-lvl fc-lvl--low">Calmo</span>', 'no-data': '' };
-      const WDN = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-      const fcLabel = (d, i) => i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : `${WDN[d.getDay()]} ${d.getDate()}`;
-
-      if (opens.length === 0 || daysCovered < 14) {
-        forecastHtml = `<div class="card mb-4">
-          <div class="flex-between" style="margin-bottom:8px"><div class="card-title" style="margin:0">Previsão da semana</div><span class="text-muted text-xs">Com base nos últimos 90 dias</span></div>
-          ${fc.map(() => `<div class="fc-row"><span class="fc-day nexo-skeleton" style="height:12px;border-radius:4px"></span><span class="fc-track nexo-skeleton"></span></div>`).join('')}
-          <p class="text-muted text-xs" style="margin-top:10px;font-style:italic">Previsão disponível após 2 semanas de dados.</p>
-        </div>`;
-      } else {
-        forecastHtml = `<div class="card mb-4">
-          <div class="flex-between" style="margin-bottom:12px"><div class="card-title" style="margin:0">Previsão da semana</div><span class="text-muted text-xs">Com base nos últimos 90 dias</span></div>
-          ${fc.map((f, i) => `<div class="fc-row">
-            <span class="fc-day">${fcLabel(f.d, i)}</span>
-            <span class="fc-track"><span class="fc-fill" style="width:${Math.round(f.predicted / maxPred * 100)}%;background:${fcColor[f.level]}"></span></span>
-            <span class="fc-val">${f.level === 'no-data' ? '—' : f.predicted + ' visitas'}</span>
-            ${fcBadge[f.level]}
-          </div>`).join('')}
-          <p class="text-muted text-xs" style="margin-top:12px;font-style:italic">Baseado em médias históricas dos últimos 90 dias. Actualize a carta antes dos dias de pico.</p>
-        </div>`;
-      }
     }
 
     function clientStatusBadge() {
@@ -356,44 +311,10 @@
 
           ${onboardingHtml}
         </aside>
-      </div>
-
-      <section style="margin-top:8px">
-        <p class="dash-section-label" style="margin-bottom:12px">Atalhos operacionais</p>
-        <div class="ops-launch-grid">
-          <a class="ops-launch" href="/portal/cozinha/"><span class="ops-ico">🍳</span><span class="ops-lbl">Cozinha</span><span class="ops-badge" id="ops-cozinha" style="display:none"></span></a>
-          <a class="ops-launch" href="/portal/sala/"><span class="ops-ico">💰</span><span class="ops-lbl">Salão / Caixa</span><span class="ops-badge" id="ops-caixa" style="display:none"></span></a>
-          <a class="ops-launch" href="/portal/estatisticas/"><span class="ops-ico">📊</span><span class="ops-lbl">Estatísticas</span></a>
-          <a class="ops-launch" href="/portal/configuracoes/"><span class="ops-ico">⚙️</span><span class="ops-lbl">Configurações</span></a>
-        </div>
-      </section>
-
-      ${forecastHtml}`;
+      </div>`;
 
     document.getElementById('page-skeleton').style.display = 'none';
     document.getElementById('page-content').style.display = 'block';
-
-    // ── Atalhos operacionais — live ticket counts ──
-    (async () => {
-      if (!slug) return;
-      try {
-        const [{ count: koz }, { count: cax }] = await Promise.all([
-          db.from('comandas').select('id', { count: 'exact', head: true })
-            .eq('espaco_slug', slug).in('status', ['submitted', 'preparing']),
-          db.from('comandas').select('id', { count: 'exact', head: true })
-            .eq('espaco_slug', slug).in('status', ['open', 'submitted', 'preparing', 'ready']),
-        ]);
-        const setBadge = (id, n, cls) => {
-          const el = document.getElementById(id);
-          if (!el || !n) return;
-          el.textContent = `● ${n} pedido${n === 1 ? '' : 's'}`;
-          el.className = 'ops-badge ' + cls;
-          el.style.display = 'inline-flex';
-        };
-        setBadge('ops-cozinha', koz, koz > 0 ? 'ops-badge--warning' : '');
-        setBadge('ops-caixa', cax, 'ops-badge--success');
-      } catch (_) {}
-    })();
 
     // briefing — fechar por hoje (sessionStorage, reaparece amanhã)
     const briefCloseBtn = document.getElementById('brief-close');

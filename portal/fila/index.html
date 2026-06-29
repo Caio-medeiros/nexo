@@ -270,7 +270,7 @@
 
     function getActive() {
       return entries
-        .filter(e => e.status === 'waiting' || e.status === 'notified')
+        .filter(e => e.status === 'waiting' || e.status === 'notified' || e.status === 'a_caminho')
         .sort((a, b) => sortKey(a) - sortKey(b));
     }
 
@@ -304,7 +304,7 @@
     }
 
     function renderStats() {
-      const waiting = entries.filter(e => e.status === 'waiting' || e.status === 'notified');
+      const waiting = entries.filter(e => e.status === 'waiting' || e.status === 'notified' || e.status === 'a_caminho');
       const seated = entries.filter(e => e.status === 'seated');
       const gone = entries.filter(e => e.status === 'cancelled' || e.status === 'no_show');
 
@@ -337,18 +337,23 @@
       let waitingPos = 0;
       queueList.innerHTML = active.map((e, idx) => {
         const isNotified = e.status === 'notified';
-        if (!isNotified) waitingPos++;
+        const isOnWay = e.status === 'a_caminho';
+        const isCalled = isNotified || isOnWay;
+        if (!isCalled) waitingPos++;
         const phoneLinks = e.phone
           ? `<a href="tel:${escapeHtml(e.phone)}">${escapeHtml(e.phone)}</a> ·
              <a href="https://wa.me/${escapeHtml(e.phone.replace(/\D/g, ''))}" target="_blank" rel="noopener">WhatsApp</a>`
           : '<span class="text-muted">sem contacto</span>';
-        const actions = isNotified
+        const actions = isCalled
           ? `<button class="btn btn-success btn-sm" data-act="seated" data-id="${e.id}">Sentou ✓</button>
              <button class="btn btn-secondary btn-sm" data-act="no_show" data-id="${e.id}">Não veio</button>`
           : `<button class="btn btn-primary btn-sm" data-act="notified" data-id="${e.id}">Chamar</button>`;
+        const metaState = isOnWay ? 'a caminho ✓ · chamado ' + timeAgo(e.notified_at || e.created_at)
+          : isNotified ? 'chamado ' + timeAgo(e.notified_at || e.created_at)
+          : 'há ' + waitingMins(e) + ' min na fila';
 
         return `
-        <div class="queue-row ${isNotified ? 'notified-row' : ''}" data-row-id="${e.id}" data-idx="${idx}" draggable="true">
+        <div class="queue-row ${isCalled ? 'notified-row' : ''}" data-row-id="${e.id}" data-idx="${idx}" draggable="true">
           <span class="drag-handle" title="Arrastar para reordenar" aria-hidden="true">⠿</span>
           <div class="order-btns">
             <button class="order-btn" data-move="up" data-id="${e.id}" data-idx="${idx}"
@@ -356,13 +361,14 @@
             <button class="order-btn" data-move="down" data-id="${e.id}" data-idx="${idx}"
                     ${idx === active.length - 1 ? 'disabled' : ''} aria-label="Descer ${escapeHtml(e.name)}">▼</button>
           </div>
-          <div class="queue-pos">${isNotified ? '🔔' : waitingPos}</div>
+          <div class="queue-pos">${isOnWay ? '🚶' : isNotified ? '🔔' : waitingPos}</div>
           <div class="queue-info">
             <div class="queue-name">${escapeHtml(e.name)}
               <span class="text-muted text-sm" style="font-weight:400">· ${e.party_size} ${e.party_size === 1 ? 'pessoa' : 'pessoas'}</span>
+              ${isOnWay ? '<span class="badge badge--success">A caminho</span>' : ''}
             </div>
             <div class="queue-meta">
-              <span>${isNotified ? 'chamado ' + timeAgo(e.notified_at || e.created_at) : 'há ' + waitingMins(e) + ' min na fila'}</span>
+              <span>${metaState}</span>
               <span>${phoneLinks}</span>
               ${e.source === 'staff' ? '<span class="badge badge--muted">manual</span>' : ''}
             </div>
@@ -447,9 +453,9 @@
       // estiver num estado válido para a transição pedida.
       const validFrom = {
         notified: ['waiting'],
-        seated: ['notified', 'waiting'],
-        no_show: ['notified'],
-        cancelled: ['waiting', 'notified'],
+        seated: ['notified', 'waiting', 'a_caminho'],
+        no_show: ['notified', 'a_caminho'],
+        cancelled: ['waiting', 'notified', 'a_caminho'],
       }[status] || [];
       const { error } = await db.from('waitlist_entries')
         .update(patch)

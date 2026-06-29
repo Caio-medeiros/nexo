@@ -97,17 +97,22 @@
     </div>
     <div class="no-body">
       <label class="no-label" for="no-table">Mesa</label>
-      <input class="no-input no-table-input" id="no-table" inputmode="numeric" placeholder="Nº da mesa (ex.: 4)" autocomplete="off">
+      <input class="no-input no-table-input" id="no-table" inputmode="numeric" pattern="[0-9]*"
+        placeholder="Nº da mesa (ex.: 4)" autocomplete="off" maxlength="3">
+      <div class="no-table-grid" id="no-table-grid"></div>
 
       <div class="no-items-head">
-        <span class="no-label">Itens</span>
-        <span class="no-col-hint">preço · qtd</span>
+        <span class="no-label" style="margin-bottom:0">Itens</span>
+        <span class="no-col-hint">preço do menu</span>
       </div>
       <div id="no-items"></div>
-      <button class="no-add-row" onclick="addNewOrderRow()">+ Adicionar item</button>
+      <button class="no-add-row" type="button" onclick="addNewOrderRow()">+ Adicionar item</button>
+      <p class="no-menu-warning" id="no-menu-warning" style="display:none">
+        Menu não sincronizado — contacta a NEXO
+      </p>
     </div>
     <div class="no-foot">
-      <button class="no-submit-btn" id="no-submit" onclick="submitNewOrder()">Enviar para a cozinha</button>
+      <button class="no-submit-btn" id="no-submit" onclick="submitNewOrder()" disabled>Enviar para a cozinha</button>
     </div>
   </div>
 

@@ -165,6 +165,81 @@
     .sheet-actions .btn { margin-top: 0; flex: 1; }
     .btn-danger { background: var(--danger); }
 
+    /* micro-toast (avançou na fila) */
+    .toast-wrap {
+      position: fixed; left: 0; right: 0; top: max(env(safe-area-inset-top), 10px);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      z-index: 60; pointer-events: none; padding: 0 16px;
+    }
+    .toast {
+      background: var(--success); color: #fff;
+      font-size: 14px; font-weight: 700;
+      padding: 11px 18px; border-radius: 100px;
+      box-shadow: 0 8px 24px rgba(22,163,74,.35);
+      transform: translateY(-16px); opacity: 0;
+      transition: transform .25s ease, opacity .25s ease;
+      max-width: 440px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* big-pos transição suave de número */
+    .big-pos { transition: transform .4s cubic-bezier(.16,1,.3,1); }
+    .big-pos.bump { transform: scale(1.12); }
+
+    /* ── Overlay "É a sua vez" — impossível de ignorar ── */
+    .call-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,.85);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px calc(env(safe-area-inset-bottom) + 24px);
+      opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s ease;
+    }
+    .call-overlay.show { opacity: 1; visibility: visible; }
+    .call-card {
+      width: 100%; max-width: 380px; text-align: center;
+      background: var(--card); border-radius: 24px;
+      padding: 40px 28px calc(env(safe-area-inset-bottom) + 32px);
+      transform: scale(.92); transition: transform .25s cubic-bezier(.16,1,.3,1);
+    }
+    .call-overlay.show .call-card { transform: scale(1); }
+    .call-bell {
+      font-size: 64px; line-height: 1; display: inline-block;
+      animation: bell-ring 1s ease-in-out infinite;
+      transform-origin: 50% 8px;
+    }
+    @keyframes bell-ring {
+      0%,100% { transform: rotate(0); }
+      15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); }
+      45% { transform: rotate(9deg); }  60% { transform: rotate(-6deg); }
+      75% { transform: rotate(3deg); }
+    }
+    .call-ring {
+      width: 96px; height: 96px; margin: 0 auto 8px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .call-ring::before, .call-ring::after {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      border: 2px solid var(--success); animation: ring-pulse 1.8s ease-out infinite;
+    }
+    .call-ring::after { animation-delay: .9s; }
+    @keyframes ring-pulse {
+      0% { transform: scale(.6); opacity: .7; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+    .call-title { font-size: 30px; font-weight: 800; letter-spacing: -.02em; margin-top: 14px; }
+    .call-name { font-size: 19px; font-weight: 700; color: var(--success); margin-top: 4px; }
+    .call-body { font-size: 15px; color: var(--muted); margin-top: 14px; line-height: 1.5; }
+    .call-btn {
+      width: 100%; min-height: 56px; margin-top: 26px;
+      border: none; border-radius: 14px; cursor: pointer;
+      background: var(--success); color: #fff;
+      font-size: 17px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform .1s;
+    }
+    .call-btn:active { transform: scale(.98); }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
     }
@@ -248,6 +323,15 @@
       </div>
     </div>
 
+    <!-- STATUS: A CAMINHO (cliente confirmou "estou a caminho") -->
+    <div class="notified hidden" id="view-onmyway">
+      <div class="card status-card">
+        <div class="notified-emoji">🎉</div>
+        <h1 style="margin-top:10px">A sua mesa está reservada</h1>
+        <p class="sub" style="margin-top:8px">Bem-vindo! Dirija-se à entrada — a equipa está à sua espera.</p>
+      </div>
+    </div>
+
     <!-- STATUS: SEATED -->
     <div class="card status-card hidden" id="view-seated">
       <div class="notified-emoji">🍽</div>
@@ -289,6 +373,20 @@
     </div>
   </div>
 
+  <!-- micro-toasts -->
+  <div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+
+  <!-- OVERLAY: É a sua vez (impossível de ignorar) -->
+  <div class="call-overlay" id="call-overlay" role="alertdialog" aria-modal="true" aria-labelledby="call-title">
+    <div class="call-card">
+      <div class="call-ring"><span class="call-bell">🔔</span></div>
+      <div class="call-title" id="call-title">É a sua vez!</div>
+      <div class="call-name" id="call-name"></div>
+      <p class="call-body">Dirija-se à entrada.<br>A sua mesa está pronta.</p>
+      <button class="call-btn" id="call-onway">Estou a caminho ✓</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
   (function () {
@@ -304,7 +402,7 @@
     // ── Helpers ──────────────────────────────────────
     function $(id) { return document.getElementById(id); }
     var VIEWS = ['view-loading','view-error','view-closed','view-join',
-                 'view-waiting','view-notified','view-seated','view-gone'];
+                 'view-waiting','view-notified','view-onmyway','view-seated','view-gone'];
     function show(viewId) {
       VIEWS.forEach(function (v) { $(v).classList.toggle('hidden', v !== viewId); });
       var menuOk = (viewId === 'view-waiting' || viewId === 'view-notified' || viewId === 'view-join');
@@ -396,16 +494,111 @@
       document.title = '🔔 É A SUA VEZ! — Fila de Espera';
     }
 
+    // ── Som de chamada (Web Audio) ───────────────────
+    // AudioContext precisa de um gesto do utilizador para arrancar.
+    // É "desbloqueado" no primeiro toque (entrar na fila conta como gesto).
+    var audioCtx = null;
+    function unlockAudio() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      } catch (_) {}
+    }
+    document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+    document.addEventListener('click', unlockAudio, { once: true });
+
+    function playTone() {
+      if (!audioCtx) return;
+      try {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.8);
+      } catch (_) {}
+    }
+    function playReadySound() {
+      unlockAudio();
+      playTone();
+      setTimeout(playTone, 1000);
+      setTimeout(playTone, 2000);
+    }
+
+    // ── Micro-toast ──────────────────────────────────
+    function toast(msg) {
+      var wrap = $('toast-wrap');
+      var el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      wrap.appendChild(el);
+      requestAnimationFrame(function () { el.classList.add('show'); });
+      setTimeout(function () {
+        el.classList.remove('show');
+        setTimeout(function () { el.remove(); }, 300);
+      }, 3000);
+    }
+
+    // ── Overlay "É a sua vez" ────────────────────────
+    var acknowledged = false; // cliente já clicou "Estou a caminho"
+    function openCallOverlay(name) {
+      $('call-name').textContent = name || '';
+      $('call-overlay').classList.add('show');
+      if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+      playReadySound();
+      fireReadyNotification();
+    }
+    function closeCallOverlay() { $('call-overlay').classList.remove('show'); }
+
+    $('call-onway').addEventListener('click', function () {
+      acknowledged = true;
+      closeCallOverlay();
+      show('view-onmyway');
+      document.title = 'Fila de Espera';
+      var token = localStorage.getItem(tokenKey);
+      // Persiste "a caminho" (degrada com elegância se a RPC ainda não existir)
+      if (token) {
+        try {
+          db.rpc('waitlist_on_my_way', { p_token: token }).then(function (res) {
+            if (res && res.error) console.warn('on_my_way:', res.error.message);
+          });
+        } catch (_) {}
+      }
+    });
+
     // ── Estado / polling ─────────────────────────────
     var pollTimer = null;
     var lastStatus = null;
+    var lastPos = null;
+
+    // Realtime: canal de BROADCAST público e SEM dados pessoais.
+    // Um trigger no Supabase emite um sinal "mudou" para este canal a cada
+    // alteração da fila; aqui só o usamos como gatilho para reconsultar o
+    // nosso próprio estado via RPC (continuamos sem ler nomes/telefones de
+    // outros). O polling de 8s fica como fallback se o realtime falhar.
+    var rtChannel = null;
+    function startRealtime() {
+      if (rtChannel || !db.channel) return;
+      try {
+        rtChannel = db.channel('fila-public-' + slug)
+          .on('broadcast', { event: 'change' }, function () { refreshStatus(); })
+          .subscribe();
+      } catch (_) { rtChannel = null; }
+    }
+    function stopRealtime() {
+      if (rtChannel) { try { db.removeChannel(rtChannel); } catch (_) {} rtChannel = null; }
+    }
 
     function stopPolling() {
       if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      stopRealtime();
     }
 
     function startPolling() {
       stopPolling();
+      startRealtime();
       pollTimer = setInterval(refreshStatus, 8000);
     }
 
@@ -420,7 +613,15 @@
 
       if (status === 'waiting') {
         var pos = (s.people_ahead || 0) + 1;
-        $('pos-num').textContent = pos;
+        var posEl = $('pos-num');
+        // contador suave + festeja se avançou (número desceu)
+        if (lastPos !== null && pos < lastPos) {
+          var bp = document.querySelector('.big-pos');
+          if (bp) { bp.classList.add('bump'); setTimeout(function () { bp.classList.remove('bump'); }, 400); }
+          toast('Avançaste na fila! 🎉');
+        }
+        posEl.textContent = pos;
+        lastPos = pos;
         $('ahead-label').textContent = s.people_ahead === 0
           ? 'É o próximo grupo a ser chamado'
           : s.people_ahead + (s.people_ahead === 1 ? ' grupo à sua frente' : ' grupos à sua frente');
@@ -429,17 +630,18 @@
           : '⏱ ≈ ' + s.est_minutes + ' min · média de ' + (s.avg_wait_minutes || 0) + ' min/grupo';
         renderNotifyBtn();
         show('view-waiting');
+        closeCallOverlay();
       } else if (status === 'notified') {
         show('view-notified');
-        if (lastStatus !== null && lastStatus !== 'notified') {
-          if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 300]);
-          fireReadyNotification();
-        } else if (lastStatus === null) {
-          // página aberta já no estado "notified" (ex: reload)
-          document.title = '🔔 É A SUA VEZ! — Fila de Espera';
-        }
+        // overlay impossível de ignorar — mostra sempre que ainda não confirmou
+        if (!acknowledged) openCallOverlay(s.name);
+      } else if (status === 'a_caminho') {
+        acknowledged = true;
+        closeCallOverlay();
+        show('view-onmyway');
       } else if (status === 'seated') {
         stopPolling();
+        closeCallOverlay();
         localStorage.removeItem(tokenKey);
         show('view-seated');
       } else if (status === 'cancelled') {
@@ -552,7 +754,7 @@
           return;
         }
         localStorage.setItem(tokenKey, token);
-        lastStatus = null;
+        lastStatus = null; lastPos = null; acknowledged = false;
         refreshStatus();
         startPolling();
         if (navigator.vibrate) navigator.vibrate(80);
@@ -564,7 +766,7 @@
     $('f-phone').addEventListener('keydown', function (e) { if (e.key === 'Enter') doJoin(); });
 
     $('rejoin-btn').addEventListener('click', function () {
-      lastStatus = null;
+      lastStatus = null; lastPos = null; acknowledged = false;
       showJoinView();
     });
 

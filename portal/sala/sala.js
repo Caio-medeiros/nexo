@@ -20,6 +20,8 @@ const state = {
 };
 
 function fmtEUR(v) { return '€' + (Number(v) || 0).toFixed(2).replace('.', ','); }
+function escapeHtml(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function escAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
 
 // Items of the currently-open table (for the payment log) + gift card state.
 let selectedItems = [];
@@ -647,17 +649,77 @@ async function sendToKitchenFromPanel() {
 // O empregado regista um pedido para uma mesa (ex.: o cliente mostrou o
 // pedido no telemóvel) e envia-o directamente para a cozinha — sem ter de
 // abrir a mesa no plano de sala primeiro.
-function openNewOrder(prefillTable) {
+// Catálogo de itens do menu (fonte: config.js do espaço — a carta canónica).
+// Cache em memória: { id, name, price (number), category }.
+let _menuItems = null;
+let _menuItemsLoading = null;
+
+function parseMenuPrice(p) {
+  if (typeof p === 'number') return p;
+  if (!p) return 0;
+  const n = String(p).replace(/[^\d.,]/g, '').replace(/\.(?=\d{3})/g, '').replace(',', '.');
+  const v = parseFloat(n);
+  return isNaN(v) ? 0 : v;
+}
+
+// Carrega os itens da carta a partir de /menu/{slug}/config.js (mesmo método
+// CSP-safe que o Editar Menu usa). Sem tabela de itens em Supabase, o config.js
+// do menu é a fonte de verdade.
+async function loadMenuItems() {
+  if (_menuItems) return _menuItems;
+  if (_menuItemsLoading) return _menuItemsLoading;
+  const slug = window.ESPACO_SLUG;
+  _menuItemsLoading = (async () => {
+    try {
+      const res = await fetch(`/menu/${slug}/config.js`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const CONFIG = new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
+      const out = [];
+      if (CONFIG && Array.isArray(CONFIG.menu)) {
+        CONFIG.menu.forEach(sec => {
+          const cat = (sec.section && (sec.section.pt || sec.section.en)) || sec.id || '';
+          (sec.items || []).forEach((it, idx) => {
+            const name = (it.name && (it.name.pt || it.name.en)) || '';
+            if (!name) return;
+            out.push({ id: `${sec.id}:${idx}`, name, price: parseMenuPrice(it.price), category: cat });
+          });
+        });
+      }
+      _menuItems = out;
+      return out;
+    } catch (err) {
+      console.error('[Sala] carregar itens do menu', err);
+      _menuItems = [];
+      return _menuItems;
+    } finally {
+      _menuItemsLoading = null;
+    }
+  })();
+  return _menuItemsLoading;
+}
+
+// ── Novo pedido rápido ────────────────────────────────────────
+// O empregado regista um pedido para uma mesa (touch-first): escolhe a mesa
+// num grid de mesas livres e os itens por pesquisa da carta — sem texto livre
+// nem preços manuais (o preço vem sempre do menu).
+async function openNewOrder(prefillTable) {
   const ov = document.getElementById('new-order-overlay');
   const panel = document.getElementById('new-order-panel');
   if (!ov || !panel) return;
   const tableEl = document.getElementById('no-table');
-  tableEl.value = (prefillTable != null ? prefillTable : (state.selectedTable || ''));
+  tableEl.value = (prefillTable != null ? String(prefillTable) : (state.selectedTable ? String(state.selectedTable) : ''));
   document.getElementById('no-items').innerHTML = '';
-  addNewOrderRow();
   ov.classList.add('show');
   panel.classList.add('show');
-  (tableEl.value ? document.querySelector('#no-items .no-name') : tableEl).focus();
+
+  renderTablePicker();
+  const items = await loadMenuItems();
+  const warn = document.getElementById('no-menu-warning');
+  if (warn) warn.style.display = items.length ? 'none' : 'block';
+  addNewOrderRow();
+  updateNewOrderSubmit();
+  if (!tableEl.value) tableEl.focus();
 }
 
 function closeNewOrder(e) {
@@ -666,29 +728,169 @@ function closeNewOrder(e) {
   document.getElementById('new-order-panel')?.classList.remove('show');
 }
 
+// Grid de mesas: livres clicáveis, ocupadas a cinzento/disabled ("ocupada").
+function renderTablePicker() {
+  const grid = document.getElementById('no-table-grid');
+  if (!grid) return;
+  const n = state.tableCount || state.configCount || 0;
+  let html = '';
+  for (let i = 1; i <= n; i++) {
+    const occupied = state.tables[i] && state.tables[i].status && state.tables[i].status !== 'empty';
+    html += `<button type="button" class="no-table-btn${occupied ? ' occupied' : ''}"
+      data-table="${i}" ${occupied ? 'disabled' : ''}>
+      <span class="no-table-num">${i}</span>
+      ${occupied ? '<span class="no-table-tag">ocupada</span>' : ''}
+    </button>`;
+  }
+  grid.innerHTML = html;
+}
+
+// O input da mesa aceita só dígitos; selecionar um botão preenche-o.
+const _noTableInput = () => document.getElementById('no-table');
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'no-table') {
+    e.target.value = e.target.value.replace(/\D/g, '');
+    syncTablePickerSelection();
+    updateNewOrderSubmit();
+  }
+});
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest && e.target.closest('.no-table-btn');
+  if (!btn || btn.disabled) return;
+  const el = _noTableInput();
+  if (el) { el.value = btn.dataset.table; }
+  syncTablePickerSelection();
+  updateNewOrderSubmit();
+});
+function syncTablePickerSelection() {
+  const val = (_noTableInput()?.value || '').trim();
+  document.querySelectorAll('#no-table-grid .no-table-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.table === val && !b.disabled);
+  });
+}
+
+// Linha de item: SearchableSelect (pesquisa → seleção bloqueada) + stepper qty.
 function addNewOrderRow() {
   const list = document.getElementById('no-items');
   if (!list) return;
   const row = document.createElement('div');
   row.className = 'no-row';
-  row.innerHTML =
-    '<input class="no-input no-name" placeholder="Item (ex.: Polvo à Lagareiro)" autocomplete="off">' +
-    '<input class="no-input no-price" inputmode="decimal" placeholder="€">' +
-    '<input class="no-input no-qty" inputmode="numeric" value="1" aria-label="Quantidade">' +
-    '<button type="button" class="no-row-del" onclick="this.closest(\'.no-row\').remove()" aria-label="Remover linha">✕</button>';
+  row.dataset.itemId = '';
+  row.dataset.itemName = '';
+  row.dataset.itemPrice = '0';
+  row.dataset.qty = '1';
+  row.innerHTML = `
+    <div class="no-pick">
+      <input class="no-search" placeholder="Pesquisar item..." autocomplete="off" aria-label="Pesquisar item">
+      <div class="no-dropdown" hidden></div>
+      <div class="no-selected" hidden>
+        <span class="no-sel-name"></span>
+        <span class="no-sel-price"></span>
+        <button type="button" class="no-sel-clear" aria-label="Mudar item">✕</button>
+      </div>
+    </div>
+    <div class="no-qty-stepper" role="group" aria-label="Quantidade">
+      <button type="button" class="no-qty-btn" data-qd aria-label="Menos">−</button>
+      <span class="no-qty-val">1</span>
+      <button type="button" class="no-qty-btn" data-qi aria-label="Mais">+</button>
+    </div>
+    <button type="button" class="no-row-del" aria-label="Remover linha">✕</button>`;
   list.appendChild(row);
-  row.querySelector('.no-name').focus();
+  wireOrderRow(row);
+  row.querySelector('.no-search').focus();
+}
+
+function wireOrderRow(row) {
+  const search = row.querySelector('.no-search');
+  const dropdown = row.querySelector('.no-dropdown');
+  const selected = row.querySelector('.no-selected');
+  const qtyVal = row.querySelector('.no-qty-val');
+
+  function renderResults(q) {
+    const items = _menuItems || [];
+    const query = q.trim().toLowerCase();
+    const matches = (query
+      ? items.filter(it => it.name.toLowerCase().includes(query) || (it.category || '').toLowerCase().includes(query))
+      : items
+    ).slice(0, 40);
+    if (!matches.length) {
+      dropdown.innerHTML = `<div class="no-dd-empty">${items.length ? 'Sem resultados' : 'Menu não sincronizado'}</div>`;
+    } else {
+      dropdown.innerHTML = matches.map(it =>
+        `<button type="button" class="no-dd-item" data-id="${it.id}" data-name="${escAttr(it.name)}" data-price="${it.price}">
+          <span class="no-dd-name">${escapeHtml(it.name)}</span>
+          <span class="no-dd-price">${fmtEUR(it.price)}</span>
+        </button>`).join('');
+    }
+    dropdown.hidden = false;
+  }
+  search.addEventListener('focus', () => renderResults(search.value));
+  search.addEventListener('input', () => renderResults(search.value));
+  search.addEventListener('blur', () => { setTimeout(() => { dropdown.hidden = true; }, 150); });
+
+  dropdown.addEventListener('click', (e) => {
+    const opt = e.target.closest('.no-dd-item');
+    if (!opt) return;
+    row.dataset.itemId = opt.dataset.id;
+    row.dataset.itemName = opt.dataset.name;
+    row.dataset.itemPrice = opt.dataset.price;
+    row.querySelector('.no-sel-name').textContent = opt.dataset.name;
+    row.querySelector('.no-sel-price').textContent = fmtEUR(parseFloat(opt.dataset.price) || 0);
+    selected.hidden = false;
+    search.hidden = true;
+    dropdown.hidden = true;
+    updateNewOrderSubmit();
+  });
+
+  row.querySelector('.no-sel-clear').addEventListener('click', () => {
+    row.dataset.itemId = ''; row.dataset.itemName = ''; row.dataset.itemPrice = '0';
+    selected.hidden = true;
+    search.hidden = false;
+    search.value = '';
+    search.focus();
+    updateNewOrderSubmit();
+  });
+
+  row.querySelector('[data-qd]').addEventListener('click', () => {
+    let q = Math.max(1, (parseInt(row.dataset.qty, 10) || 1) - 1);
+    row.dataset.qty = String(q); qtyVal.textContent = q;
+  });
+  row.querySelector('[data-qi]').addEventListener('click', () => {
+    let q = Math.min(20, (parseInt(row.dataset.qty, 10) || 1) + 1);
+    row.dataset.qty = String(q); qtyVal.textContent = q;
+  });
+  row.querySelector('.no-row-del').addEventListener('click', () => {
+    row.remove();
+    updateNewOrderSubmit();
+  });
+}
+
+// Lê as linhas com item escolhido (id/nome/preço do menu + qty).
+function collectNewOrderRows() {
+  return [...document.querySelectorAll('#no-items .no-row')]
+    .filter(r => r.dataset.itemId)
+    .map(r => ({
+      id: r.dataset.itemId,
+      name: r.dataset.itemName,
+      price: parseFloat(r.dataset.itemPrice) || 0,
+      qty: Math.max(1, Math.min(20, parseInt(r.dataset.qty, 10) || 1)),
+    }));
+}
+
+// Submit só fica activo com mesa + pelo menos 1 item selecionado.
+function updateNewOrderSubmit() {
+  const btn = document.getElementById('no-submit');
+  if (!btn) return;
+  const hasTable = !!((_noTableInput()?.value || '').trim());
+  const hasItems = collectNewOrderRows().length > 0;
+  btn.disabled = !(hasTable && hasItems);
 }
 
 async function submitNewOrder() {
   const tableNum = parseInt((document.getElementById('no-table').value || '').trim(), 10);
   if (!tableNum) { salaToast('Indique o número da mesa'); return; }
-  const rows = [...document.querySelectorAll('#no-items .no-row')].map(r => ({
-    name: r.querySelector('.no-name').value.trim(),
-    price: parseFloat((r.querySelector('.no-price').value || '0').replace(',', '.')) || 0,
-    qty: Math.max(1, parseInt(r.querySelector('.no-qty').value, 10) || 1),
-  })).filter(r => r.name);
-  if (!rows.length) { salaToast('Adicione pelo menos um item'); return; }
+  const rows = collectNewOrderRows();
+  if (!rows.length) { salaToast('Selecione pelo menos um item'); return; }
 
   const btn = document.getElementById('no-submit');
   if (btn) { btn.disabled = true; btn.textContent = 'A enviar…'; }
@@ -703,7 +905,7 @@ async function submitNewOrder() {
       fired_by: 'staff', item_count: rows.length }).select('id').single();
     if (rErr) throw rErr;
     const { error: iErr } = await db.from('comanda_items').insert(rows.map(r => ({
-      comanda_id: comanda.id, espaco_slug: window.ESPACO_SLUG, item_name: r.name,
+      comanda_id: comanda.id, espaco_slug: window.ESPACO_SLUG, item_id: r.id, item_name: r.name,
       item_price: r.price, quantity: r.qty, added_by: 'staff', status: 'sent',
       course: 'principal', round_id: round.id, round_number: rn })));
     if (iErr) throw iErr;
