@@ -40,7 +40,7 @@ jobs:
       - name: E2E smoke (menu + portal auth)
         env:
           NEXO_TEST_ENV: prod
-          NEXO_TEST_SLUG: rest-nexo-lisboa
+          NEXO_TEST_SLUG: marisca-petisca
           CI: 'true'
         run: npx playwright test -c tests/e2e/playwright.config.js menu-smoke.spec.js portal-auth.spec.js
 
