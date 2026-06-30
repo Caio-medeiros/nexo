@@ -302,16 +302,33 @@
       return live.length > 0 && live.every(i => i.status === 'ready' || i.status === 'served' || i.status === 'delivered');
     }
 
-    async function loadAll() {
-      const { data: rounds } = await db.from('comanda_rounds')
-        .select('id, comanda_id, round_number, fired_at, status, ' +
-                'comandas!inner(table_label, status, mode, session_code, archived_at), ' +
-                'comanda_items(id, item_name, quantity, status, notes, course, added_by)')
+    // Constrói a query das rondas. fallback=true omite comandas.archived_at —
+    // usado quando a coluna ainda não existe (migração 030 por aplicar): sem
+    // isto o Postgres devolve 42703 e a query inteira não traz nada, deixando
+    // a COZINHA EM BRANCO mesmo com pedidos. A salvaguarda mantém o ecrã vivo.
+    function roundsQuery(fallback) {
+      const sel = 'id, comanda_id, round_number, fired_at, status, ' +
+        'comandas!inner(table_label, status, mode, session_code' + (fallback ? '' : ', archived_at') + '), ' +
+        'comanda_items(id, item_name, quantity, status, notes, course, added_by)';
+      let q = db.from('comanda_rounds').select(sel)
         .eq('espaco_slug', slug)
         .in('status', ROUND_VISIBLE)
-        .in('comandas.status', ACTIVE_COMANDA)
-        .is('comandas.archived_at', null)   // comandas arquivadas saem do ecrã
-        .order('fired_at', { ascending: true });
+        .in('comandas.status', ACTIVE_COMANDA);
+      if (!fallback) q = q.is('comandas.archived_at', null); // comandas arquivadas saem do ecrã
+      return q.order('fired_at', { ascending: true });
+    }
+    async function selectRoundsResilient() {
+      let res = await roundsQuery(false);
+      const e = res.error;
+      if (e && (e.code === '42703' || /does not exist/i.test(e.message || ''))) {
+        console.warn('[cozinha] archived_at em falta (migração 030 por aplicar) — a usar fallback');
+        res = await roundsQuery(true);
+      }
+      return res;
+    }
+
+    async function loadAll() {
+      const { data: rounds } = await selectRoundsResilient();
 
       Object.keys(state).forEach(k => delete state[k]);
       (rounds || []).forEach(r => {

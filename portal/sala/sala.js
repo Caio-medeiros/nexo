@@ -598,15 +598,31 @@ async function addItemToActiveTable() {
 // UMA comanda por mesa: antes de criar, reaproveita uma comanda activa já
 // existente (aberta pelo cliente via QR, ou na Caixa) — conta unificada,
 // nunca duplica mesas entre modos.
+// SELECT resiliente: se uma coluna referida ainda não existir (migração por
+// aplicar → Postgres 42703), repete a query sem ela em vez de devolver vazio
+// (que deixaria a Sala em branco). build(fallback): fallback=false = query
+// completa; fallback=true = versão sem a coluna em falta.
+async function selectResilient(build) {
+  let res = await build(false);
+  const e = res.error;
+  if (e && (e.code === '42703' || /does not exist/i.test(e.message || ''))) {
+    console.warn('[sala] coluna em falta (migração por aplicar) — a usar fallback');
+    res = await build(true);
+  }
+  return res;
+}
+
 async function ensureComanda(tableNum) {
   if (state.tables[tableNum]?.comanda?.id) return state.tables[tableNum].comanda;
   const label = `Mesa ${tableNum}`;
-  const { data: existing } = await db.from('comandas')
-    .select('id, session_code, total')
-    .eq('espaco_slug', window.ESPACO_SLUG).eq('table_label', label)
-    .in('status', ['open', 'submitted', 'preparing', 'ready'])
-    .is('archived_at', null)
-    .order('created_at', { ascending: false }).limit(1);
+  const { data: existing } = await selectResilient((fallback) => {
+    let q = db.from('comandas')
+      .select('id, session_code, total')
+      .eq('espaco_slug', window.ESPACO_SLUG).eq('table_label', label)
+      .in('status', ['open', 'submitted', 'preparing', 'ready']);
+    if (!fallback) q = q.is('archived_at', null);
+    return q.order('created_at', { ascending: false }).limit(1);
+  });
   if (existing && existing.length) {
     const c = existing[0];
     state.tables[tableNum] = { status: 'active', comanda: { id: c.id, code: c.session_code, total: c.total || 0 } };
@@ -1153,10 +1169,13 @@ function playSoundForEvent(type) {
 const STALE_MS = 3 * 60 * 60 * 1000; // 3h — mesa "esquecida" fecha sozinha
 
 async function loadActiveComandas() {
-  const { data } = await db.from('comandas')
-    .select('*, comanda_items(id, status)')
-    .eq('espaco_slug', window.ESPACO_SLUG).in('status', ['open', 'submitted', 'preparing', 'ready'])
-    .is('archived_at', null); // comandas arquivadas (presas > 18h) saem da Sala
+  const { data } = await selectResilient((fallback) => {
+    let q = db.from('comandas')
+      .select('*, comanda_items(id, status)')
+      .eq('espaco_slug', window.ESPACO_SLUG).in('status', ['open', 'submitted', 'preparing', 'ready']);
+    if (!fallback) q = q.is('archived_at', null); // comandas arquivadas (presas > 18h) saem da Sala
+    return q;
+  });
   const statusMap = { open: 'active', submitted: 'order_new', preparing: 'active', ready: 'ready' };
   const now = Date.now();
   const activeNums = new Set();
