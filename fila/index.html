@@ -557,6 +557,8 @@
       closeCallOverlay();
       show('view-onmyway');
       document.title = 'Fila de Espera';
+      stopPolling();
+      scheduleReset(); // liberta o ecrã p/ nova entrada passado RESET_MS
       var token = localStorage.getItem(tokenKey);
       // Persiste "a caminho" (degrada com elegância se a RPC ainda não existir)
       if (token) {
@@ -602,6 +604,28 @@
       pollTimer = setInterval(refreshStatus, 8000);
     }
 
+    // ── Auto-reset do ecrã ───────────────────────────
+    // Depois de chamado/sentado (estado final), o ecrã liberta-se sozinho
+    // passado um tempo e volta ao formulário — assim o mesmo dispositivo
+    // (telemóvel ou tablet à entrada) pode entrar na fila outra vez sem
+    // ficar preso em "A sua mesa está reservada".
+    var RESET_MS = 120000; // 2 min
+    var resetTimer = null;
+    function scheduleReset() {
+      if (resetTimer) return;
+      resetTimer = setTimeout(resetToJoin, RESET_MS);
+    }
+    function cancelReset() { if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; } }
+    function resetToJoin() {
+      cancelReset();
+      stopPolling();
+      closeCallOverlay();
+      try { localStorage.removeItem(tokenKey); } catch (_) {}
+      lastStatus = null; lastPos = null; acknowledged = false;
+      document.title = 'Fila de Espera';
+      showJoinView();
+    }
+
     function renderStatus(s) {
       if (!s || s.found === false) {
         localStorage.removeItem(tokenKey);
@@ -637,13 +661,16 @@
         if (!acknowledged) openCallOverlay(s.name);
       } else if (status === 'a_caminho') {
         acknowledged = true;
+        stopPolling();
         closeCallOverlay();
         show('view-onmyway');
+        scheduleReset();
       } else if (status === 'seated') {
         stopPolling();
         closeCallOverlay();
         localStorage.removeItem(tokenKey);
         show('view-seated');
+        scheduleReset();
       } else if (status === 'cancelled') {
         stopPolling();
         localStorage.removeItem(tokenKey);
@@ -678,6 +705,7 @@
 
     // ── Join ─────────────────────────────────────────
     function showJoinView() {
+      cancelReset();
       db.rpc('waitlist_queue_info', { p_slug: slug }).then(function (res) {
         if (res.error) {
           $('error-msg').textContent = 'Não foi possível carregar a fila. Tente recarregar a página.';
