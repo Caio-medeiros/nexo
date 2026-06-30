@@ -136,10 +136,34 @@
       item_price: Math.min(Math.max(Number(i.price) || 0, 0), 999.99),
       quantity: Math.min(Math.max(parseInt(i.qty, 10) || 1, 1), 50),
       notes: cleanNote(i.note), added_by: 'customer',
-      round_number: window.nexoComandaRound || 1,
+      status: 'pending', round_id: null, // entram no "carrinho"; a ronda é disparada a seguir
     }));
     const { error } = await client.from('comanda_items').insert(rows);
     if (error) throw error;
+  }
+
+  // Dispara uma RONDA para a cozinha: cria o registo em comanda_rounds e marca
+  // os itens pendentes como 'sent'. SEM isto, o Modo Cozinha (que lê
+  // comanda_rounds) nunca vê o pedido. Espelha a lógica do Modo Restaurante.
+  async function fireRound(comandaId) {
+    const client = await sb();
+    const { data: pending, error: pErr } = await client.from('comanda_items')
+      .select('id').eq('comanda_id', comandaId).eq('status', 'pending').is('round_id', null);
+    if (pErr) throw pErr;
+    if (!pending || !pending.length) return null;
+    const { data: last } = await client.from('comanda_rounds').select('round_number')
+      .eq('comanda_id', comandaId).order('round_number', { ascending: false }).limit(1).maybeSingle();
+    const rn = ((last && last.round_number) || 0) + 1;
+    const { data: round, error: rErr } = await client.from('comanda_rounds').insert({
+      comanda_id: comandaId, espaco_slug: SLUG, round_number: rn,
+      fired_by: 'customer', item_count: pending.length,
+    }).select('id').single();
+    if (rErr) throw rErr;
+    const { error: uErr } = await client.from('comanda_items')
+      .update({ status: 'sent', round_id: round.id, round_number: rn })
+      .in('id', pending.map(p => p.id));
+    if (uErr) throw uErr;
+    return round;
   }
 
   async function submitComanda(comandaId) {
@@ -174,6 +198,7 @@
       comanda = await createComanda(tableLabel, 1);
     }
     await addItemsToComanda(comanda.id, items);
+    await fireRound(comanda.id); // cria a ronda → o pedido chega à cozinha
     const submitted = await submitComanda(comanda.id);
     sessionStorage.removeItem(COMANDA_KEY);
     renderComandaBar(null);
