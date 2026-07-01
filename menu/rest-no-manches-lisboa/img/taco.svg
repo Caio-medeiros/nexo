@@ -1,0 +1,18 @@
+<svg width="120" height="96" viewBox="0 0 120 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Taco">
+  <g stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Tortilla shell (outer fold) -->
+    <path d="M14 74 C14 40 41 16 60 16 C79 16 106 40 106 74"/>
+    <!-- Tortilla inner rim -->
+    <path d="M24 74 C24 47 43 27 60 27 C77 27 96 47 96 74"/>
+    <!-- Base line of the shell -->
+    <path d="M12 74 L108 74"/>
+    <!-- Fillings peeking over the top -->
+    <path d="M34 40 C39 33 47 33 51 40"/>
+    <path d="M52 34 C57 27 66 27 70 34"/>
+    <path d="M69 39 C74 32 82 32 86 39"/>
+    <!-- Coriander / garnish accents -->
+    <path d="M45 52 l0 -7 M45 52 l-5 -4 M45 52 l5 -4"/>
+    <path d="M74 54 l0 -7 M74 54 l-5 -4 M74 54 l5 -4"/>
+    <circle cx="60" cy="56" r="2.4" fill="#ffffff" stroke="none"/>
+  </g>
+</svg>
