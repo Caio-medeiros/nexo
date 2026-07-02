@@ -383,9 +383,13 @@
       if (tabs && tabs.parentNode) tabs.parentNode.insertBefore(cont, tabs);
       else document.body.appendChild(cont);
     }
+    // Valores vindos da BD só entram em atributos depois de saneados —
+    // cores restringidas a caracteres CSS seguros, ids sem aspas.
+    const cssColor = (c, fb) => (/^[#a-zA-Z0-9(),.%\s-]+$/.test(String(c ?? '')) ? c : fb);
+    const safeAttr = (v) => String(v ?? '').replace(/["'<>&]/g, '');
     cont.innerHTML = banners.map((b, i) => `
-      <div class="menu-banner" ${b.link_item_id ? `data-link="${b.link_item_id}"` : ''}
-        style="background:${b.bg_color};color:${b.text_color};animation-delay:${i * 80}ms">
+      <div class="menu-banner" ${b.link_item_id ? `data-link="${safeAttr(b.link_item_id)}"` : ''}
+        style="background:${cssColor(b.bg_color, '#333')};color:${cssColor(b.text_color, '#fff')};animation-delay:${i * 80}ms">
         <span class="banner-title">${escapeHTML(b.title)}</span>
         ${b.subtitle ? `<span class="banner-sub">${escapeHTML(b.subtitle)}</span>` : ''}
         ${b.link_item_id ? `<span class="banner-arrow">→</span>` : ''}

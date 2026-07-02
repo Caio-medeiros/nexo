@@ -223,8 +223,9 @@
     },
 
     showClosedMessage(openTime, closeTime) {
+      const safe = (v) => String(v ?? '').replace(/[<>&"]/g, '').substring(0, 8);
       const timeMsg = openTime && closeTime
-        ? `Estamos abertos das ${openTime} às ${closeTime}. `
+        ? `Estamos abertos das ${safe(openTime)} às ${safe(closeTime)}. `
         : 'Verifique os nossos horários. ';
       this._modal('🕐', 'Fora do horário de pedidos', timeMsg + 'Pode continuar a ver o menu.', 'OK', false);
     },

@@ -20,6 +20,24 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
 
+  // Detalhe por cliente (nomes, slugs, volumes de pedidos) só para
+  // utilizadores autenticados do portal — e, se NEXO_ADMIN_EMAILS estiver
+  // definido, apenas para esses emails (página interna Caio/Bia).
+  // Chamadas anónimas (UptimeRobot com anon key) recebem só up/down.
+  let isPortalUser = false
+  const bearer = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
+  if (bearer) {
+    try {
+      const { data: { user } } = await db.auth.getUser(bearer)
+      if (user) {
+        const admins = (Deno.env.get('NEXO_ADMIN_EMAILS') ?? '')
+          .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+        isPortalUser = admins.length === 0
+          || admins.includes((user.email ?? '').toLowerCase())
+      }
+    } catch (_) { /* token inválido → tratado como anónimo */ }
+  }
+
   const now = new Date()
 
   try {
@@ -92,7 +110,7 @@ serve(async (req) => {
       JSON.stringify({
         generated_at: now.toISOString(),
         status: totalIssues === 0 ? 'ok' : 'warning',
-        clients: clientResults,
+        clients: isPortalUser ? clientResults : [],
         summary: {
           total_active_menus: total,
           menus_with_issues: totalIssues,

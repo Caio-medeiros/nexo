@@ -9,7 +9,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 //   CALLMEBOT_KEY          — apikey from CallMeBot WhatsApp setup
 //   CAIO_WHATSAPP_NUMBER   — e.g. 351912345678 (no + or spaces)
 
-serve(async () => {
+serve(async (req) => {
+  // Se NEXO_CRON_SECRET estiver definido, só o pg_cron (que envia o header
+  // a partir do Vault — ver migration 032) pode invocar esta função.
+  const cronSecret = Deno.env.get('NEXO_CRON_SECRET')
+  if (cronSecret && req.headers.get('x-nexo-cron-secret') !== cronSecret) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401, headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const db = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -135,8 +144,10 @@ serve(async () => {
     results:      stats,
   }).catch(() => {})
 
+  // Nunca devolver `stats` no corpo HTTP — contém métricas por cliente e a
+  // resposta é ignorada pelo pg_cron. O detalhe fica no monitoring_log.
   return new Response(
-    JSON.stringify({ checked_at: now.toISOString(), total: menus.length, issues: issues.length, stats }),
+    JSON.stringify({ checked_at: now.toISOString(), total: menus.length, issues: issues.length }),
     { headers: { 'Content-Type': 'application/json' } }
   )
 })
