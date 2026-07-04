@@ -22,7 +22,7 @@ const CONFIG = {
 
   ga4MeasurementId: "",
 
-  callStaffTopic: 'nexo-no-manches',
+  callStaffTopic: 'rest-nexo-no-manches',
 
   /* Supabase — partilhado com a Marisca (mesmo projeto menus+portal) */
   supabaseUrl: 'https://kgbrtbpeekhkroibsgqq.supabase.co',
