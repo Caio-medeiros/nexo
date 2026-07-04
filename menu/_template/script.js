@@ -14,6 +14,14 @@
    1. i18n CONSTANTES
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Escapa dados de utilizador (notas, nomes de convidados, payloads Supabase)
+   antes de qualquer interpolação em innerHTML. */
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 const ALLERGENS_EU = {
   pt: { 1:"Glúten",2:"Crustáceos",3:"Ovos",4:"Peixe",5:"Amendoins",6:"Soja",7:"Lácteos",8:"Frutos de casca",9:"Aipo",10:"Mostarda",11:"Sésamo",12:"Sulfitos",13:"Tremoço",14:"Moluscos" },
   en: { 1:"Gluten",2:"Crustaceans",3:"Eggs",4:"Fish",5:"Peanuts",6:"Soy",7:"Dairy",8:"Nuts",9:"Celery",10:"Mustard",11:"Sesame",12:"Sulphites",13:"Lupin",14:"Molluscs" },
@@ -2453,7 +2461,7 @@ function renderCartSheet() {
     if (clearBtn) clearBtn.style.display = 'block';
     listEl.innerHTML = sharedItems.map(row => {
       const item = getItemByRef(row.item_id);
-      const nm   = item ? item.name[currentLang] : row.item_name;
+      const nm   = escHtml(item ? item.name[currentLang] : row.item_name);
       const price = item ? (parsePriceToNumber(item.price) || 0) : (row.item_price || 0);
       const lineTotal = price * row.quantity;
       const isOwn = row.member_key === _myPresenceKey;
@@ -2465,7 +2473,7 @@ function renderCartSheet() {
           ? `<div class="cart-item-note-wrap" data-note-wrap="${safeId}">
               <div class="cart-item-note-preview">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                <span class="cart-note-text" data-note-reopen="${safeId}">${note}</span>
+                <span class="cart-note-text" data-note-reopen="${safeId}">${safeNote}</span>
                 <button class="cart-note-clear" data-note-clear="${safeId}" aria-label="Remover nota" type="button">×</button>
               </div>
               <div class="cart-item-note-input-wrap" id="note-input-wrap-${safeId}" style="display:none">
@@ -2480,14 +2488,14 @@ function renderCartSheet() {
                   placeholder="${t().notePlaceholder}" value="">
               </div>
             </div>`)
-        : (note ? `<span class="cart-item-note-readonly">${note}</span>` : '');
+        : (note ? `<span class="cart-item-note-readonly">${safeNote}</span>` : '');
       return `
         <div class="cart-list-item">
           <div class="cart-item-main-row">
             <span class="cart-item-qty">${row.quantity}×</span>
             <div class="cart-item-name-col">
               <span class="cart-item-name">${nm}</span>
-              <span class="cart-item-member">adicionado por ${row.member_name}</span>
+              <span class="cart-item-member">adicionado por ${escHtml(row.member_name)}</span>
             </div>
             <span class="cart-item-price">${formatPrice(lineTotal)}</span>
             <div class="cart-item-controls"${isOwn ? '' : ' style="visibility:hidden"'}>
@@ -2532,7 +2540,7 @@ function renderCartSheet() {
         <div class="cart-item-note-wrap" data-note-wrap="${safeRefId}">
           <div class="cart-item-note-preview">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            <span class="cart-note-text" data-note-reopen="${safeRefId}">${note}</span>
+            <span class="cart-note-text" data-note-reopen="${safeRefId}">${safeNote}</span>
             <button class="cart-note-clear" data-note-clear="${safeRefId}" aria-label="Remover nota" type="button">×</button>
           </div>
           <div class="cart-item-note-input-wrap" id="note-input-wrap-${safeRefId}" style="display:none">
@@ -2756,17 +2764,17 @@ function renderConfirmScreen() {
   if (sharedCart) {
     itemsEl.innerHTML = sharedCartItems.map((row, i) => {
       const item = getItemByRef(row.item_id);
-      const nm = item ? item.name[currentLang] : row.item_name;
+      const nm = escHtml(item ? item.name[currentLang] : row.item_name);
       const price = item ? (parsePriceToNumber(item.price) || 0) : (row.item_price || 0);
       const lineTotal = price * row.quantity;
       const noteHtml = (row.note && row.note.trim())
-        ? `<div class="confirm-item-note">↳ ${row.note.trim()}</div>` : '';
+        ? `<div class="confirm-item-note">↳ ${escHtml(row.note.trim())}</div>` : '';
       return `
         <div class="confirm-item-row${i > 0 ? ' with-divider' : ''}">
           <span class="confirm-item-qty">×${row.quantity}</span>
           <div class="confirm-item-info">
             <span class="confirm-item-name">${nm}</span>
-            <span class="confirm-item-member-tag">${row.member_name}</span>
+            <span class="confirm-item-member-tag">${escHtml(row.member_name)}</span>
             ${noteHtml}
           </div>
           <span class="confirm-item-price">${formatPrice(lineTotal)}</span>
@@ -2779,7 +2787,7 @@ function renderConfirmScreen() {
       const unitPrice = parsePriceToNumber(item.price) || 0;
       const lineTotal = unitPrice * entry.qty;
       const noteHtml = (entry.note && entry.note.trim())
-        ? `<div class="confirm-item-note">↳ ${entry.note.trim()}</div>` : '';
+        ? `<div class="confirm-item-note">↳ ${escHtml(entry.note.trim())}</div>` : '';
       return `
         <div class="confirm-item-row${i > 0 ? ' with-divider' : ''}">
           <span class="confirm-item-qty">×${entry.qty}</span>
@@ -3360,7 +3368,7 @@ function renderSplitEqual() {
 
   const rows = Array.from({ length: splitPeople }, (_, i) => `
     <div class="split-eq-row">
-      <span class="split-eq-person">${getPersonName(i)}</span>
+      <span class="split-eq-person">${escHtml(getPersonName(i))}</span>
       <span class="split-eq-amount">${formatPrice(perPerson)}</span>
     </div>
   `).join('');
@@ -3386,7 +3394,7 @@ function renderSplitPeopleTabs() {
     return `
       <button class="split-person-tab ${isActive ? 'active' : ''}" data-person="${i}">
         <span class="ptab-name" data-rename-idx="${i}">
-          ${getPersonName(i)}
+          ${escHtml(getPersonName(i))}
           <svg class="ptab-edit-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </span>
         <span class="ptab-total">${totalStr}</span>
@@ -3839,15 +3847,6 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   ctx.fillText(line.trim(), x, y);
 }
 
-// Darken/lighten hex color
-function shadeColor(hex, percent) {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const r = Math.min(255, Math.max(0, (num >> 16) + percent));
-  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + percent));
-  const b = Math.min(255, Math.max(0, (num & 0xff) + percent));
-  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-}
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
    12G. ORDER HISTORY — Track pedidos enviados ao staff na sessão
@@ -3879,14 +3878,14 @@ function renderStaffHistory() {
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
-            <span class="staff-note-text">${r.note}</span>
+            <span class="staff-note-text">${escHtml(r.note)}</span>
           </div>` : '';
         return `
           <div class="staff-list-item${r.note ? ' has-note' : ''}">
             <span class="staff-list-qty">${r.qty}×</span>
             <div class="staff-list-name-wrap">
-              <span class="staff-list-name">${r.name}</span>
-              ${r.member ? `<span class="staff-item-member">${r.member}</span>` : ''}
+              <span class="staff-list-name">${escHtml(r.name)}</span>
+              ${r.member ? `<span class="staff-item-member">${escHtml(r.member)}</span>` : ''}
               ${noteHtml}
             </div>
           </div>`;
@@ -3937,7 +3936,7 @@ function renderSplitPodium() {
   podiumEl.innerHTML = `
     <div class="split-podium-title">${t().splitPodiumTitle}</div>
     <div class="split-podium-winner">
-      <span style="color:var(--gold-bright)">${standings[0].name}</span>
+      <span style="color:var(--gold-bright)">${escHtml(standings[0].name)}</span>
       ${t().splitPodiumWinner}
     </div>
     <div class="split-podium-bars">
@@ -3946,7 +3945,7 @@ function renderSplitPodium() {
         return `
           <div class="podium-row">
             <span class="podium-medal">${medals[rank] || ''}</span>
-            <span class="podium-name">${s.name}</span>
+            <span class="podium-name">${escHtml(s.name)}</span>
             <div class="podium-bar-track">
               <div class="podium-bar-fill" style="width:${pct}%"></div>
             </div>

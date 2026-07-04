@@ -37,10 +37,10 @@ const DIET_LABELS = {
 };
 
 const WINE_TYPE_LABELS = {
-  pt: { tinto:"Tinto", branco:"Branco", verde:"Verde", rose:"Rosé", espumante:"Espumante", agua:"Água", refrigerante:"Refrigerante", sumo:"Sumo Natural", cerveja:"Cerveja", cocktail:"Cocktail" },
-  en: { tinto:"Red", branco:"White", verde:"Green", rose:"Rosé", espumante:"Sparkling", agua:"Water", refrigerante:"Soft Drink", sumo:"Fresh Juice", cerveja:"Beer", cocktail:"Cocktail" },
-  es: { tinto:"Tinto", branco:"Blanco", verde:"Verde", rose:"Rosado", espumante:"Espumoso", agua:"Agua", refrigerante:"Refresco", sumo:"Zumo Natural", cerveja:"Cerveza", cocktail:"Cóctel" },
-  fr: { tinto:"Rouge", branco:"Blanc", verde:"Verde", rose:"Rosé", espumante:"Mousseux", agua:"Eau", refrigerante:"Boisson gazeuse", sumo:"Jus Naturel", cerveja:"Bière", cocktail:"Cocktail" }
+  pt: { tinto:"Tinto", branco:"Branco", verde:"Verde", rose:"Rosé", espumante:"Espumante", agua:"Água", refrigerante:"Refrigerante", sumo:"Sumo Natural", cerveja:"Cerveja", cocktail:"Cocktail", margarita:"Margarita", shot:"Shot", sangria:"Sangria", "sem-alcool":"Sem Álcool" },
+  en: { tinto:"Red", branco:"White", verde:"Green", rose:"Rosé", espumante:"Sparkling", agua:"Water", refrigerante:"Soft Drink", sumo:"Fresh Juice", cerveja:"Beer", cocktail:"Cocktail", margarita:"Margarita", shot:"Shot", sangria:"Sangria", "sem-alcool":"Non-Alcoholic" },
+  es: { tinto:"Tinto", branco:"Blanco", verde:"Verde", rose:"Rosado", espumante:"Espumoso", agua:"Agua", refrigerante:"Refresco", sumo:"Zumo Natural", cerveja:"Cerveza", cocktail:"Cóctel", margarita:"Margarita", shot:"Shot", sangria:"Sangría", "sem-alcool":"Sin Alcohol" },
+  fr: { tinto:"Rouge", branco:"Blanc", verde:"Verde", rose:"Rosé", espumante:"Mousseux", agua:"Eau", refrigerante:"Boisson gazeuse", sumo:"Jus Naturel", cerveja:"Bière", cocktail:"Cocktail", margarita:"Margarita", shot:"Shot", sangria:"Sangria", "sem-alcool":"Sans Alcool" }
 };
 
 /* Badges psicológicos — emoji + texto multilíngue */
@@ -768,7 +768,9 @@ function getActiveBanner() {
         label:    b.label[currentLang]    || b.label.pt    || '',
         headline: b.headline              ? (b.headline[currentLang] || b.headline.pt || '') : (b.label[currentLang] || ''),
         text:     b.text[currentLang]     || b.text.pt     || '',
-        ghost:    b.ghost                 ? (b.ghost[currentLang]    || b.ghost.pt    || '') : ''
+        ghost:    b.ghost                 ? (b.ghost[currentLang]    || b.ghost.pt    || '') : '',
+        countdown: !!b.countdown,
+        endH:      b.endH
       };
     }
   }
@@ -799,6 +801,52 @@ function renderSpecialBanner() {
   if (labelEl)        labelEl.textContent        = banner.label;
   if (headlineTextEl) headlineTextEl.textContent = banner.headline;
   if (textEl)         textEl.textContent         = banner.text;
+
+  // Countdown ao vivo até ao fim do happy hour (endH)
+  updateHappyHourCountdown(banner);
+}
+
+let _happyHourInterval = null;
+function updateHappyHourCountdown(banner) {
+  const cd = document.getElementById('special-countdown');
+  if (!cd) return;
+
+  // Sem countdown (ou fora da janela) → esconde e limpa o timer
+  if (!banner || !banner.countdown || typeof banner.endH !== 'number') {
+    cd.style.display = 'none';
+    if (_happyHourInterval) { clearInterval(_happyHourInterval); _happyHourInterval = null; }
+    return;
+  }
+
+  const topEl = document.getElementById('special-cd-top');
+  if (topEl) topEl.textContent = t().happyHourEnds;
+  cd.style.display = '';
+
+  const tick = () => {
+    const now = new Date();
+    const end = new Date(now);
+    end.setHours(banner.endH, 0, 0, 0);
+    let diff = Math.floor((end - now) / 1000);
+    if (diff <= 0) {
+      // Happy hour terminou → re-render (passa ao banner informativo)
+      if (_happyHourInterval) { clearInterval(_happyHourInterval); _happyHourInterval = null; }
+      renderSpecialBanner();
+      return;
+    }
+    const hh = String(Math.floor(diff / 3600)).padStart(2, '0');
+    const mm = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+    const ss = String(diff % 60).padStart(2, '0');
+    const hEl = document.getElementById('cd-h');
+    const mEl = document.getElementById('cd-m');
+    const sEl = document.getElementById('cd-s');
+    if (hEl) hEl.textContent = hh;
+    if (mEl) mEl.textContent = mm;
+    if (sEl) sEl.textContent = ss;
+  };
+
+  tick();
+  if (_happyHourInterval) clearInterval(_happyHourInterval);
+  _happyHourInterval = setInterval(tick, 1000);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -833,7 +881,7 @@ function renderMostOrdered() {
       <span class="most-ordered-rank">${rank}</span>
       <div class="most-ordered-card-content">
         <span class="most-ordered-card-badge">${ref.badge[currentLang]}</span>
-        <div class="most-ordered-card-name">${item.name[currentLang]}</div>
+        <div class="most-ordered-card-name">${(item.baseName && item.baseName[currentLang]) || item.name[currentLang]}</div>
       </div>
       <div class="most-ordered-card-price">${item.price}</div>
     </div>
@@ -921,14 +969,142 @@ function positionTabInk(activeTab, animate = true) {
    9. RENDER — MENU (com badges psicológicos — v5)
    ═══════════════════════════════════════════════════════════════════════════ */
 
+// Variante de taco selecionada por grupo (posição no array de variantes)
+let _variantSelection = {};
+
+// Avisos no fundo do menu: Menu do Dia + alergénios (info, não pedíveis).
+// Escondidos durante pesquisa para não poluir os resultados.
+function renderMenuNotes() {
+  if (currentQuery.trim()) return '';
+  let out = '';
+  const md = CONFIG.menuDoDia;
+  if (md && md.label && md.label[currentLang]) {
+    out += `
+      <div class="menu-do-dia">
+        <div class="menu-do-dia-head">
+          <span class="menu-do-dia-label">${md.label[currentLang]}</span>
+          ${md.price ? `<span class="menu-do-dia-price">${md.price}</span>` : ''}
+        </div>
+        ${md.desc && md.desc[currentLang] ? `<p class="menu-do-dia-desc">${md.desc[currentLang]}</p>` : ''}
+      </div>`;
+  }
+  if (CONFIG.allergenNotice && CONFIG.allergenNotice[currentLang]) {
+    out += `<p class="menu-allergen-notice">${CONFIG.allergenNotice[currentLang]}</p>`;
+  }
+  return out;
+}
+
 function renderMenu() {
   const normalizedQuery = currentQuery.trim().toLowerCase();
   let visibleItems = 0;
 
+  // Controlos +/- do cartão (partilhados por itens simples e variantes de taco)
+  const addControlsHtml = (refId, canOrder, inCart) => canOrder ? `
+          <div class="menu-item-order-controls ${inCart > 0 ? 'has-qty' : ''}" data-order-controls="${refId}">
+            <button class="menu-item-step-btn menu-item-step-btn-minus ${inCart > 0 ? 'show' : ''}" data-decrement-ref="${refId}" aria-label="${t().reduceQty}" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <button class="menu-item-add-btn ${inCart > 0 ? 'added' : ''}" data-add-ref="${refId}" aria-label="${t().increaseQty}" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              ${inCart > 0 ? `<span class="qty-badge">${inCart}</span>` : ''}
+            </button>
+          </div>
+        ` : '';
+
   const html = CONFIG.menu.map(sec => {
     let sectionVisibleItems = 0;
 
-    const itemsHtml = sec.items.map((item, idx) => {
+    // Agrupa variantes consecutivas (mesmo `group`) numa "unidade" de render.
+    const units = [];
+    sec.items.forEach((item, idx) => {
+      if (item.group) {
+        const last = units[units.length - 1];
+        if (last && last.group === item.group) { last.variants.push({ item, idx }); return; }
+        units.push({ group: item.group, variants: [{ item, idx }] });
+      } else {
+        units.push({ single: { item, idx } });
+      }
+    });
+
+    const itemsHtml = units.map(unit => {
+        // ── Cartão com variantes (Tacos ×2 / ×3) ─────────────────────────────
+        if (unit.group) {
+          const variants = unit.variants.filter(v => !v.item._hidden);
+          if (variants.length === 0) return '';
+          const primary = variants[0].item;
+          // Variante selecionada (persistida em _variantSelection por grupo)
+          let selPos = _variantSelection[unit.group];
+          if (typeof selPos !== 'number' || selPos < 0 || selPos >= variants.length) selPos = 0;
+          const sel    = variants[selPos];
+          const selRef = `${sec.id}:${sel.idx}`;
+
+          const matchesFilter = currentFilter === 'all' ||
+            variants.some(v => (v.item.diet || []).includes(currentFilter));
+          const haystack = variants
+            .flatMap(v => [v.item.name[currentLang], v.item.name.pt, v.item.name.en])
+            .concat(primary.baseName ? Object.values(primary.baseName) : [])
+            .concat(primary.desc ? [primary.desc[currentLang]] : [])
+            .filter(Boolean).join(' ').toLowerCase();
+          const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
+          const matchesAllergens = activeAllergenExcludes.size === 0 ||
+            !(primary.allergens || []).some(a => activeAllergenExcludes.has(a));
+          const matches = matchesFilter && matchesQuery && matchesAllergens;
+          if (matches) { visibleItems++; sectionVisibleItems++; }
+
+          const soldOut = !!sel.item.soldOut || _nexoAvailability[selRef] === false;
+          const displayName = (primary.baseName && primary.baseName[currentLang]) || primary.name[currentLang];
+          const badgeHtml = soldOut
+            ? `<div class="item-badge item-badge-soldout">${t().soldOut}</div>`
+            : (primary.badge && ITEM_BADGES[primary.badge]
+              ? `<div class="item-badge item-badge-${primary.badge}">${ITEM_BADGES[primary.badge].emoji} ${ITEM_BADGES[primary.badge][currentLang]}</div>`
+              : '');
+          const canOrder = !soldOut && parsePriceToNumber(sel.item.price) !== null;
+          const inCart = getCartQty(selRef);
+
+          const pillsHtml = `
+            <div class="taco-variants" role="group" aria-label="${displayName}">
+              ${variants.map((v, i) => `
+                <button class="taco-variant ${i === selPos ? 'active' : ''}" data-variant-group="${unit.group}" data-variant-pos="${i}" type="button">
+                  <span class="taco-variant-lbl">${v.item.variantLabel || ''}</span>
+                  <span class="taco-variant-price">${v.item.price}</span>
+                </button>`).join('')}
+            </div>`;
+
+          return `
+        <article class="menu-item menu-item--variants ${matches ? '' : 'hidden'}${soldOut ? ' sold-out' : ''}" data-item="${selRef}">
+          <div class="menu-item-body">
+            ${badgeHtml}
+            <h3 class="menu-item-name">${displayName}</h3>
+            ${primary.desc && primary.desc[currentLang] ? `<p class="menu-item-desc">${primary.desc[currentLang]}</p>` : ''}
+            ${pillsHtml}
+            <div class="menu-item-meta">
+              ${(sel.item.diet || []).length > 0 ? `
+                <div class="menu-item-tags">
+                  ${sel.item.diet.map(d => `<span class="tag tag-diet">${d}</span>`).join('')}
+                </div>
+              ` : ''}
+              <div class="menu-item-actions">
+                ${addControlsHtml(selRef, canOrder, inCart)}
+              </div>
+            </div>
+          </div>
+          <div class="menu-item-visual">
+            <div class="menu-item-photo is-placeholder" data-section="${sec.id}"><span>${displayName[0].toUpperCase()}</span></div>
+            <button class="menu-item-bookmark ${isFavorited(selRef) ? 'saved' : ''}" data-bookmark-ref="${selRef}" aria-label="Guardar favorito" type="button">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+            </button>
+          </div>
+        </article>
+        `;
+        }
+
+        // ── Cartão normal ────────────────────────────────────────────────────
+        const { item, idx } = unit.single;
         if (item._hidden) return '';   // escondido via Portal NEXO
         const matchesFilter = currentFilter === 'all' || (item.diet || []).includes(currentFilter);
         const haystack = [
@@ -962,22 +1138,7 @@ function renderMenu() {
         // Botão "+" só aparece se item tem preço parseable (€) e não está esgotado
         const canOrder = !soldOut && parsePriceToNumber(item.price) !== null;
         const inCart = getCartQty(refId);
-        const addBtnHtml = canOrder ? `
-          <div class="menu-item-order-controls ${inCart > 0 ? 'has-qty' : ''}" data-order-controls="${refId}">
-            <button class="menu-item-step-btn menu-item-step-btn-minus ${inCart > 0 ? 'show' : ''}" data-decrement-ref="${refId}" aria-label="${t().reduceQty}" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            </button>
-            <button class="menu-item-add-btn ${inCart > 0 ? 'added' : ''}" data-add-ref="${refId}" aria-label="${t().increaseQty}" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              ${inCart > 0 ? `<span class="qty-badge">${inCart}</span>` : ''}
-            </button>
-          </div>
-        ` : '';
+        const addBtnHtml = addControlsHtml(refId, canOrder, inCart);
 
         return `
         <article class="menu-item ${matches ? '' : 'hidden'}${soldOut ? ' sold-out' : ''}" data-item="${refId}">
@@ -1010,14 +1171,18 @@ function renderMenu() {
         `;
       }).join('');
 
+    const noteHtml = (sec.note && sec.note[currentLang])
+      ? `<p class="menu-section-note">${sec.note[currentLang]}</p>` : '';
+
     return `
     <section class="menu-section ${sectionVisibleItems > 0 ? '' : 'hidden'}" id="section-${sec.id}">
       <h2 class="menu-section-title">${sec.section[currentLang]}</h2>
       ${sec.desc && sec.desc[currentLang] ? `<p class="menu-section-desc">${sec.desc[currentLang]}</p>` : ''}
+      ${noteHtml}
       ${itemsHtml}
     </section>
   `;
-  }).join('');
+  }).join('') + renderMenuNotes();
 
   const emptyState = visibleItems === 0
     ? `<div class="menu-empty-state">
@@ -1869,6 +2034,20 @@ function setupMostOrdered() {
 // Menu clicks → modal + bounce tátil
 function setupMenuClicks() {
   document.getElementById('menu').addEventListener('click', e => {
+    // Toggle de variante do taco (×2 / ×3) — muda seleção e re-render, sem abrir modal
+    const variantBtn = e.target.closest('.taco-variant');
+    if (variantBtn) {
+      haptic();
+      const group = variantBtn.dataset.variantGroup;
+      const pos = parseInt(variantBtn.dataset.variantPos, 10);
+      if (group && !isNaN(pos)) {
+        _variantSelection[group] = pos;
+        renderMenu();
+        if (window._attachMenuObserver) window._attachMenuObserver();
+      }
+      return;
+    }
+
     // Photo tap → lightbox (not modal)
     const photoEl = e.target.closest('.menu-item-photo');
     if (photoEl && photoEl.src) {

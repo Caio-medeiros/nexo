@@ -202,6 +202,11 @@
     });
 
     // ── Per-client status grid ─────────────────────────────────────────────
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     function timeAgo(isoStr) {
       if (!isoStr) return 'nunca';
       const diff = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
@@ -217,8 +222,14 @@
       const grid       = document.getElementById('client-status-grid');
 
       try {
+        // Token da sessão do portal (não o anon key) — o endpoint só devolve
+        // o detalhe por cliente a utilizadores autenticados.
+        const { data: { session } } = await window.db.auth.getSession();
         const res = await fetch(`${SB_URL}/functions/v1/nexo-health-endpoint`, {
-          headers: { 'Authorization': `Bearer ${SB_KEY}`, 'apikey': SB_KEY },
+          headers: {
+            'Authorization': `Bearer ${session?.access_token || SB_KEY}`,
+            'apikey': SB_KEY,
+          },
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
@@ -253,8 +264,8 @@
           <div class="client-status-card${c.status === 'warning' ? ' has-issue' : ''}">
             <div class="csc-header">
               <div>
-                <span class="csc-name">${c.client_name}</span>
-                <span class="csc-slug">${c.slug}</span>
+                <span class="csc-name">${esc(c.client_name)}</span>
+                <span class="csc-slug">${esc(c.slug)}</span>
               </div>
               <span class="csc-badge ${c.status}">${c.status === 'ok' ? '✓ OK' : '⚠️ Atenção'}</span>
             </div>
@@ -276,8 +287,8 @@
               ${c.last_event_at ? `Último evento: ${timeAgo(c.last_event_at)}` : 'Sem eventos registados'}
             </div>
             <div class="csc-actions">
-              <a href="/menu/${c.slug}/" target="_blank" class="csc-link">Ver menu →</a>
-              <a href="/portal/estatisticas/?slug=${c.slug}" class="csc-link">Analytics →</a>
+              <a href="/menu/${encodeURIComponent(c.slug)}/" target="_blank" class="csc-link">Ver menu →</a>
+              <a href="/portal/estatisticas/?slug=${encodeURIComponent(c.slug)}" class="csc-link">Analytics →</a>
             </div>
           </div>`).join('');
 

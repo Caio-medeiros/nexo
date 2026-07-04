@@ -1,0 +1,316 @@
+/* ═══════════════════════════════════════════════════════════════
+   NEXO PREMIUM — Menu add-ons (Comanda · Banners)
+   Additive layer. Loads only when CONFIG.features.comanda/banners
+   are enabled. Does not touch the core menu styles.
+   Tokens mirror the NEXO operational design system.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --np-bg-base: #0A0A0A;
+  --np-bg-elevated: #1C1C1C;
+  --np-bg-hover: #212121;
+  --np-border: rgba(255,255,255,0.07);
+  --np-border-md: rgba(255,255,255,0.12);
+  --np-text: #F5F5F5;
+  --np-text-2: #888;
+  --np-text-muted: #555;
+  --np-success: #22C55E;
+  --np-warning: #F59E0B;
+  --np-danger: #EF4444;
+  --np-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Promotional banners ── */
+#menu-banners {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+.menu-banner {
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: default;
+  animation: npFadeIn 240ms ease both;
+}
+.menu-banner[data-link] { cursor: pointer; }
+.banner-title { font-size: 14px; font-weight: 700; }
+.banner-sub { font-size: 12px; opacity: 0.75; margin-left: 8px; }
+.banner-arrow { font-size: 16px; font-weight: 700; margin-left: auto; }
+@keyframes npFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+/* ── Cart pill — comanda mode (cart empty, active comanda) ── */
+.cart-pill--comanda {
+  box-shadow:
+    0 10px 32px rgba(13, 46, 101, 0.45),
+    0 2px 8px rgba(13, 46, 101, 0.25),
+    0 0 0 1.5px rgba(245,158,11,0.35) !important;
+}
+
+/* ── Comanda bar — kept in CSS but never rendered (pill handles it now) ── */
+.comanda-bar {
+  position: fixed;
+  bottom: 84px;
+  left: 16px;
+  right: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, #1a1710 55%, #141210 100%);
+  border: 1px solid rgba(245,158,11,0.22);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  z-index: 150; /* mesma camada do cart-pill: por baixo dos modais (200) */
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(245,158,11,0.05);
+  animation: npSlideUp 300ms var(--np-ease) both;
+  color: var(--np-text);
+  overflow: hidden;
+  max-height: 90px;
+  transition: max-height 350ms var(--np-ease), padding 350ms var(--np-ease), opacity 300ms ease;
+}
+@keyframes npSlideUp {
+  from { transform: translateY(24px); opacity: 0; }
+}
+.comanda-bar-left { min-width: 0; }
+.comanda-code {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--np-text-muted);
+  letter-spacing: 0.1em;
+  display: block;
+}
+.comanda-table {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--np-text);
+  display: block;
+}
+.comanda-bar-center { text-align: center; }
+.comanda-total {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--np-text);
+  display: block;
+}
+.comanda-items {
+  font-size: 11px;
+  color: var(--np-text-muted);
+  display: block;
+}
+.comanda-submit-btn {
+  background: var(--np-text);
+  color: var(--np-bg-base);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  min-height: 48px;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 150ms ease;
+  white-space: nowrap;
+}
+.comanda-submit-btn:active { transform: scale(0.96); opacity: 0.85; }
+
+/* ── Join comanda + staff takeover ── */
+.comanda-join-row {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.comanda-join-input {
+  flex: 1;
+  min-height: 44px;
+  background: var(--np-bg-elevated);
+  border: 1px solid var(--np-border-md);
+  border-radius: 10px;
+  color: var(--np-text);
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 12px;
+}
+.staff-takeover-section {
+  margin-top: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.staff-takeover-label {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin: 0;
+}
+#staff-qr-canvas {
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+}
+.staff-qr-hint { font-size: 11px; opacity: 0.6; margin: 0; }
+
+/* ── Running tab: comanda-bar (clicável) + estado ── */
+.comanda-bar { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.comanda-bar:active { transform: scale(0.99); }
+.comanda-status { font-size: 11px; color: var(--np-text-2); display: block; margin-top: 2px; }
+.comanda-bar-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.comanda-bar-cta { font-size: 11px; font-weight: 600; color: var(--np-text-2); }
+.comanda-bar--mini {
+  max-height: 46px;
+  padding: 10px 14px;
+  opacity: 0.78;
+}
+.comanda-bar--mini .comanda-status,
+.comanda-bar--mini .comanda-bar-cta { display: none; }
+.comanda-bar--mini .comanda-total { font-size: 13px; }
+.comanda-bar--mini .cb-countdown { display: none; }
+.cb-countdown {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--np-warning);
+  opacity: 0.45;
+  transform-origin: left;
+  animation: cbCountdown 6s linear forwards;
+}
+@keyframes cbCountdown {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* ── "Já enviado" — tab própria "Comanda", UI clara a condizer com o menu ── */
+#panel-comanda { padding-bottom: 16px; }
+.nexo-sent-section {
+  margin: 12px 12px 0;
+  border-radius: 12px;
+  background: var(--bg-alt, #DAE8F2);
+  border: 1px solid var(--border, #C0D5E8);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* header row: label + total */
+.ns-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px 6px;
+  border-bottom: 1px solid var(--border-soft, #D6E8F2);
+}
+.ns-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted, #4A6880);
+}
+.ns-total {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text, #0F2233);
+}
+
+/* rounds container */
+.ns-rounds {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* round header */
+.nexo-round-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 4px;
+  background: rgba(26,79,160,0.05);
+  border-bottom: 1px solid var(--border-soft, #D6E8F2);
+}
+.nexo-round-head + .nexo-round-head {
+  border-top: 1px solid var(--border-soft, #D6E8F2);
+}
+.nexo-round-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #4A6880);
+}
+.nexo-round-time {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--text-muted, #4A6880);
+  margin-left: 2px;
+}
+.nexo-round-svg {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* sent items */
+.nexo-sent-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border-soft, #D6E8F2);
+}
+.nexo-sent-item:last-child { border-bottom: none; }
+.nexo-sent-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text, #0F2233);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nexo-sent-qty {
+  font-family: 'Azeret Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--text-muted, #4A6880);
+  flex-shrink: 0;
+}
+.nexo-sent-status {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* status colours */
+.ns-status--done   { color: #16a34a; }
+.ns-status--prep   { color: #b45309; }
+.ns-status--pending{ color: var(--text-muted, #4A6880); }
+
+/* hint row */
+.ns-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--border-soft, #D6E8F2);
+  font-size: 11px;
+  color: var(--text-muted, #4A6880);
+  background: rgba(26,79,160,0.03);
+}
+.ns-hint svg { flex-shrink: 0; }

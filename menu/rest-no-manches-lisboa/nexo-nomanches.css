@@ -1,0 +1,369 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   No Manches — Mexican Street Food · override de tema
+   Carrega DEPOIS de style.css. Redefine a paleta (creme + dourado mostarda +
+   vermelho mexicano), aplica Bebas Neue aos títulos e Inter ao corpo, e
+   estiliza as features novas: hero escuro, happy hour vermelho, variantes de
+   taco (×2 / ×3), notas de secção e avisos do menu.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Paleta creme/mostarda */
+  --bg:          #FEFCF5;   /* creme quente */
+  --bg-alt:      #F6EFDF;
+  --surface:     #FFFFFF;
+  --text:        #1A1A1A;   /* preto grafite */
+  --text-muted:  #6B6B6B;
+  --muted:       #9A8C72;
+  --border:      #E8E0D0;
+  --border-soft: #F1EADB;
+
+  /* Dourado mostarda (também derivado por applyBrandColors a partir do brandColor) */
+  --accent:        #C8952A;
+  --accent-dark:   #A67820;
+  --accent-bright: #E0B24A;
+
+  --gold:        #C8952A;
+  --gold-bright: #E4B24C;
+  --gold-deep:   #A67820;
+
+  /* Zona escura (banner) em grafite, não navy */
+  --navy:     #1A1A1A;
+  --navy-mid: #262626;
+
+  /* Vermelho mexicano / terra cota */
+  --mx-red:      #D64C2B;
+  --mx-red-dark: #B23A1F;
+
+  /* Tipografia: Inter no corpo, Bebas Neue nos títulos */
+  --font-ui:      'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Bebas Neue', 'Inter', sans-serif;
+
+  --shadow-elite: 0 20px 50px -10px rgba(200, 149, 42, 0.22), 0 8px 16px -4px rgba(200, 149, 42, 0.12);
+}
+
+body { background: var(--bg); }
+
+/* ── Títulos em Bebas Neue (grunge, uppercase) ────────────────────────────── */
+.hero-name,
+.menu-section-title,
+.category-tab,
+.special-banner-headline,
+.special-banner-label,
+.section-title-elite,
+.most-ordered-title,
+.wine-header .section-title,
+.favorites-title,
+.menu-do-dia-label,
+.item-modal-name,
+.cart-title {
+  font-family: var(--font-heading) !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  letter-spacing: 0.02em;
+}
+
+.menu-section-title,
+.section-title-elite,
+.most-ordered-title,
+.wine-header .section-title {
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Sublinhado decorativo das secções em dourado */
+.menu-section-title::after { background: var(--accent) !important; opacity: 0.9; }
+
+.category-tab {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 15px;
+}
+.category-tab.active { color: var(--accent-dark); }
+
+/* ── HERO escuro (grafite) com taco em linha branca ───────────────────────── */
+.hero { background: #1A1A1A; height: 300px; }
+.hero-image { background-image: none !important; background: #1A1A1A; }
+.hero-overlay {
+  background:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(200,149,42,0.16) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.0) 45%, rgba(0,0,0,0.55) 100%);
+}
+
+/* Logo = taco SVG (contorno branco), sem círculo dourado */
+.hero-logo {
+  width: 88px;
+  height: 70px;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  margin-bottom: 10px;
+}
+.hero-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+.hero-name {
+  font-size: 54px;
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(0,0,0,0.55);
+}
+
+/* Subtítulo "Mexican Street Food" em dourado, letra a letra */
+.hero-tagline {
+  font-family: var(--font-ui);
+  font-style: normal;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--gold-bright);
+  opacity: 1;
+  margin-top: 8px;
+}
+
+/* Instagram handle no fundo do hero, discreto */
+.hero-stamp {
+  font-family: var(--font-ui);
+  border: none;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.12em;
+  font-size: 10px;
+  padding: 0;
+  margin-top: 12px;
+  margin-bottom: 0;
+  text-transform: none;
+}
+
+/* ── HAPPY HOUR — banner vermelho mexicano + countdown ────────────────────── */
+.special-banner { background: linear-gradient(135deg, var(--mx-red) 0%, var(--mx-red-dark) 100%); }
+.special-banner::before { background: linear-gradient(90deg, transparent 0%, var(--gold-bright) 45%, rgba(255,255,255,0.25) 100%); }
+.banner-art { display: none; }   /* esconde o peixe da Marisca */
+
+.special-banner-label { color: #FFE9C7; font-family: var(--font-heading); font-size: 12px; letter-spacing: 0.14em; }
+.special-banner-headline {
+  font-family: var(--font-heading) !important;
+  font-style: normal !important;
+  font-size: 30px;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+.special-banner-text { font-family: var(--font-ui); font-style: normal; color: rgba(255,255,255,0.9); font-weight: 500; }
+
+.special-cd { background: rgba(0,0,0,0.18); border-color: rgba(255,255,255,0.28); }
+.special-cd-top { color: #FFE9C7 !important; }
+
+/* ── VARIANTES DE TACO (×2 / ×3) — toggle em pill ─────────────────────────── */
+.taco-variants {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 4px;
+  flex-wrap: wrap;
+}
+.taco-variant {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  border-radius: 100px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  line-height: 1;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.taco-variant:active { transform: scale(0.95); }
+.taco-variant-lbl   { font-weight: 700; font-size: 14px; color: var(--text); }
+.taco-variant-price { font-weight: 600; font-size: 13px; color: var(--accent-dark); }
+.taco-variant.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px -2px rgba(200,149,42,0.45);
+}
+.taco-variant.active .taco-variant-lbl,
+.taco-variant.active .taco-variant-price { color: #fff; }
+
+.menu-item--variants .menu-item-meta { margin-top: 2px; }
+
+/* ── Nota de secção (ex.: "+€1,50 para queijo gratinado") ─────────────────── */
+.menu-section-note {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--text-muted);
+  margin: -2px 0 14px;
+}
+
+/* ── Menu do Dia + aviso de alergénios (fim do menu) ──────────────────────── */
+.menu-do-dia {
+  margin: 22px var(--s3, 18px) 6px;
+  padding: 16px 18px;
+  background: var(--bg-alt);
+  border: 1px dashed var(--accent);
+  border-radius: 14px;
+}
+.menu-do-dia-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.menu-do-dia-label {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+}
+.menu-do-dia-price {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--accent-dark);
+  white-space: nowrap;
+}
+.menu-do-dia-desc {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-top: 6px;
+}
+.menu-allergen-notice {
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--muted);
+  text-align: center;
+  margin: 14px var(--s3, 18px) 8px;
+}
+
+/* ── Ajustes finos de marca ───────────────────────────────────────────────── */
+.menu-item-price,
+.most-ordered-card-price,
+.item-modal-price { color: var(--accent-dark); font-weight: 700; }
+
+/* Placeholder de foto em creme/dourado em vez de azul */
+.menu-item-photo.is-placeholder {
+  background: linear-gradient(135deg, #FBF3E2 0%, #F2E4C6 100%);
+  color: var(--accent-dark);
+}
+
+/* ── Remover o azul-oceano da Marisca (hexes hardcoded) ───────────────────── */
+
+/* Barra de navegação rápida: creme em vez de azul-claro */
+.quick-nav { background: rgba(254, 252, 245, 0.96); }
+
+/* Zona escura (banner + mais pedidos) em grafite */
+.dark-zone { background-color: #1A1A1A; }
+
+/* Onda que liga a zona escura ao menu → preenchida a creme */
+.dark-zone::after {
+  background-image: url("data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20preserveAspectRatio%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M0%2C40%20C18%2C22%2035%2C52%2050%2C32%20C65%2C14%2082%2C44%20100%2C26%20L100%2C100%20L0%2C100%20Z%22%20fill%3D%22%23FEFCF5%22%2F%3E%3C%2Fsvg%3E");
+}
+
+/* Badge dos "mais pedidos" a dourado em vez de azul-turquesa */
+.most-ordered-card-badge { color: rgba(228, 178, 76, 0.85); }
+
+/* Cartão Wi-Fi em grafite com contorno dourado */
+.wifi-card {
+  background: linear-gradient(135deg, #1F1F1F 0%, #2A2A2A 100%);
+  border-color: rgba(200, 149, 42, 0.4);
+}
+
+/* ── Sombras quentes (o Marisca usava azul-marinho) ───────────────────────── */
+:root {
+  --shadow-sm: 0 1px 2px rgba(60, 40, 15, 0.06);
+  --shadow-md: 0 4px 16px rgba(60, 40, 15, 0.10);
+  --shadow-lg: 0 12px 40px rgba(60, 40, 15, 0.14);
+  --shadow-elite: 0 20px 50px -10px rgba(200, 149, 42, 0.22), 0 8px 16px -4px rgba(180, 90, 40, 0.14);
+}
+
+/* ── Rodapé grafite com "papel picado" mexicano no topo ───────────────────── */
+.footer {
+  background: linear-gradient(180deg, #201d1a 0%, #171514 55%, #0F0E0D 100%) !important;
+}
+/* Substitui a onda azul por uma fiada de bandeirolas (papel picado) */
+.footer::before {
+  height: 46px;
+  background-image: url("./img/papel-picado.svg");
+  background-size: 132px 46px;
+  background-repeat: repeat-x;
+  background-position: top center;
+  filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.35));
+}
+
+/* ── Botões flutuantes (chamar empregado + voltar ao topo) em grafite/ouro ── */
+#nexo-call-staff-btn,
+.back-to-top {
+  background: #1A1A1A !important;
+  border-color: rgba(200, 149, 42, 0.5) !important;
+  box-shadow: 0 6px 22px rgba(60, 40, 15, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ILUSTRAÇÕES — pequenos ícones mexicanos (line-art) ao longo do menu.
+   Um por secção, antes do título, com sombra suave para dar profundidade.
+   ══════════════════════════════════════════════════════════════════════════ */
+.menu-section-title::before,
+.wine-header .section-title::before {
+  content: "";
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  margin-right: 0.42em;
+  vertical-align: -0.16em;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: drop-shadow(0 2px 2px rgba(60, 40, 15, 0.22));
+}
+#section-antojitos   .menu-section-title::before { background-image: url("./img/ic-antojitos.svg"); }
+#section-totopos     .menu-section-title::before { background-image: url("./img/ic-totopos.svg"); }
+#section-quesadillas .menu-section-title::before { background-image: url("./img/ic-quesadillas.svg"); }
+#section-tacos       .menu-section-title::before { background-image: url("./img/ic-tacos.svg"); }
+#section-sobremesa   .menu-section-title::before { background-image: url("./img/ic-sobremesa.svg"); }
+.wine-header .section-title::before { background-image: url("./img/ic-drinks.svg"); }
+
+/* Taco do hero com sombra própria (profundidade sobre o fundo escuro) */
+.hero-logo img { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5)); }
+
+/* Emoji/taco do banner Happy Hour com leve sombra */
+.special-banner-headline { text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
+
+/* Placeholder das bebidas (Drinks): grafite + garrafa dourada, não azul */
+.wine-card-photo:not(.has-image) {
+  background: linear-gradient(135deg, #2A2724 0%, #1A1A1A 100%);
+  color: var(--gold-bright);
+}
+
+/* Wi-Fi card: tirar o azul-ciano da Marisca → dourado */
+.wifi-icon { background: rgba(200, 149, 42, 0.14) !important; color: var(--gold-bright) !important; }
+.wifi-hint { color: var(--gold-bright) !important; }
+/* Troca o "carimbo" de coordenadas da praia por um toque mexicano, em dourado */
+.wifi-card::after {
+  content: "¡BUEN PROVECHO!" !important;
+  color: rgba(228, 178, 76, 0.5) !important;
+  font-family: var(--font-heading) !important;
+  letter-spacing: 0.12em !important;
+}
+.wifi-card:active { background: linear-gradient(135deg, #2A2724 0%, #171514 100%) !important; }
+
+/* Placeholders dos modais (item / bebida) em grafite, não azul */
+.item-modal-photo.is-placeholder,
+.wine-modal-photo.is-placeholder {
+  background: linear-gradient(135deg, #2A2724 0%, #1A1A1A 100%) !important;
+  color: var(--gold-bright);
+}
+
+/* Sombra do botão "Avaliar" em quente (era azul-marinho) */
+.btn-review { box-shadow: 0 6px 18px rgba(200, 149, 42, 0.4) !important; }

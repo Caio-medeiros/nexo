@@ -435,7 +435,7 @@ function showToast(message, type = 'info', duration = 3000) {
   const icons = { success: '✓', error: '✕', info: 'ℹ', warning: '⚠' };
   toast.innerHTML = `
     <span class="toast-icon">${icons[type] ?? 'ℹ'}</span>
-    <span class="toast-message">${message}</span>`;
+    <span class="toast-message">${escapeHtml(message)}</span>`;
   container.appendChild(toast);
   requestAnimationFrame(() => toast.classList.add('visible'));
   setTimeout(() => {

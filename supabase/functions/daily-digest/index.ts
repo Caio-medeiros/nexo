@@ -5,7 +5,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // Deploy: supabase functions deploy daily-digest
 // Schedule in Dashboard → Edge Functions → daily-digest → Schedules: 0 9 * * *
 
-serve(async () => {
+serve(async (req) => {
+  // Se NEXO_CRON_SECRET estiver definido, só o pg_cron (que envia o header
+  // a partir do Vault — ver migration 032) pode invocar esta função.
+  const cronSecret = Deno.env.get('NEXO_CRON_SECRET')
+  if (cronSecret && req.headers.get('x-nexo-cron-secret') !== cronSecret) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401, headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const db = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -104,8 +113,10 @@ serve(async () => {
     ).catch(() => {})
   }
 
+  // Nunca devolver `message` no corpo HTTP — contém facturação por cliente
+  // e a resposta é ignorada pelo pg_cron (o digest segue por WhatsApp).
   return new Response(
-    JSON.stringify({ sent: true, date: yesterday.toISOString().split('T')[0], message }),
+    JSON.stringify({ sent: true, date: yesterday.toISOString().split('T')[0] }),
     { headers: { 'Content-Type': 'application/json' } }
   )
 })
