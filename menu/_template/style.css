@@ -2468,14 +2468,30 @@ body.has-cart {
 
 
 /* ─── Bottom sheet (cart details) ─── */
-.cart-sheet-overlay { align-items: flex-end; }
+.cart-sheet-overlay {
+  align-items: flex-end;
+  /* No iOS Safari, inset:0 usa o viewport de LAYOUT (que se estende por baixo
+     da barra de ferramentas flutuante), por isso o rodapé do sheet ficava
+     escondido atrás dela. Ancorar a altura ao viewport DINÂMICO (dvh) põe o
+     fundo do sheet — e o botão Confirmar — sempre acima da barra do browser. */
+  bottom: auto;
+  height: 100vh;
+  height: 100dvh;
+}
 
 .cart-sheet {
   background: var(--bg-alt);
   padding: var(--s3) 0 0;
-  max-height: 80vh;
+  max-height: 85vh;
+  max-height: 88dvh; /* viewport dinâmico — o rodapé (Confirmar) não fica sob a barra do browser no telemóvel */
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+@media (pointer: fine) {
+  .cart-sheet-overlay { padding-bottom: 24px; }
+  .cart-sheet { max-height: 82dvh; }
 }
 
 .cart-sheet-header {
@@ -2492,6 +2508,39 @@ body.has-cart {
   font-weight: 900;
   letter-spacing: -0.4px;
   color: var(--text);
+}
+
+/* Cart panel — flex column so footer sticks. Tabs (Pedido/Comanda/Dividir)
+   switch which .cart-panel is visible inside .cart-sheet; without this rule
+   panel-order/panel-comanda/panel-split are plain block divs and the
+   flex:1 + overflow-y:auto on their inner scrollable lists has no effect
+   (no flex parent to size against), so content silently overflows the
+   sheet with nothing scrollable to reach it. */
+.cart-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* #panel-split has no pinned footer inside it (unlike #panel-order, which
+   keeps Confirmar visible via .cart-list scrolling under .cart-footer) — its
+   content (people stepper, mode toggle, item assign list, podium) just grows
+   as items/people are added. Without its own scroll, that growth silently
+   overflowed the panel's `overflow: hidden` and clipped the podium/lower
+   content with no way to reach it. Scroll the whole panel instead. */
+#panel-split {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* #panel-comanda ("Já enviado" — order status view) has the same shape:
+   no pinned footer, content (kitchen rounds already fired) only grows.
+   Same fix, same reasoning as #panel-split above. */
+#panel-comanda {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Cart items list */
@@ -2610,12 +2659,14 @@ body.has-cart {
 
 /* Cart footer (total + show staff + clear) */
 .cart-footer {
+  flex-shrink: 0;
   border-top: 1px solid var(--border);
   padding: var(--s3) var(--s3) calc(var(--s4) + env(safe-area-inset-bottom));
   background: var(--surface);
   display: flex;
   flex-direction: column;
   gap: var(--s2);
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.06);
 }
 
 .cart-total-row {
@@ -2687,12 +2738,17 @@ body.has-cart {
   color: black;
   z-index: 500;
   display: none;
-  overflow: hidden;
+  /* Uma mesa com várias rondas gera um histórico longo (staff-history) —
+     antes disto, overflow:hidden + align-items:center cortava o topo E o
+     fundo do conteúdo (Mesa/total ficavam fora do ecrã), sem scroll
+     nenhum para os alcançar. */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .staff-view.show {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   animation: fadeIn 0.2s;
 }
@@ -2717,6 +2773,11 @@ body.has-cart {
 }
 
 .staff-inner {
+  /* margin auto (eixo vertical) centra quando o conteúdo cabe no ecrã, mas
+     cede a top-align + scroll (via .staff-view) quando não cabe — em vez
+     do align-items:center do pai, que cortava por igual em cima e em
+     baixo sem dar nenhuma forma de lá chegar. */
+  margin: auto 0;
   text-align: center;
   padding: 24px;
   max-width: 520px;

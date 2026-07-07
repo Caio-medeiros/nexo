@@ -2644,6 +2644,25 @@ body.has-cart {
   overflow: hidden;
 }
 
+/* #panel-split has no pinned footer inside it (unlike #panel-order, which
+   keeps Confirmar visible via .cart-list scrolling under .cart-footer) — its
+   content (people stepper, mode toggle, item assign list, podium) just grows
+   as items/people are added. Without its own scroll, that growth silently
+   overflowed the panel's `overflow: hidden` and clipped the podium/lower
+   content with no way to reach it. Scroll the whole panel instead. */
+#panel-split {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* #panel-comanda ("Já enviado" — order status view) has the same shape:
+   no pinned footer, content (kitchen rounds already fired) only grows.
+   Same fix, same reasoning as #panel-split above. */
+#panel-comanda {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ── Notificação grande: "Pedido enviado para a cozinha" ───────────────── */
 .nexo-kitchen-toast {
   position: fixed;
@@ -2987,12 +3006,17 @@ body.has-cart {
   color: black;
   z-index: 500;
   display: none;
-  overflow: hidden;
+  /* Uma mesa com várias rondas gera um histórico longo (staff-history) —
+     antes disto, overflow:hidden + align-items:center cortava o topo E o
+     fundo do conteúdo (Mesa/total ficavam fora do ecrã), sem scroll
+     nenhum para os alcançar. */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .staff-view.show {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   animation: fadeIn 0.2s;
 }
@@ -3017,6 +3041,11 @@ body.has-cart {
 }
 
 .staff-inner {
+  /* margin auto (eixo vertical) centra quando o conteúdo cabe no ecrã, mas
+     cede a top-align + scroll (via .staff-view) quando não cabe — em vez
+     do align-items:center do pai, que cortava por igual em cima e em
+     baixo sem dar nenhuma forma de lá chegar. */
+  margin: auto 0;
   text-align: center;
   padding: 24px;
   max-width: 520px;

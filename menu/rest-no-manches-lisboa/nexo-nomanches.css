@@ -91,14 +91,14 @@ body { background: var(--bg); }
     linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.0) 45%, rgba(0,0,0,0.55) 100%);
 }
 
-/* Logo = taco SVG (contorno branco), sem círculo dourado */
+/* Logo = ilustração da mão a salgar (círculo escuro funde-se no hero) */
 .hero-logo {
-  width: 88px;
-  height: 70px;
+  width: 92px;
+  height: 92px;
   border-radius: 0;
   background: transparent !important;
   box-shadow: none !important;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 .hero-logo img {
   width: 100%;
@@ -334,8 +334,18 @@ body { background: var(--bg); }
 #section-sobremesa   .menu-section-title::before { background-image: url("./img/ic-sobremesa.svg"); }
 .wine-header .section-title::before { background-image: url("./img/ic-drinks.svg"); }
 
-/* Taco do hero com sombra própria (profundidade sobre o fundo escuro) */
+/* Ícone do hero com sombra própria (profundidade sobre o fundo escuro) */
 .hero-logo img { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5)); }
+
+/* Papel de fundo com ingredientes mexicanos (dourado, muito subtil) atrás dos Drinks */
+.wine-section {
+  background:
+    linear-gradient(180deg, rgba(254,252,245,0.94) 0%, rgba(254,252,245,0.85) 100%),
+    url("./img/pattern-ingredientes.png");
+  background-size: auto, 230px 230px;
+  background-repeat: no-repeat, repeat;
+  background-position: top, top left;
+}
 
 /* Emoji/taco do banner Happy Hour com leve sombra */
 .special-banner-headline { text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
