@@ -614,3 +614,41 @@ body {
     animation: none !important;
   }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   IDENTIDADE VISUAL v4 — assets oficiais do cliente
+   Lettering "NO MANCHES" (prato) no hero + greca autêntica nos separadores.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Hero: wordmark desenhado pelo cliente em vez de texto Bebas.
+   O texto fica no DOM (acessibilidade/SEO) mas invisível. */
+.hero { height: 340px; }
+/* O lock-up oficial (prato + lettering) substitui a dupla logo+texto;
+   a mão a salgar continua no resto do menu (placeholder, favicon, etc.) */
+.hero-logo { display: none; }
+.hero-name {
+  display: block;
+  width: min(250px, 70vw);
+  height: 140px;
+  margin-top: 26px;   /* respiro sob o papel picado */
+  background: url("./img/wordmark.png") center / contain no-repeat;
+  color: transparent !important;
+  text-shadow: none !important;
+  filter: drop-shadow(3px 3px 0 rgba(214, 76, 43, 0.4)) drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+  margin: 0 auto;
+  overflow: hidden;
+}
+.hero-tagline { margin-top: 2px; }
+
+/* Separador de secções: greca oficial do cliente (substitui o SVG genérico) */
+.menu-section::after {
+  height: 14px;
+  width: 214px;   /* ~1,5 períodos × 142px — formas sólidas, legíveis em miniatura */
+  opacity: 0.5;
+  background: url("./img/greca-banda.png") repeat-x center / auto 14px;
+}
+
+/* O easter egg do "sacode o sal" muda da mão (escondida) para o lettering */
+.hero-name { transition: transform 0.2s; }
+.hero-name:active { animation: nm-shake 0.55s ease; }
