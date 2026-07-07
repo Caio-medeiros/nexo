@@ -16,7 +16,7 @@
  * Bump VERSION on every deploy that changes caching behaviour to purge old
  * caches on activate.
  */
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE_NAME = 'nexo-portal-' + VERSION;
 const STATIC_CACHE = 'nexo-static-' + VERSION;
 
@@ -27,6 +27,9 @@ const STATIC_ASSETS = [
   '/portal/_assets/portal.js',
   '/portal/_assets/icons.js',
   '/portal/_assets/supabase.min.js',
+  '/portal/onboarding/onboarding.css',
+  '/portal/onboarding/onboarding-steps.js',
+  '/portal/onboarding/onboarding.js',
   '/js/nexo-security.js',
   '/js/comanda.js',
   '/portal/sala/sala.css',

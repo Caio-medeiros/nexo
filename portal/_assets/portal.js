@@ -568,7 +568,7 @@ function renderLayout(activeNav, clientData) {
     <a href="/portal/dashboard/" class="portal-logo">NEXO.</a>
     <span class="portal-client-name">${escapeHtml(clientData.name)}</span>
     <div class="portal-nav-right">
-      <a href="${menuUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+      <a href="${menuUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" data-onboarding="menu-link">
         Ver Menu →
       </a>
       <button class="portal-icon-btn" id="theme-toggle" type="button" aria-label="Mudar tema"></button>
@@ -604,21 +604,22 @@ function renderLayout(activeNav, clientData) {
     { label: 'Operação', items: [
       // Salão + Caixa unificados num só tab (o único preciso ao balcão).
       { href: '/portal/sala/', icon: 'cashier', label: 'Modo Restaurante' },
-      { href: '/portal/cozinha/', icon: 'chef', label: 'Modo Cozinha' },
+      { href: '/portal/cozinha/', icon: 'chef', label: 'Modo Cozinha', ob: 'nav-cozinha' },
       { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
       { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
     ]},
     { label: 'Menu', items: [
-      { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu' },
+      // "Alterações" foi integrada no Editar Menu — o passo do tour aponta aqui.
+      { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu', ob: 'nav-alteracoes' },
     ]},
     { label: 'Negócio', items: [
-      { href: '/portal/estatisticas/', icon: 'bar-chart', label: 'Estatísticas' },
+      { href: '/portal/estatisticas/', icon: 'bar-chart', label: 'Estatísticas', ob: 'nav-estatisticas' },
       { href: '/portal/renovacao/', icon: 'star', label: 'Renovação' },
       { href: '/portal/referencias/', icon: 'gift', label: 'Referências' },
     ]},
     { label: '', items: [
-      { href: '/portal/configuracoes/', icon: 'settings', label: 'Configurações' },
-      { href: '/portal/guia/', icon: 'help', label: 'Guia' },
+      { href: '/portal/configuracoes/', icon: 'settings', label: 'Configurações', ob: 'nav-configuracoes' },
+      { href: '/portal/guia/', icon: 'help', label: 'Guia', ob: 'btn-suporte' },
     ]},
   ];
 
@@ -627,6 +628,7 @@ function renderLayout(activeNav, clientData) {
     ${group.items.map(item => `
       <a href="${item.href}"
          class="sidebar-item ${activeNav === item.href ? 'active' : ''}"
+         ${item.ob ? `data-onboarding="${item.ob}"` : ''}
          ${activeNav === item.href ? 'aria-current="page"' : ''}>
         ${getIcon(item.icon)}
         <span>${item.label}</span>
@@ -671,6 +673,20 @@ function renderLayout(activeNav, clientData) {
       e.stopPropagation();
       const slug = getMenuSlug(clientData);
       if (slug) markAllRead(slug);
+    });
+  }
+
+  // Onboarding interactivo — só corre nas páginas que importam /portal/onboarding/
+  if (typeof startOnboarding === 'function') {
+    const obSlug = getMenuSlug(clientData) || String(clientData.id || '');
+    let obHasState = false;
+    try { obHasState = !!localStorage.getItem('nexo_onboarding_' + obSlug); } catch (_) {}
+    startOnboarding({
+      nome: ownerName,
+      restaurante: clientData.name,
+      venueSlug: obSlug,
+      menuUrl: menuUrl,
+      isFirstLogin: !obHasState,
     });
   }
 }
