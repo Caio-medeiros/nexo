@@ -332,7 +332,13 @@ body { background: var(--bg); }
 #section-quesadillas .menu-section-title::before { background-image: url("./img/ic-quesadillas.svg"); }
 #section-tacos       .menu-section-title::before { background-image: url("./img/ic-tacos.svg"); }
 #section-sobremesa   .menu-section-title::before { background-image: url("./img/ic-sobremesa.svg"); }
-.wine-header .section-title::before { background-image: url("./img/ic-drinks.svg"); }
+.wine-header .section-title::before {
+  background-image: url("./img/ic-drinks.svg");
+  /* o template pinta este ::before como barra dourada sólida (background:
+     var(--accent)) — sem isto o copo ficava dourado-sobre-dourado = quadrado */
+  background-color: transparent;
+  border-radius: 0;
+}
 
 /* Ícone do hero com sombra própria (profundidade sobre o fundo escuro) */
 .hero-logo img { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5)); }
@@ -377,3 +383,153 @@ body { background: var(--bg); }
 
 /* Sombra do botão "Avaliar" em quente (era azul-marinho) */
 .btn-review { box-shadow: 0 6px 18px rgba(200, 149, 42, 0.4) !important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   IDENTIDADE VISUAL v2 — "cartel de taqueria" (lotería / rotulação mexicana)
+   Tipografia de rua nos pratos, molduras de lotería nos cartões, fita serape,
+   greca asteca a fechar secções e papel picado no hero. Sem novos pedidos de
+   rede: 1 SVG inline (greca) + gradientes CSS.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · TIPOGRAFIA DE RUA ──────────────────────────────────────────────────
+   Os nomes dos pratos vinham do template Marisca em serif itálico (elegante,
+   marítimo — errado aqui). Quadro de taqueria: Bebas, caixa alta, direito. */
+.menu-item-name,
+.most-ordered-card-name,
+.wine-card-name,
+.favorite-name {
+  font-family: var(--font-heading) !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+.menu-item-name        { font-size: 22px; }
+.most-ordered-card-name{ font-size: 21px; letter-spacing: 0.04em; }
+.wine-card-name        { font-size: 18px; }
+
+/* Preços como numerário de quadro de giz — Bebas, dourado queimado */
+.menu-item-price,
+.most-ordered-card-price,
+.item-modal-price {
+  font-family: var(--font-heading) !important;
+  font-weight: 400 !important;
+  font-size: 21px;
+  letter-spacing: 0.03em;
+}
+
+/* ── 2 · TÍTULOS DE SECÇÃO — rotulação com sombra deslocada (sign painting) */
+.menu-section-title,
+.wine-header .section-title {
+  text-shadow: 2px 2px 0 rgba(214, 76, 43, 0.18);
+}
+/* Sublinhado = fita serape (vermelho · dourado · verde), sem animação */
+.menu-section-title::after {
+  height: 4px !important;
+  width: 56px !important;
+  background: linear-gradient(90deg,
+    var(--mx-red) 0 33%, var(--accent) 33% 67%, #3F7A47 67% 100%) !important;
+  animation: none !important;
+}
+
+/* Nome do restaurante no hero com o mesmo deslocado, mais assumido */
+.hero-name {
+  text-shadow: 3px 3px 0 rgba(214, 76, 43, 0.4), 0 2px 18px rgba(0, 0, 0, 0.55);
+}
+
+/* ── 3 · HERO — papel picado pendurado no tecto + fita serape na base ────── */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 26px;
+  z-index: 1;                      /* sobre o fundo, sob os botões de idioma */
+  background-image: url("./img/papel-picado.svg");
+  background-size: 76px 26px;
+  background-repeat: repeat-x;
+  background-position: top center;
+  opacity: 0.85;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.4));
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 6px;
+  z-index: 3;
+  background: repeating-linear-gradient(90deg,
+    #B23A1F 0 20px,  #D64C2B 20px 36px, #E4B24C 36px 50px, #FEFCF5 50px 56px,
+    #3F7A47 56px 72px, #FEFCF5 72px 78px, #C8952A 78px 96px);
+  pointer-events: none;
+}
+
+/* ── 4 · LISTA DO MENU — separadores tracejados quentes (menu de papel) ──── */
+.menu-item { border-bottom: 1.5px dashed rgba(200, 149, 42, 0.4); }
+.menu-item:last-child { border-bottom: none; }
+.menu-item:active { background: rgba(200, 149, 42, 0.05); }
+
+/* Greca asteca a fechar cada secção (SVG inline, dourado suave) */
+.menu-section::after {
+  content: '';
+  display: block;
+  height: 9px;
+  width: 176px;
+  margin: 26px auto 0;
+  opacity: 0.45;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2022%209%22%3E%3Cpath%20d%3D%22M0%208%20H3%20V2%20H8%20V8%20H14%20V2%20H19%20V8%20H22%22%20fill%3D%22none%22%20stroke%3D%22%23C8952A%22%20stroke-width%3D%221.5%22%2F%3E%3C%2Fsvg%3E") repeat-x center / 22px 9px;
+}
+
+/* ── 5 · CARTÕES COM MOLDURA DE LOTERÍA (linha dupla com respiro) ────────── */
+.wine-card {
+  background: #FFFEF8;
+  border: 1px solid rgba(200, 149, 42, 0.32);
+  box-shadow:
+    inset 0 0 0 3px #FFFEF8,
+    inset 0 0 0 4px rgba(200, 149, 42, 0.18),
+    0 4px 16px rgba(60, 40, 15, 0.07);
+}
+
+/* Mais pedidos (zona escura): filete dourado interior + número em vermelho */
+.most-ordered-card {
+  border-color: rgba(228, 178, 76, 0.28);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(228, 178, 76, 0.2);
+}
+.most-ordered-rank { color: var(--mx-red); opacity: 1; }
+
+/* Menu do Dia como cartel: moldura dupla sólida, preço em vermelho */
+.menu-do-dia {
+  border: 2px solid rgba(200, 149, 42, 0.75);
+  box-shadow: inset 0 0 0 4px var(--bg-alt), inset 0 0 0 5px rgba(200, 149, 42, 0.45);
+}
+.menu-do-dia-price { color: var(--mx-red); font-family: var(--font-heading); font-size: 20px; font-weight: 400; }
+
+/* ── 6 · DETALHES PICANTES ────────────────────────────────────────────────── */
+/* Underline deslizante das tabs = fita serape */
+.tab-ink {
+  background: linear-gradient(90deg,
+    var(--mx-red) 0 33%, var(--accent) 33% 67%, #3F7A47 67% 100%) !important;
+}
+
+/* Badge POPULAR a vermelho chili (era outline neutro) */
+.item-badge-popular {
+  color: var(--mx-red) !important;
+  border-color: rgba(214, 76, 43, 0.45) !important;
+  background: rgba(214, 76, 43, 0.06);
+}
+
+/* ── 7 · LIMPEZA — últimos azuis Marisca no carrinho partilhado ──────────── */
+.nexo-shared-trigger {
+  background: rgba(200, 149, 42, 0.07) !important;
+  border-color: rgba(200, 149, 42, 0.28) !important;
+}
+.shared-cart-code-chip {
+  background: rgba(200, 149, 42, 0.12) !important;
+  border-color: rgba(200, 149, 42, 0.3) !important;
+  color: var(--accent-dark) !important;
+}
+.shared-cart-leave-btn {
+  border-color: rgba(200, 149, 42, 0.35) !important;
+  color: var(--accent-dark) !important;
+}
