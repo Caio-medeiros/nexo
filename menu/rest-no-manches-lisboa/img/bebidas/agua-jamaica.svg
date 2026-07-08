@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 180">
+<path d="M43,72 C55,68 85,68 97,72 C96,95 95,125 92,148 C80,153 60,153 48,148 C45,125 44,95 43,72 Z" fill="#A93D4E" fill-opacity="0.85"/>
+<path d="M46,90 C60,85 72,88 78,96 C77,110 76,130 74,146 C64,149 54,148 50,145 C47,128 46,112 46,90 Z" fill="#ffffff" fill-opacity="0.18"/>
+<path d="M38,52 C37,58 40,96 42,120 C43,140 46,152 50,155 C61,160 79,160 90,155 C94,152 97,140 98,120 C100,96 103,58 102,52" fill="none" stroke="#1b1b1b" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M38,52 C52,47 88,47 102,52" fill="none" stroke="#1b1b1b" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48,84 C47,100 48,122 50,138" fill="none" stroke="#1b1b1b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M96,40 C100,32 110,32 113,39 C120,38 125,46 120,52 C124,58 118,66 111,64 C108,71 98,71 96,64 C89,64 85,55 90,50 C86,44 90,38 96,40 Z" fill="#A93D4E" fill-opacity="0.95"/>
+<path d="M96,40 C100,32 110,32 113,39 C120,38 125,46 120,52 C124,58 118,66 111,64 C108,71 98,71 96,64 C89,64 85,55 90,50 C86,44 90,38 96,40" fill="none" stroke="#1b1b1b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="105" cy="51" r="3.4" fill="#5c1620" fill-opacity="1"/>
+</svg>
