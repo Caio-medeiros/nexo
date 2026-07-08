@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "no-manches-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8811", "--directory", "menu/rest-no-manches-lisboa"],
+      "port": 8811
+    }
+  ]
+}
