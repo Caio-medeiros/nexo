@@ -50,6 +50,27 @@ serve(async (req) => {
 
   const twoHoursAgo     = new Date(now.getTime() -  7_200_000).toISOString()
   const twentyFourHoursAgo = new Date(now.getTime() - 86_400_000).toISOString()
+  const sevenDaysAgo    = new Date(now.getTime() - 7 * 86_400_000).toISOString()
+
+  // ── COOLDOWN ──────────────────────────────────────────────────────────
+  // Um problema persistente só volta ao WhatsApp 24h depois do último
+  // alerta — nunca de hora a hora. Reconstruímos "quando foi o último
+  // alerta por slug" a partir do monitoring_log (zero config, zero
+  // tabelas novas). Linhas antigas sem o campo `alerted` contam como
+  // alertadas, o que corta o spam em curso logo no primeiro run.
+  const { data: recentRuns } = await db
+    .from('monitoring_log')
+    .select('checked_at, results')
+    .gte('checked_at', twentyFourHoursAgo)
+    .order('checked_at', { ascending: false })
+    .limit(30)
+
+  const lastAlerted: Record<string, true> = {}
+  for (const run of recentRuns ?? []) {
+    for (const r of (run.results as { slug?: string; issues?: string[]; alerted?: boolean }[]) ?? []) {
+      if (r?.slug && r.issues?.length && r.alerted !== false) lastAlerted[r.slug] = true
+    }
+  }
 
   const isPeakHours = hourPT >= 12 && hourPT <= 22
   const issues: string[] = []
@@ -59,7 +80,7 @@ serve(async (req) => {
     const slug       = menu.slug
     const clientName = (menu.clients as { name: string }).name
 
-    const [ev2h, ev24h, ord24h, errRows, lastEvRow] = await Promise.all([
+    const [ev2h, ev24h, ev7d, ord24h, errRows, lastEvRow] = await Promise.all([
       db.from('menu_events')
         .select('*', { count: 'exact', head: true })
         .eq('espaco_slug', slug)
@@ -68,6 +89,10 @@ serve(async (req) => {
         .select('*', { count: 'exact', head: true })
         .eq('espaco_slug', slug)
         .gte('created_at', twentyFourHoursAgo),
+      db.from('menu_events')
+        .select('*', { count: 'exact', head: true })
+        .eq('espaco_slug', slug)
+        .gte('created_at', sevenDaysAgo),
       db.from('orders_log')
         .select('*', { count: 'exact', head: true })
         .eq('espaco_slug', slug)
@@ -92,11 +117,18 @@ serve(async (req) => {
 
     const menuIssues: string[] = []
 
-    if (isPeakHours && (ev2h.count ?? 0) === 0) {
+    // ── BASELINE ────────────────────────────────────────────────────────
+    // Silêncio só é anómalo se o menu tem tráfego real (≥20 eventos na
+    // última semana ≈ 3 aberturas/dia). Demos e menus ainda não lançados
+    // nunca alarmam por estarem parados; quando o restaurante entrar em
+    // uso real, os alertas armam-se sozinhos. Erros alertam sempre.
+    const hasBaseline = (ev7d.count ?? 0) >= 20
+
+    if (hasBaseline && isPeakHours && (ev2h.count ?? 0) === 0) {
       menuIssues.push(`sem eventos há ${Math.round(hoursSinceLast)}h`)
     }
 
-    if (hourPT >= 14 && (ev24h.count ?? 0) === 0) {
+    if (hasBaseline && hourPT >= 14 && (ev24h.count ?? 0) === 0) {
       menuIssues.push('zero eventos hoje')
     }
 
@@ -104,18 +136,24 @@ serve(async (req) => {
       menuIssues.push(`${errRows.count} erros nas últimas 24h`)
     }
 
+    // Cooldown: problema já alertado nas últimas 24h não repete WhatsApp.
+    const alertNow = menuIssues.length > 0 && !lastAlerted[slug]
+
     stats.push({
       slug,
       client: clientName,
       events_2h:  ev2h.count  ?? 0,
       events_24h: ev24h.count ?? 0,
+      events_7d:  ev7d.count  ?? 0,
       orders_24h: ord24h.count ?? 0,
       errors_24h: errRows.count ?? 0,
       hours_since_last_event: Math.round(hoursSinceLast * 10) / 10,
+      baseline: hasBaseline,
       issues: menuIssues,
+      alerted: alertNow,
     })
 
-    if (menuIssues.length > 0) {
+    if (alertNow) {
       issues.push(`⚠️ ${clientName} (${slug}): ${menuIssues.join(', ')}`)
     }
   }
