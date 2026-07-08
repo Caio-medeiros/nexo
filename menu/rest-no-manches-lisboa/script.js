@@ -1355,7 +1355,8 @@ function renderActions() {
   document.getElementById('btn-review-label').textContent = t().review;
   const tableText = tableNumber ? ` · ${t().tableHint} ${tableNumber}` : '';
   const ratingText = CONFIG.googleRating ? `★ ${CONFIG.googleRating} · ` : '';
-  document.getElementById('btn-review-sub').textContent = `${ratingText}Google · TheFork${tableText}`;
+  const reviewPlatforms = CONFIG.theForkReviewUrl ? 'Google · TheFork' : 'Google';
+  document.getElementById('btn-review-sub').textContent = `${ratingText}${reviewPlatforms}${tableText}`;
 
   document.getElementById('btn-instagram').href = `https://instagram.com/${CONFIG.instagramHandle}`;
   document.getElementById('btn-instagram-label').textContent = t().instagram;
@@ -1544,7 +1545,9 @@ function setupRatingGate() {
       const stars = '★'.repeat(currentRating) + '☆'.repeat(5 - currentRating);
       const table = tableNumber ? ` | Mesa ${tableNumber}` : '';
       const msg = `[Feedback Privado${table}] ${stars}\n${text || '(sem comentário)'}`;
-      window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+      // Críticas (≤3★) vão para o número dedicado, se existir
+      const fbNumber = CONFIG.reviewWhatsappNumber || CONFIG.whatsappNumber;
+      window.open(`https://wa.me/${fbNumber}?text=${encodeURIComponent(msg)}`, '_blank');
       showThanks(false);
     });
   }
