@@ -829,3 +829,7 @@ body {
   .hero-overlay::before { opacity: 0; }
   .nm-video-section { opacity: 1; transform: none; transition: none; }
 }
+
+/* Tagline "Mexican Street Food" removida — o prato desenhado já diz tudo */
+.hero-tagline { display: none; }
+.hero { height: 315px; }
