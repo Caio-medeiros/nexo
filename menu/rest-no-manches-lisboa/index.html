@@ -279,8 +279,8 @@
       <span class="nm-video-eyebrow">Espreita a chapa</span>
       <h2 class="nm-video-title">¡Así se hace!</h2>
     </div>
-    <div class="nm-video-frame">
-      <video id="nm-video" muted loop playsinline preload="none"
+    <div class="nm-video-frame" id="nm-video-frame">
+      <video id="nm-video" muted loop playsinline webkit-playsinline preload="metadata"
              poster="./video/tacos-poster.jpg" aria-label="Vídeo: tacos No Manches na chapa">
         <source src="./video/tacos.mp4" type="video/mp4">
       </video>
@@ -292,13 +292,34 @@
   (function () {
     var v = document.getElementById('nm-video');
     var sec = document.getElementById('section-video');
+    var frame = document.getElementById('nm-video-frame');
     if (!v || !sec) return;
-    if (!('IntersectionObserver' in window)) { v.setAttribute('preload', 'metadata'); return; }
+
+    // iOS: o atributo muted nem sempre é honrado — as PROPRIEDADES têm de
+    // estar definidas antes do play(), senão o autoplay é recusado.
+    v.muted = true; v.defaultMuted = true; v.playsInline = true; v.loop = true;
+
+    function tryPlay() {
+      var p = v.play();
+      if (p && p.catch) p.catch(function () {
+        // autoplay bloqueado (ex.: poupança de bateria) → mostra ▶ para tocar
+        if (frame) frame.classList.add('nm-video-tap');
+      });
+    }
+    v.addEventListener('playing', function () {
+      if (frame) frame.classList.remove('nm-video-tap');
+    });
+    // toque na moldura alterna play/pausa — gesto do utilizador desbloqueia sempre
+    if (frame) frame.addEventListener('click', function () {
+      if (v.paused) tryPlay(); else v.pause();
+    });
+
+    if (!('IntersectionObserver' in window)) { tryPlay(); return; }
     var io = new IntersectionObserver(function (es) {
       es.forEach(function (e) {
         if (e.isIntersecting) {
           sec.classList.add('nm-in');            /* revela a moldura */
-          v.play().catch(function () {});        /* mudo + playsinline = autoplay ok */
+          tryPlay();
         } else {
           v.pause();                              /* poupa bateria fora do ecrã */
         }

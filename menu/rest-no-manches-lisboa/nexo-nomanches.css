@@ -833,3 +833,83 @@ body {
 /* Tagline "Mexican Street Food" removida — o prato desenhado já diz tudo */
 .hero-tagline { display: none; }
 .hero { height: 315px; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   IDENTIDADE VISUAL v6 — prompt de adicionais + vídeo compacto com fallback
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Prompt "queres juntar queijo gratinado?" (bottom sheet) ─────────────── */
+#nm-extra-sheet {
+  position: fixed; inset: 0; z-index: 720;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+#nm-extra-sheet.show { opacity: 1; }
+
+.nm-extra-card {
+  width: 100%; max-width: 430px;
+  background: var(--bg, #FEFCF5);
+  border: 1px solid rgba(200, 149, 42, 0.4);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  box-shadow: inset 0 0 0 4px var(--bg, #FEFCF5), inset 0 0 0 5px rgba(200, 149, 42, 0.25),
+              0 -12px 40px rgba(0, 0, 0, 0.25);
+  padding: 22px 20px calc(20px + env(safe-area-inset-bottom));
+  text-align: center;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#nm-extra-sheet.show .nm-extra-card { transform: translateY(0); }
+
+.nm-extra-emoji { font-size: 34px; margin-bottom: 6px; }
+.nm-extra-q {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1.15;
+}
+.nm-extra-for {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 4px 0 16px;
+}
+.nm-extra-actions { display: flex; flex-direction: column; gap: 9px; }
+.nm-extra-yes {
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 12px;
+  padding: 14px; font-size: 15px; font-weight: 800;
+  font-family: var(--font-ui); cursor: pointer;
+  box-shadow: 0 6px 18px -6px rgba(200, 149, 42, 0.6);
+  transition: transform 0.12s;
+}
+.nm-extra-yes:active { transform: scale(0.97); }
+.nm-extra-no {
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+  color: var(--text-muted); padding: 8px;
+}
+
+/* ── Vídeo: mais compacto (performance/atenção) + fallback ▶ ─────────────── */
+.nm-video-frame { max-width: 236px; width: 62vw; cursor: pointer; position: relative; }
+
+.nm-video-frame.nm-video-tap::after {
+  content: '▶';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px; color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 13px;
+  text-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #nm-extra-sheet, .nm-extra-card { transition: none; }
+}

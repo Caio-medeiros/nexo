@@ -390,8 +390,29 @@ const CONFIG = {
           baseName: { pt: "Taco de Camarão", en: "Shrimp Taco", es: "Taco de Camarón", fr: "Taco de Crevettes" },
           name: { pt: "Taco de Camarão ×3", en: "Shrimp Taco ×3", es: "Taco de Camarón ×3", fr: "Taco de Crevettes ×3" },
           price: "9,90€", photo: null, diet: [], allergens: [2,3]
+        },
+
+        /* ── ADICIONAL (escondido do menu; entra no pedido/cozinha como linha
+              própria via prompt "queres juntar?" ao adicionar um taco) ── */
+        {
+          isExtra: true, _hidden: true,
+          name: { pt: "+ Queijo Gratinado", en: "+ Gratinated Cheese", es: "+ Queso Gratinado", fr: "+ Fromage Gratiné" },
+          desc: { pt: "Adicional para tacos.", en: "Add-on for tacos.", es: "Adicional para tacos.", fr: "Supplément pour tacos." },
+          price: "1,50€", photo: null, diet: [], allergens: [7]
         }
-      ]
+      ],
+
+      /* Prompt do adicional — aparece ao juntar qualquer taco ao pedido */
+      extraOffer: {
+        question: {
+          pt: "Queres juntar queijo gratinado?",
+          en: "Add gratinated cheese?",
+          es: "¿Quieres añadir queso gratinado?",
+          fr: "Ajouter du fromage gratiné ?"
+        },
+        yes: { pt: "Sim, juntar", en: "Yes, add it", es: "Sí, añadir", fr: "Oui, ajouter" },
+        no:  { pt: "Não, obrigado", en: "No, thanks", es: "No, gracias", fr: "Non, merci" }
+      }
     },
 
     /* ── SOBREMESA ── */

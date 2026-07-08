@@ -2476,7 +2476,7 @@ function getCartQty(refId) {
 
 // Adiciona 1x ao cart (ou incrementa)
 function addToCart(refId) {
-  if (sharedCart) { sharedAddToCart(refId); return; }
+  if (sharedCart) { sharedAddToCart(refId); maybeOfferExtra(refId); return; }
   const pill = document.getElementById('cart-pill');
   const wasVisible = pill?.classList.contains('show');
   const entry = cart.find(c => c.refId === refId);
@@ -2488,6 +2488,7 @@ function addToCart(refId) {
   const it = getItemByRef(refId);
   if (it) track('item_added', { item_name: it.name.pt, item_category: refId.split(':')[0], item_price: parsePriceToNumber(it.price) || 0 });
   onCartChange();
+  maybeOfferExtra(refId);
   if (wasVisible && pill) {
     pill.classList.remove('pop');
     void pill.offsetWidth;
@@ -2555,6 +2556,80 @@ function getItemByRef(refId) {
   const sec = CONFIG.menu.find(s => s.id === sid);
   if (!sec) return null;
   return sec.items[parseInt(iidxStr)] || null;
+}
+
+/* ─── ADICIONAIS (ex.: queijo gratinado +1,50€) ────────────────────────────
+   O adicional é um item real do config (isExtra + _hidden) — entra no
+   carrinho, no total, no pedido e na cozinha como qualquer item, com uma
+   nota a dizer a que prato pertence. O prompt aparece ao juntar um item de
+   uma secção com `extraOffer`. */
+function findSectionExtra(sectionId) {
+  if (typeof CONFIG === 'undefined' || !Array.isArray(CONFIG.menu)) return null;
+  const sec = CONFIG.menu.find(s => s.id === sectionId);
+  if (!sec || !sec.extraOffer) return null;
+  const idx = sec.items.findIndex(it => it && it.isExtra);
+  if (idx === -1) return null;
+  return { sec, extraRef: `${sec.id}:${idx}`, extraItem: sec.items[idx], offer: sec.extraOffer };
+}
+
+function maybeOfferExtra(refId) {
+  try {
+    const info = findSectionExtra(refId.split(':')[0]);
+    if (!info) return;
+    const added = getItemByRef(refId);
+    if (!added || added.isExtra) return;                       // o próprio extra
+    // extra esgotado (config ou disponibilidade em tempo real) → não oferecer
+    if (info.extraItem.soldOut || _nexoAvailability[info.extraRef] === false) return;
+    // já está no pedido → não perguntar outra vez
+    if (sharedCart) {
+      if ((sharedCartItems || []).some(r => r.item_id === info.extraRef)) return;
+    } else if (cart.find(c => c.refId === info.extraRef)) {
+      return;
+    }
+    if (document.getElementById('nm-extra-sheet')) return;     // já aberto
+    showExtraSheet(info, added);
+  } catch (_) { /* o prompt é opcional — nunca partir o fluxo de pedido */ }
+}
+
+function showExtraSheet(info, forItem) {
+  const L = currentLang || 'pt';
+  const pick = (o) => (o && (o[L] || o.pt)) || '';
+  const sheet = document.createElement('div');
+  sheet.id = 'nm-extra-sheet';
+  sheet.innerHTML = `
+    <div class="nm-extra-card" role="dialog" aria-modal="true" aria-label="${pick(info.offer.question)}">
+      <div class="nm-extra-emoji">🧀</div>
+      <p class="nm-extra-q">${pick(info.offer.question)}</p>
+      <p class="nm-extra-for">${forItem.name[L] || forItem.name.pt}</p>
+      <div class="nm-extra-actions">
+        <button type="button" class="nm-extra-yes">${pick(info.offer.yes) || 'Sim'} · +${info.extraItem.price}</button>
+        <button type="button" class="nm-extra-no">${pick(info.offer.no) || 'Não, obrigado'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(sheet);
+  requestAnimationFrame(() => sheet.classList.add('show'));
+  const close = () => { sheet.classList.remove('show'); setTimeout(() => sheet.remove(), 260); };
+
+  sheet.addEventListener('click', (e) => { if (e.target === sheet) close(); });
+  sheet.querySelector('.nm-extra-no').addEventListener('click', () => {
+    track('extra_declined', { extra: info.extraItem.name.pt });
+    close();
+  });
+  sheet.querySelector('.nm-extra-yes').addEventListener('click', () => {
+    haptic();
+    addToCart(info.extraRef);
+    // liga o adicional ao prato — a nota segue para o pedido e para a cozinha
+    if (!sharedCart) {
+      const entry = cart.find(c => c.refId === info.extraRef);
+      if (entry && !entry.note) {
+        const paraWord = { pt: 'para', en: 'for', es: 'para', fr: 'pour' }[L] || 'para';
+        entry.note = `${paraWord} ${forItem.name[L] || forItem.name.pt}`;
+        onCartChange();
+      }
+    }
+    track('extra_added', { extra: info.extraItem.name.pt, with: forItem.name.pt });
+    close();
+  });
 }
 
 // Note helpers
