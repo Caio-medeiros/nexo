@@ -294,6 +294,41 @@
     </a>
   </section>
 
+  <!-- ── VÍDEO — ambiente No Manches (autoplay mudo só quando visível) ── -->
+  <section class="nm-video-section" id="section-video">
+    <div class="nm-video-head">
+      <span class="nm-video-eyebrow">Espreita a chapa</span>
+      <h2 class="nm-video-title">¡Así se hace!</h2>
+    </div>
+    <div class="nm-video-frame">
+      <video id="nm-video" muted loop playsinline preload="none"
+             poster="./video/tacos-poster.jpg" aria-label="Vídeo: tacos No Manches na chapa">
+        <source src="./video/tacos.mp4" type="video/mp4">
+      </video>
+    </div>
+    <a class="nm-video-ig" href="https://instagram.com/no.manches.mexican.street.food"
+       target="_blank" rel="noopener">Mais em @no.manches.mexican.street.food →</a>
+  </section>
+  <script>
+  (function () {
+    var v = document.getElementById('nm-video');
+    var sec = document.getElementById('section-video');
+    if (!v || !sec) return;
+    if (!('IntersectionObserver' in window)) { v.setAttribute('preload', 'metadata'); return; }
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) {
+          sec.classList.add('nm-in');            /* revela a moldura */
+          v.play().catch(function () {});        /* mudo + playsinline = autoplay ok */
+        } else {
+          v.pause();                              /* poupa bateria fora do ecrã */
+        }
+      });
+    }, { threshold: 0.35 });
+    io.observe(sec);
+  })();
+  </script>
+
   <!-- FOOTER -->
   <footer class="footer">
     <div class="footer-info">
