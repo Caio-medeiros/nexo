@@ -230,6 +230,30 @@
     clearInterval(_msgTimer); _msgTimer = null;
     clearInterval(_pollTimer); _pollTimer = null;
     clearTimeout(_timeoutId); _timeoutId = null;
+    hideReopenChip();
+  }
+
+  // ── UI: chip flutuante para retomar o ecrã de espera fechado ─────
+  function chipEl() {
+    let el = document.getElementById('nm-reopen-chip');
+    if (el) return el;
+    el = document.createElement('button');
+    el.id = 'nm-reopen-chip';
+    el.type = 'button';
+    document.body.appendChild(el);
+    return el;
+  }
+  function showReopenChip(p) {
+    const el = chipEl();
+    el.innerHTML = `<span class="nm-chip-dot"></span><span>${escHtml(p.mesa)} · a confirmar…</span>`;
+    el.onclick = () => { hideReopenChip(); showWaitingScreen(p); subscribePending(p); };
+    requestAnimationFrame(() => el.classList.add('show'));
+  }
+  function hideReopenChip() {
+    const el = document.getElementById('nm-reopen-chip');
+    if (!el) return;
+    el.classList.remove('show');
+    el.onclick = null;
   }
 
   // ── UI: ecrã de espera (bottom sheet) ────────────────────────
@@ -255,17 +279,31 @@
   }
 
   function showWaitingScreen(p) {
+    hideReopenChip();
     const el = sheetEl();
     el.innerHTML = `
       <div id="nm-waiting-screen">
+        <button id="nm-close-btn" type="button" aria-label="Fechar">✕</button>
         <div class="nm-icon-wrap"><span class="nm-icon">🙌</span></div>
         <p class="nm-title" id="nm-rotating-msg">${ROTATING[0]}</p>
         <p class="nm-sub">${escHtml(p.mesa)} · ${p.count} ${p.count === 1 ? 'item' : 'itens'}</p>
         <div class="nm-progress-bar"><div class="nm-progress-fill"></div></div>
         <p class="nm-hint">A aguardar confirmação</p>
-        <button id="nm-edit-btn" type="button" style="display:none">Editar pedido</button>
+        <button id="nm-edit-btn" type="button">Editar pedido</button>
       </div>`;
     requestAnimationFrame(() => el.classList.add('show'));
+
+    // Fechar: sai do ecrã de espera sem tocar no pedido. A confirmação/
+    // subscrição continuam em fundo — se o staff resolver entretanto, o
+    // resultado aparece de qualquer forma (ver resolvePending). Fica um
+    // chip flutuante para voltar ao ecrã de espera a qualquer momento.
+    const closeBtn = document.getElementById('nm-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        hideSheet();
+        showReopenChip(p);
+      });
+    }
 
     // Mensagens rotativas: crossfade a cada 8s (pára na confirmação/cancelamento).
     let idx = 0;
@@ -282,12 +320,12 @@
       }, 400);
     }, 8000);
 
-    // "Editar pedido": só aparece se o staff ainda não pegou no pedido.
+    // "Editar pedido": disponível de imediato — showWaitingScreen só é chamado
+    // quando já sabemos que o pedido está 'awaiting' (ver chamadores). O
+    // handler abaixo revalida o estado no momento do clique como rede de
+    // segurança (o staff pode ter pegado no pedido entretanto).
     const editBtn = document.getElementById('nm-edit-btn');
     if (editBtn) {
-      pendingState(p).then(st => {
-        if (st === 'awaiting') editBtn.style.display = '';
-      });
       editBtn.addEventListener('click', async () => {
         editBtn.disabled = true;
         const st = await pendingState(p);
@@ -360,17 +398,20 @@
     const css = `
 #nm-assisted-sheet{position:fixed;left:0;right:0;bottom:0;z-index:2600;transform:translateY(110%);transition:transform .35s cubic-bezier(.32,.72,.28,1);pointer-events:none}
 #nm-assisted-sheet.show{transform:translateY(0);pointer-events:auto}
-#nm-waiting-screen,#nm-confirmed-screen,#nm-cancelled-screen{background:#1A1A1A;color:#fff;border-radius:22px 22px 0 0;padding:26px 22px calc(24px + env(safe-area-inset-bottom));text-align:center;box-shadow:0 -12px 40px rgba(0,0,0,.45)}
+#nm-waiting-screen,#nm-confirmed-screen,#nm-cancelled-screen{position:relative;background:#1A1A1A;color:#fff;border-radius:22px 22px 0 0;padding:26px 22px calc(24px + env(safe-area-inset-bottom));text-align:center;box-shadow:0 -12px 40px rgba(0,0,0,.45)}
+#nm-close-btn{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.75);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s ease,background .15s ease,border-color .15s ease,color .15s ease}
+#nm-close-btn:active{transform:scale(.88);background:rgba(214,76,43,.35);border-color:rgba(214,76,43,.55);color:#fff}
 .nm-icon-wrap{margin-bottom:6px}
 .nm-icon{display:inline-block;font-size:44px;animation:nm-pulse 2s ease-in-out infinite}
 @keyframes nm-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.75}}
 .nm-title{font-size:19px;font-weight:700;margin:8px 0 4px;transition:opacity .4s ease}
 .nm-sub{font-size:13.5px;opacity:.75;margin:0 0 16px}
 .nm-progress-bar{height:5px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;margin:0 12px}
-.nm-progress-fill{height:100%;width:0;border-radius:99px;background:var(--accent,#C8952A);animation:nm-progress-loop 24s linear infinite}
+.nm-progress-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--mx-red,#D64C2B) 0%,var(--accent,#C8952A) 50%,#3F7A47 100%);animation:nm-progress-loop 24s linear infinite}
 @keyframes nm-progress-loop{0%{width:0}100%{width:100%}}
 .nm-hint{font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;opacity:.5;margin:12px 0 14px}
-#nm-edit-btn{background:transparent;border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:9px 18px;font-size:13.5px;cursor:pointer}
+#nm-edit-btn{background:transparent;border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:9px 18px;font-size:13.5px;cursor:pointer;transition:transform .15s ease,border-color .15s ease}
+#nm-edit-btn:active{transform:scale(.96);border-color:var(--accent,#C8952A)}
 #nm-edit-btn:disabled{opacity:.5}
 .nm-confirmed-icon,.nm-cancelled-icon{font-size:52px;margin-bottom:4px}
 .nm-confirmed-icon{animation:nm-pop .5s cubic-bezier(.34,1.56,.64,1)}
@@ -378,6 +419,12 @@
 .nm-confirmed-title,.nm-cancelled-title{font-size:20px;font-weight:800;margin:8px 0 4px}
 .nm-confirmed-sub,.nm-cancelled-sub{font-size:14px;opacity:.75;line-height:1.5;margin:0 0 18px}
 #nm-back-menu,#nm-back-menu-cancel{background:var(--accent,#C8952A);border:none;color:#fff;border-radius:12px;padding:12px 26px;font-size:14.5px;font-weight:700;cursor:pointer;min-height:48px}
+
+/* Chip flutuante: retomar o ecrã de espera depois de o fechar */
+#nm-reopen-chip{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translate(-50%,10px);z-index:165;display:flex;align-items:center;gap:8px;max-width:calc(100% - 32px);padding:10px 16px;border-radius:100px;background:#1A1A1A;border:1px solid rgba(200,149,42,.45);box-shadow:0 8px 26px rgba(0,0,0,.35);color:#fff;font-family:var(--font-ui);font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;cursor:pointer;transition:opacity .25s ease,transform .25s cubic-bezier(.34,1.56,.64,1)}
+#nm-reopen-chip.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#nm-reopen-chip:active{transform:translate(-50%,0) scale(.95)}
+.nm-chip-dot{width:8px;height:8px;border-radius:50%;background:var(--mx-red,#D64C2B);flex-shrink:0;animation:nm-pulse 1.6s ease-in-out infinite}
 `;
     const s = document.createElement('style');
     s.textContent = css;
