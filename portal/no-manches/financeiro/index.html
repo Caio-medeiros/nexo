@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Financeiro — No Manches</title>
+  <link rel="stylesheet" href="/portal/no-manches/financeiro/financeiro.css">
+  <!-- Supabase + Chart.js via CDN (jsDelivr já permitido na CSP do site).
+       NÃO carrega portal.js: esta página é standalone — auth local por senha,
+       sem sessão Supabase. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ═══ GATE DE SENHA ═══ -->
+  <div id="fin-gate">
+    <div class="gate-card">
+      <div class="gate-lock" id="gate-lock">🔒</div>
+      <h1 class="gate-title">Área Financeira</h1>
+      <p class="gate-venue">No Manches</p>
+      <form id="gate-form" novalidate>
+        <input type="password" id="gate-pw" class="gate-input"
+               placeholder="••••••••••••••" autocomplete="off"
+               autocapitalize="none" spellcheck="false" aria-label="Senha">
+        <p class="gate-error" id="gate-error" hidden>Senha incorrecta</p>
+        <button type="submit" class="gate-btn" id="gate-btn">Entrar</button>
+      </form>
+      <p class="gate-warn">⚠ Acesso restrito</p>
+    </div>
+  </div>
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <div id="fin-app" hidden>
+    <header class="fin-header">
+      <div class="fin-header-left">
+        <span class="fin-header-title">💰 Financeiro — No Manches</span>
+        <span class="fin-live" id="fin-live"><span class="dot"></span><span id="fin-live-txt">A ligar…</span></span>
+        <span class="fin-spinner" id="fin-spinner" hidden></span>
+      </div>
+      <div class="fin-header-right">
+        <button type="button" class="fin-refresh" id="fin-refresh" title="Actualizar" hidden>↻ Actualizar</button>
+        <button type="button" class="fin-logout" id="nm-logout">Sair 🔒</button>
+      </div>
+    </header>
+
+    <nav class="fin-periods" id="fin-periods">
+      <button type="button" data-period="hoje" class="active">Hoje</button>
+      <button type="button" data-period="semana">Semana</button>
+      <button type="button" data-period="mes">Mês</button>
+      <button type="button" data-period="custom">Período</button>
+    </nav>
+    <div class="fin-custom-range" id="fin-custom-range" hidden>
+      <label>De <input type="date" id="fin-date-start"></label>
+      <label>Até <input type="date" id="fin-date-end"></label>
+      <button type="button" id="fin-date-apply">Aplicar</button>
+    </div>
+
+    <main class="fin-main">
+      <section class="kpi-grid" id="kpi-grid"></section>
+
+      <section class="fin-card">
+        <h2 class="fin-card-title" id="chart-title">Faturamento</h2>
+        <div class="chart-wrap" id="chart-wrap">
+          <canvas id="fin-chart"></canvas>
+        </div>
+      </section>
+
+      <section class="fin-card">
+        <h2 class="fin-card-title">Pratos mais vendidos</h2>
+        <div id="top-pratos"></div>
+      </section>
+
+      <section class="fin-card">
+        <h2 class="fin-card-title">Pedidos do período</h2>
+        <div id="orders-list"></div>
+        <div class="fin-pagination" id="fin-pagination" hidden>
+          <button type="button" id="pg-prev">← Anterior</button>
+          <span id="pg-info"></span>
+          <button type="button" id="pg-next">Próxima →</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="fin-toasts"></div>
+  <div id="fin-modal" hidden></div>
+
+  <script src="/portal/no-manches/financeiro/financeiro.js"></script>
+</body>
+</html>

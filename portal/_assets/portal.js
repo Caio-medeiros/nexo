@@ -488,7 +488,15 @@ function timeAgo(dateStr) {
 }
 
 // ─── FORMAT ──────────────────────────────
+// Venues onde € NUNCA aparece no portal — o faturamento vive apenas na
+// área financeira dedicada (senha própria, fora da navegação).
+const NEXO_NO_EUR_SLUGS = ['rest-no-manches-lisboa'];
+function moneyHiddenFor(slug) {
+  return NEXO_NO_EUR_SLUGS.includes(slug || '');
+}
+
 function formatEUR(value) {
+  if (window.NEXO_HIDE_EUR) return '—';
   return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
     .format(Number(value) || 0);
 }
@@ -559,6 +567,7 @@ function renderLayout(activeNav, clientData) {
   // Módulos opcionais (ex.: pending-orders) leem o cliente daqui — cobre o
   // caso de o módulo carregar depois de renderLayout já ter corrido.
   window._nexoClientData = clientData || window._nexoClientData;
+  window.NEXO_HIDE_EUR = moneyHiddenFor(getMenuSlug(window._nexoClientData));
   const nav = document.getElementById('portal-nav');
   const sidebar = document.getElementById('portal-sidebar');
   if (!nav || !sidebar || !clientData) return;

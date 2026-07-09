@@ -173,13 +173,13 @@ const CONFIG = {
         {
           name: { pt: "Poke Mexicano", en: "Mexican Poke", es: "Poke Mexicano", fr: "Poke Mexicain" },
           desc: {
-            pt: '"Burrito desnudo": base de arroz, o nosso feijão preto, abacate, pico de gallo, proteína e salsa à escolha. (Também em versão burrito em tortilha de trigo.)',
-            en: '"Naked burrito": rice base, our black beans, avocado, pico de gallo, your choice of protein and salsa. (Also as a wheat-tortilla burrito.)',
-            es: '"Burrito desnudo": base de arroz, nuestros frijoles negros, aguacate, pico de gallo, proteína y salsa a elegir. (También en versión burrito en tortilla de trigo.)',
-            fr: '"Burrito nu" : base de riz, nos haricots noirs, avocat, pico de gallo, protéine et salsa au choix. (Aussi en burrito dans une tortilla de blé.)'
+            pt: '"Burrito desnudo": base de arroz, o nosso feijão preto, abacate, pico de gallo, proteína e salsa à escolha. Aconselhamos com carne de birria ou camarão. (Também em versão burrito em tortilha de trigo.)',
+            en: '"Naked burrito": rice base, our black beans, avocado, pico de gallo, your choice of protein and salsa. We recommend it with birria beef or shrimp. (Also as a wheat-tortilla burrito.)',
+            es: '"Burrito desnudo": base de arroz, nuestros frijoles negros, aguacate, pico de gallo, proteína y salsa a elegir. Lo recomendamos con carne de birria o camarón. (También en versión burrito en tortilla de trigo.)',
+            fr: '"Burrito nu" : base de riz, nos haricots noirs, avocat, pico de gallo, protéine et salsa au choix. Nous le conseillons avec bœuf birria ou crevettes. (Aussi en burrito dans une tortilla de blé.)'
           },
           price: "8,00€", photo: null, diet: ["GF"], allergens: [], badge: "popular",
-          upsell: ["totopos:0", "sobremesa:0"]
+          upsell: ["bebidas:1", "sobremesa:2"]
         },
         {
           name: { pt: "Birria Ramen Ramón", en: "Birria Ramen Ramón", es: "Birria Ramen Ramón", fr: "Birria Ramen Ramón" },
@@ -190,7 +190,7 @@ const CONFIG = {
             fr: "Notre plat fusion : un consommé délicieux rencontre des nouilles gourmandes avec coriandre, oignon frais et morceaux de notre viande Birria."
           },
           price: "7,50€", photo: null, diet: [], allergens: [1,3], badge: "chef",
-          upsell: ["tacos:2", "sobremesa:2"]
+          upsell: ["bebidas:15", "sobremesa:2"]
         },
         {
           name: { pt: "Ceviche de Polvo", en: "Octopus Ceviche", es: "Ceviche de Pulpo", fr: "Ceviche de Poulpe" },
@@ -201,7 +201,7 @@ const CONFIG = {
             fr: "Poulpe façon ceviche avec pico de gallo, guacamole, mangue et une portion de nachos."
           },
           price: "10,00€", photo: null, diet: ["GF"], allergens: [14],
-          upsell: ["totopos:0", "sobremesa:0"]
+          upsell: ["totopos:0", "bebidas:17", "sobremesa:2"]
         }
       ]
     },
@@ -274,7 +274,7 @@ const CONFIG = {
             fr: "Tortilla de blé de 25cm avec haricots et pico de gallo."
           },
           price: "6,00€", photo: null, diet: ["V"], allergens: [1,7],
-          upsell: ["quesadillas:2", "quesadillas:3"]
+          upsell: ["totopos:0", "bebidas:0", "sobremesa:2"]
         },
         {
           name: { pt: "Quesadilla Gringa Pastor", en: "Gringa Pastor Quesadilla", es: "Quesadilla Gringa Pastor", fr: "Quesadilla Gringa Pastor" },
@@ -285,7 +285,7 @@ const CONFIG = {
             fr: "Tortilla de blé de 25cm garnie de porc al pastor."
           },
           price: "8,00€", photo: null, diet: [], allergens: [1,7],
-          upsell: ["tacos:0", "sobremesa:0"]
+          upsell: ["bebidas:6", "sobremesa:2"]
         },
         {
           name: { pt: "Quesadilla de Camarão", en: "Shrimp Quesadilla", es: "Quesadilla de Camarón", fr: "Quesadilla de Crevettes" },
@@ -296,7 +296,7 @@ const CONFIG = {
             fr: "Tortilla de blé de 25cm avec crevettes grillées, pico de gallo, chou et mayonnaise fumée maison."
           },
           price: "8,50€", photo: null, diet: [], allergens: [1,2,3,7], badge: "chef",
-          upsell: ["antojitos:2", "sobremesa:2"]
+          upsell: ["antojitos:2", "bebidas:14", "sobremesa:2"]
         }
       ]
     },
@@ -320,13 +320,14 @@ const CONFIG = {
             fr: "Porc mariné aux épices typiquement mexicaines, grillé et juteux, avec ananas, oignon haché et coriandre."
           },
           price: "7,90€", photo: null, diet: ["GF"], allergens: [], badge: "popular",
-          upsell: ["totopos:0", "sobremesa:0"]
+          upsell: ["totopos:1", "bebidas:3", "sobremesa:2"]
         },
         {
           group: "taco-al-pastor", variantLabel: "×3",
           baseName: { pt: "Taco Al Pastor", en: "Al Pastor Taco", es: "Taco Al Pastor", fr: "Taco Al Pastor" },
           name: { pt: "Taco Al Pastor ×3", en: "Al Pastor Taco ×3", es: "Taco Al Pastor ×3", fr: "Taco Al Pastor ×3" },
-          price: "9,90€", photo: null, diet: ["GF"], allergens: []
+          price: "9,90€", photo: null, diet: ["GF"], allergens: [],
+          upsell: ["totopos:1", "bebidas:3", "sobremesa:2"]
         },
         /* Birria */
         {
@@ -340,13 +341,14 @@ const CONFIG = {
             fr: "Bœuf mijoté et effiloché, avec son délicieux bouillon, oignon haché et coriandre. Trempez le taco dans le bouillon avant de déguster — expérience 5 étoiles."
           },
           price: "7,90€", photo: null, diet: ["GF"], allergens: [], badge: "chef",
-          upsell: ["antojitos:1", "sobremesa:2"]
+          upsell: ["bebidas:2", "sobremesa:2"]
         },
         {
           group: "taco-birria", variantLabel: "×3",
           baseName: { pt: "Taco de Birria", en: "Birria Taco", es: "Taco de Birria", fr: "Taco de Birria" },
           name: { pt: "Taco de Birria ×3", en: "Birria Taco ×3", es: "Taco de Birria ×3", fr: "Taco de Birria ×3" },
-          price: "9,90€", photo: null, diet: ["GF"], allergens: []
+          price: "9,90€", photo: null, diet: ["GF"], allergens: [],
+          upsell: ["bebidas:2", "sobremesa:2"]
         },
         /* Al Pastor Vegan */
         {
@@ -359,13 +361,15 @@ const CONFIG = {
             es: "Trozos de soja marinados en especias típicamente mexicanas, a la parrilla y jugosos, con piña, cebolla picada y cilantro. Toda la tradición sin culpa.",
             fr: "Morceaux de soja marinés aux épices typiquement mexicaines, grillés et juteux, avec ananas, oignon haché et coriandre. Toute la tradition sans culpabilité."
           },
-          price: "7,50€", photo: null, diet: ["V","VG"], allergens: [6]
+          price: "7,50€", photo: null, diet: ["V","VG"], allergens: [6],
+          upsell: ["totopos:0", "quesadillas:0", "bebidas:18", "sobremesa:2"]
         },
         {
           group: "taco-al-pastor-vegan", variantLabel: "×3",
           baseName: { pt: "Taco Al Pastor Vegan", en: "Vegan Al Pastor Taco", es: "Taco Al Pastor Vegano", fr: "Taco Al Pastor Vegan" },
           name: { pt: "Taco Al Pastor Vegan ×3", en: "Vegan Al Pastor Taco ×3", es: "Taco Al Pastor Vegano ×3", fr: "Taco Al Pastor Vegan ×3" },
-          price: "8,90€", photo: null, diet: ["V","VG"], allergens: [6]
+          price: "8,90€", photo: null, diet: ["V","VG"], allergens: [6],
+          upsell: ["totopos:0", "quesadillas:0", "bebidas:18", "sobremesa:2"]
         },
         /* Cogumelo Panado */
         {
@@ -378,13 +382,15 @@ const CONFIG = {
             es: "Champiñón marinado, empanado y frito hasta quedar crujiente, con mayonesa cremosa de ajo, col blanca y pico de gallo.",
             fr: "Champignon mariné, pané et frit jusqu'à être croustillant, avec mayonnaise crémeuse à l'ail, chou blanc et pico de gallo."
           },
-          price: "7,50€", photo: null, diet: ["V"], allergens: [1,3]
+          price: "7,50€", photo: null, diet: ["V"], allergens: [1,3], badge: "popular",
+          upsell: ["totopos:1", "bebidas:5", "bebidas:16", "sobremesa:2"]
         },
         {
           group: "taco-cogumelo", variantLabel: "×3",
           baseName: { pt: "Taco de Cogumelo Panado", en: "Breaded Mushroom Taco", es: "Taco de Champiñón Empanado", fr: "Taco de Champignon Pané" },
           name: { pt: "Taco de Cogumelo Panado ×3", en: "Breaded Mushroom Taco ×3", es: "Taco de Champiñón Empanado ×3", fr: "Taco de Champignon Pané ×3" },
-          price: "8,90€", photo: null, diet: ["V"], allergens: [1,3]
+          price: "8,90€", photo: null, diet: ["V"], allergens: [1,3],
+          upsell: ["totopos:1", "bebidas:5", "bebidas:16", "sobremesa:2"]
         },
         /* Camarão */
         {
@@ -397,13 +403,15 @@ const CONFIG = {
             es: "Camarón a la plancha, con mix de col picada y una cremosa mayonesa ahumada de la casa.",
             fr: "Crevettes grillées, avec un mélange de chou haché et une mayonnaise fumée crémeuse maison."
           },
-          price: "7,90€", photo: null, diet: [], allergens: [2,3]
+          price: "7,90€", photo: null, diet: [], allergens: [2,3],
+          upsell: ["quesadillas:0", "bebidas:4", "sobremesa:2"]
         },
         {
           group: "taco-camarao", variantLabel: "×3",
           baseName: { pt: "Taco de Camarão", en: "Shrimp Taco", es: "Taco de Camarón", fr: "Taco de Crevettes" },
           name: { pt: "Taco de Camarão ×3", en: "Shrimp Taco ×3", es: "Taco de Camarón ×3", fr: "Taco de Crevettes ×3" },
-          price: "9,90€", photo: null, diet: [], allergens: [2,3]
+          price: "9,90€", photo: null, diet: [], allergens: [2,3],
+          upsell: ["quesadillas:0", "bebidas:4", "sobremesa:2"]
         },
 
         /* ── ADICIONAL (escondido do menu; entra no pedido/cozinha como linha
@@ -455,10 +463,10 @@ const CONFIG = {
         {
           name: { pt: "Chamoyada", en: "Chamoyada", es: "Chamoyada", fr: "Chamoyada" },
           desc: {
-            pt: '"Açaí" mexicano de chamoy e manga.',
-            en: 'Mexican "açaí" of chamoy and mango.',
-            es: '"Açaí" mexicano de chamoy y mango.',
-            fr: '"Açaí" mexicain au chamoy et à la mangue.'
+            pt: 'A sobremesa perfeita para dias quentes: granizado de manga para comer à colher, com lima e molho chamoy.',
+            en: 'The perfect hot-day dessert: mango shaved ice to eat with a spoon, with lime and chamoy sauce.',
+            es: 'El postre perfecto para días calurosos: granizado de mango para comer a cucharadas, con lima y salsa chamoy.',
+            fr: 'Le dessert parfait pour les jours chauds : granité de mangue à la cuillère, avec citron vert et sauce chamoy.'
           },
           price: "5,50€", photo: null, diet: ["V","GF"], allergens: [], badge: "chef",
           upsell: ["sobremesa:3", "sobremesa:0"]
@@ -502,9 +510,10 @@ const CONFIG = {
      ════════════════════════════════════════════════════════════════════════ */
 
   mostOrdered: [
-    { refId: "tacos:0",     badge: { pt: "O nosso taco nº1",   en: "Our #1 taco",        es: "Nuestro taco nº1",   fr: "Notre taco nº1"    } },
-    { refId: "antojitos:0", badge: { pt: "Mais pedido à mesa", en: "Most ordered",       es: "Más pedido",         fr: "Le plus commandé"  } },
-    { refId: "totopos:2",   badge: { pt: "Para partilhar",     en: "Made for sharing",   es: "Para compartir",     fr: "À partager"        } }
+    { refId: "quesadillas:3", badge: { pt: "A mais pedida",          en: "Most ordered",         es: "La más pedida",          fr: "La plus commandée"   } },
+    { refId: "totopos:2",     badge: { pt: "Para partilhar",         en: "Made for sharing",     es: "Para compartir",         fr: "À partager"          } },
+    { refId: "tacos:2",       badge: { pt: "Experiência 5 estrelas", en: "5-star experience",    es: "Experiencia 5 estrellas", fr: "Expérience 5 étoiles" } },
+    { refId: "tacos:6",       badge: { pt: "Favorito veggie",        en: "Veggie favourite",     es: "Favorito veggie",        fr: "Favori veggie"       } }
   ],
 
 

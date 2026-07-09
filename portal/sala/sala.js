@@ -19,7 +19,11 @@ const state = {
   todayStats: { revenue: 0, orders: 0, calls: 0 },
 };
 
-function fmtEUR(v) { return '€' + (Number(v) || 0).toFixed(2).replace('.', ','); }
+function fmtEUR(v) {
+  // Venues sem € no portal (ex.: No Manches): faturamento só na área financeira.
+  if (typeof moneyHiddenFor === 'function' && moneyHiddenFor(window.ESPACO_SLUG)) return '—';
+  return '€' + (Number(v) || 0).toFixed(2).replace('.', ',');
+}
 function escapeHtml(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function escAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
 

@@ -1946,10 +1946,10 @@ function openItemModal(sectionId, itemIdx) {
   const upsellEl = document.getElementById('item-modal-upsell');
   if (upsellEl) {
     if (item.upsell && item.upsell.length > 0) {
+      // getItemByRef resolve comida ("secção:idx") E bebidas ("bebidas:idx")
       const upsellItems = item.upsell.map(ref => {
-        const [sid, iidxStr] = ref.split(':');
-        const sec = CONFIG.menu.find(s => s.id === sid);
-        return sec ? { item: sec.items[parseInt(iidxStr)], ref } : null;
+        const it = getItemByRef(ref);
+        return it ? { item: it, ref } : null;
       }).filter(Boolean);
 
       if (upsellItems.length > 0) {
@@ -1973,7 +1973,11 @@ function openItemModal(sectionId, itemIdx) {
             haptic();
             const [sid, iidxStr] = card.dataset.upsellRef.split(':');
             closeModal('item-modal');
-            setTimeout(() => openItemModal(sid, parseInt(iidxStr)), 220);
+            if (sid === 'bebidas') {
+              setTimeout(() => openWineModal(parseInt(iidxStr)), 220);
+            } else {
+              setTimeout(() => openItemModal(sid, parseInt(iidxStr)), 220);
+            }
           });
         });
       } else {
@@ -2080,8 +2084,81 @@ function openWineModal(idx) {
     }
   }
 
+  // ═══ Adicionar bebida ao pedido (refId "bebidas:<idx>") ═══
+  const addBtn = document.getElementById('wine-modal-add');
+  const addLabel = document.getElementById('wine-modal-add-label');
+  const decrementBtn = document.getElementById('wine-modal-decrement');
+  const orderBar = document.getElementById('wine-modal-order-bar');
+  if (addBtn && addLabel && orderBar) {
+    const refId = `bebidas:${idx}`;
+    if (parsePriceToNumber(w.price) !== null) {
+      orderBar.style.display = 'flex';
+      addBtn.dataset.addRef = refId;
+      addBtn.setAttribute('aria-label', t().increaseQty);
+      const qty = getCartQty(refId);
+      addLabel.textContent = qty > 0 ? `${qty} ${t().inOrder}` : t().addToOrder;
+      orderBar.classList.toggle('has-decrement', qty > 0);
+      if (addBtn._feedbackTimer) { clearTimeout(addBtn._feedbackTimer); addBtn._feedbackTimer = null; }
+      addBtn.classList.remove('just-added');
+      if (decrementBtn) {
+        decrementBtn.dataset.decrementRef = refId;
+        decrementBtn.setAttribute('aria-label', t().reduceQty);
+        decrementBtn.classList.toggle('show', qty > 0);
+      }
+    } else {
+      orderBar.style.display = 'none';
+      orderBar.classList.remove('has-decrement');
+    }
+  }
+
   track('wine_open', { name: w.name, price: w.price });
   openModal('wine-modal');
+}
+
+// Botão "Adicionar ao pedido" do modal de bebida — mesmo feedback do item modal
+function setupWineModalAdd() {
+  const btn = document.getElementById('wine-modal-add');
+  const decrementBtn = document.getElementById('wine-modal-decrement');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const ref = btn.dataset.addRef;
+    if (!ref) return;
+    haptic();
+    addToCart(ref);
+    btn.classList.add('just-added');
+    const label = document.getElementById('wine-modal-add-label');
+    if (label) {
+      label.textContent = t().addedToOrder;
+      if (btn._feedbackTimer) clearTimeout(btn._feedbackTimer);
+      btn._feedbackTimer = setTimeout(() => {
+        btn.classList.remove('just-added');
+        btn._feedbackTimer = null;
+        updateOpenWineModalControls();
+      }, 900);
+    }
+  });
+  if (decrementBtn) {
+    decrementBtn.addEventListener('click', () => {
+      const ref = decrementBtn.dataset.decrementRef;
+      if (!ref) return;
+      haptic();
+      decrementCart(ref);
+    });
+  }
+}
+
+function updateOpenWineModalControls() {
+  const modal = document.getElementById('wine-modal');
+  if (!modal || !modal.classList.contains('show')) return;
+  const addBtn = document.getElementById('wine-modal-add');
+  const addLabel = document.getElementById('wine-modal-add-label');
+  const decrementBtn = document.getElementById('wine-modal-decrement');
+  const orderBar = document.getElementById('wine-modal-order-bar');
+  if (!addBtn || !addLabel || !addBtn.dataset.addRef) return;
+  const qty = getCartQty(addBtn.dataset.addRef);
+  addLabel.textContent = qty > 0 ? `${qty} ${t().inOrder}` : t().addToOrder;
+  if (orderBar) orderBar.classList.toggle('has-decrement', qty > 0);
+  if (decrementBtn) decrementBtn.classList.toggle('show', qty > 0);
 }
 
 // Review button
@@ -2320,8 +2397,25 @@ function getCartItemCount() {
 }
 
 // Helper: get item object por refId
+// Suporta também refs "bebidas:<idx>" — bebidas do separador Drinks (wines[])
+// embrulhadas na forma de item do menu, para poderem entrar no pedido.
+const _drinkItemCache = {};
+function getDrinkByIdx(idx) {
+  const w = (CONFIG.wines || [])[idx];
+  if (!w) return null;
+  if (!_drinkItemCache[idx]) {
+    _drinkItemCache[idx] = {
+      isDrink: true,
+      name: { pt: w.name, en: w.name, es: w.name, fr: w.name },
+      desc: { pt: w.desc || '', en: w.desc || '', es: w.desc || '', fr: w.desc || '' },
+      price: w.price, photo: w.photo || null, diet: [], allergens: []
+    };
+  }
+  return _drinkItemCache[idx];
+}
 function getItemByRef(refId) {
   const [sid, iidxStr] = refId.split(':');
+  if (sid === 'bebidas') return getDrinkByIdx(parseInt(iidxStr));
   const sec = CONFIG.menu.find(s => s.id === sid);
   if (!sec) return null;
   return sec.items[parseInt(iidxStr)] || null;
@@ -2354,6 +2448,7 @@ function onCartChange() {
   renderCartSheet();
   updateAddBtnBadges();
   updateOpenItemModalControls();
+  updateOpenWineModalControls();
   if (typeof onCartChangeSplitHook === 'function') onCartChangeSplitHook();
 }
 
@@ -4748,6 +4843,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── Order System ───
   setupMenuAddButtons();
   setupItemModalAdd();
+  setupWineModalAdd();
   setupCartPill();
   setupCartSheet();
   setupStaffView();

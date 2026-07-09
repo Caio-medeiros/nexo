@@ -217,7 +217,7 @@
         <div class="rnv-stat"><div class="n count" data-count="${lt.visits}">0</div><div class="l">${getIcon('eye')} visitas ao menu</div></div>
         <div class="rnv-stat"><div class="n count" data-count="${lt.google_clicks}">0</div><div class="l">${getIcon('star')} idas ao Google</div></div>
         <div class="rnv-stat"><div class="n count" data-count="${lt.orders}">0</div><div class="l">${getIcon('grid')} pedidos registados</div></div>
-        <div class="rnv-stat"><div class="n count" data-count="${Math.round(lt.revenue)}" data-eur="1">€0</div><div class="l">${getIcon('bar-chart')} faturação registada</div></div>
+        <div class="rnv-stat"><div class="n count" data-count="${window.NEXO_HIDE_EUR ? 0 : Math.round(lt.revenue)}" data-eur="1">${window.NEXO_HIDE_EUR ? '—' : '€0'}</div><div class="l">${getIcon('bar-chart')} faturação registada</div></div>
         <div class="rnv-stat"><div class="n count" data-count="${lt.sessions}">0</div><div class="l">${getIcon('users')} clientes únicos</div></div>
       </div>
 

@@ -40,6 +40,13 @@
   function resolveRef(refId) {
     if (!refId || typeof CONFIG === 'undefined') return null;
     const [sectionId, idx] = refId.split(':');
+    // Bebidas do separador Drinks (wines[]) — categoria "Bebidas" faz o
+    // courseFor() classificar como course 'bebida' para a cozinha.
+    if (sectionId === 'bebidas') {
+      const w = (CONFIG.wines || [])[parseInt(idx, 10)];
+      if (!w) return null;
+      return { id: refId, name: w.name, category: 'Bebidas', price: parsePrice(w.price) };
+    }
     const section = (CONFIG.menu || []).find(s => s.id === sectionId);
     if (!section) return null;
     const item = section.items[parseInt(idx, 10)];

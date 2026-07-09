@@ -575,6 +575,11 @@
 `;
     const s = document.createElement('style');
     s.textContent = css;
+    // Venues sem € no portal: o drawer confirma itens sem mostrar preços —
+    // faturamento vive apenas na área financeira dedicada.
+    if (typeof moneyHiddenFor === 'function' && moneyHiddenFor(SLUG)) {
+      s.textContent += '\n.nm-line-price,.nm-add-hit span,.nm-total{display:none !important}';
+    }
     document.head.appendChild(s);
   }
 })();
