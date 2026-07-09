@@ -401,9 +401,17 @@
       if (typeof origSent === 'function') origSent();
     };
 
-    // 3) CTA principal do ecrã de confirmação.
+    // 3) CTA principal do ecrã de confirmação. O render do ecrã reescreve
+    // o label (t().confirmKitchen) a cada abertura/mudança de idioma — um
+    // observer garante que o CTA assistido ganha sempre.
     const label = document.getElementById('confirm-kitchen-label');
-    if (label && CONFIG.ASSISTED_CTA) label.textContent = CONFIG.ASSISTED_CTA;
+    if (label && CONFIG.ASSISTED_CTA) {
+      const enforce = () => {
+        if (label.textContent !== CONFIG.ASSISTED_CTA) label.textContent = CONFIG.ASSISTED_CTA;
+      };
+      enforce();
+      new MutationObserver(enforce).observe(label, { childList: true, characterData: true, subtree: true });
+    }
   }
 
   // ── init ─────────────────────────────────────────────────────
