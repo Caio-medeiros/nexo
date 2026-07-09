@@ -13,3 +13,6 @@ supabase/.temp/
 .env.*
 *.env
 
+
+# Graphify knowledge-graph artefacts (local only)
+graphify-out/

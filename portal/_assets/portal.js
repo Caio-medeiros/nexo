@@ -556,6 +556,9 @@ function getMenuSlug(clientData) {
 
 // ─── LAYOUT ──────────────────────────────
 function renderLayout(activeNav, clientData) {
+  // Módulos opcionais (ex.: pending-orders) leem o cliente daqui — cobre o
+  // caso de o módulo carregar depois de renderLayout já ter corrido.
+  window._nexoClientData = clientData || window._nexoClientData;
   const nav = document.getElementById('portal-nav');
   const sidebar = document.getElementById('portal-sidebar');
   if (!nav || !sidebar || !clientData) return;
@@ -1027,6 +1030,16 @@ window.addEventListener('appinstalled', () => {
   try { localStorage.setItem('nexo_pwa_installed', new Date().toISOString()); } catch (_) {}
   document.getElementById('nexo-install-banner')?.remove();
 });
+
+// ─── PEDIDO ASSISTIDO (Mesas a Confirmar) ──
+// Módulo opcional carregado em todas as páginas; só activa quando o config
+// do menu do cliente tem VENUE_TYPE === 'assisted' (ex.: No Manches).
+(function loadPendingOrders() {
+  const s = document.createElement('script');
+  s.src = '/portal/_assets/pending-orders.js';
+  s.defer = true;
+  document.head.appendChild(s);
+})();
 
 // ─── KIOSK MODE (Cozinha + Restaurante on mounted tablets) ──
 // Wake Lock keeps the screen on; fullscreen-on-first-tap only when installed

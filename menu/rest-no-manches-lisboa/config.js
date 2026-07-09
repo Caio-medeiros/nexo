@@ -24,6 +24,20 @@ const CONFIG = {
 
   callStaffTopic: 'rest-nexo-no-manches',
 
+  /* ── PEDIDO ASSISTIDO ─────────────────────────────────────────
+     'assisted' → o pedido do cliente fica em espera ('awaiting_staff')
+     até um membro do staff confirmar no portal. undefined/'direct' →
+     comportamento clássico (ronda disparada directamente p/ cozinha). */
+  VENUE_TYPE: 'assisted',
+  NTFY_TOPIC: 'nexo-no-manches',
+
+  ASSISTED_CTA:           'Estou pronto — chamar staff',
+  ASSISTED_MSG_WAITING:   'O staff está a caminho 🙌',
+  ASSISTED_MSG_REVIEWING: 'A verificar o seu pedido 📋',
+  ASSISTED_MSG_ALMOST:    'Quase pronto! 🌮',
+  ASSISTED_MSG_CONFIRMED: 'Pedido confirmado! A preparar... 🍽️',
+  ASSISTED_MSG_CANCELLED: 'Pedido cancelado. Chama um membro do staff.',
+
   /* Supabase — partilhado com a Marisca (mesmo projeto menus+portal) */
   supabaseUrl: 'https://kgbrtbpeekhkroibsgqq.supabase.co',
   supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYnJ0YnBlZWtoa3JvaWJzZ3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDAwMTMsImV4cCI6MjA5NjYxNjAxM30.vFvSLysnS3456WWKa2a659YuIVuOceYHG4NMd79Jerc',
