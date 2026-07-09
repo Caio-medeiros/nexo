@@ -72,15 +72,16 @@
   }
 
   // ── ntfy (best-effort, nunca bloqueia nem lança) ─────────────
-  function fireNtfy(mesa, totalItens) {
+  function fireNtfy(mesa, totalItens, isUpdate) {
     try {
       const TOPIC = CONFIG.NTFY_TOPIC;
       if (!TOPIC) return;
       // Headers HTTP têm de ser ASCII — título sem acentos.
+      const prefix = isUpdate ? 'PEDIDO ATUALIZADO: ' : 'CONFIRMAR PEDIDO: ';
       fetch('https://ntfy.sh/' + TOPIC, {
         method: 'POST',
         headers: {
-          'Title': 'CONFIRMAR PEDIDO: ' + String(mesa || 'Mesa').replace(/[^\x20-\x7E]/g, ''),
+          'Title': prefix + String(mesa || 'Mesa').replace(/[^\x20-\x7E]/g, ''),
           'Priority': 'high',
           'Tags': 'fork_and_knife',
           'Content-Type': 'text/plain; charset=utf-8',
@@ -114,19 +115,29 @@
   }
 
   // ── submissão assistida (substitui NEXOPremium.onOrderConfirmed) ──
+  // 1.º envio: cria o lote awaiting + esvazia o carrinho local (o snapshot
+  // no pending permite repovoar no "Editar pedido"). Envios seguintes com o
+  // lote ainda em espera fazem APPEND ao mesmo pedido — o drawer do portal
+  // atualiza ao vivo via realtime.
   async function assistedOrderConfirmed() {
     if (_inFlight) return { ok: false, reason: 'locked' };
 
-    // Já existe um pedido em espera? Não duplica — volta a mostrar o ecrã.
-    const prev = getPending();
-    if (prev && prev.itemIds && prev.itemIds.length) {
-      const st = await pendingState(prev);
-      if (st === 'awaiting') return { ok: true, resumed: true };
-      setPending(null); // resolvido entretanto — segue pedido novo
-    }
-
     _inFlight = true;
     try {
+      const isShared = (typeof sharedCart !== 'undefined' && sharedCart);
+      const prev = getPending();
+      let appendTo = null;
+      if (prev && prev.itemIds && prev.itemIds.length) {
+        const st = await pendingState(prev);
+        if (st === 'awaiting') {
+          const cartItems = NEXOPremium.readMenuCart();
+          if (!cartItems.length || isShared) return { ok: true, resumed: true };
+          appendTo = prev; // carrinho tem itens novos → juntar ao pedido em espera
+        } else {
+          setPending(null); // resolvido entretanto — segue pedido novo
+        }
+      }
+
       const items = NEXOPremium.readMenuCart();
       if (!items.length) return { ok: false, reason: 'empty' };
       if (window.NexoAccess && !(await NexoAccess.guardOrder())) return { ok: false, reason: 'blocked' };
@@ -136,11 +147,12 @@
         const v = NS.validateOrderItems(items);
         if (!v.valid) return { ok: false, reason: 'invalid' };
       }
-      const tableLabel = NEXOPremium.currentTableLabel();
-      const comanda = await openOrGetComanda(tableLabel);
+      const tableLabel = appendTo ? appendTo.mesa : NEXOPremium.currentTableLabel();
+      const comandaId = appendTo ? appendTo.comandaId
+        : (await openOrGetComanda(tableLabel)).id;
       const client = await sb();
       const rows = items.map(i => ({
-        comanda_id: comanda.id, espaco_slug: SLUG, item_id: i.id,
+        comanda_id: comandaId, espaco_slug: SLUG, item_id: i.id,
         item_name: clean(i.name, 200), item_category: i.category,
         item_price: Math.min(Math.max(parsePriceNum(i.price), 0), 999.99),
         quantity: Math.min(Math.max(parseInt(i.qty, 10) || 1, 1), 50),
@@ -151,17 +163,28 @@
         .insert(rows).select('id');
       if (error) throw error;
 
-      const totalItens = items.reduce((s, i) => s + (i.qty || 1), 0);
-      setPending({
-        comandaId: comanda.id,
-        itemIds: (inserted || []).map(r => r.id),
-        mesa: tableLabel,
-        count: totalItens,
-        ts: Date.now(),
-      });
-      fireNtfy(tableLabel, totalItens);
+      const snapshot = items.map(i => ({ refId: i.id, qty: i.qty || 1, note: i.note || '' }));
+      const totalNew = items.reduce((s, i) => s + (i.qty || 1), 0);
+      const merged = appendTo ? {
+        ...appendTo,
+        itemIds: appendTo.itemIds.concat((inserted || []).map(r => r.id)),
+        count: (appendTo.count || 0) + totalNew,
+        snapshot: (appendTo.snapshot || []).concat(snapshot),
+      } : {
+        comandaId, itemIds: (inserted || []).map(r => r.id),
+        mesa: tableLabel, count: totalNew, ts: Date.now(),
+        snapshot,
+      };
+      setPending(merged);
+
+      // Carrinho local esvazia — o pedido vive agora no lote em espera; o
+      // "Editar pedido" repovoa-o a partir do snapshot. (Partilhado: mantém
+      // o fluxo clássico, limpo só na confirmação.)
+      if (!isShared && typeof clearCart === 'function') { try { clearCart(); } catch (_) {} }
+
+      fireNtfy(tableLabel, merged.count, !!appendTo);
       if (typeof track === 'function') {
-        try { track('assisted_order_awaiting', { espaco_slug: SLUG, item_count: items.length }); } catch (_) {}
+        try { track('assisted_order_awaiting', { espaco_slug: SLUG, item_count: items.length, appended: !!appendTo }); } catch (_) {}
       }
       return { ok: true };
     } catch (e) {
@@ -201,7 +224,7 @@
       }, 20000);
     }
     clearTimeout(_timeoutId);
-    _timeoutId = setTimeout(() => { cleanup(); hideSheet(); }, 15 * 60 * 1000);
+    _timeoutId = setTimeout(() => { cleanup(); hideSheet(); removePill(); }, 15 * 60 * 1000);
   }
 
   let _resolving = false;
@@ -215,6 +238,7 @@
       if (st === 'awaiting') return;
       cleanup();
       setPending(null);
+      removePill();
       if (st === 'confirmed') showConfirmedScreen(p);
       else if (st === 'cancelled') showCancelledScreen();
       else hideSheet(); // 'gone' — resolvido fora do fluxo
@@ -254,16 +278,44 @@
     setTimeout(() => { el.innerHTML = ''; }, 350);
   }
 
+  // Pill compacta quando o cliente minimiza o ecrã de espera — o menu fica
+  // navegável e um toque reabre o ecrã. Removida quando o pedido resolve.
+  function showPill(p) {
+    removePill();
+    const pill = document.createElement('button');
+    pill.id = 'nm-waiting-pill';
+    pill.type = 'button';
+    pill.innerHTML = `<span class="nm-pill-dot"></span>${escHtml(p.mesa)} · A aguardar staff`;
+    pill.addEventListener('click', () => {
+      removePill();
+      const cur = getPending();
+      if (cur) showWaitingScreen(cur); else resolvePending();
+    });
+    document.body.appendChild(pill);
+    requestAnimationFrame(() => pill.classList.add('show'));
+  }
+  function removePill() {
+    const pill = document.getElementById('nm-waiting-pill');
+    if (pill) pill.remove();
+  }
+
   function showWaitingScreen(p) {
+    removePill();
     const el = sheetEl();
     el.innerHTML = `
       <div id="nm-waiting-screen">
+        <button id="nm-minimize-btn" type="button" aria-label="Continuar a ver o menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
         <div class="nm-icon-wrap"><span class="nm-icon">🙌</span></div>
         <p class="nm-title" id="nm-rotating-msg">${ROTATING[0]}</p>
         <p class="nm-sub">${escHtml(p.mesa)} · ${p.count} ${p.count === 1 ? 'item' : 'itens'}</p>
         <div class="nm-progress-bar"><div class="nm-progress-fill"></div></div>
         <p class="nm-hint">A aguardar confirmação</p>
-        <button id="nm-edit-btn" type="button" style="display:none">Editar pedido</button>
+        <div class="nm-wait-actions">
+          <button id="nm-edit-btn" type="button">Editar pedido</button>
+          <button id="nm-browse-btn" type="button">Ver o menu</button>
+        </div>
       </div>`;
     requestAnimationFrame(() => el.classList.add('show'));
 
@@ -282,16 +334,21 @@
       }, 400);
     }, 8000);
 
-    // "Editar pedido": só aparece se o staff ainda não pegou no pedido.
+    // Minimizar (chevron ou "Ver o menu") → pill; realtime continua vivo.
+    const minimize = () => { hideSheet(); showPill(p); };
+    const minBtn = document.getElementById('nm-minimize-btn');
+    if (minBtn) minBtn.addEventListener('click', minimize);
+    const browseBtn = document.getElementById('nm-browse-btn');
+    if (browseBtn) browseBtn.addEventListener('click', minimize);
+
+    // "Editar pedido": disponível de imediato; valida no toque se o staff
+    // ainda não pegou no pedido (se pegou, resolve para confirmado/cancelado).
     const editBtn = document.getElementById('nm-edit-btn');
     if (editBtn) {
-      pendingState(p).then(st => {
-        if (st === 'awaiting') editBtn.style.display = '';
-      });
       editBtn.addEventListener('click', async () => {
         editBtn.disabled = true;
         const st = await pendingState(p);
-        if (st !== 'awaiting') { editBtn.style.display = 'none'; resolvePending(); return; }
+        if (st !== 'awaiting') { resolvePending(); return; }
         try {
           const client = await sb();
           await client.from('comanda_items').delete()
@@ -300,8 +357,17 @@
         cleanup();
         setPending(null);
         hideSheet();
-        // O carrinho local nunca foi esvaziado — reabre com os itens intactos.
-        try { openModal('cart-sheet'); } catch (_) {}
+        removePill();
+        // Repovoa o carrinho local a partir do snapshot do pedido em espera
+        // e reabre-o — edição imediata, sem itens duplicados.
+        try {
+          const isShared = (typeof sharedCart !== 'undefined' && sharedCart);
+          if (!isShared && p.snapshot && p.snapshot.length && typeof cart !== 'undefined') {
+            cart = p.snapshot.map(s => ({ refId: s.refId, qty: s.qty, note: s.note || '' }));
+            if (typeof onCartChange === 'function') onCartChange();
+          }
+          openModal('cart-sheet');
+        } catch (_) {}
       });
     }
   }
@@ -355,29 +421,40 @@
     return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // ── CSS ──────────────────────────────────────────────────────
+  // ── CSS — identidade No Manches: dourado mostarda #C8952A + terracota
+  // #D64C2B sobre fundo escuro #1A1A1A (mesma paleta do hero/menu físico).
   function injectStyles() {
+    const GOLD = '#C8952A', GOLD_DARK = '#A67820', RED = '#D64C2B';
     const css = `
 #nm-assisted-sheet{position:fixed;left:0;right:0;bottom:0;z-index:2600;transform:translateY(110%);transition:transform .35s cubic-bezier(.32,.72,.28,1);pointer-events:none}
 #nm-assisted-sheet.show{transform:translateY(0);pointer-events:auto}
-#nm-waiting-screen,#nm-confirmed-screen,#nm-cancelled-screen{background:#1A1A1A;color:#fff;border-radius:22px 22px 0 0;padding:26px 22px calc(24px + env(safe-area-inset-bottom));text-align:center;box-shadow:0 -12px 40px rgba(0,0,0,.45)}
+#nm-waiting-screen,#nm-confirmed-screen,#nm-cancelled-screen{position:relative;background:#1A1A1A;color:#fff;border-radius:22px 22px 0 0;padding:26px 22px calc(24px + env(safe-area-inset-bottom));text-align:center;box-shadow:0 -12px 40px rgba(0,0,0,.45);overflow:hidden}
+#nm-waiting-screen::before,#nm-confirmed-screen::before,#nm-cancelled-screen::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,${GOLD},${RED})}
+#nm-minimize-btn{position:absolute;top:10px;right:12px;background:rgba(255,255,255,.08);border:none;color:${GOLD};border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .nm-icon-wrap{margin-bottom:6px}
 .nm-icon{display:inline-block;font-size:44px;animation:nm-pulse 2s ease-in-out infinite}
 @keyframes nm-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.75}}
 .nm-title{font-size:19px;font-weight:700;margin:8px 0 4px;transition:opacity .4s ease}
-.nm-sub{font-size:13.5px;opacity:.75;margin:0 0 16px}
+.nm-sub{font-size:13.5px;color:${GOLD};font-weight:600;margin:0 0 16px}
 .nm-progress-bar{height:5px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;margin:0 12px}
-.nm-progress-fill{height:100%;width:0;border-radius:99px;background:var(--accent,#C8952A);animation:nm-progress-loop 24s linear infinite}
+.nm-progress-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,${GOLD},${RED});animation:nm-progress-loop 24s linear infinite}
 @keyframes nm-progress-loop{0%{width:0}100%{width:100%}}
 .nm-hint{font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;opacity:.5;margin:12px 0 14px}
-#nm-edit-btn{background:transparent;border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:9px 18px;font-size:13.5px;cursor:pointer}
+.nm-wait-actions{display:flex;gap:10px;justify-content:center}
+#nm-edit-btn{background:transparent;border:1.5px solid ${GOLD};color:${GOLD};border-radius:11px;padding:11px 20px;font-size:13.5px;font-weight:700;cursor:pointer;min-height:48px}
 #nm-edit-btn:disabled{opacity:.5}
+#nm-browse-btn{background:transparent;border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.75);border-radius:11px;padding:11px 20px;font-size:13.5px;cursor:pointer;min-height:48px}
+#nm-waiting-pill{position:fixed;left:50%;transform:translateX(-50%) translateY(-140px);top:calc(112px + env(safe-area-inset-top));z-index:820;display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,${GOLD_DARK},${RED});color:#fff;border:none;border-radius:99px;padding:11px 18px;font-size:13.5px;font-weight:700;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.45);transition:transform .3s cubic-bezier(.32,.72,.28,1);min-height:44px;white-space:nowrap}
+#nm-waiting-pill.show{transform:translateX(-50%) translateY(0)}
+.nm-pill-dot{width:9px;height:9px;border-radius:50%;background:#fff;animation:nm-pulse 1.6s ease-in-out infinite}
 .nm-confirmed-icon,.nm-cancelled-icon{font-size:52px;margin-bottom:4px}
 .nm-confirmed-icon{animation:nm-pop .5s cubic-bezier(.34,1.56,.64,1)}
 @keyframes nm-pop{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
-.nm-confirmed-title,.nm-cancelled-title{font-size:20px;font-weight:800;margin:8px 0 4px}
+.nm-confirmed-title{font-size:20px;font-weight:800;margin:8px 0 4px;color:${GOLD}}
+.nm-cancelled-title{font-size:20px;font-weight:800;margin:8px 0 4px;color:${RED}}
 .nm-confirmed-sub,.nm-cancelled-sub{font-size:14px;opacity:.75;line-height:1.5;margin:0 0 18px}
-#nm-back-menu,#nm-back-menu-cancel{background:var(--accent,#C8952A);border:none;color:#fff;border-radius:12px;padding:12px 26px;font-size:14.5px;font-weight:700;cursor:pointer;min-height:48px}
+#nm-back-menu{background:linear-gradient(90deg,${GOLD},${GOLD_DARK});border:none;color:#fff;border-radius:12px;padding:12px 26px;font-size:14.5px;font-weight:700;cursor:pointer;min-height:48px}
+#nm-back-menu-cancel{background:transparent;border:1.5px solid ${RED};color:${RED};border-radius:12px;padding:12px 26px;font-size:14.5px;font-weight:700;cursor:pointer;min-height:48px}
 `;
     const s = document.createElement('style');
     s.textContent = css;
@@ -402,15 +479,19 @@
     };
 
     // 3) CTA principal do ecrã de confirmação. O render do ecrã reescreve
-    // o label (t().confirmKitchen) a cada abertura/mudança de idioma — um
-    // observer garante que o CTA assistido ganha sempre.
-    const label = document.getElementById('confirm-kitchen-label');
-    if (label && CONFIG.ASSISTED_CTA) {
+    // o label (t().confirmKitchen) e o estado de loading do botão substitui
+    // o innerHTML inteiro (resetKitchenBtn) — por isso observa-se o BOTÃO
+    // (que persiste), não o span, e o enforce reencontra o label actual.
+    const btn = document.getElementById('confirm-btn-kitchen');
+    if (btn && CONFIG.ASSISTED_CTA) {
       const enforce = () => {
-        if (label.textContent !== CONFIG.ASSISTED_CTA) label.textContent = CONFIG.ASSISTED_CTA;
+        // Nunca tocar no botão em loading (spinner + "A enviar…").
+        if (btn.classList.contains('is-loading')) return;
+        const lbl = document.getElementById('confirm-kitchen-label');
+        if (lbl && lbl.textContent !== CONFIG.ASSISTED_CTA) lbl.textContent = CONFIG.ASSISTED_CTA;
       };
       enforce();
-      new MutationObserver(enforce).observe(label, { childList: true, characterData: true, subtree: true });
+      new MutationObserver(enforce).observe(btn, { childList: true, characterData: true, subtree: true });
     }
   }
 
