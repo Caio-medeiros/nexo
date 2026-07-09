@@ -2644,6 +2644,18 @@ body.has-cart {
   overflow: hidden;
 }
 
+/* #panel-order: o rodapé (Total + Confirmar) tem de ficar SEMPRE visível,
+   independentemente do motor de layout. Estratégia em duas camadas:
+   1) caminho normal — .cart-list (flex:1, min-height:0) encolhe e faz o
+      seu próprio scroll; o rodapé nunca sai do sítio;
+   2) rede de segurança (Safari/WebKit não colapsa min-height em flex
+      aninhado) — o painel faz scroll e o rodapé é sticky no fundo visível.
+   Nos browsers saudáveis o conteúdo cabe exacto e o sticky nunca actua. */
+#panel-order {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* #panel-split has no pinned footer inside it (unlike #panel-order, which
    keeps Confirmar visible via .cart-list scrolling under .cart-footer) — its
    content (people stepper, mode toggle, item assign list, podium) just grows
@@ -2812,6 +2824,10 @@ body.has-cart {
 /* Cart items list — only this scrolls */
 .cart-list {
   flex: 1;
+  /* min-height:0 explícito — sem isto o WebKit usa o mínimo automático
+     (= altura do conteúdo) e a lista recusa-se a encolher/scrollar,
+     empurrando o rodapé para fora do ecrã. */
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -2928,6 +2944,11 @@ body.has-cart {
 /* Cart footer (total + show staff + clear) */
 .cart-footer {
   flex-shrink: 0;
+  /* sticky = rede de segurança: se o painel scrollar (ver #panel-order),
+     o rodapé cola-se ao fundo visível em vez de sair do ecrã. */
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   border-top: 1px solid var(--border);
   padding: var(--s3) var(--s3) calc(var(--s4) + env(safe-area-inset-bottom));
   background: var(--surface);

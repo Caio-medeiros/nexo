@@ -823,7 +823,9 @@
   </div>
 
   <style>
-  .nexo-shared-trigger{display:flex;align-items:center;gap:8px;margin:8px var(--s3) 4px;padding:11px 14px;background:rgba(200, 149, 42,0.06);border:1px solid rgba(200, 149, 42,0.18);border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;text-align:left;font-family:var(--font-ui);-webkit-tap-highlight-color:transparent;transition:background 0.15s;}
+  /* width explícito: o Safari não estica <button> via align-items:stretch
+     do flex — sem isto o trigger encolhe ao conteúdo em vez de 100%. */
+  .nexo-shared-trigger{display:flex;align-items:center;gap:8px;margin:8px var(--s3) 4px;padding:11px 14px;width:calc(100% - (2 * var(--s3)));background:rgba(200, 149, 42,0.06);border:1px solid rgba(200, 149, 42,0.18);border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;text-align:left;font-family:var(--font-ui);-webkit-tap-highlight-color:transparent;transition:background 0.15s;}
   .nexo-shared-trigger:active{background:rgba(200, 149, 42,0.12);}
   .nexo-shared-trigger span{margin-left:auto;background:var(--accent);color:white;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;white-space:nowrap;letter-spacing:0.01em;}
   .nexo-shared-header{display:flex;align-items:center;gap:8px;margin:4px var(--s3) 8px;padding:10px 14px;background:rgba(200, 149, 42,0.08);border:1px solid rgba(200, 149, 42,0.25);border-radius:12px;font-size:13px;flex-wrap:nowrap;}

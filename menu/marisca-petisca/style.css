@@ -2650,6 +2650,15 @@ body.has-cart {
    as items/people are added. Without its own scroll, that growth silently
    overflowed the panel's `overflow: hidden` and clipped the podium/lower
    content with no way to reach it. Scroll the whole panel instead. */
+/* #panel-order: o rodapé (Total + Confirmar) fica SEMPRE visível — caminho
+   normal: .cart-list encolhe e scrolla; rede de segurança (WebKit não
+   colapsa min-height em flex aninhado): o painel scrolla e o rodapé é
+   sticky no fundo visível. */
+#panel-order {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 #panel-split {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -2812,6 +2821,10 @@ body.has-cart {
 /* Cart items list — only this scrolls */
 .cart-list {
   flex: 1;
+  /* min-height:0 explícito — sem isto o WebKit usa o mínimo automático
+     (= altura do conteúdo) e a lista recusa-se a encolher/scrollar,
+     empurrando o rodapé para fora do ecrã. */
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -2928,6 +2941,11 @@ body.has-cart {
 /* Cart footer (total + show staff + clear) */
 .cart-footer {
   flex-shrink: 0;
+  /* sticky = rede de segurança: se o painel scrollar (ver #panel-order),
+     o rodapé cola-se ao fundo visível em vez de sair do ecrã. */
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   border-top: 1px solid var(--border);
   padding: var(--s3) var(--s3) calc(var(--s4) + env(safe-area-inset-bottom));
   background: var(--surface);
