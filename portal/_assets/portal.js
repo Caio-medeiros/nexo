@@ -635,7 +635,17 @@ function renderLayout(activeNav, clientData) {
     ]},
   ];
 
-  sidebar.innerHTML = navGroups.map(group => `
+  // Venues owner-only (No Manches): Estatísticas e Renovação saem do portal
+  // do staff — vivem na área financeira dedicada do dono.
+  const OWNER_ONLY_HREFS = ['/portal/estatisticas/', '/portal/renovacao/'];
+  const visibleGroups = navGroups
+    .map(g => ({
+      ...g,
+      items: g.items.filter(i => !window.NEXO_HIDE_EUR || !OWNER_ONLY_HREFS.includes(i.href)),
+    }))
+    .filter(g => g.items.length);
+
+  sidebar.innerHTML = visibleGroups.map(group => `
     ${group.label ? `<div class="sidebar-group-label">${group.label}</div>` : ''}
     ${group.items.map(item => `
       <a href="${item.href}"

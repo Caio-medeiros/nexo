@@ -30,6 +30,11 @@
   let channel = null;
   let chart = null;
   let wasConnected = false;
+  let isLive = false;
+  let liveWatchdog = null;
+  let currentView = 'faturamento'; // faturamento | estatisticas
+  let statsRange = 7;              // dias (0 = tudo)
+  let chartHours = null;
 
   const state = {
     period: 'hoje',            // hoje | semana | mes | custom
@@ -192,7 +197,33 @@
       state.page = 1;
       loadData();
     });
-    document.getElementById('fin-refresh').addEventListener('click', () => loadData());
+    document.getElementById('fin-refresh').addEventListener('click', () => {
+      loadData();
+      if (!isLive) subscribe(); // reconexão manual do realtime
+      if (currentView === 'estatisticas') loadStats();
+    });
+
+    // ── Troca de vista: Faturamento ⇄ Estatísticas ────────────────
+    document.querySelectorAll('#fin-views button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#fin-views button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentView = btn.dataset.view;
+        const stats = currentView === 'estatisticas';
+        document.getElementById('fin-stats').hidden = !stats;
+        document.querySelector('.fin-main:not(#fin-stats)').hidden = stats;
+        document.getElementById('fin-periods').hidden = stats;
+        document.getElementById('fin-custom-range').hidden = stats || state.period !== 'custom';
+        if (stats) loadStats();
+      });
+    });
+    document.getElementById('stats-ranges').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-range]');
+      if (!b) return;
+      statsRange = parseInt(b.dataset.range, 10);
+      document.querySelectorAll('#stats-ranges button').forEach(x => x.classList.toggle('active', x === b));
+      loadStats();
+    });
     document.getElementById('pg-prev').addEventListener('click', () => { state.page--; renderOrders(); });
     document.getElementById('pg-next').addEventListener('click', () => { state.page++; renderOrders(); });
 
@@ -319,7 +350,21 @@
     refetchTimer = setTimeout(loadData, 500);
   }
 
+  function markOffline() {
+    const live = document.getElementById('fin-live');
+    live.classList.remove('on'); live.classList.add('off');
+    document.getElementById('fin-live-txt').textContent = '○ Offline';
+    document.getElementById('fin-refresh').hidden = false;
+  }
+
   function subscribe() {
+    isLive = false;
+    if (channel) { try { db.removeChannel(channel); } catch (_) {} channel = null; }
+    // Watchdog: se o handshake do realtime nunca completar (rede móvel,
+    // websocket bloqueado…), não ficar preso em "A ligar" — marca offline
+    // e mostra o botão ↻. Os dados continuam a carregar por query normal.
+    clearTimeout(liveWatchdog);
+    liveWatchdog = setTimeout(() => { if (!isLive) markOffline(); }, 12000);
     channel = db.channel('nm-financeiro')
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'comanda_items',
@@ -340,6 +385,8 @@
         const live = document.getElementById('fin-live');
         const txt = document.getElementById('fin-live-txt');
         if (status === 'SUBSCRIBED') {
+          isLive = true;
+          clearTimeout(liveWatchdog);
           live.classList.add('on'); live.classList.remove('off');
           txt.textContent = 'Ao vivo';
           document.getElementById('fin-refresh').hidden = true;
@@ -347,11 +394,125 @@
           if (wasConnected) debouncedRefetch();
           wasConnected = true;
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          isLive = false;
           live.classList.remove('on'); live.classList.add('off');
           txt.textContent = 'A reconectar…';
           document.getElementById('fin-refresh').hidden = false;
         }
       });
+  }
+
+  // Auto-retry: enquanto não estiver "Ao vivo", tenta re-subscrever a cada 45s.
+  setInterval(() => { if (db && !isLive) subscribe(); }, 45000);
+
+  // ══════════════════════════════════════════════════════════════
+  // VISTA ESTATÍSTICAS — métricas do menu (ex-/portal/estatisticas/,
+  // agora exclusivas do dono nesta área)
+  // ══════════════════════════════════════════════════════════════
+  const LANG_PT = { pt: 'Português', en: 'Inglês', es: 'Espanhol', fr: 'Francês', de: 'Alemão', it: 'Italiano' };
+
+  async function loadStats() {
+    const kpis = document.getElementById('stats-kpis');
+    kpis.innerHTML = Array(4).fill('<div class="kpi-card"><div class="sk sk-num"></div><div class="sk sk-label"></div></div>').join('');
+    document.getElementById('stats-top-items').innerHTML = Array(4).fill('<div class="sk sk-row"></div>').join('');
+    document.getElementById('stats-langs').innerHTML = '<div class="sk sk-row"></div>';
+
+    // RLS: como anon, menu_events/orders_log/staff_calls não são legíveis
+    // linha-a-linha — a RPC nm_financeiro_stats (036, SECURITY DEFINER)
+    // devolve apenas agregados e apenas deste venue.
+    const { data, error } = await db.rpc('nm_financeiro_stats', { p_days: statsRange });
+    if (error || !data) {
+      console.warn('[financeiro] stats', error);
+      const missing = error && /nm_financeiro_stats|function|404/i.test(error.message || '');
+      kpis.innerHTML = `<div class="fin-empty" style="grid-column:1/-1">📊<p>${missing
+        ? 'Estatísticas indisponíveis — falta correr a migração 036 no Supabase.'
+        : 'Erro ao carregar estatísticas. Tenta actualizar.'}</p></div>`;
+      document.getElementById('stats-top-items').innerHTML = '';
+      document.getElementById('stats-langs').innerHTML = '';
+      return;
+    }
+
+    const views = Number(data.views) || 0;
+    const sessions = Number(data.sessions) || 0;
+    const itemsViewed = Number(data.items_viewed) || 0;
+    const googleClicks = Number(data.google_clicks) || 0;
+    const nCalls = Number(data.staff_calls) || 0;
+    const nOrders = Number(data.orders_count) || 0;
+    const revenue = Number(data.revenue) || 0;
+
+    kpis.innerHTML = `
+      <div class="kpi-card">
+        <div class="kpi-value" id="st-views"></div>
+        <div class="kpi-label">Visitas ao menu</div>
+        <div class="kpi-sub">${sessions} ${sessions === 1 ? 'cliente único' : 'clientes únicos'}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="st-items"></div>
+        <div class="kpi-label">Itens vistos</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="st-google"></div>
+        <div class="kpi-label">Cliques Google</div>
+        <div class="kpi-sub">${nCalls} ${nCalls === 1 ? 'chamada de staff' : 'chamadas de staff'}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="st-orders"></div>
+        <div class="kpi-label">Pedidos registados</div>
+        <div class="kpi-sub">${nOrders ? fmtEUR(revenue) + ' no período' : ''}</div>
+      </div>`;
+    countUp(document.getElementById('st-views'), views, v => String(Math.round(v)));
+    countUp(document.getElementById('st-items'), itemsViewed, v => String(Math.round(v)));
+    countUp(document.getElementById('st-google'), googleClicks, v => String(Math.round(v)));
+    countUp(document.getElementById('st-orders'), nOrders, v => String(Math.round(v)));
+
+    // Actividade por hora (histograma já vem agregado da RPC, hora de Lisboa)
+    const hours = Array.isArray(data.hours) && data.hours.length === 24
+      ? data.hours.map(n => Number(n) || 0) : Array(24).fill(0);
+    if (chartHours) { chartHours.destroy(); chartHours = null; }
+    chartHours = new Chart(document.getElementById('stats-chart-hours').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: Array.from({ length: 24 }, (_, h) => `${h}h`),
+        datasets: [{ data: hours, backgroundColor: 'rgba(200,149,42,0.7)', borderColor: COLOR_PRIMARY, borderWidth: 1, borderRadius: 4 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: '#E8E0D0' }, ticks: { maxRotation: 0, autoSkip: true } },
+          y: { grid: { color: '#E8E0D0' }, beginAtZero: true, ticks: { precision: 0 } },
+        },
+      },
+    });
+
+    // Top 5 itens mais vistos
+    const top = (Array.isArray(data.top_items) ? data.top_items : [])
+      .map(x => [x.name, Number(x.n) || 0]);
+    const maxV = top[0] ? top[0][1] : 1;
+    document.getElementById('stats-top-items').innerHTML = top.length ? top.map(([name, n], i) => `
+      <div class="prato" style="--delay:${i * 60}ms; cursor:default">
+        <div class="prato-head">
+          <span class="prato-rank">#${i + 1}</span>
+          <span class="prato-name">${esc(name)}</span>
+          <span class="prato-meta">${n} ${n === 1 ? 'visualização' : 'visualizações'}</span>
+        </div>
+        <div class="prato-bar"><div class="prato-fill" style="width:${Math.round(n / maxV * 100)}%"></div></div>
+      </div>`).join('')
+      : '<div class="fin-empty">👀<p>Sem visualizações neste período.</p></div>';
+
+    // Idiomas
+    const langs = (Array.isArray(data.langs) ? data.langs : [])
+      .map(x => [x.lang, Number(x.n) || 0]);
+    const totalLang = langs.reduce((s, [, n]) => s + n, 0) || 1;
+    document.getElementById('stats-langs').innerHTML = langs.length ? langs.map(([l, n]) => `
+      <div class="prato" style="cursor:default">
+        <div class="prato-head">
+          <span class="prato-name">${esc(LANG_PT[l] || l)}</span>
+          <span class="prato-meta">${Math.round(n / totalLang * 100)}%</span>
+        </div>
+        <div class="prato-bar"><div class="prato-fill" style="width:${Math.round(n / totalLang * 100)}%"></div></div>
+      </div>`).join('')
+      : '<div class="fin-empty">🌐<p>Sem dados de idioma neste período.</p></div>';
   }
 
   // ══════════════════════════════════════════════════════════════

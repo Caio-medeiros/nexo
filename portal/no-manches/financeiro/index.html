@@ -45,6 +45,11 @@
       </div>
     </header>
 
+    <nav class="fin-views" id="fin-views">
+      <button type="button" data-view="faturamento" class="active">💰 Faturamento</button>
+      <button type="button" data-view="estatisticas">📊 Estatísticas</button>
+    </nav>
+
     <nav class="fin-periods" id="fin-periods">
       <button type="button" data-period="hoje" class="active">Hoje</button>
       <button type="button" data-period="semana">Semana</button>
@@ -80,6 +85,29 @@
           <span id="pg-info"></span>
           <button type="button" id="pg-next">Próxima →</button>
         </div>
+      </section>
+    </main>
+
+    <!-- ═══ VISTA ESTATÍSTICAS (antiga página /portal/estatisticas/, agora só do dono) ═══ -->
+    <main class="fin-main" id="fin-stats" hidden>
+      <nav class="fin-periods" id="stats-ranges">
+        <button type="button" data-range="7" class="active">7 dias</button>
+        <button type="button" data-range="30">30 dias</button>
+        <button type="button" data-range="90">90 dias</button>
+        <button type="button" data-range="0">Tudo</button>
+      </nav>
+      <section class="kpi-grid" id="stats-kpis"></section>
+      <section class="fin-card">
+        <h2 class="fin-card-title">Actividade por hora</h2>
+        <div class="chart-wrap"><canvas id="stats-chart-hours"></canvas></div>
+      </section>
+      <section class="fin-card">
+        <h2 class="fin-card-title">Itens mais vistos</h2>
+        <div id="stats-top-items"></div>
+      </section>
+      <section class="fin-card">
+        <h2 class="fin-card-title">Idiomas dos clientes</h2>
+        <div id="stats-langs"></div>
       </section>
     </main>
   </div>

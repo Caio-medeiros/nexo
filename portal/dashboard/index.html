@@ -229,7 +229,9 @@
     }
 
     let reportHtml = '';
-    if (lastReport && lastReport.report_text) {
+    // Venue owner-only (No Manches): o relatório semanal (IA) pode citar
+    // faturação e liga a Estatísticas — não aparece ao staff.
+    if (lastReport && lastReport.report_text && !window.NEXO_HIDE_EUR) {
       const sentences = lastReport.report_text.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ');
       reportHtml = `
         <div class="card mb-4">
@@ -260,17 +262,17 @@
         <div class="card kpi">
           <div class="kpi-top"><span class="kpi-label">Visitas ao menu</span><span class="kpi-ico">${getIcon('eye')}</span></div>
           <div class="kpi-num ${viewsToday > 50 ? 'text-info' : ''}">${viewsToday}<span class="u">hoje</span></div>
-          <div class="kpi-foot"><span class="s">aberturas de menu</span><a class="kpi-link" href="/portal/estatisticas/">Ver →</a></div>
+          <div class="kpi-foot"><span class="s">aberturas de menu</span>${window.NEXO_HIDE_EUR ? '' : '<a class="kpi-link" href="/portal/estatisticas/">Ver →</a>'}</div>
         </div>
         <div class="card kpi">
           <div class="kpi-top"><span class="kpi-label">Reviews Google</span><span class="kpi-ico">${getIcon('star')}</span></div>
           <div class="kpi-num ${reviewsMonth > 0 ? 'text-success' : ''}">${reviewsMonth}<span class="u">mês</span></div>
-          <div class="kpi-foot"><span class="s">cliques para o Google</span><a class="kpi-link" href="/portal/estatisticas/">Funil →</a></div>
+          <div class="kpi-foot"><span class="s">cliques para o Google</span>${window.NEXO_HIDE_EUR ? '' : '<a class="kpi-link" href="/portal/estatisticas/">Funil →</a>'}</div>
         </div>
         <div class="card kpi">
           <div class="kpi-top"><span class="kpi-label">Pedidos</span><span class="kpi-ico">${getIcon('grid')}</span></div>
           <div class="kpi-num">${ordersToday}<span class="u">hoje</span></div>
-          <div class="kpi-foot"><span class="s">${revenueToday > 0 ? formatEUR(revenueToday) + ' registado' : 'sem pedidos ainda'}</span><a class="kpi-link" href="/portal/sala/">Sala →</a></div>
+          <div class="kpi-foot"><span class="s">${window.NEXO_HIDE_EUR ? (ordersToday > 0 ? 'detalhe na Sala' : 'sem pedidos ainda') : (revenueToday > 0 ? formatEUR(revenueToday) + ' registado' : 'sem pedidos ainda')}</span><a class="kpi-link" href="/portal/sala/">Sala →</a></div>
         </div>
         <div class="card kpi">
           <div class="kpi-top"><span class="kpi-label">Chamadas</span><span class="kpi-ico">${getIcon('phone')}</span></div>
@@ -299,7 +301,7 @@
             <div class="status-row"><span class="status-k">Plano</span><span class="status-v">NEXO ${planLabel}</span></div>
             <div class="status-row"><span class="status-k">Estado</span><span class="status-v">${clientStatusBadge()}</span></div>
             <div class="status-row"><span class="status-k">Renovação</span><span class="status-v">${renewalText}</span></div>
-            <a class="btn btn-secondary btn-sm btn-full" style="margin-top:14px" href="/portal/renovacao/">Ver valor & plano →</a>
+            ${window.NEXO_HIDE_EUR ? '' : '<a class="btn btn-secondary btn-sm btn-full" style="margin-top:14px" href="/portal/renovacao/">Ver valor & plano →</a>'}
           </div>
 
           <div class="card">
@@ -308,7 +310,7 @@
               <a class="qa" href="/portal/sala/">${getIcon('activity')} Modo Restaurante <span class="qa-arrow">→</span></a>
               <a class="qa" href="/portal/disponibilidade/">${getIcon('toggle')} Disponibilidade <span class="qa-arrow">→</span></a>
               <a class="qa" href="/portal/menu/">${getIcon('edit')} Editar menu <span class="qa-arrow">→</span></a>
-              <a class="qa" href="/portal/estatisticas/">${getIcon('bar-chart')} Estatísticas <span class="qa-arrow">→</span></a>
+              ${window.NEXO_HIDE_EUR ? '' : `<a class="qa" href="/portal/estatisticas/">${getIcon('bar-chart')} Estatísticas <span class="qa-arrow">→</span></a>`}
             </div>
           </div>
 

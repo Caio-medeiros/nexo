@@ -49,6 +49,10 @@
     if (!client) return;
     renderLayout('/portal/estatisticas/', client);
 
+    // Venue owner-only (No Manches): estatísticas vivem na área financeira
+    // do dono — o portal do staff não mostra esta página.
+    if (window.NEXO_HIDE_EUR) { location.replace('/portal/dashboard/'); return; }
+
     const slug = getMenuSlug(client);
     if (!slug) { renderFatalError('Sem menu configurado para mostrar estatísticas.'); return; }
     initNotifications(slug);

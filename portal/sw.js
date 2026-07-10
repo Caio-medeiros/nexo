@@ -16,7 +16,7 @@
  * Bump VERSION on every deploy that changes caching behaviour to purge old
  * caches on activate.
  */
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE_NAME = 'nexo-portal-' + VERSION;
 const STATIC_CACHE = 'nexo-static-' + VERSION;
 

@@ -128,6 +128,10 @@
     if (!client) return;
     renderLayout('/portal/renovacao/', client);
 
+    // Venue owner-only (No Manches): página de valor/contrato é do dono,
+    // não do staff — fora do portal partilhado.
+    if (window.NEXO_HIDE_EUR) { location.replace('/portal/dashboard/'); return; }
+
     const slug = getMenuSlug(client);
     if (slug) initNotifications(slug);
 
