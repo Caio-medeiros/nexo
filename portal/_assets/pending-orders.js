@@ -431,6 +431,19 @@
     const run = window.SubmitGuard ? (fn) => SubmitGuard.run('nm-confirm-' + cid, fn) : (fn) => fn();
     await run(async () => {
       try {
+        // 0) Race: dois colegas com o mesmo pedido aberto. Se outro já
+        //    confirmou/cancelou, os itens deixaram de estar 'awaiting_staff' —
+        //    sem este check criava-se uma ronda VAZIA na cozinha.
+        const { count: waitingCount, error: chkErr } = await db.from('comanda_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('comanda_id', cid).eq('status', 'awaiting_staff');
+        if (!chkErr && (waitingCount || 0) === 0 && !detailState.added.length) {
+          if (typeof showToast === 'function') showToast('Este pedido já foi tratado por outro colega.', 'info');
+          closeDrawer();
+          await refetchPending();
+          return;
+        }
+
         // 1) próxima ronda da comanda
         const { data: last } = await db.from('comanda_rounds')
           .select('round_number').eq('comanda_id', cid)
@@ -518,7 +531,12 @@
     return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
-  function fmtEUR2(v) { return '€' + (Number(v) || 0).toFixed(2).replace('.', ','); }
+  function fmtEUR2(v) {
+    // Mesmo formato do resto do portal: "€ 1.240,50".
+    const n = Number(v) || 0;
+    const [int, dec] = Math.abs(n).toFixed(2).split('.');
+    return (n < 0 ? '−€ ' : '€ ') + int.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + dec;
+  }
 
   // ── CSS ─────────────────────────────────────────────────────────
   function injectStyles() {
@@ -534,7 +552,7 @@
 .nm-toast-txt{display:flex;flex-direction:column;gap:2px;font-size:13px}
 .nm-toast-txt strong{font-size:13.5px}
 .nm-toast-txt span{opacity:.75;font-size:12.5px}
-.nm-toast-btn{margin-left:auto;background:var(--brand,#C8952A);color:#fff;border:none;border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:36px}
+.nm-toast-btn{margin-left:auto;background:var(--brand,#C8952A);color:#fff;border:none;border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px}
 #nm-drawer{position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .3s ease}
 #nm-drawer.open{opacity:1;pointer-events:auto}
 .nm-panel{position:absolute;top:0;right:0;bottom:0;width:min(480px,90vw);background:var(--bg-base,#161616);color:var(--text-primary,#fff);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:-12px 0 40px rgba(0,0,0,.4)}
@@ -561,7 +579,7 @@
 .nm-line-name{flex:1;font-size:14px}
 .nm-line-name em{font-size:11px;color:#34D399;font-style:normal;margin-left:6px}
 .nm-line-price{font-size:13.5px;font-variant-numeric:tabular-nums}
-.nm-line-x{background:none;border:1px solid var(--border-md,rgba(255,255,255,.2));color:inherit;border-radius:9px;width:34px;height:34px;font-size:16px;cursor:pointer}
+.nm-line-x{background:none;border:1px solid var(--border-md,rgba(255,255,255,.2));color:inherit;border-radius:9px;width:44px;height:44px;font-size:16px;cursor:pointer}
 .nm-line-note input{width:100%;background:transparent;border:none;border-bottom:1px dashed var(--border-md,rgba(255,255,255,.2));color:inherit;font-size:12.5px;padding:6px 2px;outline:none}
 .nm-add-wrap{margin-top:14px}
 #nm-add-search{width:100%;background:var(--bg-hover,rgba(255,255,255,.06));border:1px solid var(--border-md,rgba(255,255,255,.15));color:inherit;border-radius:11px;padding:12px;font-size:13.5px;outline:none;min-height:48px}

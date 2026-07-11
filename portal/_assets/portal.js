@@ -424,7 +424,7 @@ function createResilientChannel(name, config, handler) {
 window.createResilientChannel = createResilientChannel;
 
 // ─── TOAST ────────────────────────────────
-function showToast(message, type = 'info', duration = 3000) {
+function showToast(message, type = 'info', duration = 4000) {
   const container = document.getElementById('toast-container') || createToastContainer();
 
   // max 3 stacked
@@ -497,8 +497,11 @@ function moneyHiddenFor(slug) {
 
 function formatEUR(value) {
   if (window.NEXO_HIDE_EUR) return '—';
-  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
-    .format(Number(value) || 0);
+  // Formato único do produto: "€ 1.240,50" (símbolo antes, espaço, milhar
+  // com ponto, decimal com vírgula) — igual em todo o portal.
+  const n = Number(value) || 0;
+  const [int, dec] = Math.abs(n).toFixed(2).split('.');
+  return (n < 0 ? '−€ ' : '€ ') + int.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + dec;
 }
 
 function escapeHtml(str) {
@@ -795,8 +798,19 @@ async function initNotifications(espacoSlug) {
       updateBadgeCount();
       playNotificationSound();
     })
-    .subscribe();
+    .subscribe((status) => {
+      // Sem isto as notificações morriam em silêncio se o realtime caísse.
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        clearTimeout(initNotifications._retry);
+        initNotifications._retry = setTimeout(() => initNotifications(espacoSlug), 15000);
+      }
+    });
   trackChannel(notifSubscription);
+  // Poll de segurança partilhado: apanha notificações perdidas pelo realtime.
+  if (!initNotifications._synced) {
+    initNotifications._synced = true;
+    NexoLiveSync.register(() => loadNotifications(espacoSlug));
+  }
 }
 
 async function loadNotifications(espacoSlug) {
@@ -971,7 +985,7 @@ if ('serviceWorker' in navigator) {
         });
       });
     } catch (err) {
-      console.log('[NEXO SW] registo falhou:', err && err.message);
+      console.warn('[NEXO SW] registo falhou:', err && err.message);
     }
   });
 }

@@ -16,7 +16,7 @@
  * Bump VERSION on every deploy that changes caching behaviour to purge old
  * caches on activate.
  */
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE_NAME = 'nexo-portal-' + VERSION;
 const STATIC_CACHE = 'nexo-static-' + VERSION;
 
@@ -106,7 +106,7 @@ self.addEventListener('fetch', (event) => {
       fetch(req)
         .then((response) => {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
           return response;
         })
         .catch(() =>
@@ -136,7 +136,7 @@ self.addEventListener('fetch', (event) => {
         if (cached) return cached;
         return fetch(req).then((response) => {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
           return response;
         });
       })

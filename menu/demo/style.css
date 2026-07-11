@@ -4097,3 +4097,7 @@ body.has-cart {
   text-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
+
+/* ── Stepper +/− nas bebidas (mesmas classes da comida) ── */
+.wine-card-footer { flex-wrap: wrap; }
+.wine-card-footer .menu-item-order-controls { margin-left: auto; }

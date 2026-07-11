@@ -490,7 +490,7 @@
       .map(x => [x.name, Number(x.n) || 0]);
     const maxV = top[0] ? top[0][1] : 1;
     document.getElementById('stats-top-items').innerHTML = top.length ? top.map(([name, n], i) => `
-      <div class="prato" style="--delay:${i * 60}ms; cursor:default">
+      <div class="prato" style="--delay:${Math.min(i * 40, 280)}ms; cursor:default">
         <div class="prato-head">
           <span class="prato-rank">#${i + 1}</span>
           <span class="prato-name">${esc(name)}</span>
@@ -714,7 +714,7 @@
     const totalRevenue = state.orders.reduce((s, o) => s + o.total, 0);
 
     cont.innerHTML = top.map((it, i) => `
-      <div class="prato ${state.expandedPrato === it.key ? 'open' : ''}" data-key="${escAttr(it.key)}" style="--delay:${i * 60}ms">
+      <div class="prato ${state.expandedPrato === it.key ? 'open' : ''}" data-key="${escAttr(it.key)}" style="--delay:${Math.min(i * 40, 280)}ms">
         <div class="prato-head">
           <span class="prato-rank">#${i + 1}</span>
           <span class="prato-name">${esc(it.name)}</span>
@@ -879,7 +879,7 @@
     t.textContent = msg;
     cont.appendChild(t);
     requestAnimationFrame(() => t.classList.add('show'));
-    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 6000);
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4000);
   }
 
   // ── Formatação ────────────────────────────────────────────────

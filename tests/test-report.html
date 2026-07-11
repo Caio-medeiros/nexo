@@ -7,15 +7,15 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
 .green{background:rgba(34,197,94,.15);color:#22C55E} .red{background:rgba(239,68,68,.15);color:#EF4444}
 </style></head><body>
 <h1>NEXO — Relatório de testes unitários</h1>
-<p class="summary"><span class="pill green">26/26 passaram</span> · gerado 10/07/2026, 23:57:33</p>
+<p class="summary"><span class="pill green">26/26 passaram</span> · gerado 11/07/2026, 10:43:35</p>
 <table><thead><tr><th></th><th>Suite</th><th>Teste</th><th>Tempo</th><th>Erro</th></tr></thead><tbody>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.sanitise</td><td>strips <script> (no '<' remains)</td>
-    <td>2ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.sanitise</td><td>passes normal text through</td>
-    <td>2ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.sanitise</td><td>empty string → empty</td>
@@ -43,7 +43,7 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.validateTableNumber</td><td>5 within 10 → valid</td>
-    <td>1ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.validateTableNumber</td><td>15 within 10 → invalid</td>
@@ -63,7 +63,7 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.validateOrderItems</td><td>empty → invalid</td>
-    <td>1ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.validateOrderItems</td><td>good items → valid</td>
@@ -83,27 +83,27 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.validatePhone</td><td>9 digits → valid</td>
-    <td>1ms</td><td></td>
-  </tr>
-  <tr class="ok">
-    <td>✅</td><td>NexoSecurity.validatePhone</td><td>too short → invalid</td>
     <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
-    <td>✅</td><td>NexoSecurity.getPublicErrorMessage</td><td>never leaks PGRST internals</td>
+    <td>✅</td><td>NexoSecurity.validatePhone</td><td>too short → invalid</td>
     <td>1ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.getPublicErrorMessage</td><td>never leaks PGRST internals</td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.getPublicErrorMessage</td><td>maps 42501 → permission msg</td>
-    <td>1ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.getPublicErrorMessage</td><td>keeps safe operational msg</td>
-    <td>3ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.checkRateLimit</td><td>staff_call blocks the 2nd within the window</td>
-    <td>1ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.getSessionId</td><td>returns a non-empty string</td>

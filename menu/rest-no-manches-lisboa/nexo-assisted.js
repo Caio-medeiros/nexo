@@ -86,6 +86,9 @@
           'Tags': 'fork_and_knife',
           'Content-Type': 'text/plain; charset=utf-8',
         },
+        // fire-and-forget: nunca mais de 5s à espera do ntfy
+        ...(typeof AbortSignal !== 'undefined' && AbortSignal.timeout
+            ? { signal: AbortSignal.timeout(5000) } : {}),
         body: `${totalItens} itens aguardam confirmação no portal.`,
         keepalive: true,
       }).catch(() => {});
@@ -176,6 +179,19 @@
         snapshot,
       };
       setPending(merged);
+
+      // Mesa partilhada: broadcast para TODOS adoptarem o mesmo estado de
+      // espera (pill + realtime) e esvaziarem o carrinho da mesa — sem isto
+      // só quem tocou sabia do envio e a mesa duplicava pedidos.
+      if (isShared) {
+        try {
+          if (typeof _sharedCartChannel !== 'undefined' && _sharedCartChannel) {
+            _sharedCartChannel.send({ type: 'broadcast', event: 'assisted_sent', payload: merged });
+          }
+          // o broadcast não ecoa para o próprio — aplica localmente também
+          if (typeof _applySharedAssistedSent === 'function') _applySharedAssistedSent(merged);
+        } catch (_) {}
+      }
 
       // Carrinho local esvazia — o pedido vive agora no lote em espera; o
       // "Editar pedido" repovoa-o a partir do snapshot. (Partilhado: mantém
@@ -494,6 +510,24 @@
       new MutationObserver(enforce).observe(btn, { childList: true, characterData: true, subtree: true });
     }
   }
+
+  // ── estado adoptado de outro membro da mesa (broadcast 'assisted_sent') ──
+  window.NexoAssisted = {
+    adoptPending(p) {
+      if (!p || !p.comandaId || !p.itemIds || !p.itemIds.length) return;
+      const cur = getPending();
+      // já temos um estado igual ou mais recente → só garante a subscrição
+      if (cur && cur.comandaId === p.comandaId && (cur.ts || 0) >= (p.ts || 0)) {
+        subscribePending(cur);
+        return;
+      }
+      setPending(p);
+      subscribePending(p);
+      // pill discreta — não interrompe quem está a navegar o menu
+      const sheetOpen = document.querySelector('#nm-assisted-sheet.show');
+      if (!sheetOpen) showPill(p);
+    },
+  };
 
   // ── init ─────────────────────────────────────────────────────
   function init() {

@@ -207,7 +207,7 @@
 .pay-btn { background: var(--bg-elevated); border: 1px solid var(--border-md); color: var(--text-primary); border-radius: 12px; padding: 16px 6px; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 56px; transition: all 150ms ease; }
 .pay-btn:hover { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06); }
 .gift-row { display: flex; gap: 8px; margin-top: 14px; }
-.gift-row input { flex: 1; background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 10px; color: var(--text-primary); font-family: 'Azeret Mono', monospace; font-size: 13px; padding: 0 12px; min-height: 44px; text-transform: uppercase; }
+.gift-row input { flex: 1; background: var(--bg-elevated); border: 1px solid var(--border-md); border-radius: 10px; color: var(--text-primary); font-family: 'Azeret Mono', monospace; font-size: 16px; padding: 0 12px; min-height: 44px; text-transform: uppercase; }
 .gift-applied { font-size: 12px; color: var(--success); margin-top: 8px; }
 
 /* 3 action buttons + close — wrap cleanly on narrow panels */

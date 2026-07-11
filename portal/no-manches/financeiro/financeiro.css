@@ -18,6 +18,13 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 /* display:flex das classes ganharia ao [hidden] do UA sem esta regra */
 [hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 html, body { min-height: 100%; }
 body {
   background: var(--color-bg);

@@ -727,6 +727,25 @@ function renderSearchBar() {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 // SUBSTITUIR getActiveBanner() — devolve agora ghost + headline
+// ─── Hora do servidor ────────────────────────────────────────────────
+// O happy hour deve seguir a hora REAL, não o relógio do telemóvel (que
+// pode estar errado/em outro fuso). Offset via header Date do próprio
+// servidor (Netlify edge), calculado uma vez ao arrancar; 0 se falhar.
+let _serverClockOffset = 0;
+try {
+  fetch(location.href, { method: 'HEAD', cache: 'no-store' }).then((r) => {
+    const d = r.headers.get('Date');
+    if (d) {
+      const server = new Date(d).getTime();
+      // ignora diferenças <60s (latência) — só corrige relógios mesmo errados
+      if (!isNaN(server) && Math.abs(server - Date.now()) > 60000) {
+        _serverClockOffset = server - Date.now();
+      }
+    }
+  }).catch(() => {});
+} catch (_) {}
+function nexoNow() { return new Date(Date.now() + _serverClockOffset); }
+
 function getActiveBanner() {
   if (!CONFIG.timeBanners || CONFIG.timeBanners.length === 0) {
     if (CONFIG.todaysSpecial) {
@@ -736,7 +755,7 @@ function getActiveBanner() {
     return null;
   }
 
-  const now = new Date();
+  const now = nexoNow();
   const h   = now.getHours();
   const day = now.getDay();
 
@@ -1085,6 +1104,25 @@ function renderVivinoStars(rating) {
   return html;
 }
 
+// Controlos +/− da bebida (refId "bebidas:<idx>") — mesma estrutura e
+// classes dos cartões de comida: o updateAddBtnBadges() apanha-os sem
+// alterações e o carrinho trata bebidas como qualquer item.
+function wineOrderControlsHtml(realIdx, w) {
+  if (parsePriceToNumber(w.price) === null) return '';
+  const refId = `bebidas:${realIdx}`;
+  const inCart = getCartQty(refId);
+  return `
+          <div class="menu-item-order-controls wine-order-controls ${inCart > 0 ? 'has-qty' : ''}" data-order-controls="${refId}">
+            <button class="menu-item-step-btn menu-item-step-btn-minus ${inCart > 0 ? 'show' : ''}" data-decrement-ref="${refId}" aria-label="${t().reduceQty}" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <button class="menu-item-add-btn ${inCart > 0 ? 'added' : ''}" data-add-ref="${refId}" aria-label="${t().increaseQty}" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              ${inCart > 0 ? `<span class="qty-badge">${inCart}</span>` : ''}
+            </button>
+          </div>`;
+}
+
 function renderWineList() {
   if (!CONFIG.wines || CONFIG.wines.length === 0) {
     document.getElementById('wine-list').innerHTML = '';
@@ -1139,6 +1177,7 @@ function renderWineList() {
           <div class="wine-card-footer">
             <span class="wine-card-price">${w.price}</span>
             <span class="wine-card-volume">${w.volume}</span>
+            ${wineOrderControlsHtml(realIdx, w)}
           </div>
         </div>
       </div>
@@ -2018,6 +2057,17 @@ function setupWineClicks() {
   const listEl = document.getElementById('wine-list');
   if (!listEl) return;
   listEl.addEventListener('click', e => {
+    // +/− no cartão da bebida: adiciona/remove sem abrir o modal
+    const addBtn = e.target.closest('[data-add-ref]');
+    const decBtn = e.target.closest('[data-decrement-ref]');
+    if (addBtn || decBtn) {
+      e.stopPropagation();
+      e.preventDefault();
+      haptic();
+      if (addBtn) addToCart(addBtn.dataset.addRef);
+      else decrementCart(decBtn.dataset.decrementRef);
+      return;
+    }
     const card = e.target.closest('[data-wine-idx]');
     if (!card) return;
     haptic();
@@ -3271,6 +3321,8 @@ function setupCartSheet() {
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
       haptic();
+      // Acção destrutiva: um toque acidental esvaziava o pedido inteiro.
+      if (!window.confirm(t().cartClear + '?')) return;
       clearCart();
       closeModal('cart-sheet');
     });
@@ -3765,7 +3817,7 @@ let _countdownInterval = null;
 function getCountdownBanner() {
   // Only count down for banners with id "happy-hour" (or any with countdown: true)
   if (!CONFIG.timeBanners) return null;
-  const now = new Date();
+  const now = nexoNow();
   const h = now.getHours();
   const day = now.getDay();
   for (const banner of CONFIG.timeBanners) {
@@ -3801,7 +3853,7 @@ function setupCountdown() {
 
     if (!banner) { block.style.display = 'none'; return; }
 
-    const now = new Date();
+    const now = nexoNow();
     const endTime = new Date();
     endTime.setHours(banner.endH, 0, 0, 0);
     const diffMs = endTime - now;
@@ -4143,7 +4195,12 @@ async function initAvailabilityRealtime() {
     (data || []).forEach(r => { _nexoAvailability[r.item_id] = r.available !== false; });
     if (data && data.some(r => r.available === false)) renderMenu();
 
-    sb.channel('nexo-availability-' + CONFIG.slug)
+    // Anti-duplicados: re-correr esta função (retry) remove o canal anterior.
+    if (initAvailabilityRealtime._ch) {
+      try { sb.removeChannel(initAvailabilityRealtime._ch); } catch (_) {}
+      initAvailabilityRealtime._ch = null;
+    }
+    initAvailabilityRealtime._ch = sb.channel('nexo-availability-' + CONFIG.slug)
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'item_availability',
           filter: 'espaco_slug=eq.' + CONFIG.slug },
@@ -4153,7 +4210,14 @@ async function initAvailabilityRealtime() {
           _nexoAvailability[row.item_id] = row.available !== false;
           renderMenu();
         })
-      .subscribe();
+      .subscribe((status) => {
+        // Se o realtime cair, a disponibilidade ficava presa no último estado
+        // conhecido — re-liga (e refaz a query) ao fim de 15s.
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          clearTimeout(initAvailabilityRealtime._retry);
+          initAvailabilityRealtime._retry = setTimeout(initAvailabilityRealtime, 15000);
+        }
+      });
   } catch (_) { /* disponibilidade é opcional — menu funciona sem Supabase */ }
 }
 
@@ -4360,6 +4424,25 @@ async function _trackMyPresence() {
   } catch (e) { console.warn('[SharedCart] broadcast error', e); }
 }
 
+// Toast do menu para eventos da MESA partilhada — todos os membros veem o
+// mesmo feedback (pedido enviado, staff a caminho), evitando duplicados.
+function sharedTableToast(msg) {
+  let el = document.getElementById('nexo-table-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'nexo-table-toast';
+    el.setAttribute('role', 'status');
+    document.body.appendChild(el);
+    const s = document.createElement('style');
+    s.textContent = '#nexo-table-toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#1A1A1A;color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;font-weight:600;z-index:2700;opacity:0;transition:opacity .3s ease,transform .3s ease;pointer-events:none;max-width:92vw;text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.35)}#nexo-table-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}';
+    document.head.appendChild(s);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(sharedTableToast._t);
+  sharedTableToast._t = setTimeout(() => el.classList.remove('show'), 4000);
+}
+
 function _setupChannelListeners(channel) {
   channel
     .on('broadcast', { event: 'state' }, ({ payload }) => {
@@ -4379,6 +4462,10 @@ function _setupChannelListeners(channel) {
       if (!payload?.memberKey) return;
       delete _memberStates[payload.memberKey];
       syncSharedCartItems();
+    })
+    .on('broadcast', { event: 'staff_called' }, () => {
+      // Alguém da mesa chamou o staff — todos ficam a saber.
+      sharedTableToast('🙋 Staff a caminho — chamado pela vossa mesa');
     });
 }
 
@@ -4809,6 +4896,14 @@ function showMenuUnavailable() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // config.js falhou a carregar (rede/deploy a meio) → erro amigável com
+  // retry em vez de um crash de JS numa página em branco.
+  if (typeof CONFIG === 'undefined') {
+    document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:#181818;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:24px;gap:16px">' +
+      '<p style="font-size:17px;max-width:32ch;line-height:1.5">Não foi possível carregar o menu. Tenta novamente.</p>' +
+      '<button onclick="location.reload()" style="background:#fff;color:#181818;border:none;border-radius:12px;padding:14px 22px;font-size:16px;font-weight:700;min-height:48px;cursor:pointer">↻ Tentar novamente</button></div>';
+    return;
+  }
   initContractGate();
   applyBrandColors();
   detectLang();
@@ -4971,19 +5066,28 @@ function setupCallStaff() {
       logStaffCallToSupabase(mesa ? 'Mesa ' + mesa : null);
 
       try {
+        // Nota: valores de headers HTTP têm de ser ASCII (emoji faz o fetch
+        // lançar TypeError). O ícone vem da tag 'bell'.
         const response = await fetch('https://ntfy.sh/' + TOPIC, {
           method: 'POST',
           headers: {
-            'Title': '🙋 Chamada de Mesa',
+            'Title': 'Chamada de Mesa',
             'Priority': 'high',
             'Tags': 'bell',
             'Content-Type': 'text/plain; charset=utf-8',
           },
+        // fire-and-forget: nunca mais de 5s à espera do ntfy
+        ...(typeof AbortSignal !== 'undefined' && AbortSignal.timeout
+            ? { signal: AbortSignal.timeout(5000) } : {}),
           body: msg,
         });
 
         if (response.ok) {
           if (btnText) btnText.textContent = '✓ Atendente a caminho!';
+          // Mesa partilhada: avisa os restantes membros de que o staff já vem.
+          if (typeof sharedCart !== 'undefined' && sharedCart && typeof _sharedCartChannel !== 'undefined' && _sharedCartChannel) {
+            try { _sharedCartChannel.send({ type: 'broadcast', event: 'staff_called', payload: {} }); } catch (_) {}
+          }
           if (sendBtn) { sendBtn.style.background = '#22C55E'; sendBtn.style.color = 'white'; }
           if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 

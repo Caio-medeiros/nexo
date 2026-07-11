@@ -77,7 +77,9 @@
   }
   function toast(msg) {
     if (typeof showCartToast === 'function') return showCartToast(msg);
-    console.log('[NEXO]', msg);
+    // fallback VISÍVEL — mensagens de pedido nunca podem morrer na consola
+    if (typeof sharedTableToast === 'function') return sharedTableToast(msg);
+    console.warn('[NEXO]', msg);
   }
 
   // ════════════════════════════════════════════════════════════

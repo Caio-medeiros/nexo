@@ -22,7 +22,10 @@ const state = {
 function fmtEUR(v) {
   // Venues sem € no portal (ex.: No Manches): faturamento só na área financeira.
   if (typeof moneyHiddenFor === 'function' && moneyHiddenFor(window.ESPACO_SLUG)) return '—';
-  return '€' + (Number(v) || 0).toFixed(2).replace('.', ',');
+  // Mesmo formato do resto do portal: "€ 1.240,50".
+  const n = Number(v) || 0;
+  const [int, dec] = Math.abs(n).toFixed(2).split('.');
+  return (n < 0 ? '−€ ' : '€ ') + int.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + dec;
 }
 function escapeHtml(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function escAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
@@ -188,7 +191,8 @@ function updateTableStatus(tableNum, status, data = {}) {
     const totalEl = document.getElementById(`total-${tableNum}`);
     const metaEl = document.getElementById(`meta-${tableNum}`);
     if (totalEl) {
-      const current = parseFloat(totalEl.textContent.replace('€', '').replace(',', '.')) || 0;
+      // Inverso do fmtEUR "€ 1.240,50": tira símbolo/espaços/pontos de milhar.
+      const current = parseFloat(totalEl.textContent.replace(/[€\s.−]/g, '').replace(',', '.')) || 0;
       if (MOTION && total !== current) {
         gsap.to({ val: current }, { val: total, duration: 0.4, ease: 'power2.out',
           onUpdate: function () { totalEl.textContent = fmtEUR(this.targets()[0].val); } });

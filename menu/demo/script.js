@@ -655,6 +655,25 @@ function renderSearchBar() {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 // SUBSTITUIR getActiveBanner() — devolve agora ghost + headline
+// ─── Hora do servidor ────────────────────────────────────────────────
+// O happy hour deve seguir a hora REAL, não o relógio do telemóvel (que
+// pode estar errado/em outro fuso). Offset via header Date do próprio
+// servidor (Netlify edge), calculado uma vez ao arrancar; 0 se falhar.
+let _serverClockOffset = 0;
+try {
+  fetch(location.href, { method: 'HEAD', cache: 'no-store' }).then((r) => {
+    const d = r.headers.get('Date');
+    if (d) {
+      const server = new Date(d).getTime();
+      // ignora diferenças <60s (latência) — só corrige relógios mesmo errados
+      if (!isNaN(server) && Math.abs(server - Date.now()) > 60000) {
+        _serverClockOffset = server - Date.now();
+      }
+    }
+  }).catch(() => {});
+} catch (_) {}
+function nexoNow() { return new Date(Date.now() + _serverClockOffset); }
+
 function getActiveBanner() {
   if (!CONFIG.timeBanners || CONFIG.timeBanners.length === 0) {
     if (CONFIG.todaysSpecial) {
@@ -664,7 +683,7 @@ function getActiveBanner() {
     return null;
   }
 
-  const now = new Date();
+  const now = nexoNow();
   const h   = now.getHours();
   const day = now.getDay();
 
@@ -1011,6 +1030,25 @@ function renderVivinoStars(rating) {
   return html;
 }
 
+// Controlos +/− da bebida (refId "bebidas:<idx>") — mesma estrutura e
+// classes dos cartões de comida: o updateAddBtnBadges() apanha-os sem
+// alterações e o carrinho trata bebidas como qualquer item.
+function wineOrderControlsHtml(realIdx, w) {
+  if (parsePriceToNumber(w.price) === null) return '';
+  const refId = `bebidas:${realIdx}`;
+  const inCart = getCartQty(refId);
+  return `
+          <div class="menu-item-order-controls wine-order-controls ${inCart > 0 ? 'has-qty' : ''}" data-order-controls="${refId}">
+            <button class="menu-item-step-btn menu-item-step-btn-minus ${inCart > 0 ? 'show' : ''}" data-decrement-ref="${refId}" aria-label="${t().reduceQty}" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <button class="menu-item-add-btn ${inCart > 0 ? 'added' : ''}" data-add-ref="${refId}" aria-label="${t().increaseQty}" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              ${inCart > 0 ? `<span class="qty-badge">${inCart}</span>` : ''}
+            </button>
+          </div>`;
+}
+
 function renderWineList() {
   if (!CONFIG.wines || CONFIG.wines.length === 0) {
     document.getElementById('wine-list').innerHTML = '';
@@ -1065,6 +1103,7 @@ function renderWineList() {
           <div class="wine-card-footer">
             <span class="wine-card-price">${w.price}</span>
             <span class="wine-card-volume">${w.volume}</span>
+            ${wineOrderControlsHtml(realIdx, w)}
           </div>
         </div>
       </div>
@@ -1923,6 +1962,17 @@ function setupWineClicks() {
   const listEl = document.getElementById('wine-list');
   if (!listEl) return;
   listEl.addEventListener('click', e => {
+    // +/− no cartão da bebida: adiciona/remove sem abrir o modal
+    const addBtn = e.target.closest('[data-add-ref]');
+    const decBtn = e.target.closest('[data-decrement-ref]');
+    if (addBtn || decBtn) {
+      e.stopPropagation();
+      e.preventDefault();
+      haptic();
+      if (addBtn) addToCart(addBtn.dataset.addRef);
+      else decrementCart(decBtn.dataset.decrementRef);
+      return;
+    }
     const card = e.target.closest('[data-wine-idx]');
     if (!card) return;
     haptic();
@@ -2677,6 +2727,8 @@ function setupCartSheet() {
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
       haptic();
+      // Acção destrutiva: um toque acidental esvaziava o pedido inteiro.
+      if (!window.confirm(t().cartClear + '?')) return;
       clearCart();
       closeModal('cart-sheet');
     });
@@ -3145,7 +3197,7 @@ let _countdownInterval = null;
 function getCountdownBanner() {
   // Only count down for banners with id "happy-hour" (or any with countdown: true)
   if (!CONFIG.timeBanners) return null;
-  const now = new Date();
+  const now = nexoNow();
   const h = now.getHours();
   const day = now.getDay();
   for (const banner of CONFIG.timeBanners) {
@@ -3181,7 +3233,7 @@ function setupCountdown() {
 
     if (!banner) { block.style.display = 'none'; return; }
 
-    const now = new Date();
+    const now = nexoNow();
     const endTime = new Date();
     endTime.setHours(banner.endH, 0, 0, 0);
     const diffMs = endTime - now;
@@ -3515,6 +3567,14 @@ function showMenuUnavailable() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // config.js falhou a carregar (rede/deploy a meio) → erro amigável com
+  // retry em vez de um crash de JS numa página em branco.
+  if (typeof CONFIG === 'undefined') {
+    document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:#181818;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:24px;gap:16px">' +
+      '<p style="font-size:17px;max-width:32ch;line-height:1.5">Não foi possível carregar o menu. Tenta novamente.</p>' +
+      '<button onclick="location.reload()" style="background:#fff;color:#181818;border:none;border-radius:12px;padding:14px 22px;font-size:16px;font-weight:700;min-height:48px;cursor:pointer">↻ Tentar novamente</button></div>';
+    return;
+  }
   initContractGate();
   applyBrandColors();
   detectLang();
