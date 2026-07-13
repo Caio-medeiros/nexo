@@ -58,6 +58,44 @@ function isHtmlRequest(req) {
   return accept.includes('text/html');
 }
 
+function buildValidatedUrl(requestUrl) {
+  try {
+    const url = new URL(requestUrl);
+    
+    // Protocol check - only allow http and https
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+    
+    // Domain validation for external requests
+    const allowedDomains = [
+      'supabase.co',
+      'google-analytics.com',
+      'googletagmanager.com',
+      'fonts.googleapis.com',
+      'fonts.gstatic.com'
+    ];
+    
+    // Allow same-origin requests
+    if (url.origin === self.location.origin) {
+      return url.href;
+    }
+    
+    // For external requests, check against allowed domains
+    const isAllowedDomain = allowedDomains.some(domain => 
+      url.hostname === domain || url.hostname.endsWith('.' + domain)
+    );
+    
+    if (!isAllowedDomain) {
+      throw new Error('Invalid host');
+    }
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) =>
@@ -117,7 +155,7 @@ self.addEventListener('fetch', (event) => {
   //    segurança offline.
   if (isHtmlRequest(req) && url.origin === self.location.origin) {
     event.respondWith(
-      fetch(req)
+      fetch(buildValidatedUrl(req.url))
         .then((response) => {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
@@ -135,7 +173,7 @@ self.addEventListener('fetch', (event) => {
   // 2) Supabase / analytics — always network, offline fallback for navigations.
   if (NETWORK_FIRST_PATTERNS.some((p) => p.test(req.url))) {
     event.respondWith(
-      fetch(req).catch(() => {
+      fetch(buildValidatedUrl(req.url)).catch(() => {
         if (req.mode === 'navigate') return caches.match('/portal/offline.html');
         return new Response('', { status: 503, statusText: 'Offline' });
       })
@@ -148,7 +186,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.match(req).then((cached) => {
         if (cached) return cached;
-        return fetch(req).then((response) => {
+        return fetch(buildValidatedUrl(req.url)).then((response) => {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
           return response;
@@ -165,7 +203,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) =>
         cache.match(req).then((cached) => {
-          const fetchPromise = fetch(req)
+          const fetchPromise = fetch(buildValidatedUrl(req.url))
             .then((response) => {
               cache.put(req, response.clone());
               return response;
@@ -179,5 +217,5 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 5) Default — network with cache fallback.
-  event.respondWith(fetch(req).catch(() => caches.match(req)));
+  event.respondWith(fetch(buildValidatedUrl(req.url)).catch(() => caches.match(req)));
 });
