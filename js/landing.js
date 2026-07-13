@@ -18,6 +18,24 @@
   };
 
   /* ══════════════════════════════════════════
+     CSP: substitui os on*= inline (removidos do HTML para o script-src
+     largar 'unsafe-inline'). Delegação de cliques `data-track` + swap de
+     CSS assíncrono `data-css-async`. Corre já: o script é `defer`, o DOM
+     está pronto. Comportamento idêntico ao dos antigos onclick/onload.
+     ══════════════════════════════════════════ */
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-track]');
+    if (!el) return;
+    let params = {};
+    try { params = el.dataset.trackArgs ? JSON.parse(el.dataset.trackArgs) : {}; } catch (_) {}
+    track(el.dataset.track, params);
+  });
+  document.querySelectorAll('link[data-css-async]').forEach((l) => {
+    l.rel = 'stylesheet';
+    l.removeAttribute('data-css-async');
+  });
+
+  /* ══════════════════════════════════════════
      CUSTOM CURSOR — desktop only
      ══════════════════════════════════════════ */
   if (finePointer) {

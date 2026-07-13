@@ -1263,3 +1263,26 @@ function salaToast(msg) {
     else toast.remove();
   }, 3000);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// CSP: liga os [data-action] (substituem os onclick inline removidos do
+// HTML para o script-src largar 'unsafe-inline'). Listener DIRETO em cada
+// elemento — preserva e.currentTarget, por isso o guarda de "clicar no
+// fundo" (closeNewOrder/closeTableDetail com data-pass-event) mantém-se.
+// A chamada replica exatamente a original: fn(arg) | fn(event) | fn().
+// ═══════════════════════════════════════════════════════════════
+(function wireSalaActions() {
+  const wire = () => document.querySelectorAll('[data-action]').forEach((el) => {
+    if (el._nexoWired) return;
+    el._nexoWired = true;
+    el.addEventListener('click', (e) => {
+      const fn = window[el.dataset.action];
+      if (typeof fn !== 'function') return;
+      if (el.dataset.arg !== undefined) fn(el.dataset.arg);
+      else if (el.hasAttribute('data-pass-event')) fn(e);
+      else fn();
+    });
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+  else wire();
+})();

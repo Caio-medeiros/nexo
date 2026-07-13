@@ -44,13 +44,16 @@
     <div class="logo">NEXO.</div>
     <h2>Sem conexão</h2>
     <p>O portal precisa de internet para funcionar. Verifique a ligação e tente novamente.</p>
-    <button class="btn" onclick="window.location.reload()">Tentar novamente</button>
+    <button class="btn" id="retryBtn">Tentar novamente</button>
     <div class="status" id="status"><span class="dot"></span><span id="statusText">A verificar conexão…</span></div>
   </div>
   <script>
     var statusEl = document.getElementById('status');
     var textEl = document.getElementById('statusText');
     var checking = false;
+    document.getElementById('retryBtn').addEventListener('click', function () {
+      window.location.reload();
+    });
     setInterval(function () {
       if (checking) return;
       checking = true;

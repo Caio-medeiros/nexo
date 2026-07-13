@@ -30,7 +30,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" data-css-async>
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"></noscript>
 <script src="/js/nexo-analytics.js" defer></script>
 <link rel="stylesheet" href="/css/landing.css">
@@ -60,7 +60,7 @@
 
     <div class="nav-actions">
       <a class="nav-client" href="/portal/">Área de Cliente</a>
-      <a class="nav-cta" href="#contacto" onclick="nexoTrack('proposal_cta_clicked',{position:'nav'})">Pedir proposta</a>
+      <a class="nav-cta" href="#contacto" data-track="proposal_cta_clicked" data-track-args='{"position":"nav"}'>Pedir proposta</a>
     </div>
 
     <button id="hamburger" class="hamburger" aria-label="Abrir menu" aria-expanded="false">
@@ -83,7 +83,7 @@
     <li style="--mi:6"><a href="/portal/" class="mob-client"><span>↳</span>Área de Cliente</a></li>
   </ul>
   <div class="mob-foot">
-    <a href="#contacto" class="mob-cta" onclick="nexoTrack('proposal_cta_clicked',{position:'nav'})">Pedir proposta →</a>
+    <a href="#contacto" class="mob-cta" data-track="proposal_cta_clicked" data-track-args='{"position":"nav"}'>Pedir proposta →</a>
     <span class="mob-meta">NEXO. — PT · LIS · EST. 2026</span>
   </div>
 </div>
@@ -113,11 +113,11 @@
       </p>
 
       <div class="hero-ctas" data-hero="ctas">
-        <a class="btn btn-primary" href="./menu/marisca-petisca/index.html" target="_blank" data-cursor="VER" onclick="nexoTrack('demo_cta_clicked',{position:'hero'})">
+        <a class="btn btn-primary" href="./menu/marisca-petisca/index.html" target="_blank" data-cursor="VER" data-track="demo_cta_clicked" data-track-args='{"position":"hero"}'>
           Ver demo ao vivo
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </a>
-        <a class="btn btn-ghost" href="#contacto" onclick="nexoTrack('proposal_cta_clicked',{position:'hero'})">Pedir proposta</a>
+        <a class="btn btn-ghost" href="#contacto" data-track="proposal_cta_clicked" data-track-args='{"position":"hero"}'>Pedir proposta</a>
       </div>
 
       <div class="hero-stats" data-hero="stats">
@@ -306,7 +306,7 @@
 <!-- ── SOCIAL PROOF STRIP ── -->
 <aside class="sp-strip">
   <div class="container sp-inner">
-    <p class="sp-headline">Já em produção em Portugal — <a href="./menu/marisca-petisca/index.html" target="_blank" data-cursor="VER" onclick="nexoTrack('demo_cta_clicked',{position:'section_02'})">Ver demo ao vivo →</a></p>
+    <p class="sp-headline">Já em produção em Portugal — <a href="./menu/marisca-petisca/index.html" target="_blank" data-cursor="VER" data-track="demo_cta_clicked" data-track-args='{"position":"section_02"}'>Ver demo ao vivo →</a></p>
     <div class="sp-chips">
       <span class="sp-chip">&lt; 3 seg do toque ao menu</span>
       <span class="sp-chip">0 apps necessárias</span>
@@ -635,7 +635,7 @@
           <li><span>+</span>Suporte durante o evento</li>
           <li><span>+</span>Pronto em 48h · até 7 dias activo</li>
         </ul>
-        <a href="#contacto" class="plan-cta plan-out" onclick="nexoTrack('plan_cta_clicked',{plan_name:'eventos'})">Pedir menu de evento →</a>
+        <a href="#contacto" class="plan-cta plan-out" data-track="plan_cta_clicked" data-track-args='{"plan_name":"eventos"}'>Pedir menu de evento →</a>
       </article>
 
       <article class="plan plan-featured" data-reveal>
@@ -656,7 +656,7 @@
           <li><span>+</span>Analytics e relatórios em tempo real</li>
           <li><span>+</span>Edição do menu + actualizações ilimitadas</li>
         </ul>
-        <a href="#contacto" class="plan-cta plan-fill" onclick="nexoTrack('plan_cta_clicked',{plan_name:'growth'})">Quero este plano →</a>
+        <a href="#contacto" class="plan-cta plan-fill" data-track="plan_cta_clicked" data-track-args='{"plan_name":"growth"}'>Quero este plano →</a>
       </article>
 
       <article class="plan plan-enterprise" data-reveal>
@@ -675,7 +675,7 @@
           <li><span>+</span>SLA e suporte dedicado</li>
           <li><span>+</span>Multi-espaço / franchising</li>
         </ul>
-        <a href="#contacto" class="plan-cta plan-out" onclick="nexoTrack('plan_cta_clicked',{plan_name:'enterprise'})">Falar connosco →</a>
+        <a href="#contacto" class="plan-cta plan-out" data-track="plan_cta_clicked" data-track-args='{"plan_name":"enterprise"}'>Falar connosco →</a>
       </article>
     </div>
 
@@ -690,7 +690,7 @@
         <span class="eyebrow">A conta simples</span>
         <h3 class="impact-title">O Growth paga-se no<br><em>segundo dia do mês.</em></h3>
         <p class="impact-sub">Se o menu recuperar +€3 por mesa em extras que já existiam na carta — bebidas, sobremesas, sugestões.</p>
-        <a href="#contacto" class="impact-cta" onclick="nexoTrack('plan_cta_clicked',{plan_name:'growth'})">Quero este plano →</a>
+        <a href="#contacto" class="impact-cta" data-track="plan_cta_clicked" data-track-args='{"plan_name":"growth"}'>Quero este plano →</a>
       </div>
 
       <div class="impact-right" id="impactReceipt">

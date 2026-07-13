@@ -34,7 +34,7 @@
       <span class="sala-venue" id="sala-venue-name">—</span>
     </div>
     <div class="sala-header-right">
-      <button class="sala-neworder-btn" onclick="openNewOrder()" title="Registar um pedido para uma mesa">
+      <button class="sala-neworder-btn" data-action="openNewOrder" title="Registar um pedido para uma mesa">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>Novo pedido</span>
       </button>
@@ -42,7 +42,7 @@
         <span class="live-dot"></span>
         <span class="live-text">Em directo</span>
       </div>
-      <button class="sala-action-btn" onclick="toggleFullscreen()" title="Ecrã completo" aria-label="Ecrã completo">
+      <button class="sala-action-btn" data-action="toggleFullscreen" title="Ecrã completo" aria-label="Ecrã completo">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2H14v4.5M6.5 14H2V9.5M14 2L9.5 6.5M2 14l4.5-4.5"/></svg>
       </button>
       <a href="/portal/dashboard/" class="sala-action-btn" title="Dashboard" aria-label="Dashboard">
@@ -58,17 +58,17 @@
     <div class="stat-chip"><span class="stat-value" id="stat-calls">0</span><span class="stat-label">chamadas</span></div>
 
     <div class="sala-filters">
-      <button class="filter-pill active" data-filter="all" onclick="setFilter('all')">Todas</button>
-      <button class="filter-pill" data-filter="active" onclick="setFilter('active')">Activas</button>
-      <button class="filter-pill" data-filter="calling" onclick="setFilter('calling')">🙋 A chamar</button>
-      <button class="filter-pill" data-filter="ready" onclick="setFilter('ready')">✅ Prontas</button>
+      <button class="filter-pill active" data-filter="all" data-action="setFilter" data-arg="all">Todas</button>
+      <button class="filter-pill" data-filter="active" data-action="setFilter" data-arg="active">Activas</button>
+      <button class="filter-pill" data-filter="calling" data-action="setFilter" data-arg="calling">🙋 A chamar</button>
+      <button class="filter-pill" data-filter="ready" data-action="setFilter" data-arg="ready">✅ Prontas</button>
     </div>
 
     <div class="sala-mesas-ctl">
       <span class="mesas-ctl-label">Mesas</span>
-      <button class="mesas-btn" onclick="removeTable()" aria-label="Remover mesa">−</button>
+      <button class="mesas-btn" data-action="removeTable" aria-label="Remover mesa">−</button>
       <span class="mesas-total" id="mesas-total">0</span>
-      <button class="mesas-btn" onclick="addTable()" aria-label="Adicionar mesa">+</button>
+      <button class="mesas-btn" data-action="addTable" aria-label="Adicionar mesa">+</button>
     </div>
     <div class="sala-legend" aria-hidden="true">
       <span class="lg lg-open"><i></i>Aberta</span>
@@ -89,11 +89,11 @@
   </div><!-- /sala-stage -->
 
   <!-- NOVO PEDIDO (quick-add → cozinha) -->
-  <div class="new-order-overlay" id="new-order-overlay" onclick="closeNewOrder(event)"></div>
+  <div class="new-order-overlay" id="new-order-overlay" data-action="closeNewOrder" data-pass-event></div>
   <div class="new-order-panel" id="new-order-panel" role="dialog" aria-modal="true" aria-labelledby="no-title">
     <div class="no-head">
       <h2 id="no-title">Novo pedido</h2>
-      <button class="no-close" onclick="closeNewOrder()" aria-label="Fechar">✕</button>
+      <button class="no-close" data-action="closeNewOrder" aria-label="Fechar">✕</button>
     </div>
     <div class="no-body">
       <label class="no-label" for="no-table">Mesa</label>
@@ -106,18 +106,18 @@
         <span class="no-col-hint">preço do menu</span>
       </div>
       <div id="no-items"></div>
-      <button class="no-add-row" type="button" onclick="addNewOrderRow()">+ Adicionar item</button>
+      <button class="no-add-row" type="button" data-action="addNewOrderRow">+ Adicionar item</button>
       <p class="no-menu-warning" id="no-menu-warning" style="display:none">
         Menu não sincronizado — contacta a NEXO
       </p>
     </div>
     <div class="no-foot">
-      <button class="no-submit-btn" id="no-submit" onclick="submitNewOrder()" disabled>Enviar para a cozinha</button>
+      <button class="no-submit-btn" id="no-submit" data-action="submitNewOrder" disabled>Enviar para a cozinha</button>
     </div>
   </div>
 
   <!-- TABLE DETAIL -->
-  <div class="table-detail-overlay" id="table-detail-overlay" onclick="closeTableDetail(event)"></div>
+  <div class="table-detail-overlay" id="table-detail-overlay" data-action="closeTableDetail" data-pass-event></div>
   <div class="table-detail-panel" id="table-detail-panel">
     <div class="tdp-header">
       <div>
@@ -125,10 +125,10 @@
         <span class="tdp-code" id="tdp-code"></span>
       </div>
       <div class="tdp-header-actions">
-        <button class="tdp-action-btn kitchen" onclick="sendToKitchenFromPanel()">👨‍🍳 Cozinha</button>
-        <button class="tdp-action-btn split" onclick="splitTableFromPanel()">✂️ Dividir</button>
-        <button class="tdp-action-btn pay" onclick="processPaymentFromPanel()">💰 Cobrar</button>
-        <button class="tdp-close" onclick="closeTableDetail()" aria-label="Fechar">✕</button>
+        <button class="tdp-action-btn kitchen" data-action="sendToKitchenFromPanel">👨‍🍳 Cozinha</button>
+        <button class="tdp-action-btn split" data-action="splitTableFromPanel">✂️ Dividir</button>
+        <button class="tdp-action-btn pay" data-action="processPaymentFromPanel">💰 Cobrar</button>
+        <button class="tdp-close" data-action="closeTableDetail" aria-label="Fechar">✕</button>
       </div>
     </div>
     <div class="tdp-body" id="tdp-body"></div>
@@ -136,7 +136,7 @@
 
   <!-- ACTIVITY FEED -->
   <div class="activity-feed-bar" id="activity-feed-bar">
-    <button class="feed-toggle" onclick="toggleActivityFeed()" id="feed-toggle">
+    <button class="feed-toggle" data-action="toggleActivityFeed" id="feed-toggle">
       <span id="feed-toggle-label">↑ Actividade recente</span>
       <span class="feed-count-badge" id="feed-count-badge" style="display:none">0</span>
     </button>
