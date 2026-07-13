@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   NEXO. — script.js v7 — "Mesa às 21h"
+   NEXO. — landing.js v7 — "Mesa às 21h" (script da landing page)
    GSAP 3 + ScrollTrigger choreography · 2D canvas NFC ripples
    Progressive enhancement: all hidden states are set via JS only.
    ═══════════════════════════════════════════════════════════════ */

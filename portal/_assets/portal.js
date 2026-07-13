@@ -222,10 +222,9 @@ async function applyClientBrand(client) {
   try {
     const slug = client?.menus?.[0]?.slug;
     if (!slug) return;
-    const res = await fetch(`/menu/${slug}/config.js`, { cache: 'force-cache' });
+    const res = await fetch(`/menu/${slug}/config.json`, { cache: 'force-cache' });
     if (!res.ok) return;
-    const text = await res.text();
-    const CONFIG = new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
+    const CONFIG = await res.json();
     if (CONFIG && CONFIG.brandColor) {
       document.documentElement.style.setProperty('--brand', CONFIG.brandColor);
       document.body.classList.add('has-brand');
@@ -235,12 +234,13 @@ async function applyClientBrand(client) {
 
 function renderFatalError(message, error) {
   const main = document.querySelector('.portal-main');
-  const detail = error
-    ? `<p class="empty-sub mono" style="margin-top:10px;word-break:break-word">${escapeHtml(
-        (error.code ? error.code + ' — ' : '') + (error.message || '') +
-        (error.details ? ' · ' + error.details : '') +
-        (error.hint ? ' · ' + error.hint : ''))}</p>`
-    : '';
+  // O detalhe do erro (código/mensagem/hint da BD) pode conter schema/SQL
+  // ("permission denied for table clients") — NUNCA vai para o ecrã. Fica na
+  // consola para o staff/dev diagnosticar; o utilizador vê só a mensagem amigável.
+  if (error) {
+    try { console.error('[NEXO Portal] fatal:', error.code || '', error.message || '', error.details || '', error.hint || ''); } catch (_) {}
+  }
+  const detail = '';
   if (!main) { showToast(message, 'error'); return; }
   main.innerHTML = `
     <div class="empty-state card" style="margin-top:40px">
@@ -723,12 +723,10 @@ function renderLayout(activeNav, clientData) {
 async function loadMenuItems(slug) {
   if (!slug) return null;
   try {
-    const res = await fetch(`/menu/${slug}/config.js`, { cache: 'no-store' });
+    const res = await fetch(`/menu/${slug}/config.json`, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    // config.js defines `const CONFIG = {...}` (+ helper `P`).
-    // Evaluate in an isolated function scope and return CONFIG.
-    const CONFIG = new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
+    // config.json é a fonte de dados do menu (gerada de config.js no build).
+    const CONFIG = await res.json();
     if (!CONFIG || !Array.isArray(CONFIG.menu)) return null;
 
     return CONFIG.menu.map(section => ({

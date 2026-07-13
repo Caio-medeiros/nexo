@@ -1,0 +1,31 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "node tests/perf/gzserve.mjs . 8891",
+      "startServerReadyPattern": "gzserve on",
+      "url": [
+        "http://localhost:8891/menu/marisca-petisca/",
+        "http://localhost:8891/menu/rest-no-manches-lisboa/"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "onlyCategories": ["performance"],
+        "formFactor": "mobile",
+        "throttlingMethod": "simulate",
+        "screenEmulation": { "mobile": true, "width": 390, "height": 844, "deviceScaleFactor": 3 },
+        "budgetsPath": "tests/perf/budget.json",
+        "skipAudits": ["uses-http2"]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "performance-budget": ["error", { "aggregationMethod": "pessimistic" }],
+        "cumulative-layout-shift": ["error", { "aggregationMethod": "pessimistic", "maxNumericValue": 0.2 }],
+        "total-blocking-time": ["warn", { "aggregationMethod": "optimistic", "maxNumericValue": 900 }],
+        "largest-contentful-paint": ["warn", { "aggregationMethod": "optimistic", "maxNumericValue": 4000 }],
+        "first-contentful-paint": ["warn", { "aggregationMethod": "optimistic", "maxNumericValue": 3000 }]
+      }
+    },
+    "upload": { "target": "filesystem", "outputDir": "tests/perf/lhci-report" }
+  }
+}

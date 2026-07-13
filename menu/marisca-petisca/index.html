@@ -27,9 +27,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600;1,700&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-  <!-- NEXO Premium — Azeret Mono for operational numerals -->
-  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Uma só folha de fonts (menos pedidos), render-blocking com display=swap.
+       Manter bloqueante evita o FOUT/CLS de trocar a fonte depois do primeiro paint. -->
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600;1,700&family=Outfit:wght@400;500;600;700;900&family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- LCP: pré-carregar o hero em alta prioridade para não esperar pelo script.js -->
+  <link rel="preload" as="image" href="./img/thumb.webp" fetchpriority="high">
   <link rel="stylesheet" href="nexo-premium.css">
 
   <!--
@@ -60,7 +62,7 @@
       }
     });
   </script>
-  <script src="/nexo-analytics.js"></script>
+  <script defer src="/js/nexo-analytics.js"></script>
   <link rel="stylesheet" href="style.css">
   <noscript>
     <style>body{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:#181818;color:#fff;font-family:Outfit,sans-serif;text-align:center;padding:24px}</style>
@@ -71,7 +73,9 @@
 
   <!-- HERO -->
   <header class="hero" id="hero">
-    <div class="hero-image" id="hero-image"></div>
+    <!-- bg inline = o hero (elemento LCP) pinta no parse do HTML, sem esperar pelo script.js.
+         renderHero() reafirma-o a partir de CONFIG.heroImageUrl (idempotente). -->
+    <div class="hero-image" id="hero-image" style="background-image:url('./img/thumb.webp')"></div>
     <div class="hero-overlay"></div>
 
     <div class="hero-top-bar">
@@ -801,9 +805,11 @@
   .nexo-shared-error{color:#ff6b6b;font-size:13px;margin:8px 0 0;}
   </style>
 
-  <script src="config.js"></script>
-  <script src="script.js"></script>
-  <script src="nexo-premium.js"></script>
+  <!-- defer: descarregam em paralelo sem bloquear o render; executam por ordem
+       (config→script→premium) antes do DOMContentLoaded. -->
+  <script defer src="config.js"></script>
+  <script defer src="script.js"></script>
+  <script defer src="nexo-premium.js"></script>
   <!-- BOTTOM BAR — Chamar | Ver pedido | Voltar ao topo -->
   <div class="nexo-bottom-bar" id="nexo-bottom-bar">
 

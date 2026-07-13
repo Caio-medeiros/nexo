@@ -5,7 +5,7 @@
  * to regenerate them. Requires the native `canvas` module:
  *
  *   npm install canvas --save-dev
- *   node portal/generate-icons.js
+ *   node scripts/generate-portal-icons.js
  *
  * (On this machine `canvas` would not compile, so the committed icons were
  *  produced with an equivalent Pillow script — same output: dark background,
@@ -44,7 +44,7 @@ function generateIcon(size, outputPath) {
   console.log(`Created ${outputPath}`);
 }
 
-const iconDir = path.join(__dirname, 'icons');
+const iconDir = path.join(__dirname, '..', 'portal', 'icons');
 if (!fs.existsSync(iconDir)) fs.mkdirSync(iconDir, { recursive: true });
 
 [96, 192, 512].forEach((size) =>

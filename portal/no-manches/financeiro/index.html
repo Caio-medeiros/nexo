@@ -6,28 +6,34 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Financeiro — No Manches</title>
   <link rel="stylesheet" href="/portal/no-manches/financeiro/financeiro.css">
-  <!-- Supabase + Chart.js via CDN (jsDelivr já permitido na CSP do site).
-       NÃO carrega portal.js: esta página é standalone — auth local por senha,
-       sem sessão Supabase. -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase self-hosted (mesmo ficheiro do portal — o sw.js documenta um
+       incidente em que o CDN falhou nalgumas redes). Chart.js via jsDelivr
+       (já permitido na CSP; se falhar, os KPIs continuam a funcionar).
+       NÃO carrega portal.js: esta página é standalone — Supabase Auth com a
+       conta do DONO e um storageKey próprio (não herda a sessão do portal
+       no tablet do staff). A autorização é do servidor: RLS 037 + RPC 038. -->
+  <script src="/portal/_assets/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
-  <!-- ═══ GATE DE SENHA ═══ -->
+  <!-- ═══ GATE DE LOGIN (conta do dono) ═══ -->
   <div id="fin-gate">
     <div class="gate-card">
       <div class="gate-lock" id="gate-lock">🔒</div>
       <h1 class="gate-title">Área Financeira</h1>
       <p class="gate-venue">No Manches</p>
       <form id="gate-form" novalidate>
+        <input type="email" id="gate-email" class="gate-input"
+               placeholder="email do dono" autocomplete="username"
+               autocapitalize="none" spellcheck="false" aria-label="Email">
         <input type="password" id="gate-pw" class="gate-input"
-               placeholder="••••••••••••••" autocomplete="off"
-               autocapitalize="none" spellcheck="false" aria-label="Senha">
-        <p class="gate-error" id="gate-error" hidden>Senha incorrecta</p>
+               placeholder="••••••••••••••" autocomplete="current-password"
+               autocapitalize="none" spellcheck="false" aria-label="Palavra-passe">
+        <p class="gate-error" id="gate-error" hidden>Credenciais inválidas</p>
         <button type="submit" class="gate-btn" id="gate-btn">Entrar</button>
       </form>
-      <p class="gate-warn">⚠ Acesso restrito</p>
+      <p class="gate-warn">⚠ Acesso restrito ao dono</p>
     </div>
   </div>
 

@@ -5,7 +5,7 @@ on:
     branches: [main, staging]
 
 jobs:
-  # Fast, zero-infra gate: unit tests + config scan. Run on every push/PR.
+  # Fast, zero-infra gate: unit + coverage com limiar mínimo + config scan.
   unit-and-scan:
     runs-on: ubuntu-latest
     steps:
@@ -13,19 +13,45 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Unit tests (nexo-security.js)
-        run: node tests/unit/run.mjs
-      - name: Config scan (placeholders / phantom slug / secrets)
-        run: node tests/scan/scan.mjs
-      - name: Upload unit report
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Unit tests + coverage (nexo-security.js, limiar 90/75/95)
+        run: npm run test:coverage
+      - name: Config scan (placeholders / phantom slug / secrets / senhas / eval)
+        run: npm run test:scan
+      - name: Config-as-data em sync (config.json gerado de config.js)
+        run: node scripts/build-config-json.mjs --check
+      - name: Upload unit report + coverage
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-report
-          path: tests/test-report.html
+          path: |
+            tests/test-report.html
+            tests/coverage
+          retention-days: 7
 
-  # Read-only end-to-end smoke against production. Never writes to Supabase.
-  e2e-smoke:
+  # Observabilidade das Edge Functions (Deno): prova fail-closed do cron secret,
+  # que safeError nunca vaza schema/stack, e logs JSON de uma linha.
+  edge-functions:
+    runs-on: ubuntu-latest
+    needs: unit-and-scan
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check do módulo partilhado
+        run: deno check supabase/functions/_shared/observability.ts
+      - name: Testes de observabilidade (fail-closed, no-leak, logs)
+        run: deno test --allow-env supabase/functions/_shared/observability.test.ts
+
+  # Isolamento multi-tenant (RLS) contra o projeto Supabase de TESTE.
+  # BLOQUEANTE: falha se as políticas regredirem para using(true), se a
+  # faturação abrir a anon, ou se os secrets ainda não estiverem configurados
+  # (ver tests/rls/README.md para o setup único).
+  rls-isolation:
     runs-on: ubuntu-latest
     needs: unit-and-scan
     steps:
@@ -33,19 +59,75 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm ci || npm install
+      - name: Selftest do canário (prova que o teste falha com using(true))
+        run: node tests/rls/selftest.mjs
+      - name: RLS / isolamento multi-tenant (zero deps)
+        env:
+          NEXO_RLS_URL: ${{ secrets.NEXO_RLS_URL }}
+          NEXO_RLS_ANON_KEY: ${{ secrets.NEXO_RLS_ANON_KEY }}
+          NEXO_RLS_SLUG: ${{ secrets.NEXO_RLS_SLUG }}
+          NEXO_RLS_OWNER_EMAIL: ${{ secrets.NEXO_RLS_OWNER_EMAIL }}
+          NEXO_RLS_OWNER_PASSWORD: ${{ secrets.NEXO_RLS_OWNER_PASSWORD }}
+          NEXO_RLS_OTHER_SLUG: ${{ secrets.NEXO_RLS_OTHER_SLUG }}
+        run: node tests/rls/rls.mjs
+
+  # E2E: smoke read-only contra produção + fluxos críticos com Supabase
+  # MOCKADO (servidor local, zero escritas reais).
+  e2e:
+    runs-on: ubuntu-latest
+    needs: unit-and-scan
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: E2E smoke (menu + portal auth)
+      - name: E2E smoke (menu + portal auth, prod read-only)
         env:
           NEXO_TEST_ENV: prod
           CI: 'true'
         run: npx playwright test -c tests/e2e/playwright.config.js menu-smoke.spec.js portal-auth.spec.js
+      - name: E2E fluxos críticos (comanda directa/assistida, chamada, split — mockado)
+        env:
+          NEXO_TEST_ENV: local
+          CI: 'true'
+        run: npx playwright test -c tests/e2e/playwright.config.js advanced.spec.js
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: tests/playwright-report
+          retention-days: 7
 
-# Deploys are handled by .github/workflows/deploy.yml (push to main/staging).
-# This file runs tests only, as a gate for pull requests.
+  # Orçamento de performance (Lighthouse CI). Gate DETERMINISTA: peso de
+  # JS/imagens/fonts/total por rota (tests/perf/budget.json) — falha se um
+  # bundle inchar. CLS como guarda de regressão (≤0.2). Timings (LCP/FCP/TBT)
+  # só como aviso (o modelo simulado do Lighthouse é ruidoso/pessimista).
+  # Serve o site com brotli/gzip (tests/perf/gzserve.mjs) para medir como o Netlify.
+  lighthouse-budget:
+    runs-on: ubuntu-latest
+    needs: unit-and-scan
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Lighthouse CI (budget + CLS regressão)
+        run: npm run perf:ci
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: tests/perf/lhci-report
+          retention-days: 7
+
+# Para BLOQUEAR merges de facto, marcar os jobs como "required status
+# checks" na branch protection de main/staging (Settings → Branches):
+#   unit-and-scan · edge-functions · rls-isolation · e2e · lighthouse-budget
+# Deploys continuam em deploy.yml (push a main/staging).

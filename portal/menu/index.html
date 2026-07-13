@@ -180,10 +180,9 @@
     // ── carregar config base do menu ─────────────────
     let baseMenu = null; // [{id, name, items:[{name,desc,price,photo}]}]
     try {
-      const res = await fetch(`/menu/${slug}/config.js`, { cache: 'no-store' });
+      const res = await fetch(`/menu/${slug}/config.json`, { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const text = await res.text();
-      const CONFIG = new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
+      const CONFIG = await res.json();
       if (CONFIG && Array.isArray(CONFIG.menu)) {
         baseMenu = CONFIG.menu.map(sec => ({
           id: sec.id,

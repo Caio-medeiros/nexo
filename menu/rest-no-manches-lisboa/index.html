@@ -27,11 +27,14 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600;1,700&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-  <!-- NEXO Premium — Azeret Mono for operational numerals -->
-  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- No Manches — Bebas Neue (títulos grunge) + Inter (corpo) -->
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Bebas Neue (título do hero) auto-hospedada e pré-carregada: chega antes
+       do paint, sem swap tardio da fonte condensada (evita CLS no hero). -->
+  <link rel="preload" as="font" type="font/woff2" href="./fonts/bebas-neue-latin.woff2" crossorigin>
+  <!-- Restantes fonts (Cormorant/Outfit/Azeret/Inter) do Google, uma só folha,
+       render-blocking com display=swap. Bebas saiu daqui (agora local). -->
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600;1,700&family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <!-- LCP: o hero é cor sólida; a marca (wordmark) é o maior elemento — pré-carregar. -->
+  <link rel="preload" as="image" href="./img/wordmark.webp" fetchpriority="high">
   <link rel="stylesheet" href="nexo-premium.css">
 
   <!--
@@ -62,7 +65,7 @@
       }
     });
   </script>
-  <script src="/nexo-analytics.js"></script>
+  <script defer src="/js/nexo-analytics.js"></script>
   <link rel="stylesheet" href="style.css">
   <!-- No Manches — override de tema (carrega DEPOIS do style.css) -->
   <link rel="stylesheet" href="nexo-nomanches.css">
@@ -864,10 +867,11 @@
   .nexo-shared-error{color:#ff6b6b;font-size:13px;margin:8px 0 0;}
   </style>
 
-  <script src="config.js"></script>
-  <script src="script.js"></script>
-  <script src="nexo-premium.js"></script>
-  <script src="nexo-assisted.js"></script>
+  <!-- defer: sem bloquear render; ordem preservada -->
+  <script defer src="config.js"></script>
+  <script defer src="script.js"></script>
+  <script defer src="nexo-premium.js"></script>
+  <script defer src="nexo-assisted.js"></script>
   <!-- BOTTOM BAR — Chamar | Ver pedido | Voltar ao topo -->
   <div class="nexo-bottom-bar" id="nexo-bottom-bar">
 

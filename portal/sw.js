@@ -16,7 +16,7 @@
  * Bump VERSION on every deploy that changes caching behaviour to purge old
  * caches on activate.
  */
-const VERSION = 'v7';
+const VERSION = 'v8';
 const CACHE_NAME = 'nexo-portal-' + VERSION;
 const STATIC_CACHE = 'nexo-static-' + VERSION;
 
@@ -97,6 +97,20 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
+
+  // 0) Financeiro (dono, € em tempo real) — NUNCA servir do cache.
+  //    O stale-while-revalidate do ramo 4 serviu um financeiro.js antigo
+  //    no primeiro load após deploy → página presa em "A ligar…" no PWA.
+  if (url.origin === self.location.origin &&
+      url.pathname.startsWith('/portal/no-manches/financeiro/')) {
+    event.respondWith(
+      fetch(req).catch(() => {
+        if (isHtmlRequest(req)) return caches.match('/portal/offline.html');
+        return new Response('', { status: 503, statusText: 'Offline' });
+      })
+    );
+    return;
+  }
 
   // 1) HTML pages / navigations — NETWORK-FIRST.
   //    Garante que um deploy novo aparece sempre; cache só como rede de

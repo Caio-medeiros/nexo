@@ -695,10 +695,9 @@ async function loadMenuItems() {
   const slug = window.ESPACO_SLUG;
   _menuItemsLoading = (async () => {
     try {
-      const res = await fetch(`/menu/${slug}/config.js`, { cache: 'no-store' });
+      const res = await fetch(`/menu/${slug}/config.json`, { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const text = await res.text();
-      const CONFIG = new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
+      const CONFIG = await res.json();
       const out = [];
       if (CONFIG && Array.isArray(CONFIG.menu)) {
         CONFIG.menu.forEach(sec => {

@@ -37,7 +37,11 @@
     if (_sbClient) return _sbClient;
     if (typeof loadSupabase === 'function') { _sbClient = await loadSupabase(); return _sbClient; }
     if (window.supabase && CONFIG.supabaseUrl) {
-      _sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+      // Mesmo header x-comanda-token do loadSupabase (RLS 037) — sem ele
+      // este fallback conseguiria escrever mas nunca ler o lote em espera.
+      _sbClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+        global: { fetch: (u, o) => (typeof nexoTokenFetch === 'function' ? nexoTokenFetch(u, o) : fetch(u, o)) },
+      });
       return _sbClient;
     }
     throw new Error('Supabase indisponível');
@@ -96,21 +100,39 @@
   }
 
   // ── comanda (mesma semântica do premium: reutiliza a conta da mesa) ──
+  // RLS 037: a busca aberta por table_label já não existe para anon — a
+  // comanda ativa da mesa vem da RPC nexo_table_access (token de mesa TAT
+  // validado no servidor), que devolve também o client_token de leitura.
   async function openOrGetComanda(tableLabel) {
     const client = await sb();
-    const { data: existing } = await client.from('comandas')
-      .select('id, session_code, table_label, status')
-      .eq('espaco_slug', SLUG).eq('table_label', tableLabel)
-      .in('status', ['open', 'submitted', 'preparing', 'ready'])
-      .is('archived_at', null)
-      .order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (existing) return existing;
-    const meta = window.NexoAccess ? NexoAccess.getOrderMetadata() : {};
+    const acc = window.NexoAccess;
+    if (acc && acc.tokenValidated && acc.tableLabel === tableLabel &&
+        typeof acc.getTableToken === 'function') {
+      try {
+        const { data: res } = await client.rpc('nexo_table_access', {
+          p_slug: SLUG,
+          p_table_num: acc.tableNumber,
+          p_table_token: acc.getTableToken(),
+        });
+        const c = res && res.valid && res.comanda;
+        if (c && c.client_token) {
+          if (typeof nexoComandaToken === 'function') nexoComandaToken(c.client_token);
+          return { id: c.id, session_code: c.session_code,
+                   table_label: c.table_label, status: c.status };
+        }
+      } catch (_) { /* sem acesso → cria nova */ }
+    }
+    const meta = acc ? acc.getOrderMetadata() : {};
+    // Token de leitura gerado antes do insert — o returning já vem filtrado
+    // pela política de SELECT (header x-comanda-token).
+    const token = (typeof nexoNewComandaToken === 'function') ? nexoNewComandaToken() : null;
+    if (token && typeof nexoComandaToken === 'function') nexoComandaToken(token);
     const { data, error } = await client.from('comandas').insert({
       espaco_slug: SLUG,
       table_label: clean(tableLabel, 50) || 'Mesa',
       guest_count: 1,
       mode: 'dine_in',
+      ...(token ? { client_token: token } : {}),
       ...meta,
     }).select('id, session_code, table_label, status').single();
     if (error) throw error;
@@ -177,6 +199,9 @@
         comandaId, itemIds: (inserted || []).map(r => r.id),
         mesa: tableLabel, count: totalNew, ts: Date.now(),
         snapshot,
+        // token de leitura da comanda (RLS 037) — viaja no broadcast da mesa
+        // para os outros membros conseguirem acompanhar o lote em espera.
+        clientToken: (typeof nexoComandaToken === 'function' ? nexoComandaToken() : null),
       };
       setPending(merged);
 
@@ -228,11 +253,11 @@
   async function subscribePending(p) {
     const client = await sb();
     unsubscribe();
-    _channel = client.channel(`assisted_${p.comandaId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'comanda_items',
-        filter: `comanda_id=eq.${p.comandaId}`,
-      }, () => resolvePending())
+    // RLS 037: postgres_changes já não chega ao cliente anónimo. O gatilho
+    // é o broadcast público SEM dados comanda-ping-<id> (trigger na BD);
+    // cada ping reconsulta o lote via REST com o x-comanda-token.
+    _channel = client.channel('comanda-ping-' + p.comandaId)
+      .on('broadcast', { event: 'change' }, () => resolvePending())
       .subscribe((status) => { if (status === 'SUBSCRIBED') resolvePending(); });
     if (!_pollTimer) {
       _pollTimer = setInterval(() => {
@@ -515,6 +540,9 @@
   window.NexoAssisted = {
     adoptPending(p) {
       if (!p || !p.comandaId || !p.itemIds || !p.itemIds.length) return;
+      // adopta também o token de leitura (RLS 037) — sem ele o pendingState
+      // deste dispositivo via 0 linhas e o estado nunca resolvia.
+      if (p.clientToken && typeof nexoComandaToken === 'function') nexoComandaToken(p.clientToken);
       const cur = getPending();
       // já temos um estado igual ou mais recente → só garante a subscrição
       if (cur && cur.comandaId === p.comandaId && (cur.ts || 0) >= (p.ts || 0)) {

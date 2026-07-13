@@ -1183,7 +1183,7 @@ function renderWineList() {
 
     return `
       <div class="wine-card-item" data-wine-idx="${realIdx}">
-        <div class="wine-card-photo ${w.photo ? 'has-image' : ''}" ${w.photo ? `style="background-image:url('${w.photo}')"` : ''}>
+        <div class="wine-card-photo ${w.photo ? 'has-image lazy-bg' : ''}" ${w.photo ? `data-bg="${w.photo}"` : ''}>
           ${!w.photo ? bottleIcon : ''}
         </div>
         <div class="wine-card-body">
@@ -1206,6 +1206,33 @@ function renderWineList() {
   }).join('');
 
   document.getElementById('wine-list').innerHTML = html;
+  observeLazyBackgrounds(document.getElementById('wine-list'));
+}
+
+// Lazy-load de background-images (fotos de vinhos/bebidas). CSS backgrounds
+// não têm loading="lazy" nativo → sem isto, todas as fotos externas carregam
+// no arranque e competem com o hero (LCP). Só busca a imagem perto do viewport.
+let _lazyBgObserver = null;
+function observeLazyBackgrounds(root) {
+  const els = (root || document).querySelectorAll('.lazy-bg[data-bg]');
+  if (!els.length) return;
+  if (!('IntersectionObserver' in window)) {
+    // fallback: sem IO, carrega já (comportamento antigo)
+    els.forEach(el => { el.style.backgroundImage = `url('${el.dataset.bg}')`; el.removeAttribute('data-bg'); el.classList.remove('lazy-bg'); });
+    return;
+  }
+  if (!_lazyBgObserver) {
+    _lazyBgObserver = new IntersectionObserver((entries, obs) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        const el = e.target;
+        if (el.dataset.bg) { el.style.backgroundImage = `url('${el.dataset.bg}')`; el.removeAttribute('data-bg'); }
+        el.classList.remove('lazy-bg');
+        obs.unobserve(el);
+      }
+    }, { rootMargin: '300px 0px' }); // pré-carrega um ecrã antes de entrar
+  }
+  els.forEach(el => _lazyBgObserver.observe(el));
 }
 
 
@@ -4560,19 +4587,52 @@ function generateCartCode() {
   return Array.from({length: 6}, () => C[Math.floor(Math.random() * C.length)]).join('');
 }
 
+// ── Token de comanda (RLS da migração 037) ──────────────────────────────
+// A leitura da comanda deixou de ser pública: o Supabase só devolve linhas
+// se o pedido levar o header x-comanda-token com o token desta comanda.
+// Guardado por sessão; injectado em todos os pedidos REST pelo fetch
+// personalizado do loadSupabase (o realtime não precisa — usa broadcast).
+function nexoComandaToken(tok) {
+  const key = 'nexo_ctoken_' + ((typeof CONFIG !== 'undefined' && CONFIG.slug) || '');
+  if (tok !== undefined) {
+    try { tok ? sessionStorage.setItem(key, tok) : sessionStorage.removeItem(key); } catch (_) {}
+    return tok || null;
+  }
+  try { return sessionStorage.getItem(key); } catch (_) { return null; }
+}
+// uuid v4 gerado no dispositivo — tem de ser conhecido ANTES do insert da
+// comanda, porque o returning já vem filtrado pela política de SELECT.
+function nexoNewComandaToken() {
+  try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (_) {}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+  });
+}
+function nexoTokenFetch(url, opts) {
+  opts = opts || {};
+  const tok = nexoComandaToken();
+  if (tok) {
+    const h = new Headers(opts.headers || {});
+    h.set('x-comanda-token', tok);
+    opts = Object.assign({}, opts, { headers: h });
+  }
+  return fetch(url, opts);
+}
+
 async function loadSupabase() {
   if (_supabaseClient) return _supabaseClient;
   const { supabaseUrl, supabaseAnonKey } = CONFIG;
   if (!supabaseUrl || !supabaseAnonKey) throw new Error('Supabase not configured');
   if (typeof window.supabase !== 'undefined') {
-    _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+    _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: nexoTokenFetch } });
     return _supabaseClient;
   }
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
     s.onload = () => {
-      _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+      _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: nexoTokenFetch } });
       resolve(_supabaseClient);
     };
     s.onerror = () => reject(new Error('Failed to load Supabase'));
@@ -4709,6 +4769,11 @@ function _applySharedOrderFired(payload) {
   try { _saveSharedSession(); } catch (_) {}
   syncSharedCartItems();
   const comandaId = payload && payload.comandaId;
+  // O token de leitura da comanda (RLS 037) viaja no broadcast da mesa —
+  // sem ele os restantes membros não conseguiam acompanhar o "Já enviado".
+  if (payload && payload.clientToken && typeof nexoComandaToken === 'function') {
+    nexoComandaToken(payload.clientToken);
+  }
   if (comandaId && window.NEXOPremium && typeof window.NEXOPremium.renderComandaBar === 'function') {
     try {
       window.NEXOPremium.renderComandaBar({
@@ -4723,7 +4788,10 @@ function _applySharedOrderFired(payload) {
 // Chamado após disparar uma ronda a partir de um carrinho PARTILHADO: limpa
 // o carrinho de toda a mesa neste dispositivo e avisa os restantes.
 function notifySharedOrderFired(comandaId, tableLabel) {
-  const payload = { by: _myPresenceKey, comandaId: comandaId || null, tableLabel: tableLabel || null };
+  const payload = {
+    by: _myPresenceKey, comandaId: comandaId || null, tableLabel: tableLabel || null,
+    clientToken: (typeof nexoComandaToken === 'function' ? nexoComandaToken() : null),
+  };
   _applySharedOrderFired(payload); // o emissor não recebe o próprio broadcast
   if (_sharedCartChannel) {
     try { _sharedCartChannel.send({ type: 'broadcast', event: 'order_fired', payload }); } catch (_) {}

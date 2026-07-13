@@ -42,31 +42,33 @@
       if (isNaN(tableNum) || tableNum < 1) return this.setMode('browse');
 
       try {
-        const { data } = await db
-          .from('venue_settings')
-          .select('table_tokens, table_count')
-          .eq('espaco_slug', espacoSlug)
-          .maybeSingle();
+        // Validação NO SERVIDOR (RPC security definer, migração 037). Os
+        // tokens de mesa deixaram de ser legíveis por anon em venue_settings:
+        // validar no browser obrigava a expô-los TODOS a qualquer pessoa,
+        // o que anulava o valor do TAT como prova de presença.
+        const { data, error } = await db.rpc('nexo_table_access', {
+          p_slug: espacoSlug,
+          p_table_num: tableNum,
+          p_table_token: String(tok),
+        });
+        if (error) throw error;
 
-        if (!data) return this.setMode('browse');
-
-        // Table number out of range → flag + browse
-        if (data.table_count && tableNum > data.table_count) {
-          this.flagActivity({
-            flag_type: 'impossible_table',
-            table_label: `Mesa ${tableNum}`,
-            details: { attempted: tableNum, max: data.table_count },
-          });
-          return this.setMode('browse');
-        }
-
-        const expected = data.table_tokens?.[String(tableNum)];
-        if (!expected || expected !== tok) {
-          this.flagActivity({
-            flag_type: 'invalid_token',
-            table_label: `Mesa ${tableNum}`,
-            details: { attempted_tok: String(tok).slice(0, 32) },
-          });
+        if (!data || data.valid !== true) {
+          // venue desconhecido → browse silencioso (comportamento antigo)
+          if (!data || typeof data.table_count !== 'number') return this.setMode('browse');
+          if (tableNum > data.table_count) {
+            this.flagActivity({
+              flag_type: 'impossible_table',
+              table_label: `Mesa ${tableNum}`,
+              details: { attempted: tableNum, max: data.table_count },
+            });
+          } else {
+            this.flagActivity({
+              flag_type: 'invalid_token',
+              table_label: `Mesa ${tableNum}`,
+              details: { attempted_tok: String(tok).slice(0, 32) },
+            });
+          }
           return this.setMode('browse');
         }
 
@@ -95,6 +97,7 @@
 
     // ── CACHE (valid 4h = a meal) ─────────────────────────
     loadFromCache(espacoSlug) {
+      this._slug = this._slug || espacoSlug;
       try {
         const cached = sessionStorage.getItem(`nexo_access_${espacoSlug}`);
         if (!cached) return this.setMode('browse');
@@ -176,6 +179,15 @@
     // ── METADATA ──────────────────────────────────────────
     getOrderMetadata() {
       return { order_source: this.orderSource, had_valid_token: this.tokenValidated };
+    },
+
+    // Token de mesa (TAT) desta sessão — usado pelas RPCs que validam a
+    // presença no servidor (nexo_table_access, migração 037).
+    getTableToken() {
+      try {
+        const cached = sessionStorage.getItem(`nexo_access_${this._slug}`);
+        return cached ? (JSON.parse(cached).token || null) : null;
+      } catch (_) { return null; }
     },
 
     // ── FLAGGING (silent; never shown to customer) ────────

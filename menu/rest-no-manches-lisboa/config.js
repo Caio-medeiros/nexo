@@ -65,7 +65,7 @@ const CONFIG = {
   brandColorDark: "#A67820",
   accentColor:    "#D64C2B",   // vermelho mexicano / terra cota (lido pelo override CSS)
   heroImageUrl:   null,        // hero escuro sólido (#1A1A1A) — sem foto
-  logoUrl:        "./img/logo-mark.png",
+  logoUrl:        "./img/logo-mark.webp",
 
 
   /* ════════════════════════════════════════════════════════════════════════
@@ -526,23 +526,23 @@ const CONFIG = {
   wines: [
 
     /* ── FIESTA FUEL · com álcool ── */
-    { name: "Margarita",                         country: "México",   region: "Tequila",  type: "margarita", grape: "Tequila",   abv: "13%",  volume: "25cl", price: "6,50€",  photo: "./img/bebidas/margarita.png", desc: "Clássica, spicy, manga ou maracujá." },
+    { name: "Margarita",                         country: "México",   region: "Tequila",  type: "margarita", grape: "Tequila",   abv: "13%",  volume: "25cl", price: "6,50€",  photo: "./img/bebidas/margarita.webp", desc: "Clássica, spicy, manga ou maracujá." },
     { name: "Mezcal Margarita",                  country: "México",   region: "Mezcal",   type: "margarita", grape: "Mezcal",    abv: "13%",  volume: "25cl", price: "7,00€",  photo: "./img/bebidas/mezcal-margarita.svg", desc: "Clássica, spicy, manga ou maracujá — com o toque fumado do mezcal." },
-    { name: "Vodka Sour Tamarindo",              country: "México",   region: "—",        type: "cocktail",  grape: "Vodka",     abv: "12%",  volume: "25cl", price: "6,00€",  photo: "./img/bebidas/cocktail-mano.png", desc: "Vodka, tamarindo e um final ácido irresistível." },
-    { name: "Charro Negro",                      country: "México",   region: "—",        type: "cocktail",  grape: "Tequila",   abv: "10%",  volume: "30cl", price: "5,00€",  photo: "./img/bebidas/coca-negra.png", desc: "Coca-Cola com sumo de lima, tequila ou vodka." },
+    { name: "Vodka Sour Tamarindo",              country: "México",   region: "—",        type: "cocktail",  grape: "Vodka",     abv: "12%",  volume: "25cl", price: "6,00€",  photo: "./img/bebidas/cocktail-mano.webp", desc: "Vodka, tamarindo e um final ácido irresistível." },
+    { name: "Charro Negro",                      country: "México",   region: "—",        type: "cocktail",  grape: "Tequila",   abv: "10%",  volume: "30cl", price: "5,00€",  photo: "./img/bebidas/coca-negra.webp", desc: "Coca-Cola com sumo de lima, tequila ou vodka." },
     { name: "Corona Chrus",                      country: "México",   region: "—",        type: "cocktail",  grape: "Tequila",   abv: "8%",   volume: "33cl", price: "5,50€",  photo: "./img/bebidas/corona-chrus.svg", desc: "Calipo de lima-limão, coronita, tequila e gelo picado." },
     { name: "Merengue",                          country: "México",   region: "—",        type: "cocktail",  grape: "Cerveja",   abv: "4%",   volume: "33cl", price: "3,00€",  photo: "./img/bebidas/merengue.svg", desc: "Sprite, groselha e cerveja Corona." },
-    { name: "Cerveja Coronita",                  country: "México",   region: "—",        type: "cerveja",   grape: "Corona",    abv: "4,5%", volume: "21cl", price: "2,50€",  photo: "./img/bebidas/cerveza-mini.png", desc: "A mini Corona, gelada." },
-    { name: "Cerveja Nacional",                  country: "Portugal", region: "—",        type: "cerveja",   grape: "Nacional",  abv: "5%",   volume: "20cl", price: "2,00€",  photo: "./img/bebidas/cerveza-jarra.png", desc: "Imperial portuguesa fresca." },
-    { name: "Shot de Tequila",                   country: "México",   region: "—",        type: "shot",      grape: "Tequila",   abv: "38%",  volume: "4cl",  price: "2,00€",  photo: "./img/bebidas/tequila-shot.png", desc: "Puro, com sal e lima." },
-    { name: "Shot de Mezcal",                    country: "México",   region: "—",        type: "shot",      grape: "Mezcal",    abv: "40%",  volume: "4cl",  price: "2,50€",  photo: "./img/bebidas/shot-salero.png", desc: "Fumado, com sal de verme." },
-    { name: "Shot de Vodka Tamarindo",           country: "México",   region: "—",        type: "shot",      grape: "Vodka",     abv: "30%",  volume: "4cl",  price: "2,00€",  photo: "./img/bebidas/cheers-shots.png", desc: "Doce-ácido, com kick de tamarindo." },
+    { name: "Cerveja Coronita",                  country: "México",   region: "—",        type: "cerveja",   grape: "Corona",    abv: "4,5%", volume: "21cl", price: "2,50€",  photo: "./img/bebidas/cerveza-mini.webp", desc: "A mini Corona, gelada." },
+    { name: "Cerveja Nacional",                  country: "Portugal", region: "—",        type: "cerveja",   grape: "Nacional",  abv: "5%",   volume: "20cl", price: "2,00€",  photo: "./img/bebidas/cerveza-jarra.webp", desc: "Imperial portuguesa fresca." },
+    { name: "Shot de Tequila",                   country: "México",   region: "—",        type: "shot",      grape: "Tequila",   abv: "38%",  volume: "4cl",  price: "2,00€",  photo: "./img/bebidas/tequila-shot.webp", desc: "Puro, com sal e lima." },
+    { name: "Shot de Mezcal",                    country: "México",   region: "—",        type: "shot",      grape: "Mezcal",    abv: "40%",  volume: "4cl",  price: "2,50€",  photo: "./img/bebidas/shot-salero.webp", desc: "Fumado, com sal de verme." },
+    { name: "Shot de Vodka Tamarindo",           country: "México",   region: "—",        type: "shot",      grape: "Vodka",     abv: "30%",  volume: "4cl",  price: "2,00€",  photo: "./img/bebidas/cheers-shots.webp", desc: "Doce-ácido, com kick de tamarindo." },
     { name: "Sangria Branca (1L)",               country: "Portugal", region: "—",        type: "sangria",   grape: "Vinho",     abv: "9%",   volume: "1L",   price: "12,00€", photo: "./img/bebidas/sangria-blanca.svg", desc: "Para partilhar. Vinho branco e fruta fresca." },
     { name: "Sangria Espumante c/ Morango (1L)", country: "Portugal", region: "—",        type: "sangria",   grape: "Espumante", abv: "10%",  volume: "1L",   price: "15,00€", photo: "./img/bebidas/sangria-morango.svg", desc: "Espumante e morango — festa numa jarra." },
-    { name: "Jarro de Margarita (1,5L)",         country: "México",   region: "Tequila",  type: "margarita", grape: "Tequila",   abv: "13%",  volume: "1,5L", price: "25,00€", photo: "./img/bebidas/jarra-margarita.png", desc: "Para o grupo. Margarita clássica em jarro." },
+    { name: "Jarro de Margarita (1,5L)",         country: "México",   region: "Tequila",  type: "margarita", grape: "Tequila",   abv: "13%",  volume: "1,5L", price: "25,00€", photo: "./img/bebidas/jarra-margarita.webp", desc: "Para o grupo. Margarita clássica em jarro." },
 
     /* ── BEBIDAS COM PINTA · sem álcool ── */
-    { name: "Água Fresca",       country: "México",   region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "40cl", price: "2,50€", photo: "./img/bebidas/vaso-hielo.png", desc: "Ananás, água de coco, lima, açúcar e gelo." },
+    { name: "Água Fresca",       country: "México",   region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "40cl", price: "2,50€", photo: "./img/bebidas/vaso-hielo.webp", desc: "Ananás, água de coco, lima, açúcar e gelo." },
     { name: "Água de Jamaica",   country: "México",   region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "40cl", price: "2,00€", photo: "./img/bebidas/agua-jamaica.svg", desc: "Infusão de hibisco, refrescante e ligeiramente ácida." },
     { name: "Monaco",            country: "Portugal", region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "33cl", price: "2,50€", photo: "./img/bebidas/monaco.svg", desc: "Groselha e Sprite." },
     { name: "Limonada de Coco",  country: "México",   region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "40cl", price: "3,50€", photo: "./img/bebidas/limonada-coco.svg", desc: "Leite de coco, leite condensado, sumo de lima e gelo picado." },
@@ -550,8 +550,8 @@ const CONFIG = {
     { name: "Limonada",          country: "México",   region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "40cl", price: "2,00€", photo: "./img/bebidas/limonada.svg", desc: "Fresca, feita na hora." },
     { name: "Água",              country: "Portugal", region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "50cl", price: "1,50€", photo: "./img/bebidas/agua.svg", desc: "Água natural sem gás." },
     { name: "Água com Gás",      country: "Portugal", region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "50cl", price: "1,50€", photo: "./img/bebidas/agua-gas.svg", desc: "Água mineral com gás." },
-    { name: "Ice Tea",           country: "Portugal", region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "33cl", price: "1,50€", photo: "./img/bebidas/ice-tea.png", desc: "Gelado, pêssego ou limão." },
-    { name: "Refrigerante",      country: "—",        region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "33cl", price: "2,50€", photo: "./img/bebidas/cocas-cheers.png", desc: "Coca-Cola, Coca-Cola Zero, Sprite ou Fanta." }
+    { name: "Ice Tea",           country: "Portugal", region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "33cl", price: "1,50€", photo: "./img/bebidas/ice-tea.webp", desc: "Gelado, pêssego ou limão." },
+    { name: "Refrigerante",      country: "—",        region: "—", type: "sem-alcool", grape: "Sem álcool", abv: "0%", volume: "33cl", price: "2,50€", photo: "./img/bebidas/cocas-cheers.webp", desc: "Coca-Cola, Coca-Cola Zero, Sprite ou Fanta." }
   ],
 
 

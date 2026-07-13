@@ -16,3 +16,15 @@ supabase/.temp/
 
 # Graphify knowledge-graph artefacts (local only)
 graphify-out/
+
+# Coverage output (gerado por npm run test:coverage)
+tests/coverage/
+coverage/
+
+# Playwright — artefactos e relatórios gerados (npm run test:e2e)
+test-results/
+tests/playwright-report/
+
+# Lighthouse CI — relatórios locais (gerados por npm run perf:ci)
+.lighthouseci/
+tests/perf/lhci-report/

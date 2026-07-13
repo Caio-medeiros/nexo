@@ -64,6 +64,9 @@ button { font-family: inherit; }
   outline: none; text-align: center; letter-spacing: 2px;
 }
 .gate-input:focus { border-color: var(--color-primary); }
+/* login do dono: email + palavra-passe empilhados */
+.gate-input + .gate-input { margin-top: 10px; }
+#gate-email { letter-spacing: 0; }
 .gate-input.shake { animation: gate-shake 0.4s ease; }
 @keyframes gate-shake {
   0%, 100% { transform: translateX(0); }

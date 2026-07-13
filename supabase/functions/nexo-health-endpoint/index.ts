@@ -1,19 +1,24 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { startInvocation, captureException } from '../_shared/observability.ts'
 
 // Public health endpoint — monitored by UptimeRobot every 5 minutes.
 // Deploy with: supabase functions deploy nexo-health-endpoint --no-verify-jwt
 // UptimeRobot: send Authorization: Bearer <anon-key> as custom header.
+// Pública (sem cron secret): auth só decide o DETALHE por cliente; anónimos
+// recebem up/down. Erros → Sentry + log; a resposta nunca vaza detalhe.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-correlation-id',
   'Content-Type': 'application/json',
   'Cache-Control': 'no-cache',
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
+  const { log, cid } = startInvocation('nexo-health-endpoint', req)
 
   const db = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -106,6 +111,7 @@ serve(async (req) => {
       totalIssues === 0 ? 'ok' :
       totalIssues > total / 2 ? 'critical' : 'warning'
 
+    log.info('done', { total_active_menus: total, menus_with_issues: totalIssues, overall_status: overallStatus, portal_user: isPortalUser })
     return new Response(
       JSON.stringify({
         generated_at: now.toISOString(),
@@ -116,10 +122,13 @@ serve(async (req) => {
           menus_with_issues: totalIssues,
           overall_status: overallStatus,
         },
+        cid,
       }),
       { headers: corsHeaders }
     )
   } catch (e) {
+    // Observável (Sentry + log estruturado); a resposta continua genérica.
+    await captureException(e, { fn: 'nexo-health-endpoint', cid })
     return new Response(
       JSON.stringify({
         generated_at: now.toISOString(),
@@ -127,6 +136,7 @@ serve(async (req) => {
         error: 'Health check failed',
         summary: { overall_status: 'error' },
         clients: [],
+        cid,
       }),
       { status: 500, headers: corsHeaders }
     )

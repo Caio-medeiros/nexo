@@ -6,6 +6,26 @@
    taco (×2 / ×3), notas de secção e avisos do menu.
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* Bebas Neue auto-hospedada + pré-carregada (ver <head>): como é condensada,
+   o swap tardio a partir de um fallback largo remetia o hero 54px (CLS ~0.1).
+   Servida da mesma origem chega antes do paint → sem swap. Sem 3ª parte. */
+@font-face {
+  font-family: 'Bebas Neue';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/bebas-neue-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Bebas Neue';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/bebas-neue-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
   /* Paleta creme/mostarda */
   --bg:          #FEFCF5;   /* creme quente */
@@ -81,6 +101,13 @@ body { background: var(--bg); }
   font-size: 15px;
 }
 .category-tab.active { color: var(--accent-dark); }
+
+/* ── Reserva de espaço (CLS): script.js (defer) injecta o carrossel
+   "mais pedidos" e o menu depois do primeiro paint. Reservar a altura
+   final da secção evita empurrar o conteúdo visível (CLS ~0.8 → ~0). */
+#section-most-ordered { min-height: 404px; }
+.most-ordered-title { min-height: 34px; }
+.most-ordered-sub   { min-height: 20px; }
 
 /* ── HERO escuro (grafite) com taco em linha branca ───────────────────────── */
 .hero { background: #1A1A1A; height: 300px; }
@@ -347,7 +374,7 @@ body { background: var(--bg); }
 .wine-section {
   background:
     linear-gradient(180deg, rgba(254,252,245,0.94) 0%, rgba(254,252,245,0.85) 100%),
-    url("./img/pattern-ingredientes.png");
+    url("./img/pattern-ingredientes.webp");
   background-size: auto, 230px 230px;
   background-repeat: no-repeat, repeat;
   background-position: top, top left;
@@ -544,7 +571,7 @@ body { background: var(--bg); }
 body {
   background:
     linear-gradient(rgba(254, 252, 245, 0.955), rgba(254, 252, 245, 0.955)),
-    url("./img/pattern-ingredientes.png") top left / 240px 240px repeat;
+    url("./img/pattern-ingredientes.webp") top left / 240px 240px repeat;
 }
 
 /* Happy hour: textura de manta tecida (diagonais subtis) sobre o vermelho */
@@ -632,7 +659,7 @@ body {
   width: min(250px, 70vw);
   height: 140px;
   margin-top: 26px;   /* respiro sob o papel picado */
-  background: url("./img/wordmark.png") center / contain no-repeat;
+  background: url("./img/wordmark.webp") center / contain no-repeat;
   color: transparent !important;
   text-shadow: none !important;
   filter: drop-shadow(3px 3px 0 rgba(214, 76, 43, 0.4)) drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
@@ -646,7 +673,7 @@ body {
   height: 14px;
   width: 214px;   /* ~1,5 períodos × 142px — formas sólidas, legíveis em miniatura */
   opacity: 0.5;
-  background: url("./img/greca-banda.png") repeat-x center / auto 14px;
+  background: url("./img/greca-banda.webp") repeat-x center / auto 14px;
 }
 
 /* O easter egg do "sacode o sal" muda da mão (escondida) para o lettering */
@@ -669,7 +696,7 @@ body {
 .hero-image::after {
   content: '';
   position: absolute; inset: 0;
-  background: url("./img/pattern-ingredientes.png") top left / 300px 300px repeat;
+  background: url("./img/pattern-ingredientes.webp") top left / 300px 300px repeat;
   opacity: 0.05;
 }
 

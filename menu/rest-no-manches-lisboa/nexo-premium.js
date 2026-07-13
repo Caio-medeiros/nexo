@@ -70,7 +70,11 @@
     if (_sb) return _sb;
     if (typeof loadSupabase === 'function') { _sb = await loadSupabase(); return _sb; }
     if (window.supabase && CONFIG.supabaseUrl) {
-      _sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+      // Mesmo header x-comanda-token do loadSupabase (RLS 037) — sem ele
+      // este fallback conseguiria escrever mas nunca ler a comanda.
+      _sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+        global: { fetch: (u, o) => (typeof nexoTokenFetch === 'function' ? nexoTokenFetch(u, o) : fetch(u, o)) },
+      });
       return _sb;
     }
     throw new Error('Supabase indisponível');
@@ -113,11 +117,16 @@
   async function createComanda(tableLabel, guestCount) {
     const client = await sb();
     const meta = window.NexoAccess ? NexoAccess.getOrderMetadata() : {};
+    // RLS 037: o token de leitura é gerado AQUI e guardado antes do insert —
+    // o returning já só devolve a linha se o header x-comanda-token bater.
+    const token = nexoNewComandaToken();
+    nexoComandaToken(token);
     const { data, error } = await client.from('comandas').insert({
       espaco_slug: SLUG,
       table_label: clean(tableLabel, 50) || 'Mesa',
       guest_count: Math.min(Math.max(parseInt(guestCount, 10) || 1, 1), 100),
       mode: 'dine_in',
+      client_token: token,
       ...meta, // order_source + had_valid_token (TAT)
     }).select('id, session_code, table_label, status').single();
     if (error) throw error;
@@ -127,13 +136,17 @@
 
   async function joinComanda(code) {
     const client = await sb();
-    const { data, error } = await client.from('comandas')
-      .select('id, session_code, table_label, status, guest_count')
-      .eq('session_code', String(code).toUpperCase())
-      .eq('espaco_slug', SLUG).eq('status', 'open').maybeSingle();
+    // RLS 037: a leitura direta por session_code já não passa para anon —
+    // a RPC (security definer) devolve a comanda + o client_token de leitura.
+    const { data, error } = await client.rpc('nexo_join_comanda', {
+      p_slug: SLUG, p_code: String(code || ''),
+    });
     if (error || !data) throw new Error('Código inválido ou comanda fechada');
-    storeComanda(data);
-    return data;
+    if (data.client_token) nexoComandaToken(data.client_token);
+    const c = { id: data.id, session_code: data.session_code, table_label: data.table_label,
+                status: data.status, guest_count: data.guest_count };
+    storeComanda(c);
+    return c;
   }
 
   async function addItemsToComanda(comandaId, items) {
@@ -328,10 +341,11 @@
   async function subscribeTab(comandaId) {
     const client = await sb();
     if (_comandaCh) { try { client.removeChannel(_comandaCh); } catch (_) {} }
-    _comandaCh = client.channel(`tab_${comandaId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items', filter: `comanda_id=eq.${comandaId}` }, () => refreshTab())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_rounds', filter: `comanda_id=eq.${comandaId}` }, () => refreshTab())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `id=eq.${comandaId}` }, () => refreshTab())
+    // RLS 037: postgres_changes já não chega ao cliente anónimo. O gatilho
+    // passa a ser o broadcast público SEM dados comanda-ping-<id> (trigger
+    // na BD, padrão da 031) — cada ping reconsulta via REST com o token.
+    _comandaCh = client.channel('comanda-ping-' + comandaId)
+      .on('broadcast', { event: 'change' }, () => refreshTab())
       .subscribe((status) => {
         // Ao (re)ligar, ressincroniza já — o "Já enviado" do cliente nunca fica
         // desatualizado se o realtime cair e voltar.
@@ -496,15 +510,42 @@
   // RONDA dentro da mesma conta — a base do modelo de rondas da cozinha.
   async function openOrGetComanda(tableLabel) {
     const client = await sb();
-    // Inclui 'ready': se a cozinha já terminou a ronda anterior, a próxima
-    // ronda entra na MESMA conta (e reabre p/ 'submitted'), não numa nova.
-    const { data: existing } = await client.from('comandas')
-      .select('id, session_code, table_label, status')
-      .eq('espaco_slug', SLUG).eq('table_label', tableLabel)
-      .in('status', ['open', 'submitted', 'preparing', 'ready'])
-      .is('archived_at', null) // comanda arquivada não se reutiliza — abre nova
-      .order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (existing) { storeComanda(existing); return existing; }
+    // RLS 037: a busca aberta por table_label deixou de existir para anon.
+    // 1) Comanda desta sessão (temos o token → a leitura passa no RLS).
+    //    Inclui 'ready': se a cozinha já terminou a ronda anterior, a próxima
+    //    ronda entra na MESMA conta (e reabre p/ 'submitted'), não numa nova.
+    const stored = getStoredComanda();
+    if (stored && stored.id && nexoComandaToken()) {
+      const { data: mine } = await client.from('comandas')
+        .select('id, session_code, table_label, status')
+        .eq('id', stored.id)
+        .in('status', ['open', 'submitted', 'preparing', 'ready'])
+        .is('archived_at', null) // comanda arquivada não se reutiliza — abre nova
+        .maybeSingle();
+      if (mine && mine.table_label === tableLabel) { storeComanda(mine); return mine; }
+    }
+    // 2) Comanda ativa da MESA via RPC: o token de mesa (TAT) é validado no
+    //    SERVIDOR e devolve o client_token — é assim que um 2.º dispositivo
+    //    da mesma mesa retoma a conta partilhada.
+    const acc = window.NexoAccess;
+    if (acc && acc.tokenValidated && acc.tableLabel === tableLabel &&
+        typeof acc.getTableToken === 'function') {
+      try {
+        const { data: res } = await client.rpc('nexo_table_access', {
+          p_slug: SLUG,
+          p_table_num: acc.tableNumber,
+          p_table_token: acc.getTableToken(),
+        });
+        const c = res && res.valid && res.comanda;
+        if (c && c.client_token) {
+          nexoComandaToken(c.client_token);
+          const found = { id: c.id, session_code: c.session_code,
+                          table_label: c.table_label, status: c.status };
+          storeComanda(found);
+          return found;
+        }
+      } catch (_) { /* sem acesso → segue para criar nova */ }
+    }
     return createComanda(tableLabel, sharedGuestCount());
   }
 
@@ -545,15 +586,19 @@
 
   // Confirmação do menu → dispara uma ronda na comanda persistente da mesa.
   // Mantém a conta aberta: a próxima confirmação cria a ronda seguinte.
+  async function fireAndTrack(comanda, items) {
+    const res = await fireRound(comanda, items);
+    // separador (conta a correr) — total + estado + detalhe por ronda.
+    try { storeComanda({ id: comanda.id, table_label: comanda.table_label, status: 'submitted' }); activateTab(comanda.id); } catch (_) {}
+    return res;
+  }
+
   async function pushOrder(tableLabel, items) {
     if (!items || !items.length) return null;
     // guest_count = nº de pessoas a partilhar a mesa pelo menu (carrinho
     // partilhado). Sem partilha = 1. Nunca inferido do nº de itens.
     const comanda = await openOrGetComanda(tableLabel);
-    const res = await fireRound(comanda, items);
-    // separador (conta a correr) — total + estado + detalhe por ronda.
-    try { storeComanda({ id: comanda.id, table_label: comanda.table_label, status: 'submitted' }); activateTab(comanda.id); } catch (_) {}
-    return res;
+    return fireAndTrack(comanda, items);
   }
 
   // Signature of an order (item name × qty, order-independent). Notes are
@@ -566,10 +611,12 @@
     }).sort().join('|');
   }
 
-  // True if the SAME table already has an identical order in the kitchen
-  // within the dedupe window. Different tables never collide. Fail-open:
+  // True if THIS comanda already has an identical round in the kitchen
+  // within the dedupe window. (RLS 037: anon já não vê as outras comandas
+  // da mesa sem token — o dedupe compara as rondas da comanda resolvida,
+  // que é exactamente a conta onde a nova ronda iria entrar.) Fail-open:
   // any error returns false so a real order is never wrongly blocked.
-  async function isDuplicateRecentOrder(tableLabel, items) {
+  async function isDuplicateRecentRound(comandaId, items) {
     try {
       const client = await sb();
       const mins = (F.comanda && F.comanda.dedupeMinutes) || 3;
@@ -577,16 +624,9 @@
       // Comparar por RONDA (não pela comanda inteira): com a conta persistente
       // a comanda acumula várias rondas, por isso a assinatura tem de ser a
       // de cada ronda recente vs. o carrinho actual.
-      const { data: comandas } = await client.from('comandas')
-        .select('id')
-        .eq('espaco_slug', SLUG).eq('table_label', tableLabel)
-        .in('status', ['open', 'submitted', 'preparing', 'ready'])
-        .is('archived_at', null)
-        .limit(4);
-      if (!comandas || !comandas.length) return false;
       const { data: rounds } = await client.from('comanda_rounds')
         .select('id, comanda_items(item_name, quantity)')
-        .in('comanda_id', comandas.map(c => c.id))
+        .eq('comanda_id', comandaId)
         .gte('fired_at', since)
         .limit(12);
       if (!rounds || !rounds.length) return false;
@@ -605,7 +645,7 @@
   async function onOrderConfirmed(opts) {
     if (!HAS_COMANDA || !SLUG) return { ok: false, reason: 'disabled' }; // routing desligado
     // force=true: usado pelo retry automático do menu após uma falha. Contorna o
-    // lock anti-duplo-toque — a deduplicação por assinatura (isDuplicateRecentOrder)
+    // lock anti-duplo-toque — a deduplicação por assinatura (isDuplicateRecentRound)
     // garante que um retry nunca cria uma ronda duplicada.
     const force = !!(opts && opts.force);
     if (!force && Date.now() < _confirmLock) return { ok: false, reason: 'locked' }; // anti double-submit
@@ -614,12 +654,15 @@
       const items = readMenuCart();
       if (!items.length) return { ok: false, reason: 'empty' };
       const tableLabel = currentTableLabel();
-      // Anti-duplicado: mesmo pedido, mesma mesa, dentro da janela → não reenvia.
-      if (await isDuplicateRecentOrder(tableLabel, items)) {
+      // Resolve a comanda primeiro: com o RLS 037 o dedupe lê as rondas
+      // DESTA comanda (a leitura aberta por mesa já não existe para anon).
+      const comanda = await openOrGetComanda(tableLabel);
+      // Anti-duplicado: mesmo pedido, mesma conta, dentro da janela → não reenvia.
+      if (await isDuplicateRecentRound(comanda.id, items)) {
         toast('Pedido igual já enviado para esta mesa.');
         return { ok: false, reason: 'duplicate' };
       }
-      const res = await pushOrder(tableLabel, items);
+      const res = await fireAndTrack(comanda, items);
       toast('Pedido enviado para a cozinha ✓');
       // Esvazia o carrinho pendente após disparar — os itens passam a viver na
       // secção "Já enviado". Atrasado para não apanhar a vista "Mostrar ao

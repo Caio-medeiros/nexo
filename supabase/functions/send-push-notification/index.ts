@@ -1,11 +1,12 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
+import { startInvocation, safeError, json } from '../_shared/observability.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
+    'authorization, x-client-info, apikey, content-type, x-correlation-id',
 }
 
 serve(async (req) => {
@@ -13,15 +14,16 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const { log, cid } = startInvocation('send-push-notification', req)
+
   try {
     const { espaco_slug, table_label } = await req.json()
 
     if (!espaco_slug) {
-      return new Response(
-        JSON.stringify({ error: 'espaco_slug required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      log.warn('bad_request', { reason: 'espaco_slug em falta' })
+      return json({ error: 'espaco_slug required', cid }, 400, corsHeaders)
     }
+    log.info('start', { slug: espaco_slug, hasTable: !!table_label })
 
     webpush.setVapidDetails(
       Deno.env.get('VAPID_EMAIL')!,
@@ -41,10 +43,8 @@ serve(async (req) => {
       .eq('is_active', true)
 
     if (!subscriptions || subscriptions.length === 0) {
-      return new Response(
-        JSON.stringify({ delivered: 0, message: 'No active subscriptions' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      log.info('no_subscriptions', { slug: espaco_slug })
+      return json({ delivered: 0, message: 'No active subscriptions', cid }, 200, corsHeaders)
     }
 
     const tableText = table_label || 'Mesa não especificada'
@@ -88,15 +88,16 @@ serve(async (req) => {
       delivered_count: delivered,
     })
 
-    return new Response(
-      JSON.stringify({ delivered, total: subscriptions.length }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    const failed = subscriptions.length - delivered
+    log.info('ok', { slug: espaco_slug, delivered, total: subscriptions.length, failed })
+    return json({ delivered, total: subscriptions.length, cid }, 200, corsHeaders)
 
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    // String(err) vazava stack/detalhe interno → mensagem genérica + cid.
+    return await safeError(err, {
+      log, cid, fn: 'send-push-notification',
+      publicMessage: 'Não foi possível enviar a notificação.',
+      headers: corsHeaders,
+    })
   }
 })

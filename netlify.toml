@@ -3,8 +3,9 @@
 # do código real: Supabase, GA4/GTM, Google Fonts, jsDelivr/cdnjs (GSAP,
 # supabase-js, Chart.js, QRCode), api.qrserver.com (QR), ntfy.sh (chamar
 # empregado), lh3.googleusercontent.com (fotos GMB).
-# 'unsafe-eval' é necessário: o portal lê /menu/<slug>/config.js via
-# new Function() (editor de menu, cor da marca, disponibilidade).
+# 'unsafe-eval' foi REMOVIDO (2026-07-12): o portal lia /menu/<slug>/config.js
+# via new Function() (eval); agora lê /menu/<slug>/config.json via JSON.parse.
+# Nenhuma lib servida (supabase-js, Chart.js, GSAP, QRCode) usa eval.
 #
 # Deploy pipeline: pushes to 'main' → production (nexosolutions.pt)
 #                  pushes to 'staging' → staging--nexosolutions.netlify.app
@@ -39,6 +40,29 @@
   status = 200
   force = false
 
+# ─── Redirects legados — assets movidos da raiz para /js e /css ───────────
+# HTML de menus fica em cache até 5 min (max-age=300); estes 301 garantem
+# que páginas antigas em cache continuam a carregar os scripts partilhados.
+[[redirects]]
+  from = "/nexo-analytics.js"
+  to = "/js/nexo-analytics.js"
+  status = 301
+
+[[redirects]]
+  from = "/nexo-cookies.js"
+  to = "/js/nexo-cookies.js"
+  status = 301
+
+[[redirects]]
+  from = "/script.js"
+  to = "/js/landing.js"
+  status = 301
+
+[[redirects]]
+  from = "/style.css"
+  to = "/css/landing.css"
+  status = 301
+
 # ─── Global: todas as páginas ─────────────────────────────────────────────
 [[headers]]
   for = "/*"
@@ -49,7 +73,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https://*.googletagmanager.com https://*.google-analytics.com https://lh3.googleusercontent.com https://api.qrserver.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://ntfy.sh; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob: https://*.googletagmanager.com https://*.google-analytics.com https://lh3.googleusercontent.com https://api.qrserver.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://ntfy.sh; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
 
 # ─── Portal: mais restrito (sem embed; sem cache) ─────────────────────────
 [[headers]]

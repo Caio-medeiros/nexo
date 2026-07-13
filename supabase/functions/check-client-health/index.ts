@@ -1,24 +1,24 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { startInvocation, cronGuard, safeError, fetchWithTimeout, json } from '../_shared/observability.ts'
 
-// Hourly client health check — scheduled via Supabase cron.
-// Deploy: supabase functions deploy check-client-health
-// Schedule in Dashboard → Edge Functions → check-client-health → Schedules: 0 * * * *
+// Hourly client health check — scheduled via Supabase cron (HTTP + cron secret,
+// migração 032). Deploy: supabase functions deploy check-client-health
 //
+// Só-cron: FALHA FECHADO no cron secret (cronGuard required).
 // Required secrets (Project Settings → Edge Functions → Secrets):
+//   NEXO_CRON_SECRET       — igual ao guardado no Vault (migração 032)
 //   CALLMEBOT_KEY          — apikey from CallMeBot WhatsApp setup
 //   CAIO_WHATSAPP_NUMBER   — e.g. 351912345678 (no + or spaces)
 
 serve(async (req) => {
-  // Se NEXO_CRON_SECRET estiver definido, só o pg_cron (que envia o header
-  // a partir do Vault — ver migration 032) pode invocar esta função.
-  const cronSecret = Deno.env.get('NEXO_CRON_SECRET')
-  if (cronSecret && req.headers.get('x-nexo-cron-secret') !== cronSecret) {
-    return new Response(JSON.stringify({ error: 'unauthorized' }), {
-      status: 401, headers: { 'Content-Type': 'application/json' },
-    })
-  }
+  const { log, cid } = startInvocation('check-client-health', req)
 
+  // Só o pg_cron (header do Vault, migração 032) invoca esta função.
+  const denied = cronGuard(req, log, { required: true })
+  if (denied) return denied
+
+  try {
   const db = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -29,24 +29,23 @@ serve(async (req) => {
 
   // Only alert during restaurant operating hours (10–24h PT)
   if (hourPT < 10) {
-    return new Response(
-      JSON.stringify({ skipped: 'outside operating hours', hourPT }),
-      { headers: { 'Content-Type': 'application/json' } }
-    )
+    log.info('skipped_outside_hours', { hourPT })
+    return json({ skipped: 'outside operating hours', hourPT, cid })
   }
 
-  const { data: menus } = await db
+  const { data: menus, error: menusErr } = await db
     .from('menus')
     .select(`slug, clients!inner (id, name, status, plan)`)
     .eq('clients.status', 'active')
     .neq('clients.plan', 'evento')
 
+  if (menusErr) throw menusErr // erro de leitura → observável (catch → Sentry)
+
   if (!menus?.length) {
-    return new Response(
-      JSON.stringify({ message: 'No active clients' }),
-      { headers: { 'Content-Type': 'application/json' } }
-    )
+    log.info('no_active_clients')
+    return json({ message: 'No active clients', cid })
   }
+  log.info('start', { total_menus: menus.length, hourPT })
 
   const twoHoursAgo     = new Date(now.getTime() -  7_200_000).toISOString()
   const twentyFourHoursAgo = new Date(now.getTime() - 86_400_000).toISOString()
@@ -171,7 +170,8 @@ serve(async (req) => {
       `\n\nTotal activos: ${menus.length}` +
       `\nVer: nexosolutions.pt/portal/status/`
 
-    await sendAlert(db, msg)
+    await sendAlert(db, msg, log)
+    log.warn('alert_sent', { issues: issues.length, total: menus.length })
   }
 
   // Log run result (non-critical — ignore errors)
@@ -182,26 +182,36 @@ serve(async (req) => {
     results:      stats,
   }).catch(() => {})
 
+  log.info('done', { total: menus.length, issues: issues.length })
   // Nunca devolver `stats` no corpo HTTP — contém métricas por cliente e a
   // resposta é ignorada pelo pg_cron. O detalhe fica no monitoring_log.
-  return new Response(
-    JSON.stringify({ checked_at: now.toISOString(), total: menus.length, issues: issues.length }),
-    { headers: { 'Content-Type': 'application/json' } }
-  )
+  return json({ checked_at: now.toISOString(), total: menus.length, issues: issues.length, cid })
+  } catch (err) {
+    return await safeError(err, { log, cid, fn: 'check-client-health' })
+  }
 })
 
-async function sendAlert(db: ReturnType<typeof import('https://esm.sh/@supabase/supabase-js@2').createClient>, message: string) {
+async function sendAlert(
+  db: ReturnType<typeof import('https://esm.sh/@supabase/supabase-js@2').createClient>,
+  message: string,
+  log: { warn: (m: string, f?: Record<string, unknown>) => void },
+) {
   const key   = Deno.env.get('CALLMEBOT_KEY')
   const phone = Deno.env.get('CAIO_WHATSAPP_NUMBER')
 
   if (key && phone) {
     try {
-      await fetch(
+      // timeout: nunca prender a função à espera do CallMeBot.
+      const r = await fetchWithTimeout(
         `https://api.callmebot.com/whatsapp.php` +
-        `?phone=${phone}&text=${encodeURIComponent(message)}&apikey=${key}`
+        `?phone=${phone}&text=${encodeURIComponent(message)}&apikey=${key}`,
+        {}, 5000,
       )
-      return
-    } catch (_) {}
+      if (r.ok) return
+      log.warn('callmebot_non_ok', { status: r.status })
+    } catch (_) {
+      log.warn('callmebot_failed')
+    }
   }
 
   // Fallback: save to system_alerts so the portal can surface it

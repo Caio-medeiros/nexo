@@ -4360,19 +4360,52 @@ function generateCartCode() {
   return Array.from({length: 6}, () => C[Math.floor(Math.random() * C.length)]).join('');
 }
 
+// ── Token de comanda (RLS da migração 037) ──────────────────────────────
+// A leitura da comanda deixou de ser pública: o Supabase só devolve linhas
+// se o pedido levar o header x-comanda-token com o token desta comanda.
+// Guardado por sessão; injectado em todos os pedidos REST pelo fetch
+// personalizado do loadSupabase (o realtime não precisa — usa broadcast).
+function nexoComandaToken(tok) {
+  const key = 'nexo_ctoken_' + ((typeof CONFIG !== 'undefined' && CONFIG.slug) || '');
+  if (tok !== undefined) {
+    try { tok ? sessionStorage.setItem(key, tok) : sessionStorage.removeItem(key); } catch (_) {}
+    return tok || null;
+  }
+  try { return sessionStorage.getItem(key); } catch (_) { return null; }
+}
+// uuid v4 gerado no dispositivo — tem de ser conhecido ANTES do insert da
+// comanda, porque o returning já vem filtrado pela política de SELECT.
+function nexoNewComandaToken() {
+  try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (_) {}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+  });
+}
+function nexoTokenFetch(url, opts) {
+  opts = opts || {};
+  const tok = nexoComandaToken();
+  if (tok) {
+    const h = new Headers(opts.headers || {});
+    h.set('x-comanda-token', tok);
+    opts = Object.assign({}, opts, { headers: h });
+  }
+  return fetch(url, opts);
+}
+
 async function loadSupabase() {
   if (_supabaseClient) return _supabaseClient;
   const { supabaseUrl, supabaseAnonKey } = CONFIG;
   if (!supabaseUrl || !supabaseAnonKey) throw new Error('Supabase not configured');
   if (typeof window.supabase !== 'undefined') {
-    _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+    _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: nexoTokenFetch } });
     return _supabaseClient;
   }
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
     s.onload = () => {
-      _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+      _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey, { global: { fetch: nexoTokenFetch } });
       resolve(_supabaseClient);
     };
     s.onerror = () => reject(new Error('Failed to load Supabase'));

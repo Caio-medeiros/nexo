@@ -1,8 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════
    NEXO — DASHBOARD FINANCEIRO (No Manches)
    ───────────────────────────────────────────────────────────────
-   Página standalone: auth local por senha (SHA-256, sessão 4h em
-   sessionStorage) — sem conta Supabase. Apenas SELECTs como anon.
+   Página standalone com AUTORIZAÇÃO REAL: Supabase Auth com a conta
+   do DONO (a mesma do portal). Os dados de linha passam pelo RLS da
+   migração 037 (owns_espaco) e as estatísticas pela RPC da 038 — é o
+   SERVIDOR que nega o acesso, não a UI. Nenhum segredo vive neste
+   ficheiro (a anon key é pública por definição; o RLS é o gate).
+
+   O storageKey de auth é próprio ('nm-fin-auth'): a página NÃO herda
+   a sessão do portal no tablet do staff — exige login explícito.
 
    Fonte: comanda_items (JOIN comandas p/ mesa). O prompt original
    referia uma tabela "orders"; neste schema um "pedido" = uma ronda
@@ -17,9 +23,6 @@
 
   // ── Constantes ───────────────────────────────────────────────
   const SLUG = 'rest-no-manches-lisboa';
-  // SHA-256 de "nomanchesnexo123" (calculado em build time — nunca plaintext)
-  const SENHA_HASH = '7485be8c8e455605bbc078a9f2f4b1914a4c2565910e16e4c114af8a01655790';
-  const SESSION_MS = 4 * 60 * 60 * 1000; // 4h
   const BILLABLE = ['sent', 'preparing', 'ready', 'served', 'delivered'];
   const SUPABASE_URL = 'https://kgbrtbpeekhkroibsgqq.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYnJ0YnBlZWtoa3JvaWJzZ3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNDAwMTMsImV4cCI6MjA5NjYxNjAxM30.vFvSLysnS3456WWKa2a659YuIVuOceYHG4NMd79Jerc';
@@ -51,83 +54,64 @@
   };
 
   // ══════════════════════════════════════════════════════════════
-  // GATE DE SENHA
+  // GATE DE LOGIN — Supabase Auth (conta do dono)
+  // Não há senha nem hash neste ficheiro: as credenciais vão para o
+  // Supabase (que faz o seu próprio rate-limit) e a autorização é
+  // verificada no servidor (RPC 038 / RLS 037).
   // ══════════════════════════════════════════════════════════════
   const gate = document.getElementById('fin-gate');
   const app = document.getElementById('fin-app');
   const gateForm = document.getElementById('gate-form');
+  const gateEmail = document.getElementById('gate-email');
   const gateInput = document.getElementById('gate-pw');
   const gateError = document.getElementById('gate-error');
   const gateBtn = document.getElementById('gate-btn');
   const gateLock = document.getElementById('gate-lock');
 
-  async function sha256Hex(text) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  function gateBusy(busy) {
+    gateBtn.disabled = busy;
+    gateInput.disabled = busy;
+    gateEmail.disabled = busy;
+    gateBtn.textContent = busy ? 'A verificar…' : 'Entrar';
   }
 
-  function sessionValid() {
+  function gateFail(msg) {
+    gateBusy(false);
+    gateInput.value = '';
+    gateInput.classList.remove('shake');
+    void gateInput.offsetWidth; // reinicia a animação
+    gateInput.classList.add('shake');
+    gateError.hidden = false;
+    gateError.textContent = msg;
+  }
+
+  // Sonda de autorização REAL: a RPC nm_financeiro_stats (038) levanta
+  // 42501 para quem não é o dono do No Manches — decide o servidor.
+  async function probeAccess() {
     try {
-      return sessionStorage.getItem('nm_fin_auth') === 'true' &&
-             Date.now() < Number(sessionStorage.getItem('nm_fin_exp') || 0);
+      const { error } = await db.rpc('nm_financeiro_stats', { p_days: 1 });
+      return !error;
     } catch (_) { return false; }
-  }
-  function clearSession() {
-    try {
-      sessionStorage.removeItem('nm_fin_auth');
-      sessionStorage.removeItem('nm_fin_exp');
-    } catch (_) {}
-  }
-
-  // Rate-limit local: 5 falhas seguidas → 60s de bloqueio (sobrevive a reload)
-  function fails() { try { return Number(sessionStorage.getItem('nm_fin_fails') || 0); } catch (_) { return 0; } }
-  function setFails(n) { try { sessionStorage.setItem('nm_fin_fails', String(n)); } catch (_) {} }
-  function lockUntil() { try { return Number(sessionStorage.getItem('nm_fin_lock') || 0); } catch (_) { return 0; } }
-  function setLock(ts) { try { sessionStorage.setItem('nm_fin_lock', String(ts)); } catch (_) {} }
-
-  let lockTimer = null;
-  function startLockCountdown() {
-    clearInterval(lockTimer);
-    gateInput.disabled = true; gateBtn.disabled = true;
-    lockTimer = setInterval(() => {
-      const left = Math.ceil((lockUntil() - Date.now()) / 1000);
-      if (left <= 0) {
-        clearInterval(lockTimer);
-        gateInput.disabled = false; gateBtn.disabled = false;
-        gateError.hidden = true;
-        setFails(0);
-        return;
-      }
-      gateError.hidden = false;
-      gateError.textContent = `Tente novamente em ${left}s`;
-    }, 250);
   }
 
   gateForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (Date.now() < lockUntil()) return;
-    const hash = await sha256Hex(gateInput.value);
-    if (hash === SENHA_HASH) {
-      setFails(0);
-      try {
-        sessionStorage.setItem('nm_fin_auth', 'true');
-        sessionStorage.setItem('nm_fin_exp', String(Date.now() + SESSION_MS));
-      } catch (_) {}
-      unlockAnimation();
-    } else {
-      const n = fails() + 1;
-      setFails(n);
-      gateInput.value = '';
-      gateInput.classList.remove('shake');
-      void gateInput.offsetWidth; // reinicia a animação
-      gateInput.classList.add('shake');
-      gateError.hidden = false;
-      gateError.textContent = 'Senha incorrecta';
-      if (n >= 5) {
-        setLock(Date.now() + 60 * 1000);
-        startLockCountdown();
-      }
+    if (!db) return;
+    gateBusy(true);
+    const { error } = await db.auth.signInWithPassword({
+      email: gateEmail.value.trim(),
+      password: gateInput.value,
+    });
+    if (error) return gateFail('Credenciais inválidas');
+    if (!(await probeAccess())) {
+      try { await db.auth.signOut(); } catch (_) {}
+      return gateFail('Esta conta não tem acesso ao financeiro');
     }
+    // Audit (migração 040): regista "quem viu faturação". Fire-and-forget —
+    // nunca bloqueia o desbloqueio. A RPC (security definer) grava o auth.uid()
+    // real e só para o próprio espaço.
+    try { db.rpc('nexo_audit', { p_action: 'financeiro_view', p_espaco_slug: SLUG, p_entity: null, p_meta: {} }); } catch (_) {}
+    unlockAnimation();
   });
 
   function unlockAnimation() {
@@ -144,40 +128,45 @@
     }, 350);
   }
 
-  function showGate() {
-    if (Date.now() < lockUntil()) startLockCountdown();
-    gateInput.focus();
-  }
-
-  // Arranque: sessão válida → directo ao dashboard
-  if (sessionValid()) {
-    gate.remove();
-    app.hidden = false;
-    initDashboard();
+  // Arranque: sem a lib não há como autenticar — erro accionável no gate.
+  if (typeof supabase === 'undefined' || !supabase.createClient) {
+    gateError.hidden = false;
+    gateError.textContent = 'Não foi possível carregar as bibliotecas. Verifica a ligação e recarrega.';
   } else {
-    clearSession();
-    showGate();
+    db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      // storageKey próprio: não herda a sessão do portal no tablet do staff.
+      auth: { storageKey: 'nm-fin-auth', persistSession: true, autoRefreshToken: true },
+    });
+    // Sessão do dono ainda válida → directo ao dashboard (sonda na mesma:
+    // a autorização é reavaliada no servidor a cada arranque).
+    db.auth.getSession().then(async ({ data: { session } }) => {
+      if (session && (await probeAccess())) {
+        gate.remove();
+        app.hidden = false;
+        initDashboard();
+      } else {
+        if (session) { try { await db.auth.signOut(); } catch (_) {} }
+        gateEmail.focus();
+      }
+    });
   }
 
   // ══════════════════════════════════════════════════════════════
   // DASHBOARD
   // ══════════════════════════════════════════════════════════════
   function initDashboard() {
-    db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    // O cliente Supabase já foi criado no arranque (o gate de login precisa
+    // dele) — aqui a sessão do dono já está validada pela sonda server-side.
+    debugBoot();
 
-    document.getElementById('nm-logout').addEventListener('click', () => {
+    document.getElementById('nm-logout').addEventListener('click', async () => {
       if (channel) { try { channel.unsubscribe(); } catch (_) {} channel = null; }
-      clearSession();
+      try { await db.auth.signOut(); } catch (_) {}
       location.reload();
     });
     window.addEventListener('beforeunload', () => {
       if (channel) { try { channel.unsubscribe(); } catch (_) {} }
     });
-
-    // Sessão expira a meio da utilização → volta ao gate
-    setInterval(() => { if (!sessionValid()) { clearSession(); location.reload(); } }, 60 * 1000);
 
     document.querySelectorAll('#fin-periods button').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -230,6 +219,28 @@
     renderSkeletons();
     loadData();
     subscribe();
+  }
+
+  // ── Diagnóstico de arranque (só com ?debug=1 no URL) ──────────
+  // Confirma cliente, tabela, RLS e realtime sem poluir a consola normal.
+  async function debugBoot() {
+    if (!new URLSearchParams(location.search).has('debug')) return;
+    console.group('[NEXO Financeiro] Boot diagnostic');
+    console.log('Supabase client:', db ? '✅ found' : '❌ NOT FOUND');
+    console.log('Chart.js:', typeof Chart !== 'undefined' ? '✅ found' : '⚠️ missing (gráficos off)');
+    try {
+      const { data, error, count } = await db
+        .from('comanda_items')
+        .select('id, status, espaco_slug', { count: 'exact' })
+        .eq('espaco_slug', SLUG)
+        .limit(1);
+      console.log('Query test — data:', data);
+      console.log('Query test — error:', error);
+      console.log('Query test — total rows:', count);
+      if (error && error.code === '42501') console.error('❌ Permission denied — verificar políticas RLS');
+      if (error && error.code === 'PGRST116') console.error('❌ Tabela não encontrada ou RLS a bloquear');
+    } catch (e) { console.error('Query test — threw:', e); }
+    console.groupEnd();
   }
 
   // ── Período → [start, end) em Date locais ────────────────────
@@ -357,8 +368,10 @@
     document.getElementById('fin-refresh').hidden = false;
   }
 
+  let retryTimer = null;
   function subscribe() {
     isLive = false;
+    clearTimeout(retryTimer);
     if (channel) { try { db.removeChannel(channel); } catch (_) {} channel = null; }
     // Watchdog: se o handshake do realtime nunca completar (rede móvel,
     // websocket bloqueado…), não ficar preso em "A ligar" — marca offline
@@ -398,6 +411,9 @@
           live.classList.remove('on'); live.classList.add('off');
           txt.textContent = 'A reconectar…';
           document.getElementById('fin-refresh').hidden = false;
+          // Retry rápido (5s); o intervalo de 45s fica como rede de segurança.
+          clearTimeout(retryTimer);
+          retryTimer = setTimeout(() => { if (!isLive) subscribe(); }, 5000);
         }
       });
   }
@@ -417,9 +433,9 @@
     document.getElementById('stats-top-items').innerHTML = Array(4).fill('<div class="sk sk-row"></div>').join('');
     document.getElementById('stats-langs').innerHTML = '<div class="sk sk-row"></div>';
 
-    // RLS: como anon, menu_events/orders_log/staff_calls não são legíveis
-    // linha-a-linha — a RPC nm_financeiro_stats (036, SECURITY DEFINER)
-    // devolve apenas agregados e apenas deste venue.
+    // A RPC nm_financeiro_stats (036 + 038, SECURITY DEFINER) devolve apenas
+    // agregados deste venue e exige o dono autenticado (owns_espaco) — para
+    // qualquer outra sessão o servidor responde 42501.
     const { data, error } = await db.rpc('nm_financeiro_stats', { p_days: statsRange });
     if (error || !data) {
       console.warn('[financeiro] stats', error);
@@ -469,6 +485,7 @@
     const hours = Array.isArray(data.hours) && data.hours.length === 24
       ? data.hours.map(n => Number(n) || 0) : Array(24).fill(0);
     if (chartHours) { chartHours.destroy(); chartHours = null; }
+    if (typeof Chart === 'undefined') return;
     chartHours = new Chart(document.getElementById('stats-chart-hours').getContext('2d'), {
       type: 'bar',
       data: {
@@ -644,6 +661,9 @@
     }
     document.getElementById('chart-title').textContent = title;
 
+    // Chart.js vem do CDN — se falhar, o gráfico fica vazio mas os KPIs,
+    // top pratos e lista de pedidos continuam a renderizar.
+    if (typeof Chart === 'undefined') return;
     if (chart) { chart.destroy(); chart = null; }
     const ctx = document.getElementById('fin-chart').getContext('2d');
     chart = new Chart(ctx, {

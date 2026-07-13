@@ -434,12 +434,11 @@
     $('menu-cta').href = '/menu/' + slug + '/';
 
     // branding a partir do config do menu (não bloqueia a fila se falhar)
-    fetch('/menu/' + slug + '/config.js', { cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.text() : null; })
-      .then(function (text) {
-        if (!text) return;
+    fetch('/menu/' + slug + '/config.json', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (CONFIG) {
+        if (!CONFIG) return;
         try {
-          var CONFIG = new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
           if (CONFIG && CONFIG.name) {
             $('resto-name').textContent = CONFIG.name;
             document.title = 'Fila de Espera — ' + CONFIG.name;

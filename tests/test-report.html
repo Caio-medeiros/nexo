@@ -7,11 +7,11 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
 .green{background:rgba(34,197,94,.15);color:#22C55E} .red{background:rgba(239,68,68,.15);color:#EF4444}
 </style></head><body>
 <h1>NEXO — Relatório de testes unitários</h1>
-<p class="summary"><span class="pill green">26/26 passaram</span> · gerado 11/07/2026, 10:43:35</p>
+<p class="summary"><span class="pill green">50/50 passaram</span> · gerado 13/07/2026, 11:25:27</p>
 <table><thead><tr><th></th><th>Suite</th><th>Teste</th><th>Tempo</th><th>Erro</th></tr></thead><tbody>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.sanitise</td><td>strips <script> (no '<' remains)</td>
-    <td>0ms</td><td></td>
+    <td>1ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.sanitise</td><td>passes normal text through</td>
@@ -87,7 +87,7 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.validatePhone</td><td>too short → invalid</td>
-    <td>1ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.getPublicErrorMessage</td><td>never leaks PGRST internals</td>
@@ -99,7 +99,7 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.getPublicErrorMessage</td><td>keeps safe operational msg</td>
-    <td>0ms</td><td></td>
+    <td>1ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.checkRateLimit</td><td>staff_call blocks the 2nd within the window</td>
@@ -112,5 +112,101 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.getSessionId</td><td>is stable within a session</td>
     <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.sanitise variants</td><td>sanitiseNote caps at 500</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.sanitise variants</td><td>sanitiseName caps at 100</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.sanitise variants</td><td>sanitisePhone strips letters, keeps + e dígitos</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.sanitise variants</td><td>sanitisePhone null → empty</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.sanitise variants</td><td>sanitiseSlug lowercases + strips</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.sanitise variants</td><td>sanitiseSlug null → empty</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.sanitise variants</td><td>safeText escreve textContent saneado</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.sanitise variants</td><td>safeText tolera elemento null</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity rate limit — mensagens e reset</td><td>bloqueio devolve mensagem "Aguarde" com segundos</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity rate limit — mensagens e reset</td><td>clearRateLimit reabre a janela</td>
+    <td>1ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity rate limit — mensagens e reset</td><td>evento desconhecido nunca bloqueia</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity rate limit — mensagens e reset</td><td>getRateLimitMessage tem fallback</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.validateGuestCount</td><td>4 → valid</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.validateGuestCount</td><td>0 → invalid</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.validateGuestCount</td><td>51 → invalid (max 50)</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.validateGuestCount</td><td>'abc' → invalid</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.assertComanda / assertComandaItem</td><td>comanda válida → true</td>
+    <td>1ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.assertComanda / assertComandaItem</td><td>sem espaco_slug → throws</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.assertComanda / assertComandaItem</td><td>null → throws</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.assertComanda / assertComandaItem</td><td>item válido → true</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.assertComanda / assertComandaItem</td><td>preço negativo → throws</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.assertComanda / assertComandaItem</td><td>qty 0 → throws</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.assertComanda / assertComandaItem</td><td>sem nome → throws</td>
+    <td>0ms</td><td></td>
+  </tr>
+  <tr class="ok">
+    <td>✅</td><td>NexoSecurity.logError</td><td>não lança (localhost branch)</td>
+    <td>75ms</td><td></td>
   </tr></tbody></table>
 </body></html>

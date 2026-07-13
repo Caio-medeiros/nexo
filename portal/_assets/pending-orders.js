@@ -58,10 +58,9 @@
 
   async function fetchMenuConfig(slug) {
     try {
-      const res = await fetch(`/menu/${slug}/config.js`, { cache: 'no-store' });
+      const res = await fetch(`/menu/${slug}/config.json`, { cache: 'no-store' });
       if (!res.ok) return null;
-      const text = await res.text();
-      return new Function(text + '\n;return (typeof CONFIG !== "undefined") ? CONFIG : null;')();
+      return await res.json();
     } catch (_) { return null; }
   }
 

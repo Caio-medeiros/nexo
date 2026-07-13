@@ -6,6 +6,15 @@ const ENV = process.env.NEXO_TEST_ENV || 'prod';
 const baseURL = ENV === 'local' ? 'http://localhost:8888' : 'https://nexosolutions.pt';
 
 export default defineConfig({
+  // Em local, sobe o servidor estático sozinho (o site não tem build step).
+  ...(ENV === 'local' ? {
+    webServer: {
+      command: 'python3 -m http.server 8888 --directory ../..',
+      url: 'http://localhost:8888/',
+      reuseExistingServer: true,
+      timeout: 15_000,
+    },
+  } : {}),
   testDir: '.',
   timeout: 15_000,
   expect: { timeout: 8_000 },

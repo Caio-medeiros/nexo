@@ -38,7 +38,9 @@ const sandbox = {
   Date, Math, JSON, Object, Array, String, Number, parseInt, parseFloat, isNaN,
 };
 vm.createContext(sandbox);
-vm.runInContext(readFileSync(join(ROOT, 'js', 'nexo-security.js'), 'utf8'), sandbox);
+// filename: permite ao V8/c8 atribuir cobertura ao ficheiro real
+vm.runInContext(readFileSync(join(ROOT, 'js', 'nexo-security.js'), 'utf8'), sandbox,
+  { filename: join(ROOT, 'js', 'nexo-security.js') });
 const NS = sandbox.window.NexoSecurity;
 
 // ── Tiny test harness ──────────────────────────────────────────────────────
@@ -106,6 +108,63 @@ describe('NexoSecurity.checkRateLimit', () => {
 describe('NexoSecurity.getSessionId', () => {
   it('returns a non-empty string', () => ok(typeof NS.getSessionId() === 'string' && NS.getSessionId().length > 0));
   it('is stable within a session', () => eq(NS.getSessionId(), NS.getSessionId()));
+});
+
+describe('NexoSecurity.sanitise variants', () => {
+  it('sanitiseNote caps at 500', () => eq(NS.sanitiseNote('x'.repeat(600)).length, 500));
+  it('sanitiseName caps at 100', () => eq(NS.sanitiseName('a'.repeat(150)).length, 100));
+  it('sanitisePhone strips letters, keeps + e dígitos', () => eq(NS.sanitisePhone('+351 9a1b2c345678'), '+351 912345678'));
+  it('sanitisePhone null → empty', () => eq(NS.sanitisePhone(null), ''));
+  it('sanitiseSlug lowercases + strips', () => eq(NS.sanitiseSlug('Marisca Petisca!'), 'mariscapetisca'));
+  it('sanitiseSlug null → empty', () => eq(NS.sanitiseSlug(null), ''));
+  it('safeText escreve textContent saneado', () => {
+    const el = { textContent: '' };
+    NS.safeText(el, '<b>olá</b>');
+    eq(el.textContent, 'olá');
+  });
+  it('safeText tolera elemento null', () => eq(NS.safeText(null, 'x'), undefined));
+});
+
+describe('NexoSecurity rate limit — mensagens e reset', () => {
+  it('bloqueio devolve mensagem "Aguarde" com segundos', () => {
+    const sid = 'unit_' + Math.random();
+    NS.checkRateLimit('staff_call', sid);
+    const r = NS.checkRateLimit('staff_call', sid);
+    ok(!r.allowed && /Aguarde \d+s/.test(r.message), 'mensagem: ' + r.message);
+    ok(r.retryAfterSecs > 0 && r.retryAfterSecs <= 60);
+  });
+  it('clearRateLimit reabre a janela', () => {
+    const sid = 'unit_' + Math.random();
+    NS.checkRateLimit('staff_call', sid);
+    eq(NS.checkRateLimit('staff_call', sid).allowed, false);
+    NS.clearRateLimit('staff_call', sid);
+    eq(NS.checkRateLimit('staff_call', sid).allowed, true);
+  });
+  it('evento desconhecido nunca bloqueia', () => eq(NS.checkRateLimit('evento_inexistente', 'x').allowed, true));
+  it('getRateLimitMessage tem fallback', () => ok(/Aguarde/.test(NS.getRateLimitMessage('outro', 10))));
+});
+
+describe('NexoSecurity.validateGuestCount', () => {
+  it('4 → valid', () => eq(NS.validateGuestCount(4).valid, true));
+  it('0 → invalid', () => eq(NS.validateGuestCount(0).valid, false));
+  it('51 → invalid (max 50)', () => eq(NS.validateGuestCount(51).valid, false));
+  it("'abc' → invalid", () => eq(NS.validateGuestCount('abc').valid, false));
+});
+
+describe('NexoSecurity.assertComanda / assertComandaItem', () => {
+  const boa = { id: 'x', espaco_slug: 's', table_label: 'Mesa 1' };
+  it('comanda válida → true', () => eq(NS.assertComanda(boa), true));
+  it('sem espaco_slug → throws', () => { let t = false; try { NS.assertComanda({ id: 'x', table_label: 'M' }); } catch (_) { t = true; } ok(t); });
+  it('null → throws', () => { let t = false; try { NS.assertComanda(null); } catch (_) { t = true; } ok(t); });
+  const item = { id: 'i', item_name: 'Taco', item_price: 5, quantity: 1 };
+  it('item válido → true', () => eq(NS.assertComandaItem(item), true));
+  it('preço negativo → throws', () => { let t = false; try { NS.assertComandaItem({ ...item, item_price: -1 }); } catch (_) { t = true; } ok(t); });
+  it('qty 0 → throws', () => { let t = false; try { NS.assertComandaItem({ ...item, quantity: 0 }); } catch (_) { t = true; } ok(t); });
+  it('sem nome → throws', () => { let t = false; try { NS.assertComandaItem({ ...item, item_name: '  ' }); } catch (_) { t = true; } ok(t); });
+});
+
+describe('NexoSecurity.logError', () => {
+  it('não lança (localhost branch)', () => { NS.logError('unit', new Error('x'), { a: 1 }); ok(true); });
 });
 
 // ── Report ───────────────────────────────────────────────────────────────────

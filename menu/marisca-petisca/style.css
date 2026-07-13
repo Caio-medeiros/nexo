@@ -192,6 +192,12 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
   padding: 0 var(--s4) var(--s4) var(--s4);
   color: white;
   z-index: 2;
+  /* Reserva o espaço do nome/tagline (preenchidos por JS após o paint).
+     Ancorado ao fundo do hero, sem reserva o texto salta para cima ao surgir. */
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .hero-stamp {
@@ -611,7 +617,14 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
   -webkit-overflow-scrolling: touch;
   position: relative;
   z-index: 1;
+  /* Reserva a altura do carrossel: os cartões só são injectados pelo
+     script.js (defer), depois do primeiro paint. Sem isto, encher de 0→~180px
+     empurra o conteúdo visível (CLS). */
+  min-height: 180px;
 }
+/* Reserva a secção "mais pedidos" inteira (título + sub + carrossel) para a
+   injecção pós-paint não deslocar o que está por baixo. */
+#section-most-ordered { min-height: 392px; }
 
 /* First card gets extra left breathing room */
 .most-ordered-list .most-ordered-card:first-child {
