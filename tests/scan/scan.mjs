@@ -7,9 +7,10 @@
  *   node tests/scan/scan.mjs
  *
  * Adapted to reality:
- *  - The live client menu is `marisca-petisca`; the demo (`menu/demo/`) and the
- *    template (`menu/_template/`) legitimately keep {{placeholders}}, so they
- *    are excluded from the placeholder check (but NOT from the secret check).
+ *  - The live client menu is `marisca-petisca`; the template (`menu/_template/`)
+ *    legitimately keeps {{placeholders}}, so it is excluded from the placeholder
+ *    check (but NOT from the secret check). O menu/demo/ (showcase antigo, órfão,
+ *    fora do motor) foi removido em 2026-07-14 — ver Fase 1 do hardening.
  *  - The prompt's `rest-nexo-lisboa` slug does not exist anywhere and must not
  *    leak into deployed files.
  */
@@ -20,7 +21,7 @@ import { dirname, join, relative } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'tests', 'dist', 'supabase', 'card', 'img', 'docs', 'scripts', 'design', 'graphify-out']);
-const PLACEHOLDER_EXEMPT = ['menu/_template/', 'menu/demo/']; // template + demo keep {{...}}
+const PLACEHOLDER_EXEMPT = ['menu/_template/']; // só o template mantém {{...}}
 const EXTS = ['.html', '.js', '.css', '.json', '.webmanifest'];
 
 function walk(dir, files = []) {
