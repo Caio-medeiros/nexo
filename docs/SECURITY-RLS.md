@@ -58,13 +58,33 @@ dados de **display/config não-sensíveis**: `item_availability`, `menu_override
 037). Toda a PII (guest_profiles), faturação (orders_log, weekly_reports),
 notificações e comandas de outrem estão atrás de `owns_espaco()` ou token.
 
-### ⚠️ Risco aceite (baixo): `shared_cart_items`
-`using(true)` deixa qualquer anon ler todos os carrinhos partilhados. Contém
-`member_name` e `notes` (texto do cliente). Mitigação actual: efémero
-(retenção 7 dias, 039), keyed por `cart_code` aleatório, o menu só consulta por
-`cart_code`. **Recomendação futura:** escopar por `cart_code` no header
-(mesmo padrão do `x-comanda-token` da 037). Sensibilidade baixa (nomes de
-ecrã + notas de pedido), por isso não bloqueante.
+### Auditoria empírica contra a base VIVA (2026-07-14)
+Sondámos `SELECT` anónimo (anon key do bundle) a **34 tabelas**. Resultado:
+
+| Classe | Tabelas | Anon |
+|---|---|---|
+| Negado (401, sem grant) | clients, menus, orders_log, staff_calls, waitlist_entries, venue_settings (`*`), error_log, security_log, monitoring_log, rate_limit_log, retention_rollup, system_alerts, push_subscriptions, referrals, onboarding, update_requests, menu_change_requests, shared_carts | ✅ |
+| 200 mas RLS→0 linhas (`owns_espaco`/token) | comandas, comanda_items, comanda_rounds, comanda_voids (037-token); guest_profiles, gift_cards, weekly_reports, portal_notifications, order_flags, menu_events, audit_log (owns_espaco) | ✅ |
+| Público por design (menu) | item_availability, menu_overrides, menu_banners, waitlist_settings, venue_settings (só colunas públicas: table_count, venue_name…) | ✅ |
+| ⚠️ Aberto → fechado pela 041 | shared_cart_items | ✅ após 041 |
+
+Todas as 4 políticas `using(true)` ainda "vivas" (`item_availability`,
+`waitlist_settings`, `menu_overrides`, `venue_settings`) são de dados de menu
+públicos ou têm as colunas sensíveis já revogadas (037). `venue_settings.
+table_tokens` confirmado inacessível a anon (`select=*`→401; só colunas
+whitelisted→200). Nenhuma tabela com PII/faturação legível por anon.
+
+### ✅ Fechado: `shared_cart_items` (migração 041, 2026-07-14)
+Antes, `using(true)` deixava qualquer anon ler/escrever todos os carrinhos
+partilhados (contém `member_name`, `item_name`, `note`). A auditoria de
+2026-07-14 confirmou que **nenhum código deployado** usa mais estas tabelas — o
+carrinho partilhado dos menus vivos passou a ser 100% via **broadcast realtime**
+(`nexo-<slug>-<code>`, payload efémero, zero persistência); só o `menu/demo/`
+(removido na Fase 1) as usava. Por isso a **041 revoga todo o acesso anon** a
+`shared_cart_items` (e reafirma `shared_carts`, já sem grant) em vez de escopar —
+superfície mínima. Verificação: `has_table_privilege('anon', 'shared_cart_items',
+'SELECT') = false`. Se algum dia voltar um carrinho persistido em BD, criar
+política com escopo por header (padrão `x-comanda-token` da 037).
 
 ## Rotação da chave anon
 
@@ -92,7 +112,7 @@ Functions / Vault, nunca no cliente — verificado pelo scan `tests/scan`).
 
 ## Reproduzir a auditoria
 
-Num Postgres com 001–040 aplicadas (ver `docs/DATABASE-DR.md` §3.3):
+Num Postgres com 001–041 aplicadas (ver `docs/DATABASE-DR.md` §3.3):
 ```sql
 -- políticas SELECT abertas
 select tablename, policyname, roles from pg_policies
