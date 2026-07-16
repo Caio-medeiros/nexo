@@ -754,9 +754,26 @@ async function ensureComanda(tableNum) {
     return state.tables[tableNum].comanda;
   }
   const { data, error } = await db.from('comandas').insert({
-    espaco_slug: window.ESPACO_SLUG, table_label: label,
+    espaco_slug: window.ESPACO_SLUG, table_label: label, table_number: tableNum,
     status: 'open', mode: 'dine_in', guest_count: 1 }).select('id, session_code').single();
-  if (error) { salaToast('Erro ao abrir comanda'); return null; }
+  if (error) {
+    // Corrida com o invariante 043 (índice único uq_open_comanda_per_table): o
+    // cliente/outro dispositivo abriu a comanda da mesa no mesmo instante. Não é
+    // erro — re-seleciona a comanda aberta desta mesa e adopta-a.
+    if (error.code === '23505') {
+      const { data: existing } = await db.from('comandas')
+        .select('id, session_code, total')
+        .eq('espaco_slug', window.ESPACO_SLUG).eq('table_number', tableNum)
+        .not('status', 'in', '(closed,cancelled)').is('archived_at', null)
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (existing) {
+        state.tables[tableNum] = { status: 'active', comanda: { id: existing.id, code: existing.session_code, total: existing.total || 0 } };
+        updateTableStatus(tableNum, 'active', { comanda: state.tables[tableNum].comanda });
+        return state.tables[tableNum].comanda;
+      }
+    }
+    salaToast('Erro ao abrir comanda'); return null;
+  }
   state.tables[tableNum] = { status: 'active', comanda: { id: data.id, code: data.session_code, total: 0 } };
   updateTableStatus(tableNum, 'active', { comanda: state.tables[tableNum].comanda });
   return state.tables[tableNum].comanda;
@@ -1169,7 +1186,7 @@ async function splitTableFromPanel() {
   if (newNum > 60) { salaToast('Máximo de 60 mesas'); return; }
   await setTableCount(newNum);
   try {
-    await db.from('comandas').insert({ espaco_slug: window.ESPACO_SLUG, table_label: `Mesa ${newNum}`, status: 'open', mode: 'dine_in', guest_count: 1 });
+    await db.from('comandas').insert({ espaco_slug: window.ESPACO_SLUG, table_label: `Mesa ${newNum}`, table_number: newNum, status: 'open', mode: 'dine_in', guest_count: 1 });
   } catch (_) {}
   salaToast(`Mesa ${newNum} criada — divida os clientes/itens`);
   closeTableDetail();
