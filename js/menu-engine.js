@@ -3027,6 +3027,7 @@ async function createSharedCart(name, code) {
   const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
   _sharedCartChannel = channel;
   _setupChannelListeners(channel);
+  _ensureSharedResilience();
 
   await new Promise((resolve, reject) => {
     channel.subscribe(async (status) => {
@@ -3084,6 +3085,7 @@ async function joinSharedCart(code, name) {
   const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
   _sharedCartChannel = channel;
   _setupChannelListeners(channel);
+  _ensureSharedResilience();
 
   await new Promise((resolve, reject) => {
     channel.subscribe(async (status) => {
@@ -3187,6 +3189,27 @@ function _clearSharedSession() {
 }
 
 
+// Item 5: reconciliação por fetch ao voltar o foco / à rede — o carrinho
+// partilhado vive de broadcast (push); se um evento se perdeu com a app em
+// segundo plano, ao voltar a ficar visível reanunciamo-nos ('hello') e todos
+// os membros respondem com o seu estado atual, ressincronizando a mesa.
+let _sharedResilienceWired = false;
+function _ensureSharedResilience() {
+  if (_sharedResilienceWired) return;
+  _sharedResilienceWired = true;
+  const resync = () => {
+    if (!sharedCart || !_sharedCartChannel) return;
+    if (document.visibilityState !== 'visible' || !navigator.onLine) return;
+    try {
+      _sharedCartChannel.send({ type: 'broadcast', event: 'hello',
+        payload: { memberKey: _myPresenceKey, name: sharedMemberName, items: _myCartItems } });
+    } catch (_) {}
+  };
+  document.addEventListener('visibilitychange', resync);
+  window.addEventListener('online', resync);
+}
+
+
 // Item 8: uma sessão restaurada (localStorage, até 2h) traz preços EM CACHE do
 // momento em que os itens foram adicionados. Nunca os aceitamos tal e qual:
 // revalidamos SEMPRE contra o CONFIG carregado do servidor NESTE page-load
@@ -3234,6 +3257,7 @@ async function restoreSharedSession() {
     const channel = sb.channel('nexo-' + CONFIG.slug + '-' + s.code);
     _sharedCartChannel = channel;
     _setupChannelListeners(channel);
+  _ensureSharedResilience();
 
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
