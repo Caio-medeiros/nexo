@@ -59,6 +59,7 @@ async function initSala() {
   updateTableCountLabel();
   await loadActiveComandas();
   await loadPendingCalls();
+  await loadAwaitingConfirm();
   await loadTodayStats();
   subscribeToRealtime();
   subscribeToVenueChanges();
@@ -141,6 +142,7 @@ function createTableCard(num) {
     <div class="card-top">
       <div class="table-number">${num}</div>
       <div class="card-top-right">
+        <span class="confirm-chip" aria-label="Confirmar pedido">📋</span>
         <span class="call-chip" aria-label="A chamar">🙋</span>
         <div class="table-status-dot"></div>
       </div>
@@ -223,6 +225,7 @@ function subscribeToRealtime() {
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'comandas', filter: `espaco_slug=eq.${slug}` }, p => handleComandaUpdate(p.new))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'staff_calls', filter: `espaco_slug=eq.${slug}` }, p => handleStaffCall(p.new))
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'staff_calls', filter: `espaco_slug=eq.${slug}` }, () => loadPendingCalls())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'comanda_items', filter: `espaco_slug=eq.${slug}` }, p => handleAwaitingItemChange(p))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders_log', filter: `espaco_slug=eq.${slug}` }, p => handleNewOrder(p.new))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_notifications', filter: `espaco_slug=eq.${slug}` }, p => addToActivityFeed(p.new))
     .subscribe(s => {
@@ -246,6 +249,7 @@ async function reloadSalaLive() {
   try {
     await loadActiveComandas();
     await loadPendingCalls();
+    await loadAwaitingConfirm();
     await loadTodayStats();
   } catch (e) { console.warn('[Sala] reload', e); }
   _salaReloadBusy = false;
@@ -269,6 +273,7 @@ function handleComandaUpdate(comanda) {
 
   if (comanda.status === 'closed' || comanda.status === 'cancelled') {
     setCalling(tableNum, false);
+    setAwaitingConfirm(tableNum, false);
     state.tables[tableNum] = { status: 'empty', comanda: null, calls: [] };
     const card = document.querySelector(`[data-table-num="${tableNum}"]`);
     if (card) { card.dataset.status = 'empty';
@@ -352,6 +357,63 @@ async function loadPendingCalls() {
     if (should && !state.tables[num].calling) setCalling(num, true);
     else if (!should && state.tables[num].calling) setCalling(num, false);
   });
+}
+
+// ─────────────────────────────────────────
+// "CONFIRMAR PEDIDO" (pedido assistido) — camada DISTINTA da chamada
+// Fonte: comanda_items.status='awaiting_staff' (o menu deixa-os sem ronda).
+// NÃO é um staff_call (chamada de empregado): é uma comanda à espera de o
+// staff a confirmar. O sinal sonoro + a acção de confirmar vivem no drawer
+// global (pending-orders.js); aqui marcamos a MESA no plano da sala com um
+// anel/chip DOURADO para o empregado distinguir no relance de uma chamada.
+// ─────────────────────────────────────────
+function setAwaitingConfirm(tableNum, on) {
+  if (!state.tables[tableNum]) return;
+  state.tables[tableNum].awaiting = on;
+  const card = document.querySelector(`[data-table-num="${tableNum}"]`);
+  if (card) { if (on) card.dataset.awaiting = 'true'; else card.removeAttribute('data-awaiting'); }
+}
+
+const _awaitingFeeded = new Set(); // 1 entrada no feed por comanda a aguardar
+async function loadAwaitingConfirm() {
+  // Só venues assistidos têm itens 'awaiting_staff'; nos restantes é no-op.
+  const { data } = await db.from('comanda_items')
+    .select('comanda_id, comandas!inner(table_label, status)')
+    .eq('espaco_slug', window.ESPACO_SLUG)
+    .eq('status', 'awaiting_staff');
+  const awaitingNums = new Set();
+  const liveComandas = new Set();
+  (data || []).forEach((r) => {
+    const c = r.comandas;
+    if (!c || c.status === 'closed' || c.status === 'cancelled') return;
+    const n = extractTableNumber(c.table_label);
+    if (n && state.tables[n]) { awaitingNums.add(n); liveComandas.add(r.comanda_id); }
+  });
+  Object.keys(state.tables).forEach((numStr) => {
+    const num = +numStr;
+    const should = awaitingNums.has(num);
+    if (should && !state.tables[num].awaiting) setAwaitingConfirm(num, true);
+    else if (!should && state.tables[num].awaiting) setAwaitingConfirm(num, false);
+  });
+  [..._awaitingFeeded].forEach(id => { if (!liveComandas.has(id)) _awaitingFeeded.delete(id); });
+}
+
+let _awaitingDebounce = null;
+function handleAwaitingItemChange(payload) {
+  // Nova entrada 'awaiting_staff' → uma linha DISTINTA no feed (📋 Confirmar
+  // pedido), separada da chamada (🙋). Sem som — o toast global já soa.
+  const row = payload && payload.new;
+  if (payload.eventType === 'INSERT' && row && row.status === 'awaiting_staff' &&
+      row.comanda_id && !_awaitingFeeded.has(row.comanda_id)) {
+    _awaitingFeeded.add(row.comanda_id);
+    db.from('comandas').select('table_label').eq('id', row.comanda_id).maybeSingle()
+      .then(({ data }) => {
+        const label = (data && data.table_label) || 'Mesa';
+        addToActivityFeed({ type: 'order_new', title: `📋 Confirmar pedido — ${label}`, created_at: new Date().toISOString() });
+      });
+  }
+  clearTimeout(_awaitingDebounce);
+  _awaitingDebounce = setTimeout(loadAwaitingConfirm, 400);
 }
 
 function handleNewOrder(order) {
