@@ -256,7 +256,7 @@ async function reloadSalaLive() {
 }
 
 function handleNewComanda(comanda) {
-  const tableNum = extractTableNumber(comanda.table_label);
+  const tableNum = tableNumberOf(comanda);
   if (!tableNum || !state.tables[tableNum]) return;
   updateTableStatus(tableNum, 'active', { comanda: {
     id: comanda.id, total: comanda.total, itemCount: 0,
@@ -266,7 +266,7 @@ function handleNewComanda(comanda) {
 }
 
 function handleComandaUpdate(comanda) {
-  const tableNum = extractTableNumber(comanda.table_label);
+  const tableNum = tableNumberOf(comanda);
   if (!tableNum || !state.tables[tableNum]) return;
   const statusMap = { submitted: 'order_new', preparing: 'active', ready: 'ready', open: 'active', closed: 'empty', cancelled: 'empty' };
   const uiStatus = statusMap[comanda.status] || 'active';
@@ -378,7 +378,7 @@ const _awaitingFeeded = new Set(); // 1 entrada no feed por comanda a aguardar
 async function loadAwaitingConfirm() {
   // Só venues assistidos têm itens 'awaiting_staff'; nos restantes é no-op.
   const { data } = await db.from('comanda_items')
-    .select('comanda_id, comandas!inner(table_label, status)')
+    .select('comanda_id, comandas!inner(table_label, table_number, status)')
     .eq('espaco_slug', window.ESPACO_SLUG)
     .eq('status', 'awaiting_staff');
   const awaitingNums = new Set();
@@ -386,7 +386,7 @@ async function loadAwaitingConfirm() {
   (data || []).forEach((r) => {
     const c = r.comandas;
     if (!c || c.status === 'closed' || c.status === 'cancelled') return;
-    const n = extractTableNumber(c.table_label);
+    const n = tableNumberOf(c);
     if (n && state.tables[n]) { awaitingNums.add(n); liveComandas.add(r.comanda_id); }
   });
   Object.keys(state.tables).forEach((numStr) => {
@@ -1199,9 +1199,9 @@ function updateTableCountLabel() {
 // Open a specific table from the menu's "Mostrar ao staff" QR (?comanda=CODE).
 async function openTableByCode(code) {
   try {
-    const { data } = await db.from('comandas').select('table_label')
+    const { data } = await db.from('comandas').select('table_label, table_number')
       .eq('session_code', String(code).toUpperCase()).eq('espaco_slug', window.ESPACO_SLUG).maybeSingle();
-    const num = data && extractTableNumber(data.table_label);
+    const num = data && tableNumberOf(data);
     if (num && state.tables[num]) openTableDetail(num);
   } catch (_) {}
 }
@@ -1213,6 +1213,17 @@ function extractTableNumber(label) {
   if (!label) return null;
   const m = String(label).match(/\d+/);
   return m ? parseInt(m[0]) : null;
+}
+
+// Item 3 (043): a comanda tem table_number (inteiro) como FONTE DE VERDADE;
+// table_label é só apresentação. Lê sempre o número da coluna e só recorre ao
+// parsing do label para linhas antigas ainda sem table_number preenchido.
+function tableNumberOf(row) {
+  if (row && row.table_number != null && row.table_number !== '') {
+    const n = parseInt(row.table_number, 10);
+    if (!isNaN(n)) return n;
+  }
+  return extractTableNumber(row && row.table_label);
 }
 
 // Conta os itens (não cancelados) de uma comanda — para o resumo da mesa.
@@ -1320,7 +1331,7 @@ async function loadActiveComandas() {
   const now = Date.now();
   const activeNums = new Set();
   (data || []).forEach(c => {
-    const num = extractTableNumber(c.table_label);
+    const num = tableNumberOf(c);
     if (!num || !state.tables[num]) return;
     // Rotação de mesas: uma comanda activa há mais de 3h fecha-se sozinha.
     if (c.created_at && (now - new Date(c.created_at).getTime() > STALE_MS)) {
