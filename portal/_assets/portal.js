@@ -621,10 +621,10 @@ function renderLayout(activeNav, clientData) {
       { href: '/portal/sala/', icon: 'cashier', label: 'Modo Restaurante' },
       { href: '/portal/cozinha/', icon: 'chef', label: 'Modo Cozinha', ob: 'nav-cozinha' },
       { href: '/portal/fila/', icon: 'users', label: 'Fila de Espera' },
-      { href: '/portal/disponibilidade/', icon: 'toggle', label: 'Disponibilidade' },
     ]},
     { label: 'Menu', items: [
-      // "Alterações" foi integrada no Editar Menu — o passo do tour aponta aqui.
+      // "Disponibilidade" e "Alterações" foram integradas no Editar Menu — o
+      // toggle de esgotado vive agora por item, ao lado de Editar/Esconder.
       { href: '/portal/menu/', icon: 'edit', label: 'Editar Menu', ob: 'nav-alteracoes' },
     ]},
     { label: 'Negócio', items: [

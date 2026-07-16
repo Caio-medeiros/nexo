@@ -34,6 +34,7 @@
     .item-row:hover + .item-row { border-top-color: transparent; }
     .item-row.is-hidden { opacity: 0.5; }
     .item-row.is-hidden .item-name { text-decoration: line-through; }
+    .item-row.is-esgotado .item-thumb { opacity: 0.55; }
     .item-thumb {
       width: 52px; height: 52px; flex-shrink: 0; border-radius: 12px;
       background: var(--bg-elevated); border: 1px solid var(--border-md);
@@ -47,7 +48,10 @@
     .item-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px;
                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 480px; }
     .item-price { font-size: 13px; font-weight: 700; color: var(--text-primary); flex-shrink: 0; min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
-    .item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .item-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .item-actions .dispo-toggle-wrap { gap: 6px; margin-right: 4px; }
+    .item-actions .dispo-state-label { min-width: 0; }
+    @media (max-width: 600px) { .item-row { flex-wrap: wrap; } .item-actions { width: 100%; margin-top: 8px; } }
 
     .add-item-btn { margin-top: 10px; }
 
@@ -208,6 +212,7 @@
     // ── estado: overrides aprovados (ao vivo) + pedidos pendentes ──────
     let overrides = new Map(); // item_id → menu_overrides (aprovado/ao vivo)
     let pending = new Map();   // item_id → menu_change_requests (pendente NEXO)
+    let availability = new Map(); // item_id → boolean (esgotado/disponível — instantâneo, sem aprovação)
     async function loadState() {
       const [ovRes, reqRes] = await Promise.all([
         db.from('menu_overrides').select('*')
@@ -223,6 +228,38 @@
       pending = new Map((reqRes.data || []).map(r => [r.item_id, r]));
     }
     await loadState();
+
+    // ── disponibilidade (esgotado) — instantâneo, sem aprovação da NEXO ──
+    // Vive na tabela item_availability (a antiga página /disponibilidade/ foi
+    // integrada aqui). O menu do cliente esconde os esgotados em tempo real,
+    // por item_id no formato "seccao:idx" — o mesmo itemId usado neste editor.
+    async function loadAvailability() {
+      const { data, error } = await db.from('item_availability')
+        .select('item_id, available').eq('espaco_slug', slug);
+      if (error) { console.warn('[menu] availability', error); return; }
+      availability = new Map((data || []).map(r => [r.item_id, r.available !== false]));
+    }
+    await loadAvailability();
+
+    function isAvailable(itemId) { return availability.get(itemId) !== false; }
+
+    // Toggle otimista (mesma semântica da antiga página de disponibilidade).
+    async function setAvailability(itemId, available, itemName) {
+      const previous = availability.get(itemId);
+      availability.set(itemId, available);
+      render();
+      const { error } = await db.from('item_availability').upsert({
+        espaco_slug: slug, item_id: itemId, item_name: itemName,
+        available, updated_at: new Date().toISOString(), updated_by: 'staff',
+      }, { onConflict: 'espaco_slug,item_id' });
+      if (error) {
+        if (previous === undefined) availability.delete(itemId); else availability.set(itemId, previous);
+        render();
+        showToast('Erro ao atualizar disponibilidade.', 'error');
+      } else {
+        showToast(available ? 'Item disponível no menu.' : 'Item marcado como esgotado.', available ? 'success' : 'info');
+      }
+    }
 
     function findBase(itemId) {
       for (const sec of baseMenu) {
@@ -291,7 +328,8 @@
         (it.pending
           ? '<span class="badge badge--warning">pendente NEXO</span>'
           : (it.edited ? '<span class="badge badge--muted">no menu</span>' : '')) +
-        (it.hidden ? '<span class="badge badge--muted">escondido</span>' : '');
+        (it.hidden ? '<span class="badge badge--muted">escondido</span>' : '') +
+        (!it.hidden && !isAvailable(it.itemId) ? '<span class="badge badge--danger">esgotado</span>' : '');
       let actions;
       if (it.pending) {
         actions =
@@ -307,15 +345,24 @@
            <button class="btn btn-secondary btn-sm" data-toggle-hide="${it.itemId}">${it.hidden ? 'Mostrar' : 'Esconder'}</button>
            ${it.edited ? `<button class="btn btn-secondary btn-sm" data-reset="${it.itemId}" title="Voltar à versão original">Repor</button>` : ''}`;
       }
+      // Disponibilidade (esgotado) — só faz sentido em itens visíveis no menu.
+      const avail = isAvailable(it.itemId);
+      const dispoToggle = it.hidden ? '' : `
+        <span class="dispo-toggle-wrap" title="Disponibilidade no menu do cliente">
+          <span class="dispo-state-label ${avail ? 'on' : 'off'}">${avail ? 'Disponível' : 'Esgotado'}</span>
+          <button class="toggle" role="switch" aria-checked="${avail}"
+                  data-avail="${it.itemId}" data-name="${escapeHtml(it.name)}"
+                  aria-label="${escapeHtml(it.name)} — ${avail ? 'disponível' : 'esgotado'}"></button>
+        </span>`;
       return `
-        <div class="item-row ${it.hidden ? 'is-hidden' : ''}">
+        <div class="item-row ${it.hidden ? 'is-hidden' : ''}${!it.hidden && !avail ? ' is-esgotado' : ''}">
           ${thumb}
           <div class="item-info">
             <div class="item-name">${escapeHtml(it.name)} ${badges}</div>
             ${it.desc ? `<div class="item-desc">${escapeHtml(it.desc)}</div>` : ''}
           </div>
           <div class="item-price">${escapeHtml(it.price)}</div>
-          <div class="item-actions">${actions}</div>
+          <div class="item-actions">${dispoToggle}${actions}</div>
         </div>`;
     }
 
@@ -343,6 +390,8 @@
         b.addEventListener('click', () => openEditor(null, b.dataset.add)));
       sectionsEl.querySelectorAll('[data-toggle-hide]').forEach(b =>
         b.addEventListener('click', () => toggleHide(b.dataset.toggleHide, !effectiveHidden(b.dataset.toggleHide), b)));
+      sectionsEl.querySelectorAll('[data-avail]').forEach(b =>
+        b.addEventListener('click', () => setAvailability(b.dataset.avail, !isAvailable(b.dataset.avail), b.dataset.name)));
       sectionsEl.querySelectorAll('[data-reset]').forEach(b =>
         b.addEventListener('click', () => resetOverride(b.dataset.reset)));
       sectionsEl.querySelectorAll('[data-delete]').forEach(b =>
@@ -582,6 +631,29 @@
         setLoading(edSave, false);
       }
     });
+
+    // ── realtime: disponibilidade alterada noutro dispositivo/sessão ──
+    (function subscribeAvailability() {
+      const channel = db.channel('menu-dispo-' + slug)
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'item_availability', filter: `espaco_slug=eq.${slug}` },
+          (payload) => {
+            const row = payload.new;
+            if (!row || !row.item_id) return;
+            availability.set(row.item_id, row.available !== false);
+            render();
+          })
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            setTimeout(() => {
+              try { db.removeChannel(channel); } catch (_) {}
+              subscribeAvailability();
+              loadAvailability().then(render);
+            }, 3000);
+          }
+        });
+      if (typeof trackChannel === 'function') trackChannel(channel);
+    })();
 
     render();
   })();

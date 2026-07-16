@@ -135,7 +135,7 @@
         const dateCap = ds.charAt(0).toUpperCase() + ds.slice(1);
 
         const att = [];
-        if (esgotados > 0) att.push(`<a href="/portal/disponibilidade/">🔴 ${esgotados} ${esgotados === 1 ? 'item esgotado' : 'itens esgotados'} — ver disponibilidade →</a>`);
+        if (esgotados > 0) att.push(`<a href="/portal/menu/">🔴 ${esgotados} ${esgotados === 1 ? 'item esgotado' : 'itens esgotados'} — ver disponibilidade →</a>`);
         if (pendentes > 0) att.push(`<a href="/portal/alteracoes/">🟡 ${pendentes} ${pendentes === 1 ? 'pedido pendente' : 'pedidos pendentes'} — ver alterações →</a>`);
         if (revWeek > 0) att.push(`<span style="font-size:13px;color:var(--success)">🟢 ${revWeek} ${revWeek === 1 ? 'review esta semana' : 'reviews esta semana'}</span>`);
         const attHtml = att.length ? `<div class="brief-att">${att.join('')}</div>` : `<div class="brief-allclear">✓ Tudo em ordem para hoje.</div>`;
@@ -308,7 +308,6 @@
             <p class="dash-section-label">Acções rápidas</p>
             <div class="qa-list">
               <a class="qa" href="/portal/sala/">${getIcon('activity')} Modo Restaurante <span class="qa-arrow">→</span></a>
-              <a class="qa" href="/portal/disponibilidade/">${getIcon('toggle')} Disponibilidade <span class="qa-arrow">→</span></a>
               <a class="qa" href="/portal/menu/">${getIcon('edit')} Editar menu <span class="qa-arrow">→</span></a>
               ${window.NEXO_HIDE_EUR ? '' : `<a class="qa" href="/portal/estatisticas/">${getIcon('bar-chart')} Estatísticas <span class="qa-arrow">→</span></a>`}
             </div>
