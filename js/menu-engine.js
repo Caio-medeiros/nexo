@@ -3187,6 +3187,33 @@ function _clearSharedSession() {
 }
 
 
+// Item 8: uma sessão restaurada (localStorage, até 2h) traz preços EM CACHE do
+// momento em que os itens foram adicionados. Nunca os aceitamos tal e qual:
+// revalidamos SEMPRE contra o CONFIG carregado do servidor NESTE page-load
+// (config.json). Itens que já não existem no menu são removidos; preços
+// alterados são corrigidos para o preço atual. Avisa o cliente do que mudou.
+function _revalidateRestoredCartPrices(items) {
+  const kept = [];
+  let removed = 0, changed = 0;
+  (items || []).forEach((row) => {
+    const cur = getItemByRef(row.item_id);
+    if (!cur) { removed++; return; } // já não está no menu → não confiar no cache
+    const freshPrice = parsePriceToNumber(cur.price) || 0;
+    const freshName = cur.name?.[currentLang] || cur.name?.pt || row.item_name;
+    if (Number(row.item_price) !== freshPrice) changed++;
+    kept.push({ ...row, item_price: freshPrice, item_name: freshName });
+  });
+  if (removed || changed) {
+    try {
+      const parts = [];
+      if (changed) parts.push('preços atualizados');
+      if (removed) parts.push(removed + (removed === 1 ? ' item já indisponível' : ' itens já indisponíveis'));
+      sharedTableToast('Sessão retomada — ' + parts.join(' e ') + '.');
+    } catch (_) {}
+  }
+  return kept;
+}
+
 async function restoreSharedSession() {
   try {
     const raw = localStorage.getItem('nexo_shared_session_' + CONFIG.slug);
@@ -3196,7 +3223,8 @@ async function restoreSharedSession() {
     if (Date.now() - s.ts > _SESSION_TTL) { _clearSharedSession(); return; }
 
     _myPresenceKey = s.memberKey;
-    _myCartItems = s.items || [];
+    // Revalida os preços em cache contra o menu atual antes de os reactivar.
+    _myCartItems = _revalidateRestoredCartPrices(s.items || []);
     sharedMemberName = s.name || 'Anfitrião';
     _memberStates = { [_myPresenceKey]: { name: sharedMemberName, items: _myCartItems } };
     sharedCart = { code: s.code };

@@ -591,12 +591,14 @@
   function readMenuCart() {
     const isShared = (typeof sharedCart !== 'undefined' && sharedCart);
     if (isShared && typeof sharedCartItems !== 'undefined' && Array.isArray(sharedCartItems)) {
+      // Item 8: o preço vem SEMPRE do menu atual (resolveRef → CONFIG do
+      // servidor), nunca do row.item_price em cache. Item que já não resolve
+      // (saiu do menu) é descartado em vez de entrar com preço em cache.
       return sharedCartItems.map(row => {
         const it = resolveRef(row.item_id);
-        return { id: row.item_id, name: (it && it.name) || row.item_name || 'Item',
-                 category: it ? it.category : null,
-                 price: it ? it.price : (row.item_price || 0),
-                 qty: row.quantity || 1, note: row.note || '' };
+        if (!it) return null;
+        return { id: row.item_id, name: it.name, category: it.category,
+                 price: it.price, qty: row.quantity || 1, note: row.note || '' };
       }).filter(Boolean);
     }
     return readLocalCart();
