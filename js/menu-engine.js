@@ -3046,6 +3046,26 @@ async function createSharedCart(name, code) {
 }
 
 
+// Item 6: um nome está "em uso" se outro membro activo da mesa (não eu) já o
+// usa (comparação case-insensitive, sem espaços a mais).
+function _memberNameTaken(name) {
+  const target = String(name || '').trim().toLowerCase();
+  if (!target) return false;
+  return Object.keys(_memberStates).some(k =>
+    k !== _myPresenceKey &&
+    String((_memberStates[k] && _memberStates[k].name) || '').trim().toLowerCase() === target);
+}
+// Devolve um nome único: o desejado, ou "<desejado> 2", "<desejado> 3", …
+function _uniqueMemberName(desired) {
+  const base = String(desired || 'Convidado').trim() || 'Convidado';
+  if (!_memberNameTaken(base)) return base;
+  for (let n = 2; n < 50; n++) {
+    const candidate = `${base} ${n}`;
+    if (!_memberNameTaken(candidate)) return candidate;
+  }
+  return `${base} ${Date.now() % 1000}`;
+}
+
 async function joinSharedCart(code, name) {
   const sb = await loadSupabase();
   code = code.toUpperCase().trim();
@@ -3103,6 +3123,24 @@ async function joinSharedCart(code, name) {
     sharedCartItems = []; _myCartItems = []; _memberStates = {}; _myPresenceKey = null;
     _clearSharedSession();
     const err = new Error('CART_NOT_FOUND'); err.code = 'NOT_FOUND'; throw err;
+  }
+
+  // Item 6: nesta altura já conhecemos os outros membros (responderam ao hello).
+  // Se o nome escolhido colide com um deles, sufixa automaticamente e reanuncia
+  // — evita dois "Convidado" iguais na conta partilhada, que baralhavam quem
+  // pediu o quê.
+  const unique = _uniqueMemberName(sharedMemberName);
+  if (unique !== sharedMemberName) {
+    sharedMemberName = unique;
+    _memberStates[_myPresenceKey] = { name: unique, items: _myCartItems };
+    try { localStorage.setItem('nexo_member_name', unique); } catch (_) {}
+    syncSharedCartItems();
+    _saveSharedSession();
+    try {
+      await channel.send({ type: 'broadcast', event: 'hello',
+        payload: { memberKey: _myPresenceKey, name: sharedMemberName, items: _myCartItems } });
+    } catch (_) {}
+    try { sharedTableToast(`Já havia "${name}" na mesa — entrou como "${unique}".`); } catch (_) {}
   }
 
   track('shared_cart_joined', { espaco_slug: CONFIG.slug });
