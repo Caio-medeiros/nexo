@@ -284,6 +284,8 @@
     if (!sec) return;
     const tab = document.getElementById('tab-comanda');
     const sent = (data.items || []).filter(i => i.round_id && i.status !== 'cancelled');
+    // Itens assistidos à espera de confirmação do staff — ainda SEM ronda.
+    const awaiting = (data.items || []).filter(i => i.status === 'awaiting_staff');
     if (!sent.length) { hideSentSection(); return; }
     if (tab) tab.style.display = '';
     sec.style.display = 'block';
@@ -300,8 +302,15 @@
     const SVG_DOTS  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>`;
     const SVG_BELL  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
 
-    const bill = (data.items || []).filter(i => i.status !== 'cancelled')
-      .reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
+    // Total COBRÁVEL da mesa = total canónico do servidor (trigger 016) MENOS
+    // os itens ainda a aguardar confirmação (que o trigger soma mas não são
+    // cobráveis até o staff confirmar). Sem awaiting, bate certo com comanda.total.
+    const awaitingSum = awaiting.reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
+    const serverTotal = (data.comanda && data.comanda.total != null)
+      ? Number(data.comanda.total)
+      : (data.items || []).filter(i => i.status !== 'cancelled')
+          .reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
+    const bill = Math.max(0, serverTotal - awaitingSum);
 
     let roundsHtml = '';
     orderedRoundIds.forEach(rid => {
@@ -328,12 +337,29 @@
       });
     });
 
+    // Secção "A aguardar confirmação" (só fluxo assistido) — visualmente
+    // separada e FORA do total cobrável, até o staff confirmar o pedido.
+    let awaitingHtml = '';
+    if (awaiting.length) {
+      const awaitRows = awaiting.map(it => `<div class="nexo-sent-item nexo-await-item">
+          <span class="nexo-sent-name">${escapeHTML(it.item_name)}</span>
+          <span class="nexo-sent-qty">×${it.quantity}</span>
+          <span class="nexo-sent-status ns-status--pending" title="A aguardar confirmação">${SVG_CLOCK}</span>
+        </div>`).join('');
+      awaitingHtml = `<div class="nexo-await-block">
+        <div class="nexo-round-head nexo-await-head">
+          <span class="nexo-round-label">A aguardar confirmação</span>
+          <span class="nexo-await-hint">ainda não na conta</span>
+        </div>${awaitRows}</div>`;
+    }
+
     sec.innerHTML = `
       <div class="ns-header">
         <span class="ns-label">Já enviado</span>
         <span class="ns-total">${fmtEUR(bill)}</span>
       </div>
       <div class="ns-rounds">${roundsHtml}</div>
+      ${awaitingHtml}
       <div class="ns-hint">${SVG_BELL}<span>Peça a conta ao empregado</span></div>
     `;
   }

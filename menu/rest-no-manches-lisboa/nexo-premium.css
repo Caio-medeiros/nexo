@@ -301,6 +301,22 @@
 .ns-status--prep   { color: #b45309; }
 .ns-status--pending{ color: var(--text-muted, #4A6880); }
 
+/* "A aguardar confirmação" (fluxo assistido) — separado do "Já enviado" e
+   fora do total cobrável até o staff confirmar. Acento dourado/âmbar. */
+.nexo-await-block { margin-top: 4px; border-top: 1px dashed var(--border-soft, #D6E8F2); }
+.nexo-await-head { background: rgba(200,149,42,0.14); }
+.nexo-await-head .nexo-round-label { color: #E0A83B; }
+.nexo-await-hint {
+  margin-left: auto;
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #E0A83B;
+  opacity: 0.85;
+}
+.nexo-await-item .nexo-sent-name { opacity: 0.85; }
+
 /* hint row */
 .ns-hint {
   display: flex;
