@@ -275,6 +275,30 @@
     return { comanda: cRes.data, rounds: rRes.data || [], items: iRes.data || [] };
   }
 
+  // Item 9: memória do último estado dos itens JÁ ENVIADOS (id → nome/qty/anulado)
+  // para detetar o que o staff mexeu entre refrescos. Comparamos só itens com
+  // round_id (já disparados p/ cozinha e visíveis ao cliente na tab Comanda).
+  let _sentSnapshot = null;
+  function detectStaffChanges(items) {
+    const cur = new Map();
+    (items || []).forEach(i => {
+      if (!i.round_id) return; // só itens já enviados (visíveis ao cliente)
+      cur.set(i.id, { name: i.item_name, qty: i.quantity, cancelled: i.status === 'cancelled' });
+    });
+    if (_sentSnapshot) {
+      cur.forEach((now, id) => {
+        const was = _sentSnapshot.get(id);
+        if (!was || was.cancelled) return;
+        if (now.cancelled) {
+          toast(`O restaurante removeu: ${now.name}`);
+        } else if (was.qty !== now.qty) {
+          toast(`O restaurante alterou: ${now.name} (agora ×${now.qty})`);
+        }
+      });
+    }
+    _sentSnapshot = cur;
+  }
+
   async function refreshTab() {
     if (!_activeComandaId) return;
     let data;
@@ -286,6 +310,9 @@
       onTableClosed(); return;
     }
     if (!data.comanda) { clearTab(); return; }
+    // Item 9: o staff anulou/alterou um item já visível ao cliente? Avisa com um
+    // toast claro em vez de o item sumir em silêncio da lista "Já enviado".
+    detectStaffChanges(data.items || []);
     const hasSent = (data.items || []).some(i => i.round_id && i.status !== 'cancelled');
     if (!hasSent) { renderTabBar(null); hideSentSection(); return; } // ainda sem nada enviado
     renderTabBar(data.comanda);
@@ -294,6 +321,7 @@
 
   function clearTab() {
     _activeComandaId = null;
+    _sentSnapshot = null; // nova sessão/mesa → não comparar com itens antigos
     sessionStorage.removeItem(COMANDA_KEY);
     renderTabBar(null);
     hideSentSection();
