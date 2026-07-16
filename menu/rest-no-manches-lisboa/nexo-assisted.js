@@ -106,10 +106,13 @@
   async function openOrGetComanda(tableLabel) {
     const client = await sb();
     const acc = window.NexoAccess;
-    if (acc && acc.tokenValidated && acc.tableLabel === tableLabel &&
+    // MODELO 043: a MESA é dona da comanda — RPC get-or-create (cria travando a
+    // mesa OU junta-se à existente). Nunca cria uma 2.ª comanda para a mesma
+    // mesa; o índice único garante-o no servidor.
+    if (acc && acc.tokenValidated && acc.tableNumber != null &&
         typeof acc.getTableToken === 'function') {
       try {
-        const { data: res } = await client.rpc('nexo_table_access', {
+        const { data: res } = await client.rpc('nexo_open_table_comanda', {
           p_slug: SLUG,
           p_table_num: acc.tableNumber,
           p_table_token: acc.getTableToken(),
@@ -146,6 +149,8 @@
   // atualiza ao vivo via realtime.
   async function assistedOrderConfirmed() {
     if (_inFlight) return { ok: false, reason: 'locked' };
+    // Fase 3 (043): mesa fechada pelo staff → sem novos envios até re-scan.
+    if (window._nexoTableClosed) return { ok: false, reason: 'table_closed' };
 
     _inFlight = true;
     try {

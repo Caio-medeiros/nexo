@@ -577,7 +577,10 @@ function renderTableDetailItems(items, comanda) {
   // Total cobrável: exclui anulados (a comanda.total já é mantida assim no servidor).
   const total = comanda.total || items.reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
   html += `<div class="tdp-total-row"><span>Total da conta</span><span class="tdp-total-amount">${fmtEUR(total)}</span></div>
-    <div class="tdp-actions-row"><button class="tdp-full-btn" onclick="addItemToActiveTable()">+ Adicionar item</button></div>`;
+    <div class="tdp-actions-row">
+      <button class="tdp-full-btn" onclick="addItemToActiveTable()">+ Adicionar item</button>
+      <button class="tdp-full-btn" onclick="moveTableComanda()">⇄ Mover / fundir mesa</button>
+    </div>`;
   body.innerHTML = html;
   if (MOTION) gsap.from('.tdp-item', { opacity: 0, x: -8, duration: 0.25, stagger: 0.04, ease: 'power2.out' });
 }
@@ -663,6 +666,57 @@ async function addItemToActiveTable() {
     status: 'pending', course: 'principal' });
   await openTableDetail(tableNum);
 }
+
+// ── FASE 4 (043): MOVER a conta para outra mesa (corrigir engano) ─────────
+// Respeita o índice único: se a mesa destino já tem conta aberta, a BD
+// devolve unique_violation (23505) e oferecemos FUNDIR as duas contas.
+async function moveTableComanda() {
+  const tableNum = state.selectedTable;
+  const td = state.tables[tableNum];
+  if (!td?.comanda?.id) { salaToast('Mesa sem conta para mover.'); return; }
+  const raw = prompt(`Mover a conta da Mesa ${tableNum} para que mesa?`);
+  if (raw == null) return;
+  const dest = parseInt(String(raw).replace(/\D/g, ''), 10);
+  if (!dest || dest < 1 || dest > state.tableCount) { salaToast('Nº de mesa inválido.'); return; }
+  if (dest === tableNum) { salaToast('A conta já está nessa mesa.'); return; }
+  try {
+    const { error } = await db.from('comandas')
+      .update({ table_number: dest, table_label: `Mesa ${dest}` })
+      .eq('id', td.comanda.id);
+    if (error) {
+      if (error.code === '23505') return offerMergeTables(tableNum, dest, td.comanda.id);
+      throw error;
+    }
+    salaToast(`Conta movida para a Mesa ${dest}.`);
+    forceCloseTableDetail();
+    await reloadSalaLive();
+  } catch (e) { console.error(e); salaToast('Erro ao mover a mesa.'); }
+}
+
+// Fundir: mesa destino já tem conta aberta → move os itens não anulados da
+// origem para o destino e fecha a comanda de origem (respeita o invariante:
+// no fim continua a haver UMA comanda aberta por mesa).
+async function offerMergeTables(srcNum, destNum, srcComandaId) {
+  const ok = confirm(`A Mesa ${destNum} já tem uma conta aberta.\n\nFUNDIR a conta da Mesa ${srcNum} com a da Mesa ${destNum}?`);
+  if (!ok) return;
+  try {
+    const { data: destC } = await db.from('comandas')
+      .select('id').eq('espaco_slug', window.ESPACO_SLUG).eq('table_number', destNum)
+      .not('status', 'in', '(closed,cancelled)').is('archived_at', null)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (!destC) { salaToast('Conta de destino não encontrada.'); return; }
+    const { error: mErr } = await db.from('comanda_items')
+      .update({ comanda_id: destC.id })
+      .eq('comanda_id', srcComandaId).neq('status', 'cancelled');
+    if (mErr) throw mErr;
+    await db.from('comandas').update({ status: 'closed', closed_at: new Date().toISOString() })
+      .eq('id', srcComandaId);
+    salaToast(`Contas fundidas na Mesa ${destNum}.`);
+    forceCloseTableDetail();
+    await reloadSalaLive();
+  } catch (e) { console.error(e); salaToast('Erro ao fundir as contas.'); }
+}
+window.moveTableComanda = moveTableComanda;
 
 // Garante uma comanda aberta na mesa (auto-criada, sem passo manual).
 // UMA comanda por mesa: antes de criar, reaproveita uma comanda activa já

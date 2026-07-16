@@ -248,7 +248,13 @@
     if (!_activeComandaId) return;
     let data;
     try { data = await loadTab(_activeComandaId); } catch (_) { return; }
-    if (!data.comanda || data.comanda.status === 'closed' || data.comanda.status === 'cancelled') { clearTab(); return; }
+    // Mesa fechada pelo staff (043/Fase 3): limpa a sessão e mostra o ecrã de
+    // despedida. SÓ com status explícito 'closed'/'cancelled' — uma comanda
+    // null (token transitório) apenas encerra a tab, sem ecrã de fecho.
+    if (data.comanda && (data.comanda.status === 'closed' || data.comanda.status === 'cancelled')) {
+      onTableClosed(); return;
+    }
+    if (!data.comanda) { clearTab(); return; }
     const hasSent = (data.items || []).some(i => i.round_id && i.status !== 'cancelled');
     if (!hasSent) { renderTabBar(null); hideSentSection(); return; } // ainda sem nada enviado
     renderTabBar(data.comanda);
@@ -261,6 +267,44 @@
     renderTabBar(null);
     hideSentSection();
     if (_comandaCh) { try { _sb.removeChannel(_comandaCh); } catch (_) {} _comandaCh = null; }
+  }
+
+  // Fase 3 (043) — fecho da mesa pelo staff → limpa TUDO no cliente e bloqueia
+  // novos envios até nova validação de mesa (re-scan do QR). Anti-zombie: sem
+  // isto o telemóvel continuava a alimentar uma comanda já fechada.
+  function onTableClosed() {
+    if (window._nexoTableClosed) return; // idempotente
+    window._nexoTableClosed = true;
+    clearTab();
+    try { nexoComandaToken(null); } catch (_) {}
+    try { if (typeof _clearSharedSession === 'function') _clearSharedSession(); } catch (_) {}
+    showTableClosedScreen();
+  }
+
+  function showTableClosedScreen() {
+    if (document.getElementById('nexo-table-closed')) return;
+    const el = document.createElement('div');
+    el.id = 'nexo-table-closed';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.innerHTML = `
+      <div class="ntc-card">
+        <div class="ntc-icon">✓</div>
+        <p class="ntc-title">Mesa fechada</p>
+        <p class="ntc-sub">Obrigado pela visita! A conta foi fechada pela equipa.<br>Para um novo pedido, volte a ler o QR da mesa.</p>
+        <button type="button" class="ntc-btn" id="ntc-close">Ver o menu</button>
+      </div>`;
+    document.body.appendChild(el);
+    const s = document.createElement('style');
+    s.textContent = `#nexo-table-closed{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);padding:24px}
+#nexo-table-closed .ntc-card{background:#fff;color:#111;border-radius:20px;max-width:340px;width:100%;padding:30px 24px calc(24px + env(safe-area-inset-bottom));text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+#nexo-table-closed .ntc-icon{width:56px;height:56px;margin:0 auto 12px;border-radius:50%;background:#16a34a;color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center}
+#nexo-table-closed .ntc-title{font-size:21px;font-weight:800;margin:4px 0 8px}
+#nexo-table-closed .ntc-sub{font-size:14px;line-height:1.5;color:#555;margin:0 0 18px}
+#nexo-table-closed .ntc-btn{background:#111;color:#fff;border:none;border-radius:12px;padding:13px 26px;font-size:15px;font-weight:700;cursor:pointer;min-height:48px}`;
+    document.head.appendChild(s);
+    const btn = document.getElementById('ntc-close');
+    if (btn) btn.addEventListener('click', () => el.remove());
   }
   // Esconde a secção "Já enviado" e a tab Comanda. Se a tab Comanda estava
   // activa, volta automaticamente para a tab Pedido.
@@ -536,28 +580,15 @@
   // RONDA dentro da mesma conta — a base do modelo de rondas da cozinha.
   async function openOrGetComanda(tableLabel) {
     const client = await sb();
-    // RLS 037: a busca aberta por table_label deixou de existir para anon.
-    // 1) Comanda desta sessão (temos o token → a leitura passa no RLS).
-    //    Inclui 'ready': se a cozinha já terminou a ronda anterior, a próxima
-    //    ronda entra na MESMA conta (e reabre p/ 'submitted'), não numa nova.
-    const stored = getStoredComanda();
-    if (stored && stored.id && nexoComandaToken()) {
-      const { data: mine } = await client.from('comandas')
-        .select('id, session_code, table_label, status')
-        .eq('id', stored.id)
-        .in('status', ['open', 'submitted', 'preparing', 'ready'])
-        .is('archived_at', null) // comanda arquivada não se reutiliza — abre nova
-        .maybeSingle();
-      if (mine && mine.table_label === tableLabel) { storeComanda(mine); return mine; }
-    }
-    // 2) Comanda ativa da MESA via RPC: o token de mesa (TAT) é validado no
-    //    SERVIDOR e devolve o client_token — é assim que um 2.º dispositivo
-    //    da mesma mesa retoma a conta partilhada.
+    // MODELO 043: a MESA é dona da comanda. Com token de mesa válido (TAT), a
+    // RPC get-or-create devolve a comanda ÚNICA da mesa — cria-a travando a
+    // mesa OU junta-se à que já existe. O cliente HERDA a mesa; nunca cria uma
+    // 2.ª comanda para a mesma mesa (o índice único garante-o no servidor).
     const acc = window.NexoAccess;
-    if (acc && acc.tokenValidated && acc.tableLabel === tableLabel &&
+    if (acc && acc.tokenValidated && acc.tableNumber != null &&
         typeof acc.getTableToken === 'function') {
       try {
-        const { data: res } = await client.rpc('nexo_table_access', {
+        const { data: res } = await client.rpc('nexo_open_table_comanda', {
           p_slug: SLUG,
           p_table_num: acc.tableNumber,
           p_table_token: acc.getTableToken(),
@@ -570,7 +601,20 @@
           storeComanda(found);
           return found;
         }
-      } catch (_) { /* sem acesso → segue para criar nova */ }
+      } catch (_) { /* sem acesso → segue para os caminhos legados */ }
+    }
+    // Sem token de mesa (venues sem TAT / modo legado): reutiliza a comanda
+    // desta sessão se ainda aberta; senão cria. O trigger 043 deriva o
+    // table_number e o índice único mantém o invariante mesmo por aqui.
+    const stored = getStoredComanda();
+    if (stored && stored.id && nexoComandaToken()) {
+      const { data: mine } = await client.from('comandas')
+        .select('id, session_code, table_label, status')
+        .eq('id', stored.id)
+        .in('status', ['open', 'submitted', 'preparing', 'ready'])
+        .is('archived_at', null) // comanda arquivada não se reutiliza — abre nova
+        .maybeSingle();
+      if (mine && mine.table_label === tableLabel) { storeComanda(mine); return mine; }
     }
     return createComanda(tableLabel, sharedGuestCount());
   }
@@ -670,6 +714,8 @@
   //                                'duplicate'/'locked', que são intencionais)
   async function onOrderConfirmed(opts) {
     if (!HAS_COMANDA || !SLUG) return { ok: false, reason: 'disabled' }; // routing desligado
+    // Fase 3 (043): mesa fechada pelo staff → nada de novos envios até re-scan.
+    if (window._nexoTableClosed) { toast('Mesa fechada. Volte a ler o QR da mesa para pedir.'); return { ok: false, reason: 'table_closed' }; }
     // force=true: usado pelo retry automático do menu após uma falha. Contorna o
     // lock anti-duplo-toque — a deduplicação por assinatura (isDuplicateRecentRound)
     // garante que um retry nunca cria uma ronda duplicada.
