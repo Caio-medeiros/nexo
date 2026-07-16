@@ -1889,12 +1889,22 @@ function nexoInsertAsync(table, row) {
 }
 
 // Regista chamada de mesa (Sala / Modo Staff do Portal)
-function logStaffCallToSupabase(tableLabel) {
+// Item 7 (044): passa pela RPC get-or-create nexo_call_staff, que trava a
+// chamada AO NÍVEL DA MESA — se já houver uma chamada pendente para a mesa
+// devolve {pending:true} e o menu mostra "já chamámos" em vez de criar outra.
+// Cai para o INSERT direto se a RPC ainda não existir (044 por aplicar).
+async function logStaffCallToSupabase(tableLabel) {
   var NS = window.NexoSecurity || null;
-  return nexoInsertAsync('staff_calls', {
-    espaco_slug: CONFIG.slug,
-    table_label: tableLabel ? (NS ? NS.sanitise(tableLabel, 50) : tableLabel) : null,
-  });
+  var label = tableLabel ? (NS ? NS.sanitise(tableLabel, 50) : tableLabel) : null;
+  try {
+    var sb = await loadSupabase();
+    var res = await sb.rpc('nexo_call_staff', { p_slug: CONFIG.slug, p_table_label: label });
+    if (!res.error && res.data) {
+      return { ok: res.data.ok !== false, pending: !!res.data.pending };
+    }
+  } catch (_) { /* RPC indisponível → INSERT direto legado */ }
+  var r = await nexoInsertAsync('staff_calls', { espaco_slug: CONFIG.slug, table_label: label });
+  return { ok: !!(r && r.ok), pending: false };
 }
 // (order_source/had_valid_token vivem em orders_log/comandas; staff_calls não
 //  tem essas colunas — a presença é garantida pelo guardStaffCall acima.)
@@ -2202,7 +2212,10 @@ function setupCallStaff() {
       try { [supaRes, ntfyRes] = await Promise.all([supaPromise, ntfyPromise]); } catch (_) {}
 
       if (supaRes.ok || ntfyRes.ok) {
-        if (btnText) btnText.innerHTML = SVG_CHECK + '<span>Atendente a caminho!</span>';
+        // Item 7: chamada já pendente para esta mesa → "já chamámos" (a RPC não
+        // criou outra); senão, feedback normal de chamada nova.
+        const callLabel = supaRes.pending ? 'Já chamámos — a caminho!' : 'Atendente a caminho!';
+        if (btnText) btnText.innerHTML = SVG_CHECK + '<span>' + callLabel + '</span>';
         // Mesa partilhada: avisa os restantes membros de que o staff já vem.
         if (typeof sharedCart !== 'undefined' && sharedCart && _sharedCartChannel) {
           try { _sharedCartChannel.send({ type: 'broadcast', event: 'staff_called', payload: { mesa: mesa || null } }); } catch (_) {}
