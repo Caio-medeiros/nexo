@@ -123,6 +123,16 @@
 .table-card[data-awaiting="true"] .confirm-chip { display: inline-flex; animation: chipPulse 0.9s ease infinite; }
 .table-grid[data-size="xs"] .confirm-chip { height: 18px; min-width: 18px; font-size: 10px; padding: 0 5px; }
 
+/* "Rever mesa": aberta há 45+ min SEM atividade e SEM chamada pendente —
+   candidata a fecho/revisão MANUAL (nunca fecha sozinha). Sinal DISCRETO
+   (cinza, sem pulsar agressivo): é um lembrete, não um alarme. Cede sempre a
+   uma chamada (vermelho) ou confirmação (dourado) — só se mostra quando a mesa
+   não tem outra camada activa. */
+.review-chip { display: none; align-items: center; justify-content: center; height: 22px; min-width: 22px; padding: 0 6px; border-radius: 100px; background: var(--text-muted); color: #fff; font-size: 11px; line-height: 1; opacity: 0.85; }
+.table-card[data-review="true"]:not([data-calling="true"]):not([data-awaiting="true"]) .review-chip { display: inline-flex; }
+.table-card[data-review="true"]:not([data-calling="true"]):not([data-awaiting="true"]) { box-shadow: 0 0 0 1.5px rgba(148,163,184,0.5); }
+.table-grid[data-size="xs"] .review-chip { height: 18px; min-width: 18px; font-size: 9px; padding: 0 4px; }
+
 /* ─── Card interior ─── */
 .card-top { display: flex; align-items: flex-start; justify-content: space-between; }
 .table-number { font-family: 'Azeret Mono', monospace; font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1; }
