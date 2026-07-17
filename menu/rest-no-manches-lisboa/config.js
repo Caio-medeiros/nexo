@@ -95,8 +95,9 @@ const CONFIG = {
   // Abre directamente a caixa "Escrever crítica" do Google (place ID real
   // do No Manches — Mexican Street Food, Rua de Cantabria 42, Carcavelos)
   googleReviewUrl:  "https://search.google.com/local/writereview?placeid=ChIJgaAlnT7JHg0RubIqzsLvDiA",
-  googleRating:     null,
-  googleReviewCount:"",
+  googleRating:     5,
+  googleReviewCount:"155",
+  priceRange:       "10–15 €",
   theForkReviewUrl: null,   // só Google — sem TheFork
   // Críticas privadas (≤3 estrelas) vão para este WhatsApp, não para o Google
   reviewWhatsappNumber: "351918690783",

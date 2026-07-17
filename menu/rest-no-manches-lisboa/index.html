@@ -97,10 +97,20 @@
       <div class="hero-logo" id="hero-logo"></div>
       <h1 class="hero-name" id="hero-name"></h1>
       <p class="hero-tagline" id="hero-tagline"></p>
-      <div class="hero-meta">
+      <div class="hero-meta" id="hero-meta">
+        <span class="hero-pill hero-rating" id="hero-rating" hidden>
+          <svg class="hero-star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 6.06 6.6.9-4.8 4.66 1.16 6.58L12 18.6l-5.86 3.1L7.3 14.1 2.5 9.46l6.6-.9L12 2.5z"/></svg>
+          <b id="hero-rating-val"></b>
+          <span class="hero-rating-count" id="hero-rating-count"></span>
+        </span>
+        <span class="hero-pill hero-price" id="hero-price" hidden></span>
+        <span class="hero-pill hero-open" id="hero-open">
+          <span class="hero-open-dot" aria-hidden="true"></span>
+          <span id="hero-hours-today"></span>
+        </span>
+      </div>
+      <div class="hero-sub" id="hero-sub">
         <span class="hero-city" id="hero-city"></span>
-        <span class="hero-dot">·</span>
-        <span class="hero-hours-today" id="hero-hours-today"></span>
       </div>
       <div class="hero-stamp" id="hero-stamp"></div>
     </div>

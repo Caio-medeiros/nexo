@@ -211,6 +211,42 @@ function renderHero() {
   document.getElementById('hero-city').textContent = CONFIG.city;
   document.getElementById('hero-hours-today').textContent = CONFIG.hoursToday[currentLang];
 
+  // Info pills (rating / preço) — reusáveis por qualquer restaurante.
+  // Guardados: escondem-se sozinhos quando o config não traz o dado ou o
+  // markup não existe (menus antigos ficam intactos).
+  const ratingEl = document.getElementById('hero-rating');
+  if (ratingEl) {
+    if (CONFIG.googleRating != null && CONFIG.googleRating !== '') {
+      const sep = currentLang === 'en' ? '.' : ',';
+      document.getElementById('hero-rating-val').textContent =
+        Number(CONFIG.googleRating).toFixed(1).replace('.', sep);
+      const cntEl = document.getElementById('hero-rating-count');
+      if (CONFIG.googleReviewCount) {
+        cntEl.textContent = `(${CONFIG.googleReviewCount})`;
+        cntEl.hidden = false;
+      } else {
+        cntEl.hidden = true;
+      }
+      ratingEl.hidden = false;
+    } else {
+      ratingEl.hidden = true;
+    }
+  }
+  const priceEl = document.getElementById('hero-price');
+  if (priceEl) {
+    const pr = CONFIG.priceRange
+      ? (typeof CONFIG.priceRange === 'string'
+          ? CONFIG.priceRange
+          : CONFIG.priceRange[currentLang])
+      : '';
+    if (pr) {
+      priceEl.textContent = pr;
+      priceEl.hidden = false;
+    } else {
+      priceEl.hidden = true;
+    }
+  }
+
   document.title = `${CONFIG.name} — Menu`;
 }
 
