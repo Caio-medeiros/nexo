@@ -142,7 +142,6 @@ function createTableCard(num) {
     <div class="card-top">
       <div class="table-number">${num}</div>
       <div class="card-top-right">
-        <span class="review-chip" aria-label="Aberta há muito sem atividade — rever" title="Aberta há 45+ min sem atividade">⏰</span>
         <span class="confirm-chip" aria-label="Confirmar pedido">📋</span>
         <span class="call-chip" aria-label="A chamar">🙋</span>
         <div class="table-status-dot"></div>
@@ -252,14 +251,12 @@ async function reloadSalaLive() {
     await loadPendingCalls();
     await loadAwaitingConfirm();
     await loadTodayStats();
-    // Item 10: reavalia "rever mesa" já com chamadas/confirmações actualizadas.
-    markReviewCandidates();
   } catch (e) { console.warn('[Sala] reload', e); }
   _salaReloadBusy = false;
 }
 
 function handleNewComanda(comanda) {
-  const tableNum = tableNumberOf(comanda);
+  const tableNum = extractTableNumber(comanda.table_label);
   if (!tableNum || !state.tables[tableNum]) return;
   updateTableStatus(tableNum, 'active', { comanda: {
     id: comanda.id, total: comanda.total, itemCount: 0,
@@ -269,7 +266,7 @@ function handleNewComanda(comanda) {
 }
 
 function handleComandaUpdate(comanda) {
-  const tableNum = tableNumberOf(comanda);
+  const tableNum = extractTableNumber(comanda.table_label);
   if (!tableNum || !state.tables[tableNum]) return;
   const statusMap = { submitted: 'order_new', preparing: 'active', ready: 'ready', open: 'active', closed: 'empty', cancelled: 'empty' };
   const uiStatus = statusMap[comanda.status] || 'active';
@@ -278,7 +275,6 @@ function handleComandaUpdate(comanda) {
     setCalling(tableNum, false);
     setAwaitingConfirm(tableNum, false);
     state.tables[tableNum] = { status: 'empty', comanda: null, calls: [] };
-    setReviewCandidate(tableNum, false); // mesa fechada → sai de "rever"
     const card = document.querySelector(`[data-table-num="${tableNum}"]`);
     if (card) { card.dataset.status = 'empty';
       const tEl = document.getElementById(`total-${tableNum}`); if (tEl) tEl.textContent = '€0,00';
@@ -292,11 +288,9 @@ function handleComandaUpdate(comanda) {
   // "0 itens" numa mesa com consumo (ex.: €242). Mantém o último valor enquanto
   // carrega.
   const prevItems = state.tables[tableNum]?.comanda?.itemCount || 0;
-  // Qualquer update da comanda é atividade → renova o relógio de "rever mesa".
-  updateTableStatus(tableNum, uiStatus, { lastActivity: Date.now(), comanda: {
+  updateTableStatus(tableNum, uiStatus, { comanda: {
     id: comanda.id, total: comanda.total, itemCount: prevItems, guestCount: comanda.guest_count,
     code: comanda.session_code, mode: comanda.mode } });
-  setReviewCandidate(tableNum, false);
   fetchItemCount(comanda.id).then(n => {
     if (state.selectedTable !== tableNum && state.tables[tableNum]?.comanda?.id === comanda.id) {
       updateTableStatus(tableNum, uiStatus, { comanda: { ...state.tables[tableNum].comanda, itemCount: n } });
@@ -380,39 +374,11 @@ function setAwaitingConfirm(tableNum, on) {
   if (card) { if (on) card.dataset.awaiting = 'true'; else card.removeAttribute('data-awaiting'); }
 }
 
-// ─────────────────────────────────────────
-// Item 10: "REVER MESA" — mesa aberta há 45+ min SEM atividade e SEM chamada
-// pendente. É só um SINAL visual (⏰ + anel cinza discreto) para o staff
-// decidir rever/fechar manualmente — NUNCA fecha sozinha (isso é o stale
-// sweep das 3h). Camada separada, como "A chamar"/"Confirmar pedido".
-// ─────────────────────────────────────────
-const REVIEW_IDLE_MS = 45 * 60 * 1000; // 45 min sem atividade
-function setReviewCandidate(tableNum, on) {
-  if (!state.tables[tableNum]) return;
-  state.tables[tableNum].review = on;
-  const card = document.querySelector(`[data-table-num="${tableNum}"]`);
-  if (card) { if (on) card.dataset.review = 'true'; else card.removeAttribute('data-review'); }
-}
-// Reavalia todas as mesas. Corre no fim de cada ressincronização (com os
-// estados de chamada/confirmação já actualizados) e no poll periódico.
-function markReviewCandidates() {
-  const now = Date.now();
-  Object.keys(state.tables).forEach((numStr) => {
-    const num = +numStr;
-    const st = state.tables[num];
-    if (!st) return;
-    const hasComanda = !!(st.comanda && st.comanda.id);
-    const idle = hasComanda && st.lastActivity && (now - st.lastActivity > REVIEW_IDLE_MS);
-    const busy = !!(st.calling || st.awaiting); // chamada/confirmação dominam
-    setReviewCandidate(num, !!(idle && !busy));
-  });
-}
-
 const _awaitingFeeded = new Set(); // 1 entrada no feed por comanda a aguardar
 async function loadAwaitingConfirm() {
   // Só venues assistidos têm itens 'awaiting_staff'; nos restantes é no-op.
   const { data } = await db.from('comanda_items')
-    .select('comanda_id, comandas!inner(table_label, table_number, status)')
+    .select('comanda_id, comandas!inner(table_label, status)')
     .eq('espaco_slug', window.ESPACO_SLUG)
     .eq('status', 'awaiting_staff');
   const awaitingNums = new Set();
@@ -420,7 +386,7 @@ async function loadAwaitingConfirm() {
   (data || []).forEach((r) => {
     const c = r.comandas;
     if (!c || c.status === 'closed' || c.status === 'cancelled') return;
-    const n = tableNumberOf(c);
+    const n = extractTableNumber(c.table_label);
     if (n && state.tables[n]) { awaitingNums.add(n); liveComandas.add(r.comanda_id); }
   });
   Object.keys(state.tables).forEach((numStr) => {
@@ -788,26 +754,9 @@ async function ensureComanda(tableNum) {
     return state.tables[tableNum].comanda;
   }
   const { data, error } = await db.from('comandas').insert({
-    espaco_slug: window.ESPACO_SLUG, table_label: label, table_number: tableNum,
+    espaco_slug: window.ESPACO_SLUG, table_label: label,
     status: 'open', mode: 'dine_in', guest_count: 1 }).select('id, session_code').single();
-  if (error) {
-    // Corrida com o invariante 043 (índice único uq_open_comanda_per_table): o
-    // cliente/outro dispositivo abriu a comanda da mesa no mesmo instante. Não é
-    // erro — re-seleciona a comanda aberta desta mesa e adopta-a.
-    if (error.code === '23505') {
-      const { data: existing } = await db.from('comandas')
-        .select('id, session_code, total')
-        .eq('espaco_slug', window.ESPACO_SLUG).eq('table_number', tableNum)
-        .not('status', 'in', '(closed,cancelled)').is('archived_at', null)
-        .order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (existing) {
-        state.tables[tableNum] = { status: 'active', comanda: { id: existing.id, code: existing.session_code, total: existing.total || 0 } };
-        updateTableStatus(tableNum, 'active', { comanda: state.tables[tableNum].comanda });
-        return state.tables[tableNum].comanda;
-      }
-    }
-    salaToast('Erro ao abrir comanda'); return null;
-  }
+  if (error) { salaToast('Erro ao abrir comanda'); return null; }
   state.tables[tableNum] = { status: 'active', comanda: { id: data.id, code: data.session_code, total: 0 } };
   updateTableStatus(tableNum, 'active', { comanda: state.tables[tableNum].comanda });
   return state.tables[tableNum].comanda;
@@ -1220,7 +1169,7 @@ async function splitTableFromPanel() {
   if (newNum > 60) { salaToast('Máximo de 60 mesas'); return; }
   await setTableCount(newNum);
   try {
-    await db.from('comandas').insert({ espaco_slug: window.ESPACO_SLUG, table_label: `Mesa ${newNum}`, table_number: newNum, status: 'open', mode: 'dine_in', guest_count: 1 });
+    await db.from('comandas').insert({ espaco_slug: window.ESPACO_SLUG, table_label: `Mesa ${newNum}`, status: 'open', mode: 'dine_in', guest_count: 1 });
   } catch (_) {}
   salaToast(`Mesa ${newNum} criada — divida os clientes/itens`);
   closeTableDetail();
@@ -1233,9 +1182,9 @@ function updateTableCountLabel() {
 // Open a specific table from the menu's "Mostrar ao staff" QR (?comanda=CODE).
 async function openTableByCode(code) {
   try {
-    const { data } = await db.from('comandas').select('table_label, table_number')
+    const { data } = await db.from('comandas').select('table_label')
       .eq('session_code', String(code).toUpperCase()).eq('espaco_slug', window.ESPACO_SLUG).maybeSingle();
-    const num = data && tableNumberOf(data);
+    const num = data && extractTableNumber(data.table_label);
     if (num && state.tables[num]) openTableDetail(num);
   } catch (_) {}
 }
@@ -1247,17 +1196,6 @@ function extractTableNumber(label) {
   if (!label) return null;
   const m = String(label).match(/\d+/);
   return m ? parseInt(m[0]) : null;
-}
-
-// Item 3 (043): a comanda tem table_number (inteiro) como FONTE DE VERDADE;
-// table_label é só apresentação. Lê sempre o número da coluna e só recorre ao
-// parsing do label para linhas antigas ainda sem table_number preenchido.
-function tableNumberOf(row) {
-  if (row && row.table_number != null && row.table_number !== '') {
-    const n = parseInt(row.table_number, 10);
-    if (!isNaN(n)) return n;
-  }
-  return extractTableNumber(row && row.table_label);
 }
 
 // Conta os itens (não cancelados) de uma comanda — para o resumo da mesa.
@@ -1365,7 +1303,7 @@ async function loadActiveComandas() {
   const now = Date.now();
   const activeNums = new Set();
   (data || []).forEach(c => {
-    const num = tableNumberOf(c);
+    const num = extractTableNumber(c.table_label);
     if (!num || !state.tables[num]) return;
     // Rotação de mesas: uma comanda activa há mais de 3h fecha-se sozinha.
     if (c.created_at && (now - new Date(c.created_at).getTime() > STALE_MS)) {
@@ -1374,13 +1312,9 @@ async function loadActiveComandas() {
     }
     activeNums.add(num);
     const itemCount = (c.comanda_items || []).filter(i => i.status !== 'cancelled').length;
-    // Item 10: última atividade da mesa = updated_at da comanda (o trigger 016
-    // bate-o a cada mudança de itens/total); recorre a created_at se ausente.
-    const lastActivity = new Date(c.updated_at || c.created_at || Date.now()).getTime();
-    updateTableStatus(num, statusMap[c.status] || 'active', { lastActivity, comanda: {
+    updateTableStatus(num, statusMap[c.status] || 'active', { comanda: {
       id: c.id, total: c.total, itemCount, guestCount: c.guest_count, code: c.session_code, mode: c.mode } });
   });
-  markReviewCandidates();
   // Idempotência (importante p/ poll/reconexão): mesas que JÁ NÃO têm comanda
   // activa (pagas/fechadas enquanto offline) voltam a "livre". Preserva-se o
   // estado "a chamar" (chamada sem comanda é válida).

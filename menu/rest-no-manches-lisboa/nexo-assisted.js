@@ -269,23 +269,8 @@
         if (document.visibilityState === 'visible' && navigator.onLine) resolvePending();
       }, 20000);
     }
-    // Item 5: reconciliação por fetch ao voltar o foco / à rede — não confiar só
-    // no push. Se um 'change' se perdeu com a app em segundo plano, o estado do
-    // lote em espera reconcilia mal a página volta a ficar visível.
-    _wireAssistedResilience();
     clearTimeout(_timeoutId);
     _timeoutId = setTimeout(() => { cleanup(); hideSheet(); removePill(); }, 15 * 60 * 1000);
-  }
-
-  // Liga UMA vez os gatilhos de reconciliação por fetch (foco + regresso à rede).
-  let _resilienceWired = false;
-  function _wireAssistedResilience() {
-    if (_resilienceWired) return;
-    _resilienceWired = true;
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && getPending()) resolvePending();
-    });
-    window.addEventListener('online', () => { if (getPending()) resolvePending(); });
   }
 
   let _resolving = false;

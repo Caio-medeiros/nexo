@@ -3027,7 +3027,6 @@ async function createSharedCart(name, code) {
   const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
   _sharedCartChannel = channel;
   _setupChannelListeners(channel);
-  _ensureSharedResilience();
 
   await new Promise((resolve, reject) => {
     channel.subscribe(async (status) => {
@@ -3047,26 +3046,6 @@ async function createSharedCart(name, code) {
 }
 
 
-// Item 6: um nome está "em uso" se outro membro activo da mesa (não eu) já o
-// usa (comparação case-insensitive, sem espaços a mais).
-function _memberNameTaken(name) {
-  const target = String(name || '').trim().toLowerCase();
-  if (!target) return false;
-  return Object.keys(_memberStates).some(k =>
-    k !== _myPresenceKey &&
-    String((_memberStates[k] && _memberStates[k].name) || '').trim().toLowerCase() === target);
-}
-// Devolve um nome único: o desejado, ou "<desejado> 2", "<desejado> 3", …
-function _uniqueMemberName(desired) {
-  const base = String(desired || 'Convidado').trim() || 'Convidado';
-  if (!_memberNameTaken(base)) return base;
-  for (let n = 2; n < 50; n++) {
-    const candidate = `${base} ${n}`;
-    if (!_memberNameTaken(candidate)) return candidate;
-  }
-  return `${base} ${Date.now() % 1000}`;
-}
-
 async function joinSharedCart(code, name) {
   const sb = await loadSupabase();
   code = code.toUpperCase().trim();
@@ -3085,7 +3064,6 @@ async function joinSharedCart(code, name) {
   const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
   _sharedCartChannel = channel;
   _setupChannelListeners(channel);
-  _ensureSharedResilience();
 
   await new Promise((resolve, reject) => {
     channel.subscribe(async (status) => {
@@ -3125,24 +3103,6 @@ async function joinSharedCart(code, name) {
     sharedCartItems = []; _myCartItems = []; _memberStates = {}; _myPresenceKey = null;
     _clearSharedSession();
     const err = new Error('CART_NOT_FOUND'); err.code = 'NOT_FOUND'; throw err;
-  }
-
-  // Item 6: nesta altura já conhecemos os outros membros (responderam ao hello).
-  // Se o nome escolhido colide com um deles, sufixa automaticamente e reanuncia
-  // — evita dois "Convidado" iguais na conta partilhada, que baralhavam quem
-  // pediu o quê.
-  const unique = _uniqueMemberName(sharedMemberName);
-  if (unique !== sharedMemberName) {
-    sharedMemberName = unique;
-    _memberStates[_myPresenceKey] = { name: unique, items: _myCartItems };
-    try { localStorage.setItem('nexo_member_name', unique); } catch (_) {}
-    syncSharedCartItems();
-    _saveSharedSession();
-    try {
-      await channel.send({ type: 'broadcast', event: 'hello',
-        payload: { memberKey: _myPresenceKey, name: sharedMemberName, items: _myCartItems } });
-    } catch (_) {}
-    try { sharedTableToast(`Já havia "${name}" na mesa — entrou como "${unique}".`); } catch (_) {}
   }
 
   track('shared_cart_joined', { espaco_slug: CONFIG.slug });
@@ -3189,54 +3149,6 @@ function _clearSharedSession() {
 }
 
 
-// Item 5: reconciliação por fetch ao voltar o foco / à rede — o carrinho
-// partilhado vive de broadcast (push); se um evento se perdeu com a app em
-// segundo plano, ao voltar a ficar visível reanunciamo-nos ('hello') e todos
-// os membros respondem com o seu estado atual, ressincronizando a mesa.
-let _sharedResilienceWired = false;
-function _ensureSharedResilience() {
-  if (_sharedResilienceWired) return;
-  _sharedResilienceWired = true;
-  const resync = () => {
-    if (!sharedCart || !_sharedCartChannel) return;
-    if (document.visibilityState !== 'visible' || !navigator.onLine) return;
-    try {
-      _sharedCartChannel.send({ type: 'broadcast', event: 'hello',
-        payload: { memberKey: _myPresenceKey, name: sharedMemberName, items: _myCartItems } });
-    } catch (_) {}
-  };
-  document.addEventListener('visibilitychange', resync);
-  window.addEventListener('online', resync);
-}
-
-
-// Item 8: uma sessão restaurada (localStorage, até 2h) traz preços EM CACHE do
-// momento em que os itens foram adicionados. Nunca os aceitamos tal e qual:
-// revalidamos SEMPRE contra o CONFIG carregado do servidor NESTE page-load
-// (config.json). Itens que já não existem no menu são removidos; preços
-// alterados são corrigidos para o preço atual. Avisa o cliente do que mudou.
-function _revalidateRestoredCartPrices(items) {
-  const kept = [];
-  let removed = 0, changed = 0;
-  (items || []).forEach((row) => {
-    const cur = getItemByRef(row.item_id);
-    if (!cur) { removed++; return; } // já não está no menu → não confiar no cache
-    const freshPrice = parsePriceToNumber(cur.price) || 0;
-    const freshName = cur.name?.[currentLang] || cur.name?.pt || row.item_name;
-    if (Number(row.item_price) !== freshPrice) changed++;
-    kept.push({ ...row, item_price: freshPrice, item_name: freshName });
-  });
-  if (removed || changed) {
-    try {
-      const parts = [];
-      if (changed) parts.push('preços atualizados');
-      if (removed) parts.push(removed + (removed === 1 ? ' item já indisponível' : ' itens já indisponíveis'));
-      sharedTableToast('Sessão retomada — ' + parts.join(' e ') + '.');
-    } catch (_) {}
-  }
-  return kept;
-}
-
 async function restoreSharedSession() {
   try {
     const raw = localStorage.getItem('nexo_shared_session_' + CONFIG.slug);
@@ -3246,8 +3158,7 @@ async function restoreSharedSession() {
     if (Date.now() - s.ts > _SESSION_TTL) { _clearSharedSession(); return; }
 
     _myPresenceKey = s.memberKey;
-    // Revalida os preços em cache contra o menu atual antes de os reactivar.
-    _myCartItems = _revalidateRestoredCartPrices(s.items || []);
+    _myCartItems = s.items || [];
     sharedMemberName = s.name || 'Anfitrião';
     _memberStates = { [_myPresenceKey]: { name: sharedMemberName, items: _myCartItems } };
     sharedCart = { code: s.code };
@@ -3257,7 +3168,6 @@ async function restoreSharedSession() {
     const channel = sb.channel('nexo-' + CONFIG.slug + '-' + s.code);
     _sharedCartChannel = channel;
     _setupChannelListeners(channel);
-  _ensureSharedResilience();
 
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {

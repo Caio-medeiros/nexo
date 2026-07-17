@@ -114,38 +114,7 @@
     try { sessionStorage.setItem(COMANDA_KEY, JSON.stringify(c)); } catch (_) {}
   }
 
-  // MODELO 043: a MESA é dona da comanda. Com token de mesa válido (TAT), a RPC
-  // get-or-create trava a mesa NO SERVIDOR (índice único uq_open_comanda_per_table)
-  // e devolve a comanda ÚNICA da mesa — cria-a OU junta-se à existente. Devolve
-  // null só quando não há token de mesa (venue sem TAT / modo legado); aí — e SÓ
-  // aí — cai-se para o INSERT direto. Nunca há dois caminhos a criar comandas
-  // cegas para a mesma mesa em corrida.
-  async function tryOpenTableViaRpc() {
-    const acc = window.NexoAccess;
-    if (!(acc && acc.tokenValidated && acc.tableNumber != null &&
-          typeof acc.getTableToken === 'function')) return null;
-    try {
-      const client = await sb();
-      const { data: res } = await client.rpc('nexo_open_table_comanda', {
-        p_slug: SLUG, p_table_num: acc.tableNumber, p_table_token: acc.getTableToken(),
-      });
-      const c = res && res.valid && res.comanda;
-      if (c && c.client_token) {
-        nexoComandaToken(c.client_token);
-        const found = { id: c.id, session_code: c.session_code,
-                        table_label: c.table_label, status: c.status };
-        storeComanda(found);
-        return found;
-      }
-    } catch (_) { /* sem acesso → segue para o INSERT direto legado */ }
-    return null;
-  }
-
   async function createComanda(tableLabel, guestCount) {
-    // Item 1 (043): nunca um INSERT cego quando há token de mesa — a RPC
-    // get-or-create trava a mesa e impede uma 2.ª comanda aberta na mesma mesa.
-    const viaRpc = await tryOpenTableViaRpc();
-    if (viaRpc) return viaRpc;
     const client = await sb();
     const meta = window.NexoAccess ? NexoAccess.getOrderMetadata() : {};
     // RLS 037: o token de leitura é gerado AQUI e guardado antes do insert —
@@ -275,30 +244,6 @@
     return { comanda: cRes.data, rounds: rRes.data || [], items: iRes.data || [] };
   }
 
-  // Item 9: memória do último estado dos itens JÁ ENVIADOS (id → nome/qty/anulado)
-  // para detetar o que o staff mexeu entre refrescos. Comparamos só itens com
-  // round_id (já disparados p/ cozinha e visíveis ao cliente na tab Comanda).
-  let _sentSnapshot = null;
-  function detectStaffChanges(items) {
-    const cur = new Map();
-    (items || []).forEach(i => {
-      if (!i.round_id) return; // só itens já enviados (visíveis ao cliente)
-      cur.set(i.id, { name: i.item_name, qty: i.quantity, cancelled: i.status === 'cancelled' });
-    });
-    if (_sentSnapshot) {
-      cur.forEach((now, id) => {
-        const was = _sentSnapshot.get(id);
-        if (!was || was.cancelled) return;
-        if (now.cancelled) {
-          toast(`O restaurante removeu: ${now.name}`);
-        } else if (was.qty !== now.qty) {
-          toast(`O restaurante alterou: ${now.name} (agora ×${now.qty})`);
-        }
-      });
-    }
-    _sentSnapshot = cur;
-  }
-
   async function refreshTab() {
     if (!_activeComandaId) return;
     let data;
@@ -310,9 +255,6 @@
       onTableClosed(); return;
     }
     if (!data.comanda) { clearTab(); return; }
-    // Item 9: o staff anulou/alterou um item já visível ao cliente? Avisa com um
-    // toast claro em vez de o item sumir em silêncio da lista "Já enviado".
-    detectStaffChanges(data.items || []);
     const hasSent = (data.items || []).some(i => i.round_id && i.status !== 'cancelled');
     if (!hasSent) { renderTabBar(null); hideSentSection(); return; } // ainda sem nada enviado
     renderTabBar(data.comanda);
@@ -321,7 +263,6 @@
 
   function clearTab() {
     _activeComandaId = null;
-    _sentSnapshot = null; // nova sessão/mesa → não comparar com itens antigos
     sessionStorage.removeItem(COMANDA_KEY);
     renderTabBar(null);
     hideSentSection();
@@ -591,14 +532,12 @@
   function readMenuCart() {
     const isShared = (typeof sharedCart !== 'undefined' && sharedCart);
     if (isShared && typeof sharedCartItems !== 'undefined' && Array.isArray(sharedCartItems)) {
-      // Item 8: o preço vem SEMPRE do menu atual (resolveRef → CONFIG do
-      // servidor), nunca do row.item_price em cache. Item que já não resolve
-      // (saiu do menu) é descartado em vez de entrar com preço em cache.
       return sharedCartItems.map(row => {
         const it = resolveRef(row.item_id);
-        if (!it) return null;
-        return { id: row.item_id, name: it.name, category: it.category,
-                 price: it.price, qty: row.quantity || 1, note: row.note || '' };
+        return { id: row.item_id, name: (it && it.name) || row.item_name || 'Item',
+                 category: it ? it.category : null,
+                 price: it ? it.price : (row.item_price || 0),
+                 qty: row.quantity || 1, note: row.note || '' };
       }).filter(Boolean);
     }
     return readLocalCart();
@@ -645,8 +584,25 @@
     // RPC get-or-create devolve a comanda ÚNICA da mesa — cria-a travando a
     // mesa OU junta-se à que já existe. O cliente HERDA a mesa; nunca cria uma
     // 2.ª comanda para a mesma mesa (o índice único garante-o no servidor).
-    const viaRpc = await tryOpenTableViaRpc();
-    if (viaRpc) return viaRpc;
+    const acc = window.NexoAccess;
+    if (acc && acc.tokenValidated && acc.tableNumber != null &&
+        typeof acc.getTableToken === 'function') {
+      try {
+        const { data: res } = await client.rpc('nexo_open_table_comanda', {
+          p_slug: SLUG,
+          p_table_num: acc.tableNumber,
+          p_table_token: acc.getTableToken(),
+        });
+        const c = res && res.valid && res.comanda;
+        if (c && c.client_token) {
+          nexoComandaToken(c.client_token);
+          const found = { id: c.id, session_code: c.session_code,
+                          table_label: c.table_label, status: c.status };
+          storeComanda(found);
+          return found;
+        }
+      } catch (_) { /* sem acesso → segue para os caminhos legados */ }
+    }
     // Sem token de mesa (venues sem TAT / modo legado): reutiliza a comanda
     // desta sessão se ainda aberta; senão cria. O trigger 043 deriva o
     // table_number e o índice único mantém o invariante mesmo por aqui.
