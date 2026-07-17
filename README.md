@@ -80,6 +80,26 @@ Deploy: Netlify (auto-deploy em push para `main`). Domínio: `nexosolutions.pt`.
 4. URL final: `https://nexosolutions.pt/menu/[slug]/`
 5. Programar chips NFC com esse URL
 
+## Testar localmente
+
+```bash
+npm run dev
+# depois abre, COM barra final:
+#   http://localhost:8888/menu/marisca-petisca/
+#   http://localhost:8888/menu/rest-no-manches-lisboa/
+```
+
+Serve **sempre a partir da raiz do repo** (`npm run dev` fá-lo). Os menus
+carregam recursos por caminho absoluto — `/js/menu-engine.js`,
+`/js/nexo-security.js`, `/js/nexo-analytics.js` — que assumem a raiz do repo
+como raiz do site (é assim que o Netlify serve em produção). Por isso **nunca**
+abras o `index.html` diretamente (`file://`) nem sirvas a partir da subpasta do
+menu: os `/js/...` ficam 404, o motor partilhado não carrega e vês o fallback
+"Não foi possível carregar o menu". A barra final no URL também é obrigatória
+para os caminhos relativos (`config.js`, `script.js`) resolverem.
+
+---
+
 ## URLs importantes
 
 | Destino                  | URL                                          |

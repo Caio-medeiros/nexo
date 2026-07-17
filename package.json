@@ -5,6 +5,7 @@
   "description": "NEXO platform test suite (unit + config scan + Playwright E2E). No build step — the site is static.",
   "type": "module",
   "scripts": {
+    "dev": "node tests/perf/gzserve.mjs . 8888",
     "test:unit": "node tests/unit/run.mjs",
     "test:coverage": "c8 --include=js/nexo-security.js --check-coverage --lines 90 --statements 90 --branches 75 --functions 95 --reporter=text --reporter=html --report-dir=tests/coverage node tests/unit/run.mjs",
     "test:scan": "node tests/scan/scan.mjs",
