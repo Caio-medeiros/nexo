@@ -86,6 +86,11 @@ const CONFIG = {
     pt: "Aberto agora", en: "Open now",
     es: "Abierto ahora", fr: "Ouvert maintenant"
   },
+  // Horário estruturado p/ calcular "Aberto agora / Fechado" no banner.
+  // No Manches: todos os dias 12:00–24:00 (24:00 = meia-noite).
+  openSchedule: {
+    everyday: [["12:00", "24:00"]]
+  },
 
 
   /* ════════════════════════════════════════════════════════════════════════

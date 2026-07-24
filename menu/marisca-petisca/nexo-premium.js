@@ -129,7 +129,13 @@
       client_token: token,
       ...meta, // order_source + had_valid_token (TAT)
     }).select('id, session_code, table_label, status').single();
-    if (error) throw error;
+    if (error) {
+      // 043: índice único — a mesa já tem uma conta aberta. Sem token de mesa
+      // não se junta automaticamente; sinaliza p/ pedir ajuda ao staff (o servidor
+      // já impede a 2.ª comanda). Com token, este caminho nem é usado (RPC).
+      if (error.code === '23505') { const e = new Error('TABLE_BUSY'); e.code = 'TABLE_BUSY'; throw e; }
+      throw error;
+    }
     storeComanda(data);
     return data;
   }
@@ -181,8 +187,11 @@
   async function sendCartAsComanda(tableLabel) {
     const items = readLocalCart();
     if (!items.length) { toast('Carrinho vazio'); return null; }
-    // TAT: bloqueia pedidos sem token de mesa válido (modo BROWSE).
-    if (window.NexoAccess && !(await NexoAccess.guardOrder())) return null;
+    // TAT: só bloqueia pedidos sem token de mesa quando o venue exige presença
+    // (features.comanda.requireTableToken). Modo suave (por omissão): permite
+    // pedir indicando a mesa; com token, openOrGetComanda amarra-a à mesa física.
+    const requireToken = !!(F.comanda && F.comanda.requireTableToken);
+    if (requireToken && window.NexoAccess && !(await NexoAccess.guardOrder())) return null;
     // Anti-spam + integrity (defence-in-depth; RLS enforces server-side).
     if (NS) {
       const sid = NS.getSessionId();
@@ -244,6 +253,30 @@
     return { comanda: cRes.data, rounds: rRes.data || [], items: iRes.data || [] };
   }
 
+  // #8 — o staff retira/ajusta um item já enviado (falta de stock, engano) e o
+  // total desce sozinho. Comparamos os itens enviados entre refrescos e avisamos
+  // o cliente, para nunca ver a conta mudar sem explicação.
+  let _sentSnapshot = null; // { itemId: { name, qty, status } }
+  function _detectStaffChanges(data) {
+    const now = {};
+    (data.items || []).filter(i => i.round_id).forEach(i => {
+      now[i.id] = { name: i.item_name, qty: i.quantity, status: i.status };
+    });
+    if (_sentSnapshot) {
+      const removed = [], changed = [];
+      Object.keys(_sentSnapshot).forEach(id => {
+        const before = _sentSnapshot[id];
+        if (before.status === 'cancelled') return; // já não estava na conta
+        const after = now[id];
+        if (!after || after.status === 'cancelled') removed.push(before.name);
+        else if (after.qty < before.qty) changed.push(before.name);
+      });
+      if (removed.length) toast('O restaurante retirou da conta: ' + removed.join(', '));
+      else if (changed.length) toast('O restaurante ajustou: ' + changed.join(', '));
+    }
+    _sentSnapshot = now;
+  }
+
   async function refreshTab() {
     if (!_activeComandaId) return;
     let data;
@@ -255,6 +288,9 @@
       onTableClosed(); return;
     }
     if (!data.comanda) { clearTab(); return; }
+    // #8 ANTES do early-return: uma ronda que ficou toda cancelada tem de
+    // disparar o aviso na mesma (senão o total descia sem o cliente saber).
+    _detectStaffChanges(data);
     const hasSent = (data.items || []).some(i => i.round_id && i.status !== 'cancelled');
     if (!hasSent) { renderTabBar(null); hideSentSection(); return; } // ainda sem nada enviado
     renderTabBar(data.comanda);
@@ -263,6 +299,8 @@
 
   function clearTab() {
     _activeComandaId = null;
+    _sentSnapshot = null;
+    window._nexoComandaBillable = 0;
     sessionStorage.removeItem(COMANDA_KEY);
     renderTabBar(null);
     hideSentSection();
@@ -355,6 +393,11 @@
       : (data.items || []).filter(i => i.status !== 'cancelled')
           .reduce((s, i) => s + (i.item_price || 0) * i.quantity, 0);
     const bill = Math.max(0, serverTotal - awaitingSum);
+    // #6 — expõe o total COBRÁVEL canónico (servidor, sem awaiting) para o
+    // split bill nunca dividir um número recalculado no cliente. Atualiza a cada
+    // ronda confirmada (este render corre em realtime).
+    window._nexoComandaBillable = bill;
+    if (typeof onCartChangeSplitHook === 'function') { try { onCartChangeSplitHook(); } catch (_) {} }
 
     let roundsHtml = '';
     orderedRoundIds.forEach(rid => {
@@ -534,10 +577,11 @@
     if (isShared && typeof sharedCartItems !== 'undefined' && Array.isArray(sharedCartItems)) {
       return sharedCartItems.map(row => {
         const it = resolveRef(row.item_id);
-        return { id: row.item_id, name: (it && it.name) || row.item_name || 'Item',
-                 category: it ? it.category : null,
-                 price: it ? it.price : (row.item_price || 0),
-                 qty: row.quantity || 1, note: row.note || '' };
+        // Item saiu do menu (sessão antiga / preço obsoleto) → NUNCA enviar com
+        // preço em cache. Descarta-se; o preço cobrável vem sempre do CONFIG atual.
+        if (!it) return null;
+        return { id: row.item_id, name: it.name, category: it.category,
+                 price: it.price, qty: row.quantity || 1, note: row.note || '' };
       }).filter(Boolean);
     }
     return readLocalCart();
@@ -753,7 +797,13 @@
         } catch (_) {}
       }, 1200);
       return { ok: true, result: res };
-    } catch (e) { console.warn('[NEXO Premium] onOrderConfirmed', e); return { ok: false, reason: 'error' }; }
+    } catch (e) {
+      if (e && e.code === 'TABLE_BUSY') {
+        toast('Esta mesa já tem uma conta aberta. Chame o staff para juntar o seu pedido.');
+        return { ok: false, reason: 'table_busy' };
+      }
+      console.warn('[NEXO Premium] onOrderConfirmed', e); return { ok: false, reason: 'error' };
+    }
   }
 
   // ── Public API ───────────────────────────────────────────────

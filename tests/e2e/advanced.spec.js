@@ -11,12 +11,12 @@ import { test, expect } from '@playwright/test';
  * client_token da 037 viaja no header, e que a UI responde (toast, sheet
  * de espera, cooldown da chamada, divisor de conta).
  *
- * NOTA (auditoria 2026-07-12): os menus NÃO carregam /js/nexo-security.js
- * nem /js/nexo-access.js — todos os call sites degradam para no-op. O
- * anti-spam real da chamada de empregado é o cooldown de 30s do script.js
- * (testado abaixo); o rate-limit de order_submit do NexoSecurity só corre
- * nos testes unitários. Os antigos testes TAT (browse banner) eram código
- * morto por essa razão e foram removidos.
+ * NOTA (2026-07-20): o no-manches passou a carregar /js/nexo-security.js e
+ * /js/nexo-access.js (marisca ainda não). Nestes testes o URL não traz
+ * ?mesa=&tok=, por isso a camada de acesso fica em modo BROWSE e o guardOrder
+ * degrada para suave (o pedido segue com a mesa digitada) — ver a cobertura da
+ * mesa validada por token em tests/e2e/mesa-sessao.spec.js. O anti-spam real da
+ * chamada de empregado continua a ser o cooldown de 30s do script.js.
  *
  * O isolamento RLS (leituras cross-venue) vive em tests/rls/rls.mjs.
  */
@@ -232,15 +232,16 @@ test.describe('Chamada de empregado — envia 1× e entra em cooldown (anti-spam
     // fecha e fica em cooldown (o botão mostra "Enviado")
     await expect(callBtn).toContainText(/enviado/i, { timeout: 5000 });
 
-    // exactamente UMA escrita em staff_calls
-    expect(state.posts.filter((p) => p.path === 'staff_calls').length).toBe(1);
+    // exactamente UMA chamada (044: via RPC get-or-create nexo_call_staff)
+    const callCount = () => state.posts.filter((p) => p.path === 'rpc/nexo_call_staff').length;
+    expect(callCount()).toBe(1);
 
     // anti-spam: durante o cooldown o sheet não reabre
     // (dispatchEvent: o botão pode ficar sob o nav sticky após fechar o
     // sheet; o que interessa é o guard do cooldown, não o hit-testing)
     await callBtn.dispatchEvent('click');
     await expect(page.locator('#nexo-call-sheet')).toBeHidden();
-    expect(state.posts.filter((p) => p.path === 'staff_calls').length).toBe(1);
+    expect(callCount()).toBe(1);
   });
 });
 

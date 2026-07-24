@@ -175,6 +175,31 @@ function haptic() {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 
+// "Aberto agora?" — calculado a partir de CONFIG.openSchedule.
+// Formato do config (0=Dom … 6=Sáb), horas em "HH:MM" (24:00 = meia-noite):
+//   openSchedule: { everyday: [["12:00","24:00"]] }          // mesmo horário todos os dias
+//   openSchedule: { days: { 0:[["12:00","24:00"]], 1:[…] } } // por dia da semana
+// Suporta vários intervalos/dia e intervalos que atravessam a meia-noite.
+// Devolve true/false, ou null se não houver horário estruturado.
+function _hmToMin(s) { const [h, m] = String(s).split(':').map(Number); return h * 60 + (m || 0); }
+function isOpenNow(schedule, now = new Date()) {
+  if (!schedule) return null;
+  const dow = now.getDay();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const rangesFor = (d) => schedule.everyday || (schedule.days && schedule.days[d]) || [];
+  const inRanges = (ranges, minute) => ranges.some(([o, c]) => {
+    const open = _hmToMin(o), close = _hmToMin(c);
+    return close > open ? (minute >= open && minute < close)   // mesmo dia
+                        : (minute >= open || minute < close);  // atravessa a meia-noite
+  });
+  if (inRanges(rangesFor(dow), mins)) return true;
+  // intervalos de ONTEM que atravessam a meia-noite e ainda cobrem esta hora
+  const prev = (dow + 6) % 7;
+  const spillover = rangesFor(prev).filter(([o, c]) => _hmToMin(c) <= _hmToMin(o));
+  return spillover.some(([, c]) => mins < _hmToMin(c));
+}
+
+
 function renderHero() {
   const heroImage = document.getElementById('hero-image');
   if (CONFIG.heroImageUrl) {
@@ -208,42 +233,24 @@ function renderHero() {
   document.getElementById('html-root').lang = currentLang;
   document.getElementById('hero-name').textContent = CONFIG.name;
   document.getElementById('hero-tagline').textContent = CONFIG.tagline[currentLang];
-  document.getElementById('hero-city').textContent = CONFIG.city;
-  document.getElementById('hero-hours-today').textContent = CONFIG.hoursToday[currentLang];
+  // Endereço do restaurante (cai para a cidade se não houver morada definida).
+  const cityEl = document.getElementById('hero-city');
+  if (cityEl) cityEl.textContent = CONFIG.address || CONFIG.city || '';
 
-  // Info pills (rating / preço) — reusáveis por qualquer restaurante.
-  // Guardados: escondem-se sozinhos quando o config não traz o dado ou o
-  // markup não existe (menus antigos ficam intactos).
-  const ratingEl = document.getElementById('hero-rating');
-  if (ratingEl) {
-    if (CONFIG.googleRating != null && CONFIG.googleRating !== '') {
-      const sep = currentLang === 'en' ? '.' : ',';
-      document.getElementById('hero-rating-val').textContent =
-        Number(CONFIG.googleRating).toFixed(1).replace('.', sep);
-      const cntEl = document.getElementById('hero-rating-count');
-      if (CONFIG.googleReviewCount) {
-        cntEl.textContent = `(${CONFIG.googleReviewCount})`;
-        cntEl.hidden = false;
-      } else {
-        cntEl.hidden = true;
-      }
-      ratingEl.hidden = false;
+  // Estado "Aberto agora / Fechado" — calculado à hora atual a partir de
+  // CONFIG.openSchedule. Sem horário estruturado, mantém o texto do config.
+  const openEl = document.getElementById('hero-open');
+  const openTextEl = document.getElementById('hero-hours-today');
+  if (openTextEl) {
+    const OPEN_LBL   = { pt: 'Aberto agora', en: 'Open now',   es: 'Abierto ahora', fr: 'Ouvert maintenant' };
+    const CLOSED_LBL = { pt: 'Fechado',      en: 'Closed',     es: 'Cerrado',       fr: 'Fermé' };
+    const open = isOpenNow(CONFIG.openSchedule);
+    if (open === null) {
+      openTextEl.textContent = (CONFIG.hoursToday && CONFIG.hoursToday[currentLang]) || '';
+      if (openEl) openEl.classList.remove('is-closed');
     } else {
-      ratingEl.hidden = true;
-    }
-  }
-  const priceEl = document.getElementById('hero-price');
-  if (priceEl) {
-    const pr = CONFIG.priceRange
-      ? (typeof CONFIG.priceRange === 'string'
-          ? CONFIG.priceRange
-          : CONFIG.priceRange[currentLang])
-      : '';
-    if (pr) {
-      priceEl.textContent = pr;
-      priceEl.hidden = false;
-    } else {
-      priceEl.hidden = true;
+      openTextEl.textContent = open ? OPEN_LBL[currentLang] : CLOSED_LBL[currentLang];
+      if (openEl) openEl.classList.toggle('is-closed', !open);
     }
   }
 
@@ -1448,6 +1455,9 @@ function onCartChange() {
   updateOpenItemModalControls();
   updateOpenWineModalControls();
   if (typeof onCartChangeSplitHook === 'function') onCartChangeSplitHook();
+  // #4 — propaga o carrinho às outras abas do mesmo menu (no-op no modo
+  // partilhado ou enquanto se aplica um estado remoto — evita ecos).
+  if (typeof _broadcastCart === 'function') _broadcastCart();
 }
 
 
@@ -1588,19 +1598,40 @@ function openConfirmScreen() {
     screen.classList.add('show');
     document.body.style.overflow = 'hidden';
   }
+  // #3 — o Back do browser fecha o checkout (não sai da página, não perde o
+  // carrinho): empilha um estado de histórico que o popstate abaixo consome.
+  try { history.pushState({ nexoOverlay: 'confirm' }, ''); } catch (_) {}
+  _confirmPopWired();
   // Reset pulse timer — user engaged
   if (pulseTimer) { clearTimeout(pulseTimer); pulseTimer = null; }
 }
 
 
-function closeConfirmScreen() {
+let _confirmClosing = false;
+function closeConfirmScreen(fromPop) {
   const screen = document.getElementById('confirm-screen');
-  if (!screen) return;
+  if (!screen || !screen.classList.contains('show') || _confirmClosing) return;
+  _confirmClosing = true;
   screen.classList.add('closing');
   setTimeout(() => {
     screen.classList.remove('show', 'closing');
     document.body.style.overflow = '';
+    _confirmClosing = false;
   }, 260);
+  // Fechado por botão (não pelo Back) → consome o estado empilhado para o
+  // histórico ficar equilibrado; o popstate resultante é absorvido pelo guard.
+  if (!fromPop) { try { if (history.state && history.state.nexoOverlay === 'confirm') history.back(); } catch (_) {} }
+}
+
+// popstate: Back com o checkout aberto fecha-o em vez de navegar. Ligado 1×.
+let _confirmPopReady = false;
+function _confirmPopWired() {
+  if (_confirmPopReady) return;
+  _confirmPopReady = true;
+  window.addEventListener('popstate', () => {
+    const screen = document.getElementById('confirm-screen');
+    if (screen && screen.classList.contains('show')) closeConfirmScreen(true);
+  });
 }
 
 
@@ -1680,7 +1711,17 @@ function renderConfirmScreen() {
   // Table input
   const tableEnabled = CONFIG.tableInputEnabled !== false;
   if (tableWrap) tableWrap.style.display = tableEnabled ? 'block' : 'none';
-  if (tableInput && confirmTableValue) tableInput.value = confirmTableValue;
+  // Com token de mesa válido (TAT), a mesa é a validada no servidor — prefixa e
+  // tranca o campo para o pedido nunca cair noutra mesa (o utilizador não a
+  // reescreve). Sem token, mantém o valor digitado.
+  const accFull = window.NexoAccess && NexoAccess.mode === 'full' && NexoAccess.tableNumber != null;
+  if (tableInput && accFull) {
+    tableInput.value = NexoAccess.tableNumber;
+    tableInput.readOnly = true;
+    confirmTableValue = String(NexoAccess.tableNumber);
+  } else if (tableInput && confirmTableValue && !tableInput.readOnly) {
+    tableInput.value = confirmTableValue;
+  }
 
   // "Enviar para a cozinha" é sempre o botão primário (topo).
   const kitchenLabel = document.getElementById('confirm-kitchen-label');
@@ -2045,6 +2086,20 @@ function getSplitEntries() {
 }
 
 
+// #6 — Base do split = total COBRÁVEL real da mesa, nunca um número que ainda
+// vai mudar sem o cliente saber. Se há comanda a correr, parte do total CANÓNICO
+// do servidor (window._nexoComandaBillable, exposto pelo nexo-premium — já sem
+// os itens 'awaiting_staff') e soma o que ainda está no carrinho por enviar.
+// Como o render da comanda corre em realtime, o split reflecte cada nova ronda.
+function _splitBasisTotal() {
+  const confirmed = Number(window._nexoComandaBillable) || 0;
+  return confirmed + getCartTotal();
+}
+function _hasRunningComanda() {
+  return (Number(window._nexoComandaBillable) || 0) > 0 || !!window._nexoComandaInfo;
+}
+
+
 function getPersonTotal(personIdx) {
   const assigned = splitAssign[personIdx];
   if (!assigned) return 0;
@@ -2121,8 +2176,8 @@ function renderSplitPanel() {
 function renderSplitEqual() {
   const el = document.getElementById('split-equal-result');
   if (!el) return;
-  const total = getCartTotal();
-  const perPerson = total / splitPeople;
+  const total = _splitBasisTotal();
+  const perPerson = splitPeople > 0 ? total / splitPeople : 0;
 
   const rows = Array.from({ length: splitPeople }, (_, i) => `
     <div class="split-eq-row">
@@ -2131,7 +2186,11 @@ function renderSplitEqual() {
     </div>
   `).join('');
 
-  el.innerHTML = rows + `<p class="split-total-note">${ts().totalNote(splitPeople)}</p>`;
+  // Com comanda a correr, avisa que a divisão inclui as rondas confirmadas e
+  // acompanha cada novo pedido — nunca é um total "congelado" que engana.
+  const runningNote = _hasRunningComanda()
+    ? `<p class="split-total-note">Inclui rondas já confirmadas · atualiza a cada novo pedido</p>` : '';
+  el.innerHTML = rows + `<p class="split-total-note">${ts().totalNote(splitPeople)}</p>` + runningNote;
 }
 
 
@@ -3063,6 +3122,7 @@ async function createSharedCart(name, code) {
   const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
   _sharedCartChannel = channel;
   _setupChannelListeners(channel);
+  _ensureSharedResilience(); // #5 — reconcilia a mesa ao voltar online/1.º plano
 
   await new Promise((resolve, reject) => {
     channel.subscribe(async (status) => {
@@ -3100,6 +3160,7 @@ async function joinSharedCart(code, name) {
   const channel = sb.channel('nexo-' + CONFIG.slug + '-' + code);
   _sharedCartChannel = channel;
   _setupChannelListeners(channel);
+  _ensureSharedResilience(); // #5 — reconcilia a mesa ao voltar online/1.º plano
 
   await new Promise((resolve, reject) => {
     channel.subscribe(async (status) => {
@@ -3185,6 +3246,122 @@ function _clearSharedSession() {
 }
 
 
+// Revalida um cesto restaurado (localStorage) contra o menu ATUAL: descarta
+// itens que já não existem e refresca preços/nomes para os valores de hoje —
+// nunca se pede (nem se cobra) por um preço em cache de outro serviço/dia.
+// Avisa o cliente quando algo mudou. Devolve a lista saneada.
+function _revalidateRestoredCartPrices(items) {
+  if (!Array.isArray(items)) return [];
+  let dropped = 0, repriced = 0;
+  const out = [];
+  for (const it of items) {
+    const fresh = getItemByRef(it.item_id);
+    if (!fresh) { dropped++; continue; } // item saiu do menu
+    const freshPrice = parsePriceToNumber(fresh.price) || 0;
+    if (Math.abs((Number(it.item_price) || 0) - freshPrice) > 0.001) repriced++;
+    out.push({
+      item_id: it.item_id,
+      item_name: (fresh.name && (fresh.name[currentLang] || fresh.name.pt)) || it.item_name,
+      item_price: freshPrice,
+      quantity: it.quantity || 1,
+      note: it.note || null,
+    });
+  }
+  if (dropped || repriced) {
+    try {
+      sharedTableToast(dropped
+        ? 'Atualizámos o seu cesto: alguns itens mudaram ou já não estão no menu.'
+        : 'Preços atualizados para os valores de hoje.');
+    } catch (_) {}
+  }
+  return out;
+}
+
+
+// #5 — Reconciliação da mesa partilhada ao voltar. O Broadcast é efémero: se o
+// telemóvel perde a ligação (Wi-Fi instável, app em 2.º plano), os estados que
+// passaram enquanto esteve fora não são reenviados. Ao ficar visível/online,
+// reanunciamos 'hello' — cada membro responde com o seu estado (handler 'hello'
+// → _trackMyPresence) e a mesa volta a ficar sincronizada, sem refrescar à mão.
+let _sharedResilienceWired = false;
+function _ensureSharedResilience() {
+  if (_sharedResilienceWired) return;
+  _sharedResilienceWired = true;
+  const reannounce = () => {
+    if (!sharedCart || !_sharedCartChannel || !_myPresenceKey) return;
+    try {
+      _sharedCartChannel.send({
+        type: 'broadcast', event: 'hello',
+        payload: { memberKey: _myPresenceKey, name: sharedMemberName, items: _myCartItems },
+      });
+    } catch (_) {}
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') reannounce();
+  });
+  window.addEventListener('online', reannounce);
+}
+
+
+// #7 — Dois membros com o mesmo nome ("Convidado") tornam ambígua a atribuição
+// de itens no split. Se detectarmos outro membro com o nosso nome, RENOMEAMO-NOS
+// com um sufixo ("Convidado 2"). Desempate determinístico por chave de presença:
+// só renomeia quem tem a chave "maior", por isso exactamente um cede — nunca
+// ambos ao mesmo tempo. Converge à medida que os rebroadcasts propagam.
+function _dedupeMyName() {
+  if (!sharedCart || !_myPresenceKey) return;
+  const mine = (sharedMemberName || '').trim().toLowerCase();
+  if (!mine) return;
+  const others = Object.entries(_memberStates).filter(([k]) => k !== _myPresenceKey);
+  // colisão em que a outra chave é menor → sou eu que cedo
+  const collides = others.some(([k, m]) =>
+    (m.name || '').trim().toLowerCase() === mine && k < _myPresenceKey);
+  if (!collides) return;
+  const base = (sharedMemberName || 'Convidado').trim().replace(/\s+\d+$/, '');
+  const taken = new Set(others.map(([, m]) => (m.name || '').trim().toLowerCase()));
+  let n = 2, name = `${base} ${n}`;
+  while (taken.has(name.toLowerCase())) { n++; name = `${base} ${n}`; }
+  sharedMemberName = name;
+  try { localStorage.setItem('nexo_member_name', name); } catch (_) {}
+  try { sharedTableToast(`Já havia um "${base}" na mesa — passou a ser "${name}"`); } catch (_) {}
+  _trackMyPresence();
+}
+
+
+// #4 — Duas abas do mesmo menu no mesmo telemóvel tinham carrinhos diferentes
+// (o carrinho local vive em memória, por aba). Sincronizamos via BroadcastChannel:
+// à mudança do carrinho difunde-se para as outras abas e a mais recente vence
+// (last-write-wins); uma aba nova pede o estado atual ao abrir. Só no modo
+// NÃO-partilhado — no partilhado, o realtime da mesa já coordena tudo.
+let _tabChannel = null;
+const _tabId = Math.random().toString(36).slice(2);
+let _lastCartTs = 0;
+let _applyingRemoteCart = false;
+function _initTabSync() {
+  if (typeof BroadcastChannel === 'undefined' || typeof CONFIG === 'undefined') return;
+  try { _tabChannel = new BroadcastChannel('nexo-cart-' + CONFIG.slug); } catch (_) { return; }
+  _tabChannel.onmessage = (ev) => {
+    const m = ev.data;
+    if (!m || m.tabId === _tabId || sharedCart) return;
+    if (m.type === 'cart') {
+      if ((m.ts || 0) <= _lastCartTs) return; // já temos um estado igual/mais novo
+      _lastCartTs = m.ts;
+      _applyingRemoteCart = true;
+      try { cart = Array.isArray(m.cart) ? m.cart : []; onCartChange(); }
+      finally { _applyingRemoteCart = false; }
+    } else if (m.type === 'request') {
+      _broadcastCart(); // uma aba nova pediu — respondemos com o nosso carrinho
+    }
+  };
+  try { _tabChannel.postMessage({ type: 'request', tabId: _tabId }); } catch (_) {}
+}
+function _broadcastCart() {
+  if (!_tabChannel || sharedCart || _applyingRemoteCart) return;
+  _lastCartTs = Date.now();
+  try { _tabChannel.postMessage({ type: 'cart', tabId: _tabId, cart, ts: _lastCartTs }); } catch (_) {}
+}
+
+
 async function restoreSharedSession() {
   try {
     const raw = localStorage.getItem('nexo_shared_session_' + CONFIG.slug);
@@ -3194,7 +3371,10 @@ async function restoreSharedSession() {
     if (Date.now() - s.ts > _SESSION_TTL) { _clearSharedSession(); return; }
 
     _myPresenceKey = s.memberKey;
-    _myCartItems = s.items || [];
+    // Sessão restaurada (localStorage, até 2h) pode trazer preços de outro
+    // serviço/dia ou itens já removidos do menu. Revalida SEMPRE contra o CONFIG
+    // atual: refresca preços, descarta itens fora do menu e avisa o cliente.
+    _myCartItems = _revalidateRestoredCartPrices(s.items || []);
     sharedMemberName = s.name || 'Anfitrião';
     _memberStates = { [_myPresenceKey]: { name: sharedMemberName, items: _myCartItems } };
     sharedCart = { code: s.code };
@@ -3204,6 +3384,7 @@ async function restoreSharedSession() {
     const channel = sb.channel('nexo-' + CONFIG.slug + '-' + s.code);
     _sharedCartChannel = channel;
     _setupChannelListeners(channel);
+  _ensureSharedResilience(); // #5 — reconcilia a mesa ao voltar online/1.º plano
 
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
@@ -5180,10 +5361,17 @@ function lockOrder(ms) { _orderLockUntil = Date.now() + (ms || 6000); }
 async function sendToKitchen() {
   if (!validateTableInput()) return;
   if (orderLocked()) return;
-  lockOrder();
   const tableInput = document.getElementById('confirm-table-input');
   const tableValue = (tableInput ? tableInput.value.trim() : '') || confirmTableValue || '';
   confirmTableValue = tableValue;
+  // #2 — sem rede o pedido nunca "desaparece": avisa JÁ (sem esperar 15s pelo
+  // timeout) que não foi enviado e como reenviar. Não tranca o botão para o
+  // cliente poder tentar de novo assim que voltar a rede.
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    showOfflineOrderNotice(tableValue);
+    return;
+  }
+  lockOrder();
 
   const routing = !!(window.NEXOPremium && window.NEXOPremium.comandaRouting && window.NEXOPremium.onOrderConfirmed);
   let res = null;
@@ -5191,14 +5379,17 @@ async function sendToKitchen() {
     setKitchenBtnLoading(t().confirmSending || 'A enviar…');
     // 1ª tentativa (timeout 15s). Falha → 1 retry automático após 3s.
     res = await submitOrderWithTimeout(false);
-    if (res && !res.ok && res.reason !== 'duplicate' && res.reason !== 'locked') {
+    // 'table_busy' (mesa já com conta aberta, sem token p/ juntar) é terminal:
+    // reenviar dá o mesmo 23505 e o próprio layer já avisou o cliente.
+    const terminal = (r) => r && (r.reason === 'duplicate' || r.reason === 'locked' || r.reason === 'table_busy');
+    if (res && !res.ok && !terminal(res)) {
       setKitchenBtnLoading(t().confirmRetrying || 'A tentar novamente…');
       await new Promise(r => setTimeout(r, 3000));
       res = await submitOrderWithTimeout(true); // force: ignora o lock anti-duplo
     }
     resetKitchenBtn();
-    // Duplicado/lock: intencional — não reenviar nem cair para o recurso.
-    if (res && (res.reason === 'duplicate' || res.reason === 'locked')) { closeConfirmScreen(); return; }
+    // Duplicado/lock/mesa-ocupada: intencional — não reenviar nem cair para o recurso.
+    if (terminal(res)) { closeConfirmScreen(); return; }
   }
 
   if (res && res.ok) {
@@ -5302,6 +5493,21 @@ function showKitchenSentNotification() {
 
 // Falha ao enviar o pedido → fallback de boa UX (nunca um erro cru): explica
 // e oferece tentar de novo ou chamar o empregado, que regista o pedido.
+// #2 — offline explícito: o pedido NÃO foi enviado; diz claramente e oferece
+// reenviar (quando a rede voltar) ou mostrar ao staff. Nunca desaparece calado.
+function showOfflineOrderNotice(tableValue) {
+  showStaffHelpPopup({
+    title: 'Sem ligação à internet',
+    message: 'O seu pedido NÃO foi enviado. Verifique a rede e toque em "Tentar novamente" — ou mostre ao staff.',
+    primary: {
+      label: (t().confirmStaff || 'Mostrar ao Staff') + ' →',
+      onClick: () => { try { openStaffView(tableValue); } catch (_) {} },
+    },
+    retryLabel: t().staffHelpRetry || 'Tentar novamente',
+    onRetry: () => { try { retryKitchenSend(); } catch (_) {} },
+  });
+}
+
 function showKitchenErrorNotification(tableValue) {
   showStaffHelpPopup({
     title: t().kitchenErrTitle,
@@ -5576,12 +5782,33 @@ function nexoInsertAsync(table, row) {
 }
 
 // Regista chamada de mesa (Sala / Modo Staff do Portal)
+// Devolve { ok, pending }. 044: a RPC nexo_call_staff faz get-or-create ao nível
+// da MESA — se outra pessoa da mesma mesa já chamou há pouco (por resolver),
+// devolve pending:true SEM duplicar, e o menu mostra "já chamámos — a caminho".
+// Fallback ao INSERT directo se a RPC falhar/não existir (pré-044) — nunca se
+// perde uma chamada.
 function logStaffCallToSupabase(tableLabel) {
   var NS = window.NexoSecurity || null;
-  return nexoInsertAsync('staff_calls', {
-    espaco_slug: CONFIG.slug,
-    table_label: tableLabel ? (NS ? NS.sanitise(tableLabel, 50) : tableLabel) : null,
-  });
+  var label = tableLabel ? (NS ? NS.sanitise(tableLabel, 50) : tableLabel) : null;
+  var cfg = (typeof CONFIG !== 'undefined' ? CONFIG : {});
+  if (!cfg.supabaseUrl || !cfg.supabaseAnonKey || cfg.supabaseUrl.indexOf('{{') !== -1) {
+    return Promise.resolve({ ok: false, pending: false });
+  }
+  return fetch(cfg.supabaseUrl + '/rest/v1/rpc/nexo_call_staff', {
+    method: 'POST', keepalive: true,
+    headers: {
+      apikey: cfg.supabaseAnonKey, Authorization: 'Bearer ' + cfg.supabaseAnonKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ p_slug: cfg.slug, p_table_label: label }),
+  }).then(async (r) => {
+    if (!r.ok) throw new Error('rpc');
+    const data = await r.json().catch(() => null);
+    return { ok: true, pending: !!(data && data.pending) };
+  }).catch(() =>
+    nexoInsertAsync('staff_calls', { espaco_slug: cfg.slug, table_label: label })
+      .then((res) => ({ ok: res.ok, pending: false }))
+  );
 }
 // (order_source/had_valid_token vivem em orders_log/comandas; staff_calls não
 //  tem essas colunas — a presença é garantida pelo guardStaffCall acima.)
@@ -5603,6 +5830,7 @@ function _setupChannelListeners(channel) {
       if (!payload?.memberKey) return;
       _memberStates[payload.memberKey] = { name: payload.name, items: payload.items || [] };
       syncSharedCartItems();
+      _dedupeMyName(); // #7 — resolve nomes duplicados na mesa
     })
     .on('broadcast', { event: 'hello' }, ({ payload }) => {
       // New member joined — register them immediately, then reply with our state
@@ -5610,6 +5838,7 @@ function _setupChannelListeners(channel) {
         _memberStates[payload.memberKey] = { name: payload.name || 'Convidado', items: payload.items || [] };
         syncSharedCartItems();
       }
+      _dedupeMyName(); // #7 — resolve nomes duplicados na mesa
       _trackMyPresence();
     })
     .on('broadcast', { event: 'bye' }, ({ payload }) => {
@@ -5702,20 +5931,33 @@ const _SESSION_TTL = 2 * 60 * 60 * 1000; // 2 hours
 // Se o contrato do espaço estiver inativo/vencido, o menu fica indisponível.
 // FAIL-OPEN: qualquer falha de rede/config → o menu abre normalmente (nunca
 // deixa um cliente pagante sem menu por causa de um hiccup).
+function showBootError() {
+  document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:#181818;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:24px;gap:16px">' +
+    '<p style="font-size:17px;max-width:32ch;line-height:1.5">Não foi possível carregar o menu. Tenta novamente.</p>' +
+    '<button onclick="location.reload()" style="background:#fff;color:#181818;border:none;border-radius:12px;padding:14px 22px;font-size:16px;font-weight:700;min-height:48px;cursor:pointer">↻ Tentar novamente</button></div>';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  // config.js falhou a carregar (rede/deploy a meio) → erro amigável com
-  // retry em vez de um crash de JS numa página em branco.
-  if (typeof CONFIG === 'undefined') {
-    document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:#181818;color:#fff;font-family:system-ui,sans-serif;text-align:center;padding:24px;gap:16px">' +
-      '<p style="font-size:17px;max-width:32ch;line-height:1.5">Não foi possível carregar o menu. Tenta novamente.</p>' +
-      '<button onclick="location.reload()" style="background:#fff;color:#181818;border:none;border-radius:12px;padding:14px 22px;font-size:16px;font-weight:700;min-height:48px;cursor:pointer">↻ Tentar novamente</button></div>';
+  // config.js falhou/corrompido (rede, deploy a meio, JS parcial) → erro
+  // amigável com retry em vez de uma página quebrada. Não basta CONFIG existir:
+  // um CONFIG a meio (sem nome/menu) também quebrava o render — validamos o
+  // essencial ANTES de tocar no DOM.
+  const configOk = typeof CONFIG !== 'undefined' && CONFIG && typeof CONFIG === 'object'
+    && CONFIG.name && Array.isArray(CONFIG.menu);
+  if (!configOk) { showBootError(); return; }
+  // Render nuclear dentro de try/catch: qualquer erro no arranque cai no MESMO
+  // aviso amigável, nunca numa página meio-desenhada.
+  try {
+    initContractGate();
+    applyBrandColors();
+    detectLang();
+    initAnalytics();
+    renderAll();
+  } catch (e) {
+    console.error('[NEXO] arranque falhou', e);
+    showBootError();
     return;
   }
-  initContractGate();
-  applyBrandColors();
-  detectLang();
-  initAnalytics();
-  renderAll();
   showLangPrompt();
   track('menu_opened', {
     espaco_tipo: (typeof ESPACO_TIPO !== 'undefined' ? ESPACO_TIPO : 'rest'),
@@ -5792,6 +6034,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupCallStaff();
   // ─── Restore shared cart session (survives refresh, 2h TTL) ───
   restoreSharedSession();
+  // ─── #4 — sincroniza o carrinho entre abas do mesmo menu ───
+  _initTabSync();
 });
 
 
@@ -5860,6 +6104,13 @@ function setupCallStaff() {
     sendBtn.addEventListener('click', async () => {
       if (window.NexoAccess && !(await NexoAccess.guardStaffCall())) return;
       if (cooldownActive) return;
+      // #2/#3 — sem rede a chamada nunca "desaparece": diz que não foi enviada e
+      // não entra em cooldown (o cliente pode tentar assim que voltar a rede).
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (btnText) btnText.innerHTML = SVG_BELL + '<span>Sem rede — não foi enviado. Tente de novo.</span>';
+        setTimeout(() => { if (btnText) btnText.innerHTML = SVG_BELL + '<span>Chamar Empregado</span>'; }, 4000);
+        return;
+      }
       cooldownActive = true; // bloqueia reentrância imediata (evita spam/duplicados)
 
       const mesa = tableInput ? tableInput.value.trim() : '';
@@ -5889,7 +6140,10 @@ function setupCallStaff() {
       try { [supaRes, ntfyRes] = await Promise.all([supaPromise, ntfyPromise]); } catch (_) {}
 
       if (supaRes.ok || ntfyRes.ok) {
-        if (btnText) btnText.innerHTML = SVG_CHECK + '<span>Atendente a caminho!</span>';
+        // 044: outra pessoa da mesa já tinha chamado (chamada recente por
+        // resolver) → mostra "já chamámos" em vez de fingir uma nova chamada.
+        const already = supaRes.ok && supaRes.pending;
+        if (btnText) btnText.innerHTML = SVG_CHECK + '<span>' + (already ? 'Já chamámos — a caminho!' : 'Atendente a caminho!') + '</span>';
         // Mesa partilhada: avisa os restantes membros de que o staff já vem.
         if (typeof sharedCart !== 'undefined' && sharedCart && _sharedCartChannel) {
           try { _sharedCartChannel.send({ type: 'broadcast', event: 'staff_called', payload: { mesa: mesa || null } }); } catch (_) {}

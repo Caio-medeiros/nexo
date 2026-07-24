@@ -669,7 +669,7 @@
         <label class="confirm-field-label" id="confirm-table-label" for="confirm-table-input">Número da mesa <span class="confirm-table-required-mark">*</span> <span class="confirm-table-optional">(opcional para mostrar ao staff)</span></label>
         <div class="confirm-table-field" id="confirm-table-field">
           <span class="confirm-table-prefix" id="confirm-table-prefix">Mesa</span>
-          <input type="text" id="confirm-table-input" class="confirm-table-input"
+          <input type="text" id="confirm-table-input" class="confirm-table-input" data-table-input
             inputmode="numeric" pattern="[0-9]*" placeholder="4"
             maxlength="3" autocomplete="off" autocorrect="off">
         </div>
@@ -809,6 +809,11 @@
        (config→script→premium) antes do DOMContentLoaded. -->
   <script defer src="config.js"></script>
   <script defer src="script.js"></script>
+  <!-- Camada de presença/mesa (TAT): sanitização + validação do token da mesa.
+       Sem estes, o guardOrder e a RPC get-or-create (043) ficavam inertes e a
+       comanda deixava de estar amarrada à mesa física. -->
+  <script defer src="/js/nexo-security.js"></script>
+  <script defer src="/js/nexo-access.js"></script>
   <script defer src="nexo-premium.js"></script>
   <!-- BOTTOM BAR — Chamar | Ver pedido | Voltar ao topo -->
   <div class="nexo-bottom-bar" id="nexo-bottom-bar">

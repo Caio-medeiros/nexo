@@ -138,7 +138,14 @@
       ...(token ? { client_token: token } : {}),
       ...meta,
     }).select('id, session_code, table_label, status').single();
-    if (error) throw error;
+    if (error) {
+      // 043: índice único uq_open_comanda_per_table — a mesa já tem uma conta
+      // aberta (outro telemóvel/corrida). Sem token de mesa não é possível
+      // juntar-se automaticamente; sinaliza-se para pedir ajuda ao staff em vez
+      // de criar uma 2.ª comanda (que o servidor bloqueia de qualquer forma).
+      if (error.code === '23505') { const e = new Error('TABLE_BUSY'); e.code = 'TABLE_BUSY'; throw e; }
+      throw error;
+    }
     return data;
   }
 
@@ -170,7 +177,13 @@
 
       const items = NEXOPremium.readMenuCart();
       if (!items.length) return { ok: false, reason: 'empty' };
-      if (window.NexoAccess && !(await NexoAccess.guardOrder())) return { ok: false, reason: 'blocked' };
+      // TAT: só bloqueia o envio sem token de mesa quando o venue exige presença
+      // (features.comanda.requireTableToken). Por omissão (modo suave), o cliente
+      // pode pedir indicando o número da mesa — mas com token válido a comanda é
+      // sempre amarrada à mesa física via nexo_open_table_comanda (openOrGetComanda).
+      // guardOrder() abre o modal de bloqueio, por isso NÃO o chamamos no modo suave.
+      const requireToken = !!(CONFIG.features && CONFIG.features.comanda && CONFIG.features.comanda.requireTableToken);
+      if (requireToken && window.NexoAccess && !(await NexoAccess.guardOrder())) return { ok: false, reason: 'blocked' };
       if (NS) {
         const rl = NS.checkRateLimit('order_submit', NS.getSessionId());
         if (!rl.allowed) return { ok: false, reason: 'ratelimit' };
@@ -234,6 +247,10 @@
       }
       return { ok: true };
     } catch (e) {
+      if (e && e.code === 'TABLE_BUSY') {
+        try { sharedTableToast('Esta mesa já tem uma conta aberta. Chame o staff para juntar o seu pedido.'); } catch (_) {}
+        return { ok: false, reason: 'table_busy' };
+      }
       console.warn('[NEXO Assisted] submit', e);
       return { ok: false, reason: 'error' };
     } finally {

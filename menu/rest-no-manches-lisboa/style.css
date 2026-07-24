@@ -305,6 +305,13 @@ a { color: inherit; text-decoration: none; touch-action: manipulation; }
   box-shadow: 0 0 0 3px rgba(53, 199, 89, 0.22);
 }
 
+/* Estado "fechado" — ponto cinza e pill mais discreta. */
+.hero-open.is-closed .hero-open-dot {
+  background: #8A8A8E;
+  box-shadow: 0 0 0 3px rgba(138, 138, 142, 0.22);
+}
+.hero-open.is-closed { opacity: 0.72; }
+
 .hero-sub {
   margin-top: 9px;
   font-size: 12px;

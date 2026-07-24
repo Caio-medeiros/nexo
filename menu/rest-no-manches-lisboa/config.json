@@ -46,6 +46,14 @@
     "es": "Abierto ahora",
     "fr": "Ouvert maintenant"
   },
+  "openSchedule": {
+    "everyday": [
+      [
+        "12:00",
+        "24:00"
+      ]
+    ]
+  },
   "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJgaAlnT7JHg0RubIqzsLvDiA",
   "googleRating": 5,
   "googleReviewCount": "155",

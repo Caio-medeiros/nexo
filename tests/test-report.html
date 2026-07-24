@@ -7,11 +7,11 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
 .green{background:rgba(34,197,94,.15);color:#22C55E} .red{background:rgba(239,68,68,.15);color:#EF4444}
 </style></head><body>
 <h1>NEXO — Relatório de testes unitários</h1>
-<p class="summary"><span class="pill green">50/50 passaram</span> · gerado 16/07/2026, 16:19:10</p>
+<p class="summary"><span class="pill green">50/50 passaram</span> · gerado 24/07/2026, 15:09:34</p>
 <table><thead><tr><th></th><th>Suite</th><th>Teste</th><th>Tempo</th><th>Erro</th></tr></thead><tbody>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.sanitise</td><td>strips <script> (no '<' remains)</td>
-    <td>0ms</td><td></td>
+    <td>1ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.sanitise</td><td>passes normal text through</td>
@@ -51,7 +51,7 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.validateTableNumber</td><td>0 → invalid</td>
-    <td>1ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.validateTableNumber</td><td>'abc' → invalid</td>
@@ -119,7 +119,7 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.sanitise variants</td><td>sanitiseName caps at 100</td>
-    <td>1ms</td><td></td>
+    <td>0ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.sanitise variants</td><td>sanitisePhone strips letters, keeps + e dígitos</td>
@@ -195,7 +195,7 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.assertComanda / assertComandaItem</td><td>preço negativo → throws</td>
-    <td>0ms</td><td></td>
+    <td>1ms</td><td></td>
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.assertComanda / assertComandaItem</td><td>qty 0 → throws</td>
@@ -207,6 +207,6 @@ table{width:100%;border-collapse:collapse;font-size:13px} th,td{text-align:left;
   </tr>
   <tr class="ok">
     <td>✅</td><td>NexoSecurity.logError</td><td>não lança (localhost branch)</td>
-    <td>4ms</td><td></td>
+    <td>2ms</td><td></td>
   </tr></tbody></table>
 </body></html>

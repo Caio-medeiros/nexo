@@ -256,7 +256,7 @@ async function reloadSalaLive() {
 }
 
 function handleNewComanda(comanda) {
-  const tableNum = extractTableNumber(comanda.table_label);
+  const tableNum = tableNumberOf(comanda);
   if (!tableNum || !state.tables[tableNum]) return;
   updateTableStatus(tableNum, 'active', { comanda: {
     id: comanda.id, total: comanda.total, itemCount: 0,
@@ -266,7 +266,9 @@ function handleNewComanda(comanda) {
 }
 
 function handleComandaUpdate(comanda) {
-  const tableNum = extractTableNumber(comanda.table_label);
+  // #4/#5: usa a coluna table_number — assim FECHAR liberta a mesa CERTA (o
+  // regex sobre o label podia libertar a errada e deixar a real "presa").
+  const tableNum = tableNumberOf(comanda);
   if (!tableNum || !state.tables[tableNum]) return;
   const statusMap = { submitted: 'order_new', preparing: 'active', ready: 'ready', open: 'active', closed: 'empty', cancelled: 'empty' };
   const uiStatus = statusMap[comanda.status] || 'active';
@@ -378,7 +380,7 @@ const _awaitingFeeded = new Set(); // 1 entrada no feed por comanda a aguardar
 async function loadAwaitingConfirm() {
   // Só venues assistidos têm itens 'awaiting_staff'; nos restantes é no-op.
   const { data } = await db.from('comanda_items')
-    .select('comanda_id, comandas!inner(table_label, status)')
+    .select('comanda_id, comandas!inner(table_label, table_number, status)')
     .eq('espaco_slug', window.ESPACO_SLUG)
     .eq('status', 'awaiting_staff');
   const awaitingNums = new Set();
@@ -386,7 +388,7 @@ async function loadAwaitingConfirm() {
   (data || []).forEach((r) => {
     const c = r.comandas;
     if (!c || c.status === 'closed' || c.status === 'cancelled') return;
-    const n = extractTableNumber(c.table_label);
+    const n = tableNumberOf(c);
     if (n && state.tables[n]) { awaitingNums.add(n); liveComandas.add(r.comanda_id); }
   });
   Object.keys(state.tables).forEach((numStr) => {
@@ -546,6 +548,7 @@ function renderTableDetailItems(items, comanda) {
           <button class="tdp-qty-btn" onclick="changePendingQty('${it.id}',1)" aria-label="Mais um">+</button>
         </div>
         <span class="tdp-item-price">${fmtEUR((it.item_price || 0) * it.quantity)}</span>
+        <button class="tdp-void-btn" onclick="editItemSala('${it.id}')" title="Editar quantidade/nota/preço">✎</button>
         <button class="tdp-remove-btn" onclick="removePendingItemSala('${it.id}')" title="Remover">×</button>
       </div>`;
     });
@@ -569,6 +572,7 @@ function renderTableDetailItems(items, comanda) {
         <span class="tdp-item-qty">×${it.quantity}</span>
         <span class="tdp-item-price">${fmtEUR((it.item_price || 0) * it.quantity)}</span>
         <span class="tdp-item-status">${TDP_STATUS_ICON[it.status] || '⏳'}</span>
+        ${voidable ? `<button class="tdp-void-btn" onclick="editItemSala('${it.id}')" title="Editar quantidade/nota/preço">✎</button>` : ''}
         ${voidable ? `<button class="tdp-void-btn" onclick="showVoidModal('${it.id}')" title="Anular item">✕</button>` : ''}
       </div>`;
     });
@@ -643,9 +647,32 @@ async function changePendingQty(itemId, delta) {
     if (state.selectedTable) await openTableDetail(state.selectedTable);
   } catch (e) { console.error(e); }
 }
+// #3 — poder TOTAL do staff sobre a conta: editar quantidade/nota/preço de
+// QUALQUER item (incluindo já enviados — corrige enganos sem SQL nem apagar e
+// recomeçar). O trigger do servidor (016) recalcula o total da comanda.
+async function editItemSala(itemId) {
+  const it = (selectedItems || []).find(x => x.id === itemId);
+  if (!it) return;
+  const qRaw = prompt('Quantidade:', it.quantity); if (qRaw == null) return;
+  const qty = Math.max(1, parseInt(qRaw, 10) || it.quantity);
+  const pRaw = prompt('Preço unitário (€):', String(it.item_price ?? 0)); if (pRaw == null) return;
+  const price = parseFloat(String(pRaw).replace(',', '.'));
+  const nRaw = prompt('Nota (deixe vazio para remover):', it.notes || '');
+  const note = nRaw == null ? it.notes : (String(nRaw).trim() || null);
+  try {
+    await db.from('comanda_items').update({
+      quantity: qty,
+      item_price: isNaN(price) ? it.item_price : Math.max(0, price),
+      notes: note,
+    }).eq('id', itemId);
+    salaToast('Item atualizado.');
+    if (state.selectedTable) await openTableDetail(state.selectedTable);
+  } catch (e) { console.error(e); salaToast('Erro ao editar item'); }
+}
+
 window.showVoidModal = showVoidModal; window.confirmVoid = confirmVoid;
 window.closeVoidModal = closeVoidModal; window.removePendingItemSala = removePendingItemSala;
-window.changePendingQty = changePendingQty;
+window.changePendingQty = changePendingQty; window.editItemSala = editItemSala;
 
 async function addItemToActiveTable() {
   const tableNum = state.selectedTable;
@@ -1182,9 +1209,9 @@ function updateTableCountLabel() {
 // Open a specific table from the menu's "Mostrar ao staff" QR (?comanda=CODE).
 async function openTableByCode(code) {
   try {
-    const { data } = await db.from('comandas').select('table_label')
+    const { data } = await db.from('comandas').select('table_label, table_number')
       .eq('session_code', String(code).toUpperCase()).eq('espaco_slug', window.ESPACO_SLUG).maybeSingle();
-    const num = data && extractTableNumber(data.table_label);
+    const num = data && tableNumberOf(data);
     if (num && state.tables[num]) openTableDetail(num);
   } catch (_) {}
 }
@@ -1194,8 +1221,19 @@ async function openTableByCode(code) {
 // ─────────────────────────────────────────
 function extractTableNumber(label) {
   if (!label) return null;
-  const m = String(label).match(/\d+/);
-  return m ? parseInt(m[0]) : null;
+  // Prefere o padrão "Mesa N" (ignora texto/parênteses à volta) e tira zeros à
+  // esquerda; só depois cai para o 1.º número que aparecer. Evita apanhar um
+  // número errado quando o rótulo tem texto extra (ex.: "Sala 2 · Mesa 5").
+  const m = String(label).match(/mesa\s*0*(\d+)/i) || String(label).match(/0*(\d+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+// #5 — nº da mesa CANÓNICO (043): a coluna comandas.table_number é a fonte de
+// verdade; o table_label é só apresentação. Só cai para o regex em linhas
+// legadas sem a coluna, ou em tabelas que não a têm (staff_calls, orders_log).
+function tableNumberOf(row) {
+  if (row && Number.isInteger(row.table_number)) return row.table_number;
+  return extractTableNumber(row && row.table_label);
 }
 
 // Conta os itens (não cancelados) de uma comanda — para o resumo da mesa.
@@ -1303,11 +1341,11 @@ async function loadActiveComandas() {
   const now = Date.now();
   const activeNums = new Set();
   (data || []).forEach(c => {
-    const num = extractTableNumber(c.table_label);
+    const num = tableNumberOf(c); // #5: coluna table_number (select '*' já a traz)
     if (!num || !state.tables[num]) return;
     // Rotação de mesas: uma comanda activa há mais de 3h fecha-se sozinha.
     if (c.created_at && (now - new Date(c.created_at).getTime() > STALE_MS)) {
-      autoCloseComanda(c.id, c.table_label);
+      autoCloseComanda(c);
       return;
     }
     activeNums.add(num);
@@ -1330,11 +1368,12 @@ async function loadActiveComandas() {
 }
 
 // Fecha automaticamente uma comanda demasiado antiga (mesa esquecida).
-async function autoCloseComanda(id, tableLabel) {
+// Recebe a linha da comanda (com table_number, 043) para libertar a mesa CERTA.
+async function autoCloseComanda(comanda) {
   try {
-    await db.from('comandas').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', id);
-    const num = extractTableNumber(tableLabel);
-    if (num) handleComandaUpdate({ id, table_label: tableLabel, status: 'closed' });
+    await db.from('comandas').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', comanda.id);
+    handleComandaUpdate({ id: comanda.id, table_label: comanda.table_label,
+      table_number: comanda.table_number, status: 'closed' });
   } catch (_) {}
 }
 
@@ -1342,12 +1381,12 @@ async function autoCloseComanda(id, tableLabel) {
 function startStaleSweep() {
   setInterval(async () => {
     const since = new Date(Date.now() - STALE_MS).toISOString();
-    const { data } = await db.from('comandas').select('id, table_label')
+    const { data } = await db.from('comandas').select('id, table_label, table_number')
       .eq('espaco_slug', window.ESPACO_SLUG)
       .in('status', ['open', 'submitted', 'preparing', 'ready'])
       .is('archived_at', null)
       .lt('created_at', since);
-    (data || []).forEach(c => autoCloseComanda(c.id, c.table_label));
+    (data || []).forEach(c => autoCloseComanda(c));
   }, 5 * 60 * 1000);
 }
 
